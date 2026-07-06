@@ -189,7 +189,7 @@
     100%{ transform:translate(calc(-50% + var(--vx,0px)), calc(-50% + var(--vy,-40px))) scale(1.4); opacity:0; }
   }
   /* 勝利: 勝った側の碁笥から碁石が吹き上がる */
-  .burst{ position:fixed; z-index:70; border-radius:50%; pointer-events:none;
+  .burst{ position:fixed; z-index:40; border-radius:50%; pointer-events:none;   /* 碁笥より上のレイヤーから飛び出す */
     box-shadow:0 4px 8px rgba(0,0,0,.3);
     animation:burstFly 1.25s cubic-bezier(.3,.4,.5,1) forwards; }
   .burst.b{ background:radial-gradient(circle at 35% 30%, #6e6e6e, #1c1c1c 60%, #000); }
@@ -205,15 +205,14 @@
     background:radial-gradient(circle at 35% 28%, #c89a5c, #8a6a3c 62%, #5d4426 95%);
     box-shadow:inset 0 8px 14px rgba(0,0,0,.5), inset 0 -3px 6px rgba(255,255,255,.15), 0 5px 10px rgba(60,40,10,.35);
     opacity:.4; transition:opacity .3s linear; pointer-events:none;
+    z-index:6;   /* 勝利の碁石(z4)より上: 石は碁笥の下から湧いて見える */
   }
   .bowl.bk{ left:12px; } .bowl.wh{ right:12px; }
   .bowl .bs{ position:absolute; width:26%; height:26%; border-radius:50%; box-shadow:0 1px 3px rgba(0,0,0,.4); }
   .bowl.bk .bs{ background:radial-gradient(circle at 35% 30%, #6e6e6e, #1c1c1c 60%, #000); }
   .bowl.wh .bs{ background:radial-gradient(circle at 35% 30%, #ffffff, #e9e2cf 55%, #b9b2a0); }
-  .bowl.active{ opacity:1; animation:bowlSway 1.5s ease-in-out infinite; }
-  .bowl.bk.active{ animation:bowlSwayR 1.5s ease-in-out infinite; }   /* 黒(左下)は逆回転 */
-  @keyframes bowlSway{ 0%,100%{ transform:rotate(-5deg); } 50%{ transform:rotate(5deg) translateY(-4px); } }
-  @keyframes bowlSwayR{ 0%,100%{ transform:rotate(5deg); } 50%{ transform:rotate(-5deg) translateY(-4px); } }
+  .bowl.active{ opacity:1; animation:bowlBreath 1.5s ease-in-out infinite; }   /* 手番側はふくらんで呼吸する */
+  @keyframes bowlBreath{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.1); } }
   .bowl.pop{ animation:bowlPop .32s cubic-bezier(.3,1.4,.5,1); }
   /* 碁笥の上のラベル(碁笥のゆれから独立して固定) */
   .bowl-tag{
@@ -247,7 +246,8 @@
   .gline.h{ height:1px; left:3.846%; width:92.308%; }
   .gstar{ position:absolute; width:5px; height:5px; border-radius:50%; background:var(--line); transform:translate(-50%,-50%); }
   .cell{ position:absolute; width:7.692%; height:7.692%; transform:translate(-50%,-50%); cursor:pointer; }
-  @media (pointer:fine){ .cell:hover::after{ content:""; position:absolute; inset:15%; border-radius:50%; background:rgba(199,62,46,.18); } }
+  /* 置けるよの赤丸は「自分が打てる時」だけ(#boardに.myturnが付く) */
+  @media (pointer:fine){ #board.myturn .cell:hover::after{ content:""; position:absolute; inset:15%; border-radius:50%; background:rgba(199,62,46,.18); } }
   .cell.taken{ cursor:default; }
   .cell.taken:hover::after{ display:none; }
 
@@ -326,6 +326,17 @@
     opacity:0; pointer-events:none; transition:opacity .3s linear;
   }
   #resultOverlay.on{ opacity:1; pointer-events:auto; }
+  /* 投了の確認ダイアログ(結果ダイアログと同じ作法) */
+  #confirmOverlay{
+    position:fixed; inset:0; z-index:60; display:flex;
+    align-items:center; justify-content:center;
+    background:rgba(30,26,20,.55);
+    opacity:0; pointer-events:none; transition:opacity .25s linear;
+  }
+  #confirmOverlay.on{ opacity:1; pointer-events:auto; }
+  #confirmOverlay .r-card{ transform:scale(.6); opacity:0; }
+  #confirmOverlay.on .r-card{ transform:scale(1); opacity:1; }
+  .cf-msg{ font-size:clamp(20px,5.4vw,28px); letter-spacing:.1em; }
   .r-card .sub-btns{ width:100%; }
   .r-card .txt-btn{ flex:1 1 0; min-width:120px; }
   .r-card{
@@ -359,8 +370,8 @@
     <div>
       <div class="sec-label">あそびかた</div>
       <div class="fuda-row" id="modeRow">
-        <button class="fuda" data-mode="friend">オンラインで遊ぶ<small>遠くの友と対局</small></button>
         <button class="fuda" data-mode="local">1台で遊ぶ<small>近くの友と対局</small></button>
+        <button class="fuda" data-mode="friend">オンラインで遊ぶ<small>遠くの友と対局</small></button>
         <button class="fuda" data-mode="robot">ひとりで遊ぶ<small>ロボットと対局</small></button>
       </div>
     </div>
@@ -427,6 +438,7 @@
     </div>
     <div class="board-wrap"><div id="board"></div></div>
     <div class="sub-btns">
+      <button class="txt-btn" id="undoBtn">一手戻る</button>
       <button class="txt-btn" id="giveupBtn">投了</button>
     </div>
     <!-- 碁笥(碁石入れ): 黒=左下 / 白=右下。手番側がゆれる -->
@@ -436,13 +448,17 @@
       <div class="bs" style="left:22%;top:26%"></div><div class="bs" style="left:44%;top:22%;width:23%;height:23%"></div>
       <div class="bs" style="left:60%;top:36%;width:21%;height:21%"></div><div class="bs" style="left:30%;top:44%"></div>
       <div class="bs" style="left:50%;top:50%;width:24%;height:24%"></div><div class="bs" style="left:18%;top:56%;width:20%;height:20%"></div>
-      <div class="bs" style="left:40%;top:62%;width:22%;height:22%"></div>
+      <div class="bs" style="left:40%;top:62%;width:22%;height:22%"></div><div class="bs" style="left:12%;top:38%;width:19%;height:19%"></div>
+      <div class="bs" style="left:64%;top:56%;width:20%;height:20%"></div><div class="bs" style="left:36%;top:14%;width:18%;height:18%"></div>
+      <div class="bs" style="left:56%;top:18%;width:17%;height:17%"></div><div class="bs" style="left:26%;top:64%;width:18%;height:18%"></div>
     </div>
     <div class="bowl wh" id="bowlW">
       <div class="bs" style="left:22%;top:26%"></div><div class="bs" style="left:44%;top:22%;width:23%;height:23%"></div>
       <div class="bs" style="left:60%;top:36%;width:21%;height:21%"></div><div class="bs" style="left:30%;top:44%"></div>
       <div class="bs" style="left:50%;top:50%;width:24%;height:24%"></div><div class="bs" style="left:18%;top:56%;width:20%;height:20%"></div>
-      <div class="bs" style="left:40%;top:62%;width:22%;height:22%"></div>
+      <div class="bs" style="left:40%;top:62%;width:22%;height:22%"></div><div class="bs" style="left:12%;top:38%;width:19%;height:19%"></div>
+      <div class="bs" style="left:64%;top:56%;width:20%;height:20%"></div><div class="bs" style="left:36%;top:14%;width:18%;height:18%"></div>
+      <div class="bs" style="left:56%;top:18%;width:17%;height:17%"></div><div class="bs" style="left:26%;top:64%;width:18%;height:18%"></div>
     </div>
   </div>
 
@@ -452,6 +468,17 @@
   <!-- 全画面共通: 効果音のON/OFF -->
   <div class="snd-btns">
     <button class="snd-btn" id="seBtn"><svg viewBox="0 0 25 24"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor"/><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M15 9.4c1.3 1.3 1.3 3.9 0 5.2"/><path d="M17.6 7.6c2.2 2.2 2.2 6.6 0 8.8"/><path d="M20.2 5.8c3.1 3.1 3.1 9.3 0 12.4"/></g></svg>効果音</button>
+  </div>
+
+  <!-- ===== 投了の確認 ===== -->
+  <div id="confirmOverlay">
+    <div class="r-card">
+      <div class="cf-msg">まことに投了する？</div>
+      <div class="sub-btns">
+        <button class="txt-btn" id="cfYes">投了する</button>
+        <button class="txt-btn" id="cfNo">やめておく</button>
+      </div>
+    </div>
   </div>
 
   <!-- ===== 結果 ===== -->
@@ -480,7 +507,8 @@
 
   let board=[], stones=[], turn=BLACK, human=BLACK, cpuLv=1;
   let prob=0, over=false, busy=false, placed=0;
-  let local=false;   // ならんで遊ぶ(1台で交互に打つ)モード
+  let local=false;   // 1台で遊ぶ(交互に打つ)モード
+  let hist=[];       // 打たれた石の履歴(一手戻る用)
   /* --- カスタムルール --- */
   let mokuProb=20, winLen=5;
   const KAN=["","一","二","三","四","五","六","七","八","九","十"];
@@ -640,8 +668,9 @@
     board=[]; for(let r=0;r<N;r++){ board.push(new Array(N).fill(EMPTY)); }
     stones=[]; for(let r=0;r<N;r++){ stones.push(new Array(N).fill(null)); }
     cells.forEach(row=>row.forEach(d=>{ d.innerHTML=""; d.classList.remove("taken"); }));
-    over=false; busy=false; placed=0; turn=BLACK;
+    over=false; busy=false; placed=0; turn=BLACK; hist=[];
     myRematch=false; peerRematch=false;
+    undoBtn.style.display = online ? "none" : "";   // 一手戻るはオンライン以外で使える
     tagProb.textContent="もくもく "+mokuProb+"%";
     tagWin.textContent=KAN[winLen]+"目ならべ";
     resultOverlay.classList.remove("on","peek");
@@ -654,10 +683,11 @@
   function startTurn(){
     if(over) return;
     rollProb(); setTurnLabel();
-    if(local){ busy=false; return; }             // ならんで遊ぶ: どちらの番も同じ端末で打つ
-    if(online){ busy=(turn!==human); return; }   // オンライン: 相手の手はbroadcastで届く
-    if(turn!==human){ busy=true; setTimeout(cpuMove, 750+Math.random()*550); }
+    if(local){ busy=false; }                          // ならんで遊ぶ: どちらの番も同じ端末で打つ
+    else if(online){ busy=(turn!==human); }           // オンライン: 相手の手はbroadcastで届く
+    else if(turn!==human){ busy=true; setTimeout(cpuMove, 750+Math.random()*550); }
     else busy=false;
+    boardEl.classList.toggle("myturn", !busy);        // 打てる時だけhoverの赤丸を出す
   }
   function switchTurn(){ turn=(turn===BLACK)?WHITE:BLACK; startTurn(); }
 
@@ -669,7 +699,7 @@
       // もくもく・フェイント抽選は打った側が行い、結果ごと相手に送る(両者の演出と盤面が必ず一致)
       const moku=(Math.random()*100)<prob;
       const foe=(human===BLACK)?WHITE:BLACK;
-      const fake=(!moku && prob>0 && (!!winLine(r,c,human) || !!winLine(r,c,foe) || Math.random()<0.10));   // 勝負を決める/阻止する一手は必ずため(0%設定なら無し)
+      const fake=(!moku && prob>0 && (!!winLine(r,c,human) || !!winLine(r,c,foe) || Math.random()<0.05));   // 勝負を決める/阻止する一手は必ずため(0%設定なら無し)
       if(ch) ch.send({ type:"broadcast", event:"move", payload:{ r,c,moku,fake } });
       tryPlace(r,c,moku,fake);
       return;
@@ -684,14 +714,17 @@
     setTimeout(()=> bowl.classList.remove("pop"), 340);   // popが残ると手番のゆれが止まる
     const cr=cells[r][c].getBoundingClientRect(), br=bowl.getBoundingClientRect();
     const size=cr.width*0.86;
+    // 発射位置は碁笥の中でランダムにずらす(毎回同じ一点から出ると不自然なため)
+    const ox=br.left+br.width/2+(Math.random()*0.5-0.25)*br.width;
+    const oy=br.top+br.height/2+(Math.random()*0.5-0.25)*br.height;
     const el=document.createElement("div");
     el.className="fly "+(color===BLACK?"b":"w");
     el.style.width=el.style.height=size+"px";
-    el.style.left=(br.left+br.width/2-size/2)+"px";
-    el.style.top=(br.top+br.height/2-size/2)+"px";
+    el.style.left=(ox-size/2)+"px";
+    el.style.top=(oy-size/2)+"px";
     document.body.appendChild(el);
-    const dx=(cr.left+cr.width/2)-(br.left+br.width/2);
-    const dy=(cr.top+cr.height/2)-(br.top+br.height/2);
+    const dx=(cr.left+cr.width/2)-ox;
+    const dy=(cr.top+cr.height/2)-oy;
     void el.offsetWidth;   // 開始位置を確定させてからtransform(これが無いと稀に瞬間移動する)
     el.style.transform="translate("+dx+"px,"+dy+"px) rotate(300deg)";
     setTimeout(()=>{ el.remove(); if(done) done(); }, 300);
@@ -756,14 +789,15 @@
       el.className="burst "+(color===BLACK?"b":"w");
       const s=base*(0.6+Math.random()*0.75);
       el.style.width=el.style.height=s+"px";
-      el.style.left=(br.left+br.width/2-s/2)+"px";
-      el.style.top=(br.top+br.height/2-s/2)+"px";
+      // 発射位置を碁笥の中でランダムに散らす
+      el.style.left=(br.left+br.width/2+(Math.random()*0.5-0.25)*br.width-s/2)+"px";
+      el.style.top=(br.top+br.height/2+(Math.random()*0.5-0.25)*br.height-s/2)+"px";
       const ang=(-0.18+Math.random()*1.34)*(Math.PI/2);   // 逆側に少し〜真横を越えるまで、大きな扇状
       const dist=(0.45+Math.random()*0.75)*Math.max(window.innerWidth, window.innerHeight)*power;
       el.style.setProperty("--bx", (dir*Math.sin(ang)*dist).toFixed(0)+"px");
       el.style.setProperty("--by", (-(Math.cos(ang)*dist+90*power)).toFixed(0)+"px");   // 上向きの下駄もpowerで縮む(小さい泉は横に広がる)
       el.style.animationDelay=(Math.random()*0.3)+"s";
-      document.body.appendChild(el);
+      gameScene.appendChild(el);   // 碁笥と同じ重なり空間に入れて、碁笥の下から湧かせる
       setTimeout(()=>el.remove(), 1900);
     }
   }
@@ -778,13 +812,13 @@
   /* 石を置く(もくもく判定込み)。人間/ロボット/通信相手 共通
      moku: 消える / fake: 「ため」だけ入って結局置かれる(いやもくもくせんのかい！) */
   function tryPlace(r,c,forcedMoku,forcedFake){
-    busy=true;
+    busy=true; boardEl.classList.remove("myturn");
     const me=turn;
     const moku=(forcedMoku===undefined) ? (Math.random()*100)<prob : forcedMoku;
     // 勝ちが決まる一手・相手の勝ちを阻止する一手は必ず「ため」を入れる(本物でも嘘でも)。通常の嘘もくもくは10%
     const foe=(me===BLACK)?WHITE:BLACK;
     const critical=prob>0 && (!!winLine(r,c,me) || !!winLine(r,c,foe));   // 勝ち or 阻止の一手(もくもく0%設定なら演出なし)
-    const fake=(forcedFake===undefined) ? (!moku && (critical || (prob>0 && Math.random()<0.10))) : forcedFake;
+    const fake=(forcedFake===undefined) ? (!moku && (critical || (prob>0 && Math.random()<0.05))) : forcedFake;
     flyStone(me, r, c, ()=>{
       const st=document.createElement("div");
       st.className="stone "+(me===BLACK?"b":"w");
@@ -792,6 +826,7 @@
       playStone();
       const commit=()=>{
         board[r][c]=me; stones[r][c]=st; placed++;
+        hist.push({r,c,p:me});   // 一手戻る用の棋譜
         cells[r][c].classList.add("taken");
         const line=winLine(r,c,me);
         if(line){ finish(me,line); return; }
@@ -862,9 +897,33 @@
     return null;
   }
   const giveupBtn=document.getElementById("giveupBtn");
-  function setGiveupVisible(v){ giveupBtn.style.visibility = v ? "" : "hidden"; }   // 終局後は投了を隠す(盤面眺めモードで違和感が出るため)
+  const undoBtn=document.getElementById("undoBtn");
+  /* 一手戻る(アソビ大全方式): ロボット戦は自分の直前の一手まで(ロボットの応手ごと)巻き戻す。1台対戦は1手だけ戻す */
+  function removeStoneAt(m){
+    board[m.r][m.c]=EMPTY; placed--;
+    if(stones[m.r][m.c]){ stones[m.r][m.c].remove(); stones[m.r][m.c]=null; }
+    cells[m.r][m.c].classList.remove("taken");
+  }
+  undoBtn.addEventListener("click",()=>{
+    if(over||busy||online||!hist.length) return;
+    ensureAudio(); playSelect();
+    if(local){
+      const m=hist.pop(); removeStoneAt(m); turn=m.p;   // 戻した石の持ち主の番からやり直し
+    } else {
+      if(turn!==human) return;
+      let popped=false;
+      while(hist.length && !popped){ const m=hist.pop(); removeStoneAt(m); if(m.p===human) popped=true; }   // ロボットの応手＋自分の一手を戻す
+      turn=human;
+    }
+    startTurn();
+  });
+  function setGiveupVisible(v){   // 終局後は投了・一手戻るを隠す(盤面眺めモードで違和感が出るため)
+    giveupBtn.style.visibility = v ? "" : "hidden";
+    undoBtn.style.visibility = v ? "" : "hidden";
+  }
   function finish(winner,line){
     over=true; busy=true; setGiveupVisible(false);
+    document.getElementById("confirmOverlay").classList.remove("on");   // 開きっぱなしの投了確認を閉じる
     // 決め石の黄金演出(〜1.3秒)が終わった瞬間に、列全体を同時に光らせ始める(点滅の位相を揃える)
     if(line) setTimeout(()=>{ line.forEach(([r,c])=>{ if(stones[r][c]) stones[r][c].classList.add("win-glow"); }); }, 1350);
     setTimeout(()=>{
@@ -929,13 +988,18 @@
     ch.on("broadcast",{event:"resign"},()=>{
       if(!online||over) return;
       over=true; busy=true; setGiveupVisible(false);
+      document.getElementById("confirmOverlay").classList.remove("on");
       rTitle.textContent="あいての投了！"; rTitle.className="r-title win";
       rSub.textContent="あなたの勝ち"; playWin(); resultOverlay.classList.add("on");
     });
     ch.on("broadcast",{event:"rematch"},()=>{
       peerRematch=true;
-      if(myRematch){ playStart(); startGame(); }
+      if(myRematch){ if(isHost) hostRestart(); }   // 両者合意: 部屋主が先手後手を引き直して開始合図を送る
       else if(resultOverlay.classList.contains("on")) rSub.textContent="あいてが「もう一局」を希望！";
+    });
+    ch.on("broadcast",{event:"restart"},({payload})=>{   // 再戦: 先手後手は毎回引き直し
+      if(isHost) return;
+      beginOnline(payload && payload.hc===BLACK ? WHITE : BLACK);
     });
     ch.subscribe(async (status)=>{
       if(status==="SUBSCRIBED"){ try{ await ch.track({}); }catch(e){} if(onReady) onReady(); }
@@ -943,6 +1007,11 @@
         roomStatus('<div class="room-note err">通信失敗。通信環境を見直すのだ</div>');
       }
     });
+  }
+  function hostRestart(){   // 部屋主: 先手後手をランダムに引き直して再戦
+    const hc=(Math.random()<0.5)?BLACK:WHITE;
+    if(ch) ch.send({ type:"broadcast", event:"restart", payload:{ hc } });
+    beginOnline(hc);
   }
   function beginOnline(color){
     clearTimeout(joinWatch);
@@ -1222,11 +1291,11 @@
   document.getElementById("startLocalBtn").addEventListener("click",()=>{ ensureAudio(); online=false; local=true; leaveChannel(); playStart(); startGame(); });
   document.getElementById("againBtn").addEventListener("click",()=>{
     ensureAudio();
-    if(online && ch){   // オンライン: 双方が「もう一局」を押したら再戦
+    if(online && ch){   // オンライン: 双方が「もう一局」を押したら再戦(先手後手は引き直し)
       if(myRematch) return;
       myRematch=true;
       ch.send({ type:"broadcast", event:"rematch", payload:{} });
-      if(peerRematch){ playStart(); startGame(); }
+      if(peerRematch){ if(isHost) hostRestart(); else rSub.textContent="はじまる…"; }
       else { playSelect(); rSub.textContent="あいての「もう一局」を待っておる…"; }
       return;
     }
@@ -1239,15 +1308,25 @@
     ensureAudio(); playSelect();
     resultOverlay.classList.toggle("peek");
   });
-  document.getElementById("giveupBtn").addEventListener("click",()=>{
-    if(over) return; ensureAudio();
+  // 投了: 確認ダイアログを挟む
+  const confirmOverlay=document.getElementById("confirmOverlay");
+  function doResign(){
+    if(over) return;
     if(online && ch) ch.send({ type:"broadcast", event:"resign", payload:{} });
     over=true; setGiveupVisible(false);
     rTitle.textContent="投了…"; rTitle.className="r-title";
     rSub.textContent="また挑むがよい"; playLose(); resultOverlay.classList.add("on");
+  }
+  document.getElementById("giveupBtn").addEventListener("click",()=>{
+    if(over) return; ensureAudio(); playSelect();
+    confirmOverlay.classList.add("on");
   });
+  document.getElementById("cfYes").addEventListener("click",()=>{ ensureAudio(); confirmOverlay.classList.remove("on"); doResign(); });
+  document.getElementById("cfNo").addEventListener("click",()=>{ ensureAudio(); playSelect(); confirmOverlay.classList.remove("on"); });
+  confirmOverlay.addEventListener("click",(e)=>{ if(e.target===confirmOverlay){ ensureAudio(); playSelect(); confirmOverlay.classList.remove("on"); } });
   function goTitle(){
     over=true; stopVictory();
+    document.getElementById("confirmOverlay").classList.remove("on");
     resultOverlay.classList.remove("on","peek");
     gameScene.classList.remove("on"); titleScene.classList.add("on");
     leaveChannel();

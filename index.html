@@ -46,10 +46,10 @@
     font-size:clamp(30px,6.6vw,54px); font-weight:800; letter-spacing:.06em; line-height:1.3;
   }
 
-  main{ width:100%; max-width:960px; padding:44px 24px 64px; flex:1; }
+  main{ width:100%; max-width:1160px; padding:44px 24px 64px; flex:1; }
 
   /* ===== ゲームカード ===== */
-  .games{ display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:26px; }
+  .games{ display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:26px; }
   .card{
     display:flex; flex-direction:column; text-decoration:none; color:var(--ink);
     background:#fff; border-radius:16px; overflow:hidden;
@@ -75,7 +75,8 @@
   }
   .c-players svg{ width:12px; height:12px; }
   .c-desc{ margin-top:10px; font-size:14px; font-weight:500; line-height:1.85; color:rgba(32,33,31,.72); flex:1; }
-  .c-tags{ margin-top:14px; display:flex; gap:8px; flex-wrap:wrap; }
+  .c-tags{ margin-top:14px; display:flex; gap:4px 8px; flex-wrap:wrap-reverse; }   /* 行間はつめる(縦4px/横8px)。複数行になる時は下の行が長くなる */
+  .t-brk{ width:100%; height:0; }   /* 行の強制区切り */
   .tag{
     font-family:"DotGothic16",sans-serif;
     font-size:12px; letter-spacing:.05em;
@@ -116,8 +117,11 @@
     padding-top:44px;
   }
   footer a{ color:#fff; font-weight:700; text-decoration:none; margin:0 12px; }
+  footer nav a{ display:inline-flex; align-items:center; gap:5px; vertical-align:middle; }
+  footer nav a svg{ width:13px; height:13px; flex:none; opacity:.85; }
   footer a:hover{ text-decoration:underline; }
-  .f-mail{ margin-top:14px; font-size:12.5px; color:rgba(255,255,255,.75); }
+  .f-mail{ margin-top:14px; font-size:11px; color:rgba(255,255,255,.45); }
+  .f-mail a{ color:rgba(255,255,255,.55); font-weight:500; margin:0; }
   .copy{ margin-top:12px; color:rgba(255,255,255,.55); font-size:12px; letter-spacing:.12em; font-family:"DotGothic16",sans-serif; }
 </style>
 </head>
@@ -164,8 +168,7 @@
             <span class="c-players"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="7.2" r="4.2"/><path d="M12 13.4c-4.4 0-8 2.5-8 6.1V21h16v-1.5c0-3.6-3.6-6.1-8-6.1z"/></svg>1人</span>
           </div>
           <div class="c-desc">
-            いちばん近い数字にドッキング！<br>
-            十字に並んだ数字を瞬時に見比べて、中央のboxを正しい方向へ
+            いちばん近い数字にドッキング！十字に並んだ数字を瞬時に見比べて、中央のboxを正しい方向へ
           </div>
           <div class="c-tags">
             <span class="tag">知育</span><span class="tag">ランキング</span><span class="tag">PC推奨</span>
@@ -226,11 +229,13 @@
             <span class="c-players"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="7.2" r="4.2"/><path d="M9 13.4c-4.4 0-8 2.5-8 6.1V21h16v-1.5c0-3.6-3.6-6.1-8-6.1z"/><circle cx="17.5" cy="8.2" r="3.3"/><path d="M17.5 13.2c-.8 0-1.6.1-2.3.3 1.9 1.3 3.1 3.2 3.1 5.5V21H23v-1.3c0-3-2.5-5.5-5.5-5.5z"/></svg>1〜2人</span>
           </div>
           <div class="c-desc">
-            Q.普通の五目並べ？ A.いいえ、置いた碁石が煙になって消えるかも<br>
-            友達と戦うのはもちろん、最強AIとも戦える…（本当に最強）
+            Q.普通の五目並べ？ A.いいえ、置いた碁石が煙になって消えるかも。友達と戦うのはもちろん、最強AIとも戦える…（本当に最強）
           </div>
           <div class="c-tags">
-            <span class="tag">運まかせ</span><span class="tag">ローカル通信</span><span class="tag">オンライン対戦</span>
+            <!-- wrap-reverse: DOM順の逆から積む(下段=先頭の2つ / 上段=運まかせ) -->
+            <span class="tag">ローカル対戦</span><span class="tag">オンライン対戦</span>
+            <span class="t-brk"></span>
+            <span class="tag">運まかせ</span>
           </div>
           <span class="c-play">あそぶ ▶</span>
         </div>
@@ -239,7 +244,7 @@
       <div class="card soon">
         <div class="c-body">
           <div class="c-name">???</div>
-          <div class="c-desc">次回作、鋭意制作中…</div>
+          <div class="c-desc">リリースまでお待ちください</div>
           <span class="c-play">COMING SOON</span>
         </div>
       </div>
@@ -256,9 +261,9 @@
 
   <footer>
     <nav>
-      <a href="./index.html">ホーム</a>
-      <a href="./guideline.html">実況ガイドライン</a>
-      <a href="./privacy.html">プライバシーポリシー</a>
+      <a href="./index.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 3 10.5h2.2V20h5.3v-5.5h3v5.5h5.3v-9.5H21z"/></svg>ホーム</a>
+      <a href="./guideline.html"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="6.5" width="13" height="11" rx="2"/><path d="M16.5 10.5 22 7v10l-5.5-3.5z"/></svg>実況ガイドライン</a>
+      <a href="./privacy.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5 20 5.5v5.8c0 4.8-3.4 8.2-8 10.7-4.6-2.5-8-5.9-8-10.7V5.5z"/></svg>プライバシーポリシー</a>
     </nav>
     <div class="f-mail">連絡先: <a href="mailto:zentyu721wood@gmail.com">zentyu721wood@gmail.com</a></div>
     <div class="copy">&copy; 2026 MAKIMURA</div>
