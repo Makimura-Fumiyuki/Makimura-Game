@@ -35,12 +35,13 @@
     opacity:0; pointer-events:none; transform:translateY(16px);
     transition:opacity .32s linear, transform .32s cubic-bezier(.2,.8,.3,1);
     overflow-y:auto;
-    scrollbar-gutter:stable both-edges;   /* スクロールバー出現による中央ずれを防止 */
+    scrollbar-width:none;   /* スクロールバー自体を非表示に(ずれ・隙間の根本原因を断つ) */
   }
+  .scene::-webkit-scrollbar{ display:none; }
   .scene.on{ opacity:1; pointer-events:auto; transform:translateY(0); }
 
   /* ===== タイトル ===== */
-  #titleScene{ padding:9vh 20px 0; gap:34px; }
+  #titleScene{ padding:9vh 20px 90px; gap:34px; }
   .t-wrap{ position:relative; text-align:center; }
   .t-main{
     font-size:clamp(40px, 11vw, 76px); letter-spacing:.08em; line-height:1.25;
@@ -62,7 +63,7 @@
   /* 難易度・手番: 木札 */
   .fuda-row{ display:flex; gap:14px; justify-content:center; width:min(92vw, 430px); margin:0 auto; }
   .fuda{
-    flex:1 1 0; min-width:0; padding:14px 8px 15px; text-align:center; cursor:pointer;
+    flex:1 1 0; min-width:0; padding:14px 8px 15px; text-align:center; cursor:pointer; white-space:nowrap;
     font-family:inherit; font-size:19px; letter-spacing:.1em; color:var(--sumi);
     background:linear-gradient(160deg, #ecd9ac, var(--wood) 55%, var(--wood-dark));
     border:2px solid #7a5c34; border-radius:8px;
@@ -83,12 +84,37 @@
   .setup.on{ display:flex; animation:setupIn .3s cubic-bezier(.2,.9,.3,1); }
   @keyframes setupIn{ 0%{ opacity:0; transform:translateY(16px); } 100%{ opacity:1; transform:translateY(0); } }
   .prep-note{ font-size:clamp(12px,3.3vw,14px); letter-spacing:.1em; opacity:.65; text-align:center; }
+  /* ルール設定(もくもく確率・ならべる数) */
+  #ruleBox{ display:none; flex-direction:column; align-items:center; gap:12px;
+    background:rgba(255,255,255,.45); border:1px solid rgba(51,47,42,.2); border-radius:14px;
+    padding:16px 30px 12px; box-shadow:0 2px 8px rgba(60,40,10,.08); }
+  .rc-reset{
+    padding:5px 16px 6px; cursor:pointer; font-family:inherit; font-size:12px; letter-spacing:.15em;
+    color:var(--sumi); opacity:.7; background:transparent;
+    border:1px solid rgba(51,47,42,.35); border-radius:6px;
+  }
+  .rc-reset:active{ transform:translateY(1px); }
+  .setup.on #ruleBox, #ruleBox.on{ display:flex; }
+  .rule-ctrls{ display:flex; gap:34px; justify-content:center; }
+  .rc{ display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .rc-name{ font-size:13px; letter-spacing:.15em; opacity:.65; }
+  .rc-row{ display:flex; align-items:center; gap:12px; }
+  .rc-btn{
+    width:40px; height:40px; border-radius:8px; cursor:pointer; font-family:inherit; font-size:22px; line-height:1;
+    color:var(--sumi); background:linear-gradient(160deg, #ecd9ac, var(--wood) 60%, var(--wood-dark));
+    border:2px solid #7a5c34; box-shadow:0 2px 0 #7a5c34;
+  }
+  .rc-btn:active{ transform:translateY(2px); box-shadow:none; }
+  .rc-val{ min-width:74px; text-align:center; font-size:26px; letter-spacing:.05em; color:var(--shu); }
+  .rc-note{ font-size:12px; letter-spacing:.1em; opacity:.6; min-height:16px; }
   /* オンライン: 合言葉まわり */
   .room-area{ display:flex; flex-direction:column; align-items:center; gap:14px; min-height:40px; text-align:center; }
+  .room-code{ margin-top:-8px; }   /* 「合言葉」ラベルと本体を近づける */
   .room-code{ font-size:clamp(36px,9vw,48px); letter-spacing:.3em; text-indent:.3em; color:var(--shu);
-    text-shadow:0 2px 0 rgba(255,255,255,.6); }
+    text-shadow:0 2px 0 rgba(255,255,255,.6); margin-top:-9px; }
   .room-note{ font-size:clamp(12px,3.3vw,14px); letter-spacing:.1em; opacity:.7; }
   .room-note.err{ color:var(--shu); opacity:1; }
+  .copy-ic{ width:.55em; height:.55em; margin-right:14px; vertical-align:baseline; opacity:.55; }
   .code-input{
     width:230px; padding:10px 6px; text-align:center; font-family:inherit;
     font-size:26px; letter-spacing:.25em; text-indent:.25em; text-transform:uppercase;
@@ -101,28 +127,103 @@
   .stone-mini.w{ background:radial-gradient(circle at 35% 30%, #fff, #cfcabc 70%); }
 
   .start-btn{
-    margin-top:6px; padding:16px 64px 18px; cursor:pointer;
-    font-family:inherit; font-size:26px; letter-spacing:.4em; text-indent:.4em; color:#fff;
-    background:linear-gradient(160deg, #4a453d, var(--sumi) 60%, #171512);
-    border:2px solid #14120f; border-radius:10px;
-    box-shadow:0 4px 0 #14120f, 0 8px 14px rgba(0,0,0,.3);
+    margin-top:6px; padding:16px 58px 18px; cursor:pointer; white-space:nowrap;
+    font-family:inherit; font-size:26px; letter-spacing:.3em; text-indent:.3em; color:#fff;
+    background:linear-gradient(160deg, #e0684f, var(--shu) 55%, #9c2c1f);
+    border:2px solid #7d2318; border-radius:10px;
+    text-shadow:0 2px 4px rgba(90,15,5,.5);
+    box-shadow:0 4px 0 #7d2318, 0 8px 16px rgba(150,40,20,.4);
+    animation:startPulse 2.1s ease-in-out infinite;
     transition:transform .12s ease, box-shadow .12s ease;
   }
-  .start-btn:active{ transform:translateY(3px); box-shadow:0 1px 0 #14120f; }
+  @keyframes startPulse{
+    0%,100%{ transform:scale(1); box-shadow:0 4px 0 #7d2318, 0 8px 16px rgba(150,40,20,.4); }
+    50%{ transform:scale(1.05); box-shadow:0 4px 0 #7d2318, 0 10px 24px rgba(199,62,46,.6); }
+  }
+  .start-btn:active{ transform:translateY(3px) scale(1); animation:none; box-shadow:0 1px 0 #7d2318; }
 
-  .home-link{ margin-top:auto; padding-bottom:18px; font-size:13px; letter-spacing:.2em; color:var(--sumi); opacity:.55; text-decoration:none; }
-  .home-link:hover{ opacity:.9; }
+  /* 画面下部いっぱいのフッター帯(上に向かって透けるグラデーション) */
+  /* タイトル画面のフッター: 画面(viewport)に直接固定 */
+  .home-foot{
+    position:fixed; left:0; right:0; bottom:0; z-index:40;
+    display:block; text-align:center;
+    padding:34px 0 16px; font-size:13px; letter-spacing:.2em;
+    color:rgba(244,244,241,.95); text-shadow:0 1px 2px rgba(40,30,15,.4);
+    background:linear-gradient(to top, rgba(51,47,42,.55), rgba(51,47,42,.3) 50%, rgba(51,47,42,0));
+    text-decoration:none;
+    opacity:0; pointer-events:none; transition:opacity .32s linear;
+  }
+  #titleScene.on ~ .home-foot{ opacity:1; pointer-events:auto; }   /* タイトル表示中だけ現れる */
+  .home-foot:hover{ color:#fff; }
 
   /* ===== 対局画面 ===== */
   #gameScene{ padding:12px 10px 30px; gap:10px; justify-content:center; }
-  .info-bar{
-    width:min(94vw, 64svh); display:flex; align-items:stretch; gap:10px;
+  /* 現在ルールの表示(上部・2枚): ボタンに見えない「貼り紙」風。2枚は同サイズ */
+  .rule-tags{ display:flex; gap:12px; justify-content:center; width:min(94vw, 380px); }
+  .rule-tag{
+    flex:1 1 0; min-width:0; padding:4px 0 6px; border-radius:3px; text-align:center; white-space:nowrap;
+    font-size:clamp(12px,3.4vw,15px); letter-spacing:.12em; color:rgba(51,47,42,.78);
+    background:rgba(255,255,255,.48); border:1px dashed rgba(51,47,42,.35);
   }
-  .turn-box{
-    flex:1; display:flex; align-items:center; justify-content:center; gap:8px;
-    font-size:clamp(15px,4vw,19px); letter-spacing:.08em;
-    background:rgba(255,255,255,.55); border:1px solid rgba(51,47,42,.25); border-radius:8px; padding:6px 8px;
+  /* 音ON/OFF(全画面共通・右上): 控えめな見た目 */
+  .snd-btns{ position:fixed; right:10px; top:10px; z-index:80; display:flex; flex-direction:column; gap:6px; align-items:flex-end; }
+  .snd-btn{
+    display:flex; align-items:center; justify-content:flex-end; gap:5px;
+    width:82px; padding:4px 10px 5px 0; cursor:pointer;
+    font-family:inherit; font-size:12px; letter-spacing:.06em; white-space:nowrap;
+    color:rgba(51,47,42,.7); background:rgba(255,255,255,.4);
+    border:1px solid rgba(51,47,42,.28); border-radius:14px;
+    transition:opacity .15s linear;
   }
+  .snd-btn svg{ width:14px; height:13px; flex:none; }
+  .snd-btn:active{ transform:translateY(1px); }
+  .snd-btn.off{ opacity:.42; text-decoration:line-through; }
+  /* もくもく時: 画面のふちに碁石まわりと同じ「雲」がぽこぽこ湧く */
+  .vig-puff{
+    position:fixed; border-radius:50%; pointer-events:none; z-index:45;
+    background:radial-gradient(circle at 42% 40%, rgba(255,255,255,.96), rgba(198,198,195,.8) 55%, rgba(198,198,195,0) 75%);
+    transform:translate(-50%,-50%) scale(.25); opacity:0;
+    animation:vigPuff .95s ease-out forwards;
+  }
+  @keyframes vigPuff{
+    0%{ transform:translate(-50%,-50%) scale(.25); opacity:0; }
+    22%{ opacity:.95; }
+    100%{ transform:translate(calc(-50% + var(--vx,0px)), calc(-50% + var(--vy,-40px))) scale(1.4); opacity:0; }
+  }
+  /* 勝利: 勝った側の碁笥から碁石が吹き上がる */
+  .burst{ position:fixed; z-index:70; border-radius:50%; pointer-events:none;
+    box-shadow:0 4px 8px rgba(0,0,0,.3);
+    animation:burstFly 1.25s cubic-bezier(.3,.4,.5,1) forwards; }
+  .burst.b{ background:radial-gradient(circle at 35% 30%, #6e6e6e, #1c1c1c 60%, #000); }
+  .burst.w{ background:radial-gradient(circle at 35% 30%, #ffffff, #e9e2cf 55%, #b9b2a0); }
+  @keyframes burstFly{
+    0%{ transform:translate(0,0) rotate(0) scale(.7); opacity:1; }
+    45%{ transform:translate(calc(var(--bx)*0.55), var(--by)) rotate(220deg) scale(1.05); opacity:1; }
+    100%{ transform:translate(var(--bx), 60vh) rotate(440deg) scale(1); opacity:0; }
+  }
+  /* 碁笥(碁石入れ) */
+  .bowl{
+    position:absolute; bottom:16px; width:clamp(62px,17vw,102px); aspect-ratio:1/1; border-radius:50%;
+    background:radial-gradient(circle at 35% 28%, #c89a5c, #8a6a3c 62%, #5d4426 95%);
+    box-shadow:inset 0 8px 14px rgba(0,0,0,.5), inset 0 -3px 6px rgba(255,255,255,.15), 0 5px 10px rgba(60,40,10,.35);
+    opacity:.4; transition:opacity .3s linear; pointer-events:none;
+  }
+  .bowl.bk{ left:12px; } .bowl.wh{ right:12px; }
+  .bowl .bs{ position:absolute; width:26%; height:26%; border-radius:50%; box-shadow:0 1px 3px rgba(0,0,0,.4); }
+  .bowl.bk .bs{ background:radial-gradient(circle at 35% 30%, #6e6e6e, #1c1c1c 60%, #000); }
+  .bowl.wh .bs{ background:radial-gradient(circle at 35% 30%, #ffffff, #e9e2cf 55%, #b9b2a0); }
+  .bowl.active{ opacity:1; animation:bowlSway 1.5s ease-in-out infinite; }
+  .bowl.bk.active{ animation:bowlSwayR 1.5s ease-in-out infinite; }   /* 黒(左下)は逆回転 */
+  @keyframes bowlSway{ 0%,100%{ transform:rotate(-5deg); } 50%{ transform:rotate(5deg) translateY(-4px); } }
+  @keyframes bowlSwayR{ 0%,100%{ transform:rotate(5deg); } 50%{ transform:rotate(-5deg) translateY(-4px); } }
+  .bowl.pop{ animation:bowlPop .32s cubic-bezier(.3,1.4,.5,1); }
+  @keyframes bowlPop{ 0%{ transform:scale(1); } 35%{ transform:scale(1.22,0.82) translateY(4px); } 70%{ transform:scale(0.94,1.1) translateY(-5px); } 100%{ transform:scale(1); } }
+  /* 碁笥から盤へ飛ぶ石 */
+  .fly{ position:fixed; z-index:60; border-radius:50%; pointer-events:none;
+    box-shadow:0 5px 10px rgba(0,0,0,.35);
+    transition:transform .3s cubic-bezier(.35,.75,.35,1); }
+  .fly.b{ background:radial-gradient(circle at 35% 30%, #6e6e6e, #1c1c1c 60%, #000); }
+  .fly.w{ background:radial-gradient(circle at 35% 30%, #ffffff, #e9e2cf 55%, #b9b2a0); }
 
   /* 碁盤 */
   .board-wrap{ position:relative; width:min(94vw, 64svh); aspect-ratio:1/1; }
@@ -151,6 +252,35 @@
   .stone.b{ background:radial-gradient(circle at 35% 30%, #6e6e6e, #1c1c1c 60%, #000); }
   .stone.w{ background:radial-gradient(circle at 35% 30%, #ffffff, #e9e2cf 55%, #b9b2a0); }
   @keyframes stoneIn{ 0%{ transform:scale(1.7); opacity:.4; } 70%{ transform:scale(.92); opacity:1; } 100%{ transform:scale(1); } }
+  /* もくもく前の「ため」: ぷるぷる震えて膨らむ */
+  .stone.tame{ animation:tameShake .66s ease-in-out forwards; }
+  .stone.tame.long{ animation-duration:1.3s; }   /* 勝負を決める/阻止する一手は長ため */
+  /* 決着級の一手がもくもくを耐えた！: 碁石が一時的に黄金の巨石になって輝き、その後もとに戻る */
+  .stone.gold{ background:radial-gradient(circle at 35% 30%, #ffefae, #f0b53a 55%, #a97a18) !important; }
+  .stone.shine{ animation:shineGlow 1.05s cubic-bezier(.25,1.2,.4,1) forwards; z-index:4; }
+  @keyframes shineGlow{
+    0%{ transform:scale(2.3); box-shadow:0 0 0 0 rgba(245,185,66,.95), 0 0 30px 10px rgba(255,230,150,.95), 0 2px 4px rgba(0,0,0,.35); filter:brightness(1.9); }
+    45%{ transform:scale(1.45); filter:brightness(1.4); }
+    100%{ transform:scale(1.45); box-shadow:0 0 0 34px rgba(245,185,66,0), 0 0 16px 4px rgba(255,220,130,.6), 0 2px 4px rgba(0,0,0,.35); filter:brightness(1.15); }
+  }
+  .spark{
+    position:absolute; left:50%; top:50%; border-radius:50%; pointer-events:none; z-index:6;
+    background:radial-gradient(circle, #fff3c9, #f5b942 55%, rgba(245,185,66,0) 75%);
+    transform:translate(-50%,-50%) scale(.5); opacity:1;
+    animation:sparkFly .85s ease-out forwards;
+  }
+  @keyframes sparkFly{
+    0%{ transform:translate(-50%,-50%) scale(.5); opacity:1; }
+    100%{ transform:translate(calc(-50% + var(--sx,0px)), calc(-50% + var(--sy,-40px))) scale(1.15); opacity:0; }
+  }
+  @keyframes tameShake{
+    0%{ transform:scale(1) rotate(0); }
+    18%{ transform:scale(1.12) rotate(-6deg); }
+    36%{ transform:scale(0.94) rotate(5deg); }
+    54%{ transform:scale(1.16) rotate(-7deg); }
+    72%{ transform:scale(0.96) rotate(5deg); }
+    100%{ transform:scale(1.2) rotate(-3deg); }
+  }
   .stone.win-glow{ animation:winPulse .8s ease-in-out infinite; }
   @keyframes winPulse{ 0%,100%{ box-shadow:0 2px 4px rgba(0,0,0,.35), 0 0 0 0 rgba(199,62,46,.55); } 50%{ box-shadow:0 2px 4px rgba(0,0,0,.35), 0 0 0 9px rgba(199,62,46,0); } }
 
@@ -170,7 +300,7 @@
   .sub-btns{ display:flex; gap:16px; }
   .txt-btn{
     padding:8px 22px; cursor:pointer; font-family:inherit; font-size:15px; letter-spacing:.15em;
-    color:var(--sumi); background:rgba(255,255,255,.5);
+    color:var(--sumi); background:rgba(255,255,255,.5); white-space:nowrap;
     border:1px solid rgba(51,47,42,.35); border-radius:7px;
   }
   .txt-btn:active{ transform:translateY(1px); }
@@ -183,16 +313,22 @@
     opacity:0; pointer-events:none; transition:opacity .3s linear;
   }
   #resultOverlay.on{ opacity:1; pointer-events:auto; }
+  .r-card .sub-btns{ width:100%; }
+  .r-card .txt-btn{ flex:1 1 0; min-width:120px; }
   .r-card{
     background:var(--washi); border:3px solid var(--sumi); border-radius:12px;
-    padding:38px 54px; text-align:center;
-    display:flex; flex-direction:column; gap:22px; align-items:center;
+    width:min(84vw, 56svh); padding:26px 22px 24px; text-align:center;
+    display:flex; flex-direction:column; gap:18px; align-items:center;
     box-shadow:0 14px 30px rgba(0,0,0,.4);
     transform:scale(.6); opacity:0;
     transition:transform .3s cubic-bezier(.3,1.4,.5,1), opacity .25s linear;
   }
   #resultOverlay.on .r-card{ transform:scale(1); opacity:1; }
-  .r-title{ font-size:clamp(30px,8vw,44px); letter-spacing:.12em; }
+  /* 枠の外をタップ → ダイアログを引っ込めて盤面を眺める(もう一度タップで再表示)
+     ※ .onの表示ルールより後に書いて確実に上書きする */
+  #resultOverlay.on.peek{ background:rgba(30,26,20,0); }
+  #resultOverlay.on.peek .r-card{ opacity:0; transform:scale(.92); pointer-events:none; }
+  .r-title{ font-size:clamp(24px,6.5vw,36px); letter-spacing:.12em; }
   .r-title.win{ color:var(--shu); }
   .r-sub{ font-size:14px; opacity:.7; letter-spacing:.1em; }
 </style>
@@ -210,9 +346,26 @@
     <div>
       <div class="sec-label">あそびかた</div>
       <div class="fuda-row" id="modeRow">
-        <button class="fuda" data-mode="friend">友と遊ぶ<small>オンライン対戦</small></button>
+        <button class="fuda" data-mode="friend">友と遊ぶ<small>オンラインで対局</small></button>
         <button class="fuda" data-mode="robot">ロボットと遊ぶ<small>ひとりで対局</small></button>
       </div>
+    </div>
+
+    <!-- ルール設定(あそびかた選択後、選んだ側のブロックに移動して出現) -->
+    <div id="ruleBox">
+      <div class="sec-label">ルール</div>
+      <div class="rule-ctrls">
+        <div class="rc">
+          <div class="rc-name">もくもく確率</div>
+          <div class="rc-row"><button class="rc-btn" data-t="p" data-d="-1">−</button><span class="rc-val" id="probVal">20%</span><button class="rc-btn" data-t="p" data-d="1">＋</button></div>
+        </div>
+        <div class="rc">
+          <div class="rc-name">ならべる数</div>
+          <div class="rc-row"><button class="rc-btn" data-t="w" data-d="-1">−</button><span class="rc-val" id="winVal">5</span><button class="rc-btn" data-t="w" data-d="1">＋</button></div>
+        </div>
+      </div>
+      <button class="rc-reset" id="ruleReset">初期設定に戻す</button>
+      <div class="rc-note" id="ruleNote"></div>
     </div>
 
     <!-- ロボット対局の設定(あそびかた選択後に出現) -->
@@ -220,9 +373,9 @@
       <div>
         <div class="sec-label">つよさ</div>
         <div class="fuda-row" id="lvRow">
-          <button class="fuda" data-lv="0">入門<small>はじめての方に</small></button>
+          <button class="fuda" data-lv="0">初級<small>お手柔らかに</small></button>
           <button class="fuda sel" data-lv="1">中級<small>いい勝負</small></button>
-          <button class="fuda" data-lv="2">上級<small>負けるかも</small></button>
+          <button class="fuda" data-lv="2">上級<small>勝てたら侍</small></button>
         </div>
       </div>
       <div>
@@ -232,7 +385,7 @@
           <button class="fuda" data-first="0"><span class="stone-mini w"></span>後手<small>白で打つ</small></button>
         </div>
       </div>
-      <button class="start-btn" id="startBtn">対局</button>
+      <button class="start-btn" id="startBtn">いざ、対局</button>
     </div>
 
     <!-- 友と遊ぶ(オンライン): 合言葉方式 -->
@@ -244,18 +397,39 @@
       <div class="room-area" id="roomArea"></div>
     </div>
 
-    <a class="home-link" href="./index.html">牧村制作ゲームリンク集へ</a>
   </div>
 
   <!-- ===== 対局 ===== -->
   <div class="scene" id="gameScene">
-    <div class="info-bar">
-      <div class="turn-box" id="turnBox"></div>
+    <div class="rule-tags">
+      <div class="rule-tag" id="tagProb"></div>
+      <div class="rule-tag" id="tagWin"></div>
     </div>
     <div class="board-wrap"><div id="board"></div></div>
     <div class="sub-btns">
       <button class="txt-btn" id="giveupBtn">投了</button>
     </div>
+    <!-- 碁笥(碁石入れ): 黒=左下 / 白=右下。手番側がゆれる -->
+    <div class="bowl bk" id="bowlB">
+      <div class="bs" style="left:22%;top:26%"></div><div class="bs" style="left:44%;top:22%;width:23%;height:23%"></div>
+      <div class="bs" style="left:60%;top:36%;width:21%;height:21%"></div><div class="bs" style="left:30%;top:44%"></div>
+      <div class="bs" style="left:50%;top:50%;width:24%;height:24%"></div><div class="bs" style="left:18%;top:56%;width:20%;height:20%"></div>
+      <div class="bs" style="left:40%;top:62%;width:22%;height:22%"></div>
+    </div>
+    <div class="bowl wh" id="bowlW">
+      <div class="bs" style="left:22%;top:26%"></div><div class="bs" style="left:44%;top:22%;width:23%;height:23%"></div>
+      <div class="bs" style="left:60%;top:36%;width:21%;height:21%"></div><div class="bs" style="left:30%;top:44%"></div>
+      <div class="bs" style="left:50%;top:50%;width:24%;height:24%"></div><div class="bs" style="left:18%;top:56%;width:20%;height:20%"></div>
+      <div class="bs" style="left:40%;top:62%;width:22%;height:22%"></div>
+    </div>
+  </div>
+
+  <!-- タイトル画面のフッター(シーンの外・画面に直接固定するので隙間が出ない) -->
+  <a class="home-foot" id="homeFoot" href="./index.html">牧村制作ゲームリンク集へ</a>
+
+  <!-- 全画面共通: 効果音のON/OFF -->
+  <div class="snd-btns">
+    <button class="snd-btn" id="seBtn"><svg viewBox="0 0 25 24"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor"/><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M15 9.4c1.3 1.3 1.3 3.9 0 5.2"/><path d="M17.6 7.6c2.2 2.2 2.2 6.6 0 8.8"/><path d="M20.2 5.8c3.1 3.1 3.1 9.3 0 12.4"/></g></svg>効果音</button>
   </div>
 
   <!-- ===== 結果 ===== -->
@@ -276,13 +450,19 @@
   "use strict";
   const N=13, EMPTY=0, BLACK=1, WHITE=2;
   const boardEl=document.getElementById("board");
-  const turnBox=document.getElementById("turnBox");
+  const bowlB=document.getElementById("bowlB"), bowlW=document.getElementById("bowlW");
+  const tagProb=document.getElementById("tagProb"), tagWin=document.getElementById("tagWin");
   const titleScene=document.getElementById("titleScene"), gameScene=document.getElementById("gameScene");
   const resultOverlay=document.getElementById("resultOverlay");
   const rTitle=document.getElementById("rTitle"), rSub=document.getElementById("rSub");
 
   let board=[], stones=[], turn=BLACK, human=BLACK, cpuLv=1;
   let prob=0, over=false, busy=false, placed=0;
+  /* --- カスタムルール --- */
+  let mokuProb=20, winLen=5;
+  const KAN=["","一","二","三","四","五","六","七","八","九","十"];
+  const PROB_STEPS=(()=>{ const a=[]; for(let p=0;p<=95;p+=5)a.push(p); a.push(99); return a; })();   // 0,5,...,95,99
+  let probIdx=PROB_STEPS.indexOf(20);
   /* --- オンライン状態 --- */
   const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co";
   const SB_KEY="sb_publishable_cak3-W9Mmgahnwawreoa1Q_CVuhmkKL";
@@ -313,8 +493,9 @@
     }
   })();
 
-  /* ---------- 音 (WebAudio 生成) ---------- */
-  let actx=null, master=null, noiseBuf=null;
+  /* ---------- 音 (WebAudio 生成 / 効果音のみ) ---------- */
+  let actx=null, master=null, noiseBuf=null, seBus=null;
+  let seOn=localStorage.getItem("gmk.se")!=="0";
   function ensureAudio(){
     if(actx) return;
     try{
@@ -322,50 +503,57 @@
       master=actx.createGain(); master.gain.value=0.9;
       const comp=actx.createDynamicsCompressor(); comp.threshold.value=-10;
       master.connect(comp).connect(actx.destination);
+      seBus=actx.createGain();  seBus.gain.value = seOn?1:0;  seBus.connect(master);
       const n=Math.floor(actx.sampleRate*0.3);
       noiseBuf=actx.createBuffer(1,n,actx.sampleRate);
       const d=noiseBuf.getChannelData(0);
       for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
     }catch(e){}
   }
-  function note(f,t,dur,peak,type){
+  function note(f,t,dur,peak,type,bus){
     if(!actx) return;
     const o=actx.createOscillator(), g=actx.createGain();
     o.type=type||"sine"; o.frequency.value=f;
     g.gain.setValueAtTime(0.0001,t);
     g.gain.linearRampToValueAtTime(peak,t+0.015);
     g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-    o.connect(g).connect(master); o.start(t); o.stop(t+dur+0.05);
+    o.connect(g).connect(bus||seBus); o.start(t); o.stop(t+dur+0.05);
   }
   /* --- 和風SEパーツ --- */
-  function pluck(f,t,dur,peak){   // 琴の爪弾き
+  function pluck(f,t,dur,peak,bus){   // 琴の爪弾き(カープラス・ストロング法: 弦の物理シミュレーション)
     if(!actx) return;
-    const o=actx.createOscillator(), g=actx.createGain(), lp=actx.createBiquadFilter();
-    o.type="triangle"; o.frequency.setValueAtTime(f,t);
-    lp.type="lowpass"; lp.frequency.setValueAtTime(f*6,t); lp.frequency.exponentialRampToValueAtTime(f*1.4,t+dur);
-    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(peak,t+0.008);
-    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-    o.connect(lp).connect(g).connect(master); o.start(t); o.stop(t+dur+0.05);
+    const dl=actx.createDelay(0.06); dl.delayTime.value=1/f;
+    const fb=actx.createGain(); fb.gain.setValueAtTime(f<400?0.977:0.962, t);
+    fb.gain.linearRampToValueAtTime(0, t+dur);   // 弦の減衰(ループ停止も兼ねる)
+    const lp=actx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=Math.min(f*7, 5200);
+    const out=actx.createGain();
+    out.gain.setValueAtTime(peak*1.7, t); out.gain.exponentialRampToValueAtTime(0.0001, t+dur+0.1);
+    const s=actx.createBufferSource(); s.buffer=noiseBuf;   // 爪で弾く一瞬のノイズ
+    const ex=actx.createGain(); ex.gain.setValueAtTime(0.9,t); ex.gain.exponentialRampToValueAtTime(0.0001,t+0.012);
+    s.connect(ex); ex.connect(dl);
+    dl.connect(lp); lp.connect(fb); fb.connect(dl);   // 弦ループ
+    dl.connect(out); out.connect(bus||seBus);
+    s.start(t); s.stop(t+0.02);
   }
-  function taiko(t,f0,peak){      // 太鼓「ドンッ」
+  function taiko(t,f0,peak,bus){      // 和太鼓「ドンッ」
     if(!actx) return;
     const o=actx.createOscillator(), g=actx.createGain();
     o.type="sine"; o.frequency.setValueAtTime(f0||120,t); o.frequency.exponentialRampToValueAtTime(46,t+0.12);
     g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(peak||0.7,t+0.006);
     g.gain.exponentialRampToValueAtTime(0.0001,t+0.3);
-    o.connect(g).connect(master); o.start(t); o.stop(t+0.34);
+    o.connect(g).connect(bus||seBus); o.start(t); o.stop(t+0.34);
     const s=actx.createBufferSource(); s.buffer=noiseBuf;
     const f=actx.createBiquadFilter(); f.type="lowpass"; f.frequency.value=850;
-    const g2=actx.createGain(); g2.gain.setValueAtTime(0.22,t); g2.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
-    s.connect(f).connect(g2).connect(master); s.start(t); s.stop(t+0.07);
+    const g2=actx.createGain(); g2.gain.setValueAtTime((peak||0.7)*0.32,t); g2.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
+    s.connect(f).connect(g2).connect(bus||seBus); s.start(t); s.stop(t+0.07);
   }
-  function hyoshigi(t,peak){      // 拍子木「カンッ！」
+  function hyoshigi(t,peak,bus){      // 拍子木「カンッ！」
     if(!actx) return;
     const s=actx.createBufferSource(); s.buffer=noiseBuf;
     const f=actx.createBiquadFilter(); f.type="bandpass"; f.frequency.value=3100; f.Q.value=7;
     const g=actx.createGain(); g.gain.setValueAtTime(peak||0.6,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.09);
-    s.connect(f).connect(g).connect(master); s.start(t); s.stop(t+0.12);
-    note(1750,t,0.05,0.14,"sine");
+    s.connect(f).connect(g).connect(bus||seBus); s.start(t); s.stop(t+0.12);
+    note(1750,t,0.05,(peak||0.6)*0.23,"sine",bus);
   }
   function playStone(){   // 石「パチッ」+ 盤の低い響き
     if(!actx) return; const t=actx.currentTime;
@@ -373,7 +561,7 @@
     const f=actx.createBiquadFilter(); f.type="bandpass"; f.frequency.value=2600; f.Q.value=1.2;
     const g=actx.createGain();
     g.gain.setValueAtTime(0.5,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.07);
-    s.connect(f).connect(g).connect(master); s.start(t); s.stop(t+0.09);
+    s.connect(f).connect(g).connect(seBus); s.start(t); s.stop(t+0.09);
     note(150,t,0.12,0.2,"sine");
   }
   function playPuff(){    // もくもく: 小太鼓「ぽんっ」+ 煙の「ぼふっ」
@@ -384,7 +572,26 @@
     f.frequency.setValueAtTime(1600,t); f.frequency.exponentialRampToValueAtTime(220,t+0.3);
     const g=actx.createGain();
     g.gain.setValueAtTime(0.5,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.32);
-    s.connect(f).connect(g).connect(master); s.start(t); s.stop(t+0.38);
+    s.connect(f).connect(g).connect(seBus); s.start(t); s.stop(t+0.38);
+  }
+  function playTame(dur){    // もくもく前の「ため」: 迫り上がる煙の唸り(dur秒かけて)
+    if(!actx) return; const t=actx.currentTime, D=dur||0.6;
+    const s=actx.createBufferSource(); s.buffer=noiseBuf; s.loop=true;
+    const f=actx.createBiquadFilter(); f.type="lowpass";
+    f.frequency.setValueAtTime(180,t); f.frequency.exponentialRampToValueAtTime(950,t+D);
+    const g=actx.createGain();
+    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.26,t+D*0.92); g.gain.linearRampToValueAtTime(0.0001,t+D*1.2);
+    s.connect(f).connect(g).connect(seBus); s.start(t); s.stop(t+D*1.3);
+    const o=actx.createOscillator(), og=actx.createGain();
+    o.type="sine"; o.frequency.setValueAtTime(68,t); o.frequency.linearRampToValueAtTime(96,t+D);
+    og.gain.setValueAtTime(0.0001,t); og.gain.linearRampToValueAtTime(0.2,t+D*0.83); og.gain.linearRampToValueAtTime(0.0001,t+D*1.2);
+    o.connect(og).connect(seBus); o.start(t); o.stop(t+D*1.3);
+  }
+  function playTick(){ if(actx) hyoshigi(actx.currentTime, 0.4); }   // ルール増減も他UIと同じ拍子木
+  function playShine(){   // 決着級の一手が耐えた！: 琴のきらめく上昇 + 拍子木
+    if(!actx) return; const t=actx.currentTime;
+    [659,880,1319].forEach((f,i)=> pluck(f, t+i*0.07, 0.6, 0.2));
+    hyoshigi(t+0.22, 0.45);
   }
   function playSelect(){ if(actx) hyoshigi(actx.currentTime); }            // 選択 = 拍子木「カンッ」
   function playStart(){ if(actx){ const t=actx.currentTime; taiko(t,130,0.8); hyoshigi(t+0.09,0.5); } }   // 対局開始 = 「ドンッ、カッ」
@@ -400,11 +607,10 @@
   }
 
   /* ---------- 進行 ---------- */
-  function rollProb(){ prob=20; }   // もくもく確率は20%固定
-  function setTurnLabel(){
-    const you=(turn===human);
-    const col=(turn===BLACK)?'<span class="stone-mini b"></span>':'<span class="stone-mini w"></span>';
-    turnBox.innerHTML=col+(you?"あなたの番":(online?"あいての番":"ロボットの番"));
+  function rollProb(){ prob=mokuProb; }
+  function setTurnLabel(){   // 手番は碁笥(碁石入れ)のゆれで表現
+    bowlB.classList.toggle("active", !over && turn===BLACK);
+    bowlW.classList.toggle("active", !over && turn===WHITE);
   }
 
   function startGame(){
@@ -413,7 +619,10 @@
     cells.forEach(row=>row.forEach(d=>{ d.innerHTML=""; d.classList.remove("taken"); }));
     over=false; busy=false; placed=0; turn=BLACK;
     myRematch=false; peerRematch=false;
-    resultOverlay.classList.remove("on");
+    tagProb.textContent="もくもく "+mokuProb+"%";
+    tagWin.textContent=KAN[winLen]+"目ならべ";
+    resultOverlay.classList.remove("on","peek");
+    setGiveupVisible(true);
     titleScene.classList.remove("on"); gameScene.classList.add("on");
     startTurn();
   }
@@ -430,38 +639,158 @@
     if(over||busy||turn!==human) return;
     if(board[r][c]!==EMPTY) return;
     if(online){
-      // もくもく抽選は打った側が行い、結果ごと相手に送る(両者の盤面が必ず一致)
+      // もくもく・フェイント抽選は打った側が行い、結果ごと相手に送る(両者の演出と盤面が必ず一致)
       const moku=(Math.random()*100)<prob;
-      if(ch) ch.send({ type:"broadcast", event:"move", payload:{ r,c,moku } });
-      tryPlace(r,c,moku);
+      const foe=(human===BLACK)?WHITE:BLACK;
+      const fake=(!moku && (!!winLine(r,c,human) || !!winLine(r,c,foe) || (prob>0 && Math.random()<0.10)));   // 勝負を決める/阻止する一手は必ずため
+      if(ch) ch.send({ type:"broadcast", event:"move", payload:{ r,c,moku,fake } });
+      tryPlace(r,c,moku,fake);
       return;
     }
     tryPlace(r,c);
   }
 
-  /* 石を置く(もくもく判定込み)。人間/ロボット/通信相手 共通 */
-  function tryPlace(r,c,forcedMoku){
+  /* 碁笥から盤上のマスへ石が飛んでいく */
+  function flyStone(color,r,c,done){
+    const bowl=(color===BLACK)?bowlB:bowlW;
+    bowl.classList.remove("pop"); void bowl.offsetWidth; bowl.classList.add("pop");
+    setTimeout(()=> bowl.classList.remove("pop"), 340);   // popが残ると手番のゆれが止まる
+    const cr=cells[r][c].getBoundingClientRect(), br=bowl.getBoundingClientRect();
+    const size=cr.width*0.86;
+    const el=document.createElement("div");
+    el.className="fly "+(color===BLACK?"b":"w");
+    el.style.width=el.style.height=size+"px";
+    el.style.left=(br.left+br.width/2-size/2)+"px";
+    el.style.top=(br.top+br.height/2-size/2)+"px";
+    document.body.appendChild(el);
+    const dx=(cr.left+cr.width/2)-(br.left+br.width/2);
+    const dy=(cr.top+cr.height/2)-(br.top+br.height/2);
+    void el.offsetWidth;   // 開始位置を確定させてからtransform(これが無いと稀に瞬間移動する)
+    el.style.transform="translate("+dx+"px,"+dy+"px) rotate(300deg)";
+    setTimeout(()=>{ el.remove(); if(done) done(); }, 300);
+  }
+
+  /* もくもく前の「ため」: 石が震え、小さな煙がちらつく */
+  function tameWisps(r,c){
+    for(let i=0;i<3;i++){
+      setTimeout(()=>{
+        const p=document.createElement("div"); p.className="puff";
+        p.style.width=p.style.height=(30+Math.random()*22)+"%";
+        p.style.left=(38+Math.random()*24)+"%"; p.style.top=(30+Math.random()*22)+"%";
+        p.style.setProperty("--px",(Math.random()*20-10).toFixed(0)+"px");
+        p.style.setProperty("--py","-16px");
+        p.style.setProperty("--ps","1.1");
+        cells[r][c].appendChild(p);
+        setTimeout(()=>p.remove(), 900);
+      }, i*170);
+    }
+  }
+  function spawnSparks(r,c){   // 金色の粒が飛び散る(耐えた祝福)
+    const base=cells[r][c];
+    for(let i=0;i<9;i++){
+      const p=document.createElement("div"); p.className="spark";
+      const sz=(20+Math.random()*22);
+      p.style.width=p.style.height=sz+"%";
+      const a=Math.random()*Math.PI*2, d=34+Math.random()*55;
+      p.style.setProperty("--sx",(Math.cos(a)*d).toFixed(0)+"px");
+      p.style.setProperty("--sy",(Math.sin(a)*d-14).toFixed(0)+"px");
+      p.style.animationDelay=(i*0.03)+"s";
+      base.appendChild(p);
+      setTimeout(()=>p.remove(), 1200);
+    }
+  }
+  function showVignette(){   // 画面の4辺に沿って雲がぽこぽこ(碁石まわりの煙と同じ見た目)
+    const W=window.innerWidth, H=window.innerHeight;
+    for(let i=0;i<16;i++){
+      const p=document.createElement("div"); p.className="vig-puff";
+      const s=(0.10+Math.random()*0.12)*Math.max(W,H);
+      p.style.width=p.style.height=s+"px";
+      const side=i%4;
+      if(side===0){ p.style.left=(Math.random()*W)+"px"; p.style.top="0px"; }          // 上辺
+      else if(side===1){ p.style.left=(Math.random()*W)+"px"; p.style.top=H+"px"; }    // 下辺
+      else if(side===2){ p.style.left="0px"; p.style.top=(Math.random()*H)+"px"; }     // 左辺
+      else { p.style.left=W+"px"; p.style.top=(Math.random()*H)+"px"; }                // 右辺
+      p.style.setProperty("--vx",(Math.random()*60-30).toFixed(0)+"px");
+      p.style.setProperty("--vy",(-20-Math.random()*50).toFixed(0)+"px");
+      p.style.animationDelay=(Math.random()*0.18)+"s";
+      document.body.appendChild(p);
+      setTimeout(()=>p.remove(), 1400);
+    }
+  }
+  /* 勝利: 勝った側の碁笥から碁石が大量に吹き上がる
+     左下(黒)の碁笥→上から右へ大きく / 右下(白)の碁笥→上から左へ大きく */
+  function burstStones(color){
+    const bowl=(color===BLACK)?bowlB:bowlW;
+    const dir=(color===BLACK)? 1 : -1;   // 黒=右向き / 白=左向き
+    const br=bowl.getBoundingClientRect();
+    const base=Math.max(16, br.width*0.3);
+    for(let i=0;i<26;i++){
+      const el=document.createElement("div");
+      el.className="burst "+(color===BLACK?"b":"w");
+      const s=base*(0.6+Math.random()*0.75);
+      el.style.width=el.style.height=s+"px";
+      el.style.left=(br.left+br.width/2-s/2)+"px";
+      el.style.top=(br.top+br.height/2-s/2)+"px";
+      const ang=(-0.18+Math.random()*1.28)*(Math.PI/2);   // 逆側に少し〜真横を越えるまで、大きな扇状
+      const dist=(0.45+Math.random()*0.75)*Math.max(window.innerWidth, window.innerHeight);
+      el.style.setProperty("--bx", (dir*Math.sin(ang)*dist).toFixed(0)+"px");
+      el.style.setProperty("--by", (-(Math.cos(ang)*dist+90)).toFixed(0)+"px");
+      el.style.animationDelay=(Math.random()*0.3)+"s";
+      document.body.appendChild(el);
+      setTimeout(()=>el.remove(), 1900);
+    }
+  }
+
+  /* 石を置く(もくもく判定込み)。人間/ロボット/通信相手 共通
+     moku: 消える / fake: 「ため」だけ入って結局置かれる(いやもくもくせんのかい！) */
+  function tryPlace(r,c,forcedMoku,forcedFake){
     busy=true;
     const me=turn;
-    const st=document.createElement("div");
-    st.className="stone "+(me===BLACK?"b":"w");
-    cells[r][c].appendChild(st);
-    playStone();
     const moku=(forcedMoku===undefined) ? (Math.random()*100)<prob : forcedMoku;
-    if(moku){
-      setTimeout(()=>{   // 置いた瞬間にもくもくっ！
-        st.remove(); spawnPuffs(r,c); playPuff();
-        setTimeout(()=>{ if(!over) switchTurn(); }, 520);
-      }, 90);
-      return;
-    }
-    // 確定
-    board[r][c]=me; stones[r][c]=st; placed++;
-    cells[r][c].classList.add("taken");
-    const line=winLine(r,c,me);
-    if(line){ finish(me,line); return; }
-    if(placed>=N*N){ finish(0,null); return; }
-    setTimeout(switchTurn, 240);
+    // 勝ちが決まる一手・相手の勝ちを阻止する一手は必ず「ため」を入れる(本物でも嘘でも)。通常の嘘もくもくは10%
+    const foe=(me===BLACK)?WHITE:BLACK;
+    const critical=(!!winLine(r,c,me) || !!winLine(r,c,foe));   // 勝ち or 阻止の一手(本物のもくもくでも長ためになる)
+    const fake=(forcedFake===undefined) ? (!moku && (critical || (prob>0 && Math.random()<0.10))) : forcedFake;
+    flyStone(me, r, c, ()=>{
+      const st=document.createElement("div");
+      st.className="stone "+(me===BLACK?"b":"w");
+      cells[r][c].appendChild(st);
+      playStone();
+      const commit=()=>{
+        board[r][c]=me; stones[r][c]=st; placed++;
+        cells[r][c].classList.add("taken");
+        const line=winLine(r,c,me);
+        if(line){ finish(me,line); return; }
+        if(placed>=N*N){ finish(0,null); return; }
+        setTimeout(switchTurn, 200);
+      };
+      const tameMs=critical?1250:640, tameCls=critical?"tame long":"tame";   // 決着級の一手は長ため
+      if(moku){
+        setTimeout(()=>{   // ため → 本物のもくもく
+          st.className+=" "+tameCls; playTame(tameMs/1000); tameWisps(r,c);
+          setTimeout(()=>{
+            st.remove(); spawnPuffs(r,c); playPuff(); showVignette();
+            setTimeout(()=>{ if(!over) switchTurn(); }, 520);
+          }, tameMs);
+        }, 130);
+        return;
+      }
+      if(fake){
+        setTimeout(()=>{   // ため → もくもくせず普通に設置(フェイント)
+          st.className+=" "+tameCls; playTame(tameMs/1000); tameWisps(r,c);
+          setTimeout(()=>{
+            st.classList.remove("tame","long");
+            if(critical){   // 決着級が耐えた！一時的に黄金の巨石になり、1.3秒後にもとの石へ戻る
+              st.classList.add("gold","shine"); spawnSparks(r,c); playShine();
+              setTimeout(()=>{ st.classList.remove("gold","shine"); }, 1300);
+            }
+            commit();
+          }, tameMs);
+        }, 130);
+        return;
+      }
+      commit();
+    });
   }
   function spawnPuffs(r,c){
     const base=cells[r][c];
@@ -492,18 +821,21 @@
   function winLine(r,c,p){
     for(const [dr,dc] of DIRS){
       const line=[[r,c]];
-      for(let k=1;k<5;k++){ const rr=r+dr*k, cc=c+dc*k; if(rr<0||rr>=N||cc<0||cc>=N||board[rr][cc]!==p) break; line.push([rr,cc]); }
-      for(let k=1;k<5;k++){ const rr=r-dr*k, cc=c-dc*k; if(rr<0||rr>=N||cc<0||cc>=N||board[rr][cc]!==p) break; line.push([rr,cc]); }
-      if(line.length>=5) return line;
+      for(let k=1;k<winLen;k++){ const rr=r+dr*k, cc=c+dc*k; if(rr<0||rr>=N||cc<0||cc>=N||board[rr][cc]!==p) break; line.push([rr,cc]); }
+      for(let k=1;k<winLen;k++){ const rr=r-dr*k, cc=c-dc*k; if(rr<0||rr>=N||cc<0||cc>=N||board[rr][cc]!==p) break; line.push([rr,cc]); }
+      if(line.length>=winLen) return line;
     }
     return null;
   }
+  const giveupBtn=document.getElementById("giveupBtn");
+  function setGiveupVisible(v){ giveupBtn.style.visibility = v ? "" : "hidden"; }   // 終局後は投了を隠す(盤面眺めモードで違和感が出るため)
   function finish(winner,line){
-    over=true; busy=true;
+    over=true; busy=true; setGiveupVisible(false);
     if(line) line.forEach(([r,c])=>{ if(stones[r][c]) stones[r][c].classList.add("win-glow"); });
     setTimeout(()=>{
+      if(winner!==0) burstStones(winner);   // 勝利陣営の碁笥から碁石が吹き上がる
       if(winner===0){ rTitle.textContent="引き分け"; rTitle.className="r-title"; rSub.textContent="盤が埋まってしまった"; }
-      else if(winner===human){ rTitle.textContent="あなたの勝ち！"; rTitle.className="r-title win"; rSub.textContent="みごと五つ並んだ"; playWin(); }
+      else if(winner===human){ rTitle.textContent="あなたの勝ち！"; rTitle.className="r-title win"; rSub.textContent="みごと"+KAN[winLen]+"つ並べた"; playWin(); }
       else { rTitle.textContent=(online?"あいての勝ち…":"ロボットの勝ち…"); rTitle.className="r-title"; rSub.textContent="次はきっと勝てる"; playLose(); }
       resultOverlay.classList.add("on");
     }, line?900:300);
@@ -529,8 +861,9 @@
     ch.on("presence",{event:"sync"},()=>{
       if(isHost && !startSent && presenceCount()>=2){
         startSent=true;
-        ch.send({ type:"broadcast", event:"start", payload:{} });
-        beginOnline(BLACK);   // 部屋主=黒(先手)
+        const hc=(Math.random()<0.5)?BLACK:WHITE;   // 先手(黒)はランダム
+        ch.send({ type:"broadcast", event:"start", payload:{ hc, p:mokuProb, w:winLen } });
+        beginOnline(hc);
       }
     });
     ch.on("presence",{event:"leave"},()=>{
@@ -542,17 +875,24 @@
       }
       opponentLeft();   // 対局中の退出
     });
-    ch.on("broadcast",{event:"start"},()=>{ if(!isHost) beginOnline(WHITE); });
+    ch.on("broadcast",{event:"start"},({payload})=>{
+      if(isHost) return;
+      if(payload){   // 部屋主のルールを受け取って揃える
+        if(typeof payload.p==="number") mokuProb=Math.max(0, Math.min(99, payload.p|0));
+        if(typeof payload.w==="number") winLen=Math.max(2, Math.min(10, payload.w|0));
+      }
+      beginOnline(payload && payload.hc===BLACK ? WHITE : BLACK);
+    });
     ch.on("broadcast",{event:"move"},({payload})=>{
       if(!online||over||!payload) return;
       if(turn===human) return;   // 自分の番に相手の手は来ないはず(保険)
       const r=payload.r|0, c=payload.c|0;
       if(r<0||r>=N||c<0||c>=N||board[r][c]!==EMPTY) return;
-      tryPlace(r, c, !!payload.moku);
+      tryPlace(r, c, !!payload.moku, !!payload.fake);
     });
     ch.on("broadcast",{event:"resign"},()=>{
       if(!online||over) return;
-      over=true; busy=true;
+      over=true; busy=true; setGiveupVisible(false);
       rTitle.textContent="あいての投了！"; rTitle.className="r-title win";
       rSub.textContent="あなたの勝ち"; playWin(); resultOverlay.classList.add("on");
     });
@@ -564,7 +904,7 @@
     ch.subscribe(async (status)=>{
       if(status==="SUBSCRIBED"){ try{ await ch.track({}); }catch(e){} if(onReady) onReady(); }
       else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){
-        roomStatus('<div class="room-note err">通信に失敗しました。電波を確認してもう一度</div>');
+        roomStatus('<div class="room-note err">通信失敗。通信環境を見直すのだ</div>');
       }
     });
   }
@@ -574,9 +914,9 @@
     playStart(); startGame();
   }
   function opponentLeft(){
-    over=true; busy=true; online=false;
+    over=true; busy=true; online=false; setGiveupVisible(false);
     rTitle.textContent="あいてが退出しました"; rTitle.className="r-title";
-    rSub.textContent="部屋を作りなおして再戦しよう";
+    rSub.textContent="部屋を作りなおし、再戦したまえ";
     resultOverlay.classList.add("on");
     leaveChannel();
   }
@@ -584,26 +924,37 @@
   document.getElementById("makeRoomBtn").addEventListener("click",()=>{
     ensureAudio(); playSelect();
     const code=genCode();
-    roomStatus('<div class="room-note">あなたの合言葉</div>'
-      +'<div class="room-code">'+code+'</div>'
-      +'<div class="room-note room-wait">友に伝えて、そろうのを待っています…</div>');
+    roomStatus('<div class="room-note">合言葉</div>'
+      +'<div class="room-code" id="codeShow" style="cursor:pointer">'
+      +'<svg class="copy-ic" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4" y="4" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>'
+      +code+'</div>'
+      +'<div class="room-note room-wait" id="hostNote">友に伝え、待ちたまえ</div>');
+    document.getElementById("codeShow").addEventListener("click", async ()=>{
+      ensureAudio(); hyoshigi(actx?actx.currentTime:0, 0.4);
+      let ok=true;
+      try{ await navigator.clipboard.writeText(code); }
+      catch(e){ try{ const ta=document.createElement("textarea"); ta.value=code; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); }catch(_){ ok=false; } }
+      const n=document.getElementById("hostNote");
+      if(n){ n.textContent=ok?"コピー完了、共に伝えたまえ":"コピー失敗、すまぬが手入力で頼む";
+        setTimeout(()=>{ if(n.isConnected && !online) n.textContent="友に伝え、待ちたまえ"; }, 2200); }
+    });
     openChannel(code, true);
   });
   document.getElementById("joinRoomBtn").addEventListener("click",()=>{
     ensureAudio(); playSelect();
-    roomStatus('<input class="code-input" id="codeInput" maxlength="5" autocomplete="off" spellcheck="false" placeholder="あいことば">'
-      +'<button class="txt-btn" id="codeGo">入室する</button>'
+    roomStatus('<input class="code-input" id="codeInput" maxlength="5" autocomplete="off" spellcheck="false" placeholder="合言葉">'
+      +'<button class="txt-btn" id="codeGo">いざ、入室</button>'
       +'<div class="room-note" id="joinNote"></div>');
     const inp=document.getElementById("codeInput"), note=document.getElementById("joinNote");
     document.getElementById("codeGo").addEventListener("click",()=>{
       const code=(inp.value||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
-      if(code.length!==5){ note.textContent="合言葉は5文字です"; note.className="room-note err"; return; }
-      note.textContent="入室しています…"; note.className="room-note room-wait";
-      openChannel(code, false, ()=>{
-        joinWatch=setTimeout(()=>{
-          if(!online && presenceCount()<2){ note.textContent="部屋が見つかりません。合言葉を確認してね"; note.className="room-note err"; leaveChannel(); }
-        }, 5000);
-      });
+      if(code.length!==5){ note.textContent="合言葉は五文字だ"; note.className="room-note err"; return; }
+      note.textContent="部屋を探しておる…"; note.className="room-note room-wait";
+      openChannel(code, false);
+      // 見張り役は接続の成否によらずクリック時点から起動(通信が固まっても必ず答えが出る)
+      joinWatch=setTimeout(()=>{
+        if(!online){ note.textContent="部屋がみつからぬ。合言葉を再確認したまえ"; note.className="room-note err"; leaveChannel(); }
+      }, 4000);
     });
     inp.focus();
   });
@@ -642,12 +993,13 @@
     }
     return total;
   }
-  function patScore(cnt,open){
-    if(cnt>=5) return 10000000;
+  function patScore(cnt,open){   // ならべる数(winLen)からの残り距離で評価
+    if(cnt>=winLen) return 10000000;
     if(open===0) return 0;
-    if(cnt===4) return open===2 ? 1000000 : 120000;
-    if(cnt===3) return open===2 ? 60000 : 3500;
-    if(cnt===2) return open===2 ? 900 : 150;
+    const d=winLen-cnt;
+    if(d===1) return open===2 ? 1000000 : 120000;
+    if(d===2) return open===2 ? 60000 : 3500;
+    if(d===3) return open===2 ? 900 : 150;
     return open===2 ? 45 : 12;
   }
   function pickMove(){
@@ -666,31 +1018,144 @@
       return cand[Math.floor(Math.random()*cand.length)];
     }
     // 中級/上級: 評価関数(攻め+守り)
-    const defW=(cpuLv===2)?0.92:0.78;
+    // 上級はもくもく確率が高いほど守りを重く見る:
+    // 「相手に四を作られてから止める」計画は、止めの一手がもくもくすると即負けするため、
+    // 確率が高い対局では相手の三の段階で早めに潰しにいく
+    const defW=(cpuLv===2)?(0.95+prob*0.004):0.78;
     const scored=cand.map(([r,c])=>{
       const s=lineScore(r,c,cpu)+defW*lineScore(r,c,human)
         + (12-(Math.abs(r-6)+Math.abs(c-6)))*2   // 中央寄り好み
-        + Math.random()*10;
+        + (cpuLv===2 ? 0 : Math.random()*10);
       return {r,c,s};
     }).sort((a,b)=>b.s-a.s);
     if(cpuLv===1 && Math.random()<0.3 && scored.length>2 && scored[0].s<10000000){
       return [scored[1].r, scored[1].c];   // 中級: 3割で最善を逃す
     }
+    if(cpuLv===2 && scored[0].s<10000000){
+      const opp=(cpu===BLACK)?WHITE:BLACK;
+      // 鬼(1): 四追い必勝探索 — 「四」を作り続けて相手を防戦一方にしたまま勝ち切る手順(最大12手先)
+      const vcf=findVCF(cpu, opp, 12);
+      if(vcf) return vcf;
+      // 鬼(2): 6手読みアルファベータ探索
+      const mv=searchBest(cpu, opp);
+      if(mv) return mv;
+    }
     return [scored[0].r, scored[0].c];
+  }
+  /* pの「次の一手で勝てるマス」を列挙 */
+  function winningCells(p){
+    const out=[];
+    for(const [r,c] of emptyNear(2)){ if(winLine(r,c,p)) out.push([r,c]); }
+    return out;
+  }
+  /* 四追い(VCF): 置くたびに「四」で王手をかけ、相手の応手を強制しながら勝ちに到達する手を探す */
+  function findVCF(p, q, depth){
+    if(depth<=0) return null;
+    for(const [r,c] of emptyNear(2)){
+      if(lineScore(r,c,p) < 100000) continue;    // 四(王手)を作らない手は forcing でない
+      board[r][c]=p;
+      const wins=winningCells(p);
+      if(wins.length>=2){ board[r][c]=EMPTY; return [r,c]; }   // 二重の四: 止めきれず勝ち確定
+      if(wins.length===1){
+        const [br,bc]=wins[0];
+        board[br][bc]=q;                          // 相手は止めるしかない
+        const deeper=findVCF(p, q, depth-2);      // 止められてもさらに四を重ねられるか
+        board[br][bc]=EMPTY;
+        if(deeper){ board[r][c]=EMPTY; return [r,c]; }
+      }
+      board[r][c]=EMPTY;
+    }
+    return null;
+  }
+  /* 上級専用: 攻め重視で候補を絞りながら読む(もくもく確率が高いほど相手の芽を早めに摘む) */
+  function topMoves(p, q, k){   // p=手番, q=相手, k=候補数
+    const dw=0.6+prob*0.006;   // 例: 20%→0.72 / 80%→1.08
+    const out=[];
+    for(const [r,c] of emptyNear(2)){
+      out.push({ r, c, s: lineScore(r,c,p)+dw*lineScore(r,c,q) });
+    }
+    out.sort((a,b)=>b.s-a.s);
+    return out.slice(0,k);
+  }
+  function searchBest(cpu, opp){
+    const DEPTH=6;   // 6手読み(自分→相手→…)。深い層ほど有望手だけに絞る
+    const WIDTH=[0, 4, 4, 5, 6, 9, 14];   // 各深さの候補数
+    function negamax(p, q, depth, alpha, beta){
+      const cand=topMoves(p, q, WIDTH[depth]||4);
+      if(!cand.length) return 0;
+      let best=-Infinity, bestMv=null;
+      for(const m of cand){
+        let val;
+        if(m.s>=10000000){ val=10000000-(DEPTH-depth)*10000; }   // 早い勝ちほど高評価
+        else if(depth===1){ val=m.s; }
+        else{
+          board[m.r][m.c]=p;
+          val=m.s-0.82*negamax(q, p, depth-1, -beta, -Math.max(alpha,best));
+          board[m.r][m.c]=EMPTY;
+        }
+        if(val>best){ best=val; bestMv=m; }
+        if(best>=beta) break;   // 枝刈り
+      }
+      if(depth===DEPTH) return bestMv;   // 根では手そのものを返す
+      return best;
+    }
+    const mv=negamax(cpu, opp, DEPTH, -Infinity, Infinity);
+    return mv ? [mv.r, mv.c] : null;
   }
 
   /* ---------- タイトル/UI ---------- */
-  // あそびかた選択: 選んだ方の設定ブロックだけ出現
+  // あそびかた選択: 選んだ方の設定ブロックだけ出現(ルール設定も選んだ側へ移動)
   const cpuSetup=document.getElementById("cpuSetup"), friendSetup=document.getElementById("friendSetup");
+  const ruleBox=document.getElementById("ruleBox"), ruleNote=document.getElementById("ruleNote");
   document.querySelectorAll("#modeRow .fuda").forEach(b=>{
     b.addEventListener("click",()=>{ ensureAudio(); playSelect();
       document.querySelectorAll("#modeRow .fuda").forEach(x=>x.classList.remove("sel"));
       b.classList.add("sel");
       const robot=(b.dataset.mode==="robot");
+      if(robot){ cpuSetup.insertBefore(ruleBox, document.getElementById("startBtn")); ruleNote.textContent=""; }
+      else { friendSetup.insertBefore(ruleBox, friendSetup.firstElementChild); ruleNote.textContent="※部屋を作った側のルールで遊びます"; }
       cpuSetup.classList.toggle("on", robot);
       friendSetup.classList.toggle("on", !robot);
     });
   });
+  // ルール設定: −/＋で もくもく確率(0〜99%)・ならべる数(2〜7)。長押しで連続変更
+  const probValEl=document.getElementById("probVal"), winValEl=document.getElementById("winVal");
+  function renderRules(){ probValEl.textContent=mokuProb+"%"; winValEl.textContent=winLen; }
+  document.querySelectorAll(".rc-btn").forEach(b=>{
+    let holdTmr=0, holdIv=0;
+    const step=()=>{
+      const d=+b.dataset.d;
+      let changed=false;
+      if(b.dataset.t==="p"){
+        const ni=Math.max(0, Math.min(PROB_STEPS.length-1, probIdx+d));
+        if(ni!==probIdx){ probIdx=ni; mokuProb=PROB_STEPS[probIdx]; changed=true; }
+      } else {
+        const nw=Math.max(2, Math.min(10, winLen+d));
+        if(nw!==winLen){ winLen=nw; changed=true; }
+      }
+      if(changed){ playTick(); renderRules(); }
+    };
+    const stop=()=>{ clearTimeout(holdTmr); clearInterval(holdIv); holdTmr=0; holdIv=0; };
+    b.addEventListener("pointerdown",(e)=>{ e.preventDefault(); ensureAudio(); step();
+      holdTmr=setTimeout(()=>{ holdIv=setInterval(step, 90); }, 420); });
+    ["pointerup","pointerleave","pointercancel"].forEach(ev=> b.addEventListener(ev, stop));
+  });
+  document.getElementById("ruleReset").addEventListener("click",()=>{
+    ensureAudio(); playSelect();
+    probIdx=PROB_STEPS.indexOf(20); mokuProb=20; winLen=5; renderRules();
+  });
+  renderRules();
+
+  // 効果音のON/OFF — 全画面共通・保存される
+  const seBtn=document.getElementById("seBtn");
+  function renderSnd(){ seBtn.classList.toggle("off", !seOn); }
+  seBtn.addEventListener("click",()=>{ ensureAudio();
+    seOn=!seOn; try{ localStorage.setItem("gmk.se", seOn?"1":"0"); }catch(e){}
+    renderSnd();
+    if(seBus) seBus.gain.setTargetAtTime(seOn?1:0, actx.currentTime, 0.02);
+    if(seOn) playSelect();
+  });
+  renderSnd();
   document.querySelectorAll("#lvRow .fuda").forEach(b=>{
     b.addEventListener("click",()=>{ ensureAudio(); playSelect();
       document.querySelectorAll("#lvRow .fuda").forEach(x=>x.classList.remove("sel"));
@@ -711,20 +1176,27 @@
       myRematch=true;
       ch.send({ type:"broadcast", event:"rematch", payload:{} });
       if(peerRematch){ playStart(); startGame(); }
-      else { playSelect(); rSub.textContent="あいての「もう一局」を待っています…"; }
+      else { playSelect(); rSub.textContent="あいての「もう一局」を待っておる…"; }
       return;
     }
     playStart(); startGame();
   });
   document.getElementById("rHomeBtn").addEventListener("click",()=>{ ensureAudio(); goTitle(); });
+  // 結果ダイアログ: 枠の外タップで盤面を眺める⇔再表示
+  resultOverlay.addEventListener("click",(e)=>{
+    if(e.target!==resultOverlay) return;   // カード内のタップは無視
+    ensureAudio(); playSelect();
+    resultOverlay.classList.toggle("peek");
+  });
   document.getElementById("giveupBtn").addEventListener("click",()=>{
     if(over) return; ensureAudio();
     if(online && ch) ch.send({ type:"broadcast", event:"resign", payload:{} });
-    over=true; rTitle.textContent="投了…"; rTitle.className="r-title";
-    rSub.textContent="また挑戦しよう"; playLose(); resultOverlay.classList.add("on");
+    over=true; setGiveupVisible(false);
+    rTitle.textContent="投了…"; rTitle.className="r-title";
+    rSub.textContent="また挑むがよい"; playLose(); resultOverlay.classList.add("on");
   });
   function goTitle(){
-    over=true; resultOverlay.classList.remove("on");
+    over=true; resultOverlay.classList.remove("on","peek");
     gameScene.classList.remove("on"); titleScene.classList.add("on");
     leaveChannel();
     roomStatus("");   // 合言葉表示をリセット
