@@ -830,6 +830,16 @@
   .obi[data-i="0"]{ left:0; } .obi[data-i="1"]{ left:132px; } .obi[data-i="2"]{ left:264px; } .obi[data-i="3"]{ left:396px; } .obi[data-i="4"]{ left:528px; }
   .obi svg{ width:72px; height:72px; }
   .obi.sel{ color:var(--white); }
+
+  /* ===== mobile (touch) tuning ===== */
+  @media (pointer: coarse){
+    /* backdrop blur is very expensive on mobile GPUs — swap for a slightly darker plain veil */
+    .others-blur{ -webkit-backdrop-filter:none; backdrop-filter:none; background:rgba(12,12,18,.72); }
+    .name-modal{ -webkit-backdrop-filter:none; backdrop-filter:none; background:rgba(8,8,12,.82); }
+  }
+  /* portrait phone: the design canvas swaps to 1080x1920 (set by JS). wide fixed windows scale to fit */
+  .screen.portrait .dwin{ transform:scale(0.8); transform-origin:center top; }
+  .screen.portrait .confirm-inner{ transform:scale(0.9); }
 </style>
 </head>
 <body>
@@ -1001,6 +1011,7 @@
 
 <script>
 (function(){
+  const COARSE = !!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches);   // touch device (phone/tablet): lighter effects, no hover tooltip
   const dirs = ["up","down","left","right"];
   const slotEl = {
     up: document.getElementById("slot-up"),
@@ -1571,7 +1582,7 @@
   let fadeScoreIn=false;                     // title -> game: hand the logo "o" over to the score
   let flyingO=null;                          // the logo "o" mid-flight to become the score "0"
   let cornerDX=0, cornerDY=0;   // where the retreated board sits (for the exit slide)
-  const DESIGN_W=1920, DESIGN_H=1080;   // fixed design-canvas size; everything is laid out in these px
+  let DESIGN_W=1920, DESIGN_H=1080;   // design-canvas size; swaps to 1080x1920 in portrait (fitScreen)
   const opposite = { up:"down", down:"up", left:"right", right:"left" };
 
   // score mode: each round starts at 3s and shaves 0.4s for every 10 points,
@@ -2396,7 +2407,7 @@
   const dmbBoxes=Array.from(dmode.querySelectorAll(".dmb"));
   function gradOf(c){ return "linear-gradient(140deg, color-mix(in srgb, "+c+" 58%, #fff), "+c+", color-mix(in srgb, "+c+" 90%, #000))"; }
   function overlayAccent(){ return getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()||"#ff6a00"; }
-  function designRect(el){ const r=el.getBoundingClientRect(), s=screenEl.getBoundingClientRect(), sc=(s.width/1920)||1;
+  function designRect(el){ const r=el.getBoundingClientRect(), s=screenEl.getBoundingClientRect(), sc=(s.width/DESIGN_W)||1;
     return { x:(r.left-s.left)/sc, y:(r.top-s.top)/sc, w:r.width/sc, h:r.height/sc }; }
   function flyModeBox(from, to, gradFrom, gradTo, done){   // a single solid box smoothly travels between the two menus
     const a=designRect(from), b=designRect(to);
@@ -3077,7 +3088,7 @@
   }
   function optAccent(dir){ return scene==="over" ? (MODE_ACCENT[gameMode]||"#ff6a00") : (TITLE_DIR_ACCENT[dir]||"#ff6a00"); }
   function showTip(name, color, x, y){
-    if(!hoverTip) return;
+    if(!hoverTip || COARSE) return;   // no hover tooltip on touch devices (taps fire synthetic mouseenter)
     if(!name){ hoverTip.classList.remove("show"); return; }
     hoverTip.textContent=name;
     hoverTip.style.fontSize=(24*uiScale).toFixed(2)+"px";   // scale with the game so it looks the same on any window size
@@ -3180,6 +3191,7 @@
   })();
 
   /* ---------- animated wave grid background ---------- */
+  let bgResize=null;   // exposed so fitScreen can re-size the canvas when the design canvas swaps orientation
   (function(){
     const cv=document.getElementById("bg"), ctx=cv.getContext("2d");
     const dpr=1;   // faint line wave — dpr 1 keeps mobile GPU/memory low (was up to 2 = 4x the pixels)
@@ -3191,6 +3203,7 @@
       ctx.setTransform(dpr,0,0,dpr,0,0);
     }
     resize();
+    bgResize=resize;
 
     // straight lines; opacity "stadium wave" flowing right->left AND vertically
     const SP=69.12, K=0.008333, SEG=26.88, BASE=0.10, AMP=0.06, MIN=0.05;
@@ -3206,8 +3219,8 @@
     function loop(){
       requestAnimationFrame(loop);
       if(typeof running!=="undefined" && running) return;   // freeze the background during active play (the heaviest moment) — big mobile savings, and it's barely visible behind the board
-      if((frameSkip^=1)) return;             // ~30fps (draw every other frame)
-      phaseX += 0.060; phaseY += 0.044;      // doubled so the wave speed matches the halved frame rate
+      frameSkip=(frameSkip+1)%(COARSE?3:2); if(frameSkip) return;   // ~30fps on PC, ~20fps on touch devices (draw 1 in 3)
+      if(COARSE){ phaseX += 0.090; phaseY += 0.066; } else { phaseX += 0.060; phaseY += 0.044; }   // wave speed matched to each frame rate
       ctx.clearRect(0,0,W,H);
       ctx.lineWidth=1;
       for(let i=0;i<NB;i++) bands[i].length=0;
@@ -3221,13 +3234,24 @@
   })();
 
   /* ---------- scale the whole design canvas to fit any screen ---------- */
+  /* landscape = 1920x1080 (as designed). portrait (phones held upright) = 1080x1920:
+     everything is centred/edge-anchored, so the layout re-flows and the board fills the width */
   let uiScale=1;
   function fitScreen(){
+    const portrait = window.innerHeight > window.innerWidth;
+    const dw = portrait ? 1080 : 1920, dh = portrait ? 1920 : 1080;
+    if(dw !== DESIGN_W){
+      DESIGN_W=dw; DESIGN_H=dh;
+      screenEl.style.width=dw+"px"; screenEl.style.height=dh+"px";
+      screenEl.classList.toggle("portrait", portrait);
+      if(bgResize) bgResize();   // re-size the wave-grid canvas to the new design size
+    }
     const s=Math.min(window.innerWidth/DESIGN_W, window.innerHeight/DESIGN_H);
     screenEl.style.transform="scale("+s+")";
     uiScale=s;   // keep the hover tooltip proportional to the (scaled) game
   }
   window.addEventListener("resize", fitScreen);
+  window.addEventListener("orientationchange", ()=> setTimeout(fitScreen, 60));
   fitScreen();
 
 
