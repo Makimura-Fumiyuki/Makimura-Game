@@ -74,9 +74,13 @@
   .fuda.sel{
     color:#fff; background:linear-gradient(160deg, #e0684f, var(--shu) 55%, #9c2c1f);
     border-color:#7d2318; box-shadow:0 3px 0 #7d2318, 0 6px 12px rgba(150,40,20,.35);
-    transform:scale(1.06);
+    transform:scale(1,1.08);   /* 縦にだけ膨らむ: 横幅が変わらないので行ごとの幅がずれて見えない */
   }
   .fuda small{ display:block; font-size:11px; opacity:.75; margin-top:4px; letter-spacing:.05em; }
+  /* あそびかた行は3枚並ぶので、少し広く・文字は小さめに */
+  #modeRow{ width:min(94vw, 500px); }
+  #modeRow .fuda{ font-size:clamp(12px,3.3vw,15px); letter-spacing:.02em; padding-left:3px; padding-right:3px; }
+  #modeRow .fuda small{ font-size:10px; }
   .fuda.ghost{ opacity:.45; cursor:default; filter:grayscale(.5); }
   .fuda.ghost:active{ transform:none; box-shadow:0 3px 0 #7a5c34, 0 6px 10px rgba(60,40,10,.25); }
   /* あそびかた選択後に出現する設定ブロック */
@@ -129,18 +133,12 @@
   .start-btn{
     margin-top:6px; padding:16px 58px 18px; cursor:pointer; white-space:nowrap;
     font-family:inherit; font-size:26px; letter-spacing:.3em; text-indent:.3em; color:#fff;
-    background:linear-gradient(160deg, #e0684f, var(--shu) 55%, #9c2c1f);
-    border:2px solid #7d2318; border-radius:10px;
-    text-shadow:0 2px 4px rgba(90,15,5,.5);
-    box-shadow:0 4px 0 #7d2318, 0 8px 16px rgba(150,40,20,.4);
-    animation:startPulse 2.1s ease-in-out infinite;
+    background:linear-gradient(160deg, #4a453d, var(--sumi) 60%, #171512);
+    border:2px solid #14120f; border-radius:10px;
+    box-shadow:0 4px 0 #14120f, 0 8px 14px rgba(0,0,0,.3);
     transition:transform .12s ease, box-shadow .12s ease;
   }
-  @keyframes startPulse{
-    0%,100%{ transform:scale(1); box-shadow:0 4px 0 #7d2318, 0 8px 16px rgba(150,40,20,.4); }
-    50%{ transform:scale(1.05); box-shadow:0 4px 0 #7d2318, 0 10px 24px rgba(199,62,46,.6); }
-  }
-  .start-btn:active{ transform:translateY(3px) scale(1); animation:none; box-shadow:0 1px 0 #7d2318; }
+  .start-btn:active{ transform:translateY(3px); box-shadow:0 1px 0 #14120f; }
 
   /* 画面下部いっぱいのフッター帯(上に向かって透けるグラデーション) */
   /* タイトル画面のフッター: 画面(viewport)に直接固定 */
@@ -217,6 +215,15 @@
   @keyframes bowlSway{ 0%,100%{ transform:rotate(-5deg); } 50%{ transform:rotate(5deg) translateY(-4px); } }
   @keyframes bowlSwayR{ 0%,100%{ transform:rotate(5deg); } 50%{ transform:rotate(-5deg) translateY(-4px); } }
   .bowl.pop{ animation:bowlPop .32s cubic-bezier(.3,1.4,.5,1); }
+  /* 碁笥の上のラベル(碁笥のゆれから独立して固定) */
+  .bowl-tag{
+    position:absolute; bottom:calc(16px + clamp(62px,17vw,102px) + 7px);
+    width:clamp(62px,17vw,102px); text-align:center;
+    font-size:clamp(11px,3vw,14px); letter-spacing:.2em; white-space:nowrap;
+    color:rgba(51,47,42,.75); pointer-events:none;
+  }
+  .bowl-tag.bk-t{ left:12px; }
+  .bowl-tag.wh-t{ right:12px; }
   @keyframes bowlPop{ 0%{ transform:scale(1); } 35%{ transform:scale(1.22,0.82) translateY(4px); } 70%{ transform:scale(0.94,1.1) translateY(-5px); } 100%{ transform:scale(1); } }
   /* 碁笥から盤へ飛ぶ石 */
   .fly{ position:fixed; z-index:60; border-radius:50%; pointer-events:none;
@@ -257,7 +264,7 @@
   .stone.tame.long{ animation-duration:1.3s; }   /* 勝負を決める/阻止する一手は長ため */
   /* 決着級の一手がもくもくを耐えた！: 碁石が一時的に黄金の巨石になって輝き、その後もとに戻る */
   .stone.gold{ background:radial-gradient(circle at 35% 30%, #ffefae, #f0b53a 55%, #a97a18) !important; }
-  .stone.shine{ animation:shineGlow 1.05s cubic-bezier(.25,1.2,.4,1) forwards; z-index:4; }
+  .stone.gold.shine{ animation:shineGlow 1.05s cubic-bezier(.25,1.2,.4,1) forwards; z-index:4; }   /* 勝利ラインの点滅より優先 */
   @keyframes shineGlow{
     0%{ transform:scale(2.3); box-shadow:0 0 0 0 rgba(245,185,66,.95), 0 0 30px 10px rgba(255,230,150,.95), 0 2px 4px rgba(0,0,0,.35); filter:brightness(1.9); }
     45%{ transform:scale(1.45); filter:brightness(1.4); }
@@ -281,8 +288,14 @@
     72%{ transform:scale(0.96) rotate(5deg); }
     100%{ transform:scale(1.2) rotate(-3deg); }
   }
-  .stone.win-glow{ animation:winPulse .8s ease-in-out infinite; }
-  @keyframes winPulse{ 0%,100%{ box-shadow:0 2px 4px rgba(0,0,0,.35), 0 0 0 0 rgba(199,62,46,.55); } 50%{ box-shadow:0 2px 4px rgba(0,0,0,.35), 0 0 0 9px rgba(199,62,46,0); } }
+  /* そろった列: 金色にピカピカ輝く */
+  .stone.win-glow{ animation:winPulse .75s ease-in-out infinite; }
+  @keyframes winPulse{
+    0%,100%{ box-shadow:0 2px 4px rgba(0,0,0,.35), 0 0 0 0 rgba(245,185,66,.85), 0 0 6px 1px rgba(255,224,140,.4);
+             filter:brightness(1.6) saturate(1.15); }
+    50%{ box-shadow:0 2px 4px rgba(0,0,0,.35), 0 0 0 11px rgba(245,185,66,0), 0 0 16px 4px rgba(255,224,140,.85);
+         filter:brightness(1.05); }
+  }
 
   /* 煙 */
   .puff{
@@ -346,10 +359,12 @@
     <div>
       <div class="sec-label">あそびかた</div>
       <div class="fuda-row" id="modeRow">
-        <button class="fuda" data-mode="friend">友と遊ぶ<small>オンラインで対局</small></button>
-        <button class="fuda" data-mode="robot">ロボットと遊ぶ<small>ひとりで対局</small></button>
+        <button class="fuda" data-mode="friend">オンラインで遊ぶ<small>遠くの友と対局</small></button>
+        <button class="fuda" data-mode="local">1台で遊ぶ<small>近くの友と対局</small></button>
+        <button class="fuda" data-mode="robot">ひとりで遊ぶ<small>ロボットと対局</small></button>
       </div>
     </div>
+
 
     <!-- ルール設定(あそびかた選択後、選んだ側のブロックに移動して出現) -->
     <div id="ruleBox">
@@ -388,6 +403,11 @@
       <button class="start-btn" id="startBtn">いざ、対局</button>
     </div>
 
+    <!-- ならんで遊ぶ(1台で交互に対局) -->
+    <div class="setup" id="localSetup">
+      <button class="start-btn" id="startLocalBtn">いざ、対局</button>
+    </div>
+
     <!-- 友と遊ぶ(オンライン): 合言葉方式 -->
     <div class="setup" id="friendSetup">
       <div class="fuda-row">
@@ -410,6 +430,8 @@
       <button class="txt-btn" id="giveupBtn">投了</button>
     </div>
     <!-- 碁笥(碁石入れ): 黒=左下 / 白=右下。手番側がゆれる -->
+    <div class="bowl-tag bk-t" id="bowlTagB"></div>
+    <div class="bowl-tag wh-t" id="bowlTagW"></div>
     <div class="bowl bk" id="bowlB">
       <div class="bs" style="left:22%;top:26%"></div><div class="bs" style="left:44%;top:22%;width:23%;height:23%"></div>
       <div class="bs" style="left:60%;top:36%;width:21%;height:21%"></div><div class="bs" style="left:30%;top:44%"></div>
@@ -458,6 +480,7 @@
 
   let board=[], stones=[], turn=BLACK, human=BLACK, cpuLv=1;
   let prob=0, over=false, busy=false, placed=0;
+  let local=false;   // ならんで遊ぶ(1台で交互に打つ)モード
   /* --- カスタムルール --- */
   let mokuProb=20, winLen=5;
   const KAN=["","一","二","三","四","五","六","七","八","九","十"];
@@ -622,13 +645,16 @@
     tagProb.textContent="もくもく "+mokuProb+"%";
     tagWin.textContent=KAN[winLen]+"目ならべ";
     resultOverlay.classList.remove("on","peek");
-    setGiveupVisible(true);
+    setGiveupVisible(true); stopVictory();
+    document.getElementById("bowlTagB").textContent= local ? "先手" : (human===BLACK)?"自分":"あいて";
+    document.getElementById("bowlTagW").textContent= local ? "後手" : (human===WHITE)?"自分":"あいて";
     titleScene.classList.remove("on"); gameScene.classList.add("on");
     startTurn();
   }
   function startTurn(){
     if(over) return;
     rollProb(); setTurnLabel();
+    if(local){ busy=false; return; }             // ならんで遊ぶ: どちらの番も同じ端末で打つ
     if(online){ busy=(turn!==human); return; }   // オンライン: 相手の手はbroadcastで届く
     if(turn!==human){ busy=true; setTimeout(cpuMove, 750+Math.random()*550); }
     else busy=false;
@@ -636,13 +662,14 @@
   function switchTurn(){ turn=(turn===BLACK)?WHITE:BLACK; startTurn(); }
 
   function humanPlace(r,c){
-    if(over||busy||turn!==human) return;
+    if(over||busy) return;
+    if(!local && turn!==human) return;   // ならんで遊ぶ: どちらの手番でもタップで打てる
     if(board[r][c]!==EMPTY) return;
     if(online){
       // もくもく・フェイント抽選は打った側が行い、結果ごと相手に送る(両者の演出と盤面が必ず一致)
       const moku=(Math.random()*100)<prob;
       const foe=(human===BLACK)?WHITE:BLACK;
-      const fake=(!moku && (!!winLine(r,c,human) || !!winLine(r,c,foe) || (prob>0 && Math.random()<0.10)));   // 勝負を決める/阻止する一手は必ずため
+      const fake=(!moku && prob>0 && (!!winLine(r,c,human) || !!winLine(r,c,foe) || Math.random()<0.10));   // 勝負を決める/阻止する一手は必ずため(0%設定なら無し)
       if(ch) ch.send({ type:"broadcast", event:"move", payload:{ r,c,moku,fake } });
       tryPlace(r,c,moku,fake);
       return;
@@ -717,29 +744,36 @@
       setTimeout(()=>p.remove(), 1400);
     }
   }
-  /* 勝利: 勝った側の碁笥から碁石が大量に吹き上がる
+  /* 勝利: 勝った側の碁笥から碁石が吹き上がる
      左下(黒)の碁笥→上から右へ大きく / 右下(白)の碁笥→上から左へ大きく */
-  function burstStones(color){
+  function emitStones(color, count, power){
     const bowl=(color===BLACK)?bowlB:bowlW;
     const dir=(color===BLACK)? 1 : -1;   // 黒=右向き / 白=左向き
     const br=bowl.getBoundingClientRect();
     const base=Math.max(16, br.width*0.3);
-    for(let i=0;i<26;i++){
+    for(let i=0;i<count;i++){
       const el=document.createElement("div");
       el.className="burst "+(color===BLACK?"b":"w");
       const s=base*(0.6+Math.random()*0.75);
       el.style.width=el.style.height=s+"px";
       el.style.left=(br.left+br.width/2-s/2)+"px";
       el.style.top=(br.top+br.height/2-s/2)+"px";
-      const ang=(-0.18+Math.random()*1.28)*(Math.PI/2);   // 逆側に少し〜真横を越えるまで、大きな扇状
-      const dist=(0.45+Math.random()*0.75)*Math.max(window.innerWidth, window.innerHeight);
+      const ang=(-0.18+Math.random()*1.34)*(Math.PI/2);   // 逆側に少し〜真横を越えるまで、大きな扇状
+      const dist=(0.45+Math.random()*0.75)*Math.max(window.innerWidth, window.innerHeight)*power;
       el.style.setProperty("--bx", (dir*Math.sin(ang)*dist).toFixed(0)+"px");
-      el.style.setProperty("--by", (-(Math.cos(ang)*dist+90)).toFixed(0)+"px");
+      el.style.setProperty("--by", (-(Math.cos(ang)*dist+90*power)).toFixed(0)+"px");   // 上向きの下駄もpowerで縮む(小さい泉は横に広がる)
       el.style.animationDelay=(Math.random()*0.3)+"s";
       document.body.appendChild(el);
       setTimeout(()=>el.remove(), 1900);
     }
   }
+  let victoryTimer=0;
+  function burstStones(color){
+    emitStones(color, 26, 1);                                        // 勝利の瞬間: 大放出
+    clearInterval(victoryTimer);
+    victoryTimer=setInterval(()=> emitStones(color, 1, 0.24), 95);   // 以降: 小さな扇でポポポポポ…と湧き続ける
+  }
+  function stopVictory(){ clearInterval(victoryTimer); victoryTimer=0; }
 
   /* 石を置く(もくもく判定込み)。人間/ロボット/通信相手 共通
      moku: 消える / fake: 「ため」だけ入って結局置かれる(いやもくもくせんのかい！) */
@@ -749,7 +783,7 @@
     const moku=(forcedMoku===undefined) ? (Math.random()*100)<prob : forcedMoku;
     // 勝ちが決まる一手・相手の勝ちを阻止する一手は必ず「ため」を入れる(本物でも嘘でも)。通常の嘘もくもくは10%
     const foe=(me===BLACK)?WHITE:BLACK;
-    const critical=(!!winLine(r,c,me) || !!winLine(r,c,foe));   // 勝ち or 阻止の一手(本物のもくもくでも長ためになる)
+    const critical=prob>0 && (!!winLine(r,c,me) || !!winLine(r,c,foe));   // 勝ち or 阻止の一手(もくもく0%設定なら演出なし)
     const fake=(forcedFake===undefined) ? (!moku && (critical || (prob>0 && Math.random()<0.10))) : forcedFake;
     flyStone(me, r, c, ()=>{
       const st=document.createElement("div");
@@ -780,7 +814,7 @@
           st.className+=" "+tameCls; playTame(tameMs/1000); tameWisps(r,c);
           setTimeout(()=>{
             st.classList.remove("tame","long");
-            if(critical){   // 決着級が耐えた！一時的に黄金の巨石になり、1.3秒後にもとの石へ戻る
+            if(critical){   // 決着級が耐えた！黄金の巨石に(1.3秒でもとの色・サイズへ戻る)
               st.classList.add("gold","shine"); spawnSparks(r,c); playShine();
               setTimeout(()=>{ st.classList.remove("gold","shine"); }, 1300);
             }
@@ -831,10 +865,12 @@
   function setGiveupVisible(v){ giveupBtn.style.visibility = v ? "" : "hidden"; }   // 終局後は投了を隠す(盤面眺めモードで違和感が出るため)
   function finish(winner,line){
     over=true; busy=true; setGiveupVisible(false);
-    if(line) line.forEach(([r,c])=>{ if(stones[r][c]) stones[r][c].classList.add("win-glow"); });
+    // 決め石の黄金演出(〜1.3秒)が終わった瞬間に、列全体を同時に光らせ始める(点滅の位相を揃える)
+    if(line) setTimeout(()=>{ line.forEach(([r,c])=>{ if(stones[r][c]) stones[r][c].classList.add("win-glow"); }); }, 1350);
     setTimeout(()=>{
       if(winner!==0) burstStones(winner);   // 勝利陣営の碁笥から碁石が吹き上がる
       if(winner===0){ rTitle.textContent="引き分け"; rTitle.className="r-title"; rSub.textContent="盤が埋まってしまった"; }
+      else if(local){ rTitle.textContent=(winner===BLACK?"先手":"後手")+"の勝ち！"; rTitle.className="r-title win"; rSub.textContent="みごと"+KAN[winLen]+"つ並べた"; playWin(); }
       else if(winner===human){ rTitle.textContent="あなたの勝ち！"; rTitle.className="r-title win"; rSub.textContent="みごと"+KAN[winLen]+"つ並べた"; playWin(); }
       else { rTitle.textContent=(online?"あいての勝ち…":"ロボットの勝ち…"); rTitle.className="r-title"; rSub.textContent="次はきっと勝てる"; playLose(); }
       resultOverlay.classList.add("on");
@@ -910,7 +946,7 @@
   }
   function beginOnline(color){
     clearTimeout(joinWatch);
-    online=true; human=color;
+    online=true; local=false; human=color;
     playStart(); startGame();
   }
   function opponentLeft(){
@@ -1021,7 +1057,7 @@
     // 上級はもくもく確率が高いほど守りを重く見る:
     // 「相手に四を作られてから止める」計画は、止めの一手がもくもくすると即負けするため、
     // 確率が高い対局では相手の三の段階で早めに潰しにいく
-    const defW=(cpuLv===2)?(0.95+prob*0.004):0.78;
+    const defW=(cpuLv===2)?(1.0+prob*0.008):0.78;
     const scored=cand.map(([r,c])=>{
       const s=lineScore(r,c,cpu)+defW*lineScore(r,c,human)
         + (12-(Math.abs(r-6)+Math.abs(c-6)))*2   // 中央寄り好み
@@ -1033,8 +1069,8 @@
     }
     if(cpuLv===2 && scored[0].s<10000000){
       const opp=(cpu===BLACK)?WHITE:BLACK;
-      // 鬼(1): 四追い必勝探索 — 「四」を作り続けて相手を防戦一方にしたまま勝ち切る手順(最大12手先)
-      const vcf=findVCF(cpu, opp, 12);
+      // 鬼(1): 四追い必勝探索(最大16手先)。相手の「止め」がもくもくすれば早期勝利のオマケ付き
+      const vcf=findVCF(cpu, opp, 16);
       if(vcf) return vcf;
       // 鬼(2): 6手読みアルファベータ探索
       const mv=searchBest(cpu, opp);
@@ -1069,7 +1105,7 @@
   }
   /* 上級専用: 攻め重視で候補を絞りながら読む(もくもく確率が高いほど相手の芽を早めに摘む) */
   function topMoves(p, q, k){   // p=手番, q=相手, k=候補数
-    const dw=0.6+prob*0.006;   // 例: 20%→0.72 / 80%→1.08
+    const dw=0.7+prob*0.009;   // 例: 20%→0.88 / 80%→1.42
     const out=[];
     for(const [r,c] of emptyNear(2)){
       out.push({ r, c, s: lineScore(r,c,p)+dw*lineScore(r,c,q) });
@@ -1077,9 +1113,20 @@
     out.sort((a,b)=>b.s-a.s);
     return out.slice(0,k);
   }
+  /* 盤上で q が「四(あと1手で勝ち)」を作れるマスの数。
+     もくもく世界では四を1本許すごとに「止めがもくもく→即死」のくじを引かされるため、
+     この数を徹底的に減らす手を高く評価する */
+  function fourChances(q){
+    let n=0;
+    for(const [r,c] of emptyNear(2)){
+      if(lineScore(r,c,q)>=120000) n++;
+    }
+    return n;
+  }
   function searchBest(cpu, opp){
     const DEPTH=6;   // 6手読み(自分→相手→…)。深い層ほど有望手だけに絞る
-    const WIDTH=[0, 4, 4, 5, 6, 9, 14];   // 各深さの候補数
+    const WIDTH=[0, 4, 4, 5, 6, 9, 16];   // 各深さの候補数
+    const fourPen=30000+prob*900;   // 四を1本許すごとの罰点(確率が高いほど重い)
     function negamax(p, q, depth, alpha, beta){
       const cand=topMoves(p, q, WIDTH[depth]||4);
       if(!cand.length) return 0;
@@ -1090,7 +1137,8 @@
         else if(depth===1){ val=m.s; }
         else{
           board[m.r][m.c]=p;
-          val=m.s-0.82*negamax(q, p, depth-1, -beta, -Math.max(alpha,best));
+          val=m.s-0.85*negamax(q, p, depth-1, -beta, -Math.max(alpha,best));
+          if(depth===DEPTH) val-=fourChances(q)*fourPen;   // 根: この手の後に相手へ残る「四の芽」を罰する
           board[m.r][m.c]=EMPTY;
         }
         if(val>best){ best=val; bestMv=m; }
@@ -1105,17 +1153,19 @@
 
   /* ---------- タイトル/UI ---------- */
   // あそびかた選択: 選んだ方の設定ブロックだけ出現(ルール設定も選んだ側へ移動)
-  const cpuSetup=document.getElementById("cpuSetup"), friendSetup=document.getElementById("friendSetup");
+  const cpuSetup=document.getElementById("cpuSetup"), friendSetup=document.getElementById("friendSetup"), localSetup=document.getElementById("localSetup");
   const ruleBox=document.getElementById("ruleBox"), ruleNote=document.getElementById("ruleNote");
   document.querySelectorAll("#modeRow .fuda").forEach(b=>{
     b.addEventListener("click",()=>{ ensureAudio(); playSelect();
       document.querySelectorAll("#modeRow .fuda").forEach(x=>x.classList.remove("sel"));
       b.classList.add("sel");
-      const robot=(b.dataset.mode==="robot");
-      if(robot){ cpuSetup.insertBefore(ruleBox, document.getElementById("startBtn")); ruleNote.textContent=""; }
+      const mode=b.dataset.mode;
+      if(mode==="robot"){ cpuSetup.insertBefore(ruleBox, document.getElementById("startBtn")); ruleNote.textContent=""; }
+      else if(mode==="local"){ localSetup.insertBefore(ruleBox, document.getElementById("startLocalBtn")); ruleNote.textContent=""; }
       else { friendSetup.insertBefore(ruleBox, friendSetup.firstElementChild); ruleNote.textContent="※部屋を作った側のルールで遊びます"; }
-      cpuSetup.classList.toggle("on", robot);
-      friendSetup.classList.toggle("on", !robot);
+      cpuSetup.classList.toggle("on", mode==="robot");
+      localSetup.classList.toggle("on", mode==="local");
+      friendSetup.classList.toggle("on", mode==="friend");
     });
   });
   // ルール設定: −/＋で もくもく確率(0〜99%)・ならべる数(2〜7)。長押しで連続変更
@@ -1168,7 +1218,8 @@
       b.classList.add("sel"); human=(+b.dataset.first)?BLACK:WHITE;
     });
   });
-  document.getElementById("startBtn").addEventListener("click",()=>{ ensureAudio(); online=false; leaveChannel(); playStart(); startGame(); });
+  document.getElementById("startBtn").addEventListener("click",()=>{ ensureAudio(); online=false; local=false; leaveChannel(); playStart(); startGame(); });
+  document.getElementById("startLocalBtn").addEventListener("click",()=>{ ensureAudio(); online=false; local=true; leaveChannel(); playStart(); startGame(); });
   document.getElementById("againBtn").addEventListener("click",()=>{
     ensureAudio();
     if(online && ch){   // オンライン: 双方が「もう一局」を押したら再戦
@@ -1196,7 +1247,8 @@
     rSub.textContent="また挑むがよい"; playLose(); resultOverlay.classList.add("on");
   });
   function goTitle(){
-    over=true; resultOverlay.classList.remove("on","peek");
+    over=true; stopVictory();
+    resultOverlay.classList.remove("on","peek");
     gameScene.classList.remove("on"); titleScene.classList.add("on");
     leaveChannel();
     roomStatus("");   // 合言葉表示をリセット
