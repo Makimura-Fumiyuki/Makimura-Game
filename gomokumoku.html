@@ -41,7 +41,7 @@
   .scene.on{ opacity:1; pointer-events:auto; transform:translateY(0); }
 
   /* ===== タイトル ===== */
-  #titleScene{ padding:9vh 20px 90px; gap:34px; }
+  #titleScene{ padding:9vh 20px 150px; gap:34px; }   /* 下余白はフッターの帯より深く(入室ボタン等が被らない) */
   .t-wrap{ position:relative; text-align:center; }
   .t-main{
     font-size:clamp(40px, 11vw, 76px); letter-spacing:.08em; line-height:1.25;
@@ -151,7 +151,10 @@
     text-decoration:none;
     opacity:0; pointer-events:none; transition:opacity .32s linear;
   }
-  #titleScene.on ~ .home-foot{ opacity:1; pointer-events:auto; }   /* タイトル表示中だけ現れる */
+  /* 帯全体ではなく文字の部分だけタップに反応させる(入室ボタン等への誤射を防ぐ) */
+  .home-foot span{ pointer-events:none; }
+  #titleScene.on ~ .home-foot{ opacity:1; }   /* タイトル表示中だけ現れる */
+  #titleScene.on ~ .home-foot span{ pointer-events:auto; cursor:pointer; }
   .home-foot:hover{ color:#fff; }
 
   /* ===== 対局画面 ===== */
@@ -176,6 +179,59 @@
   .snd-btn svg{ width:14px; height:13px; flex:none; }
   .snd-btn:active{ transform:translateY(1px); }
   .snd-btn.off{ opacity:.42; text-decoration:line-through; }
+  /* 左上: あそびかたボタン(対局シーン表示中だけ現れる。効果音ボタンと同じ質感) */
+  /* 左上・全画面共通(タイトルでも対局中でも見られる) */
+  .help-btn{
+    position:fixed; left:10px; top:10px; z-index:80;
+    display:flex; align-items:center; gap:5px;
+    padding:4px 12px 5px 8px; cursor:pointer;
+    font-family:inherit; font-size:12px; letter-spacing:.06em; white-space:nowrap;
+    color:rgba(51,47,42,.7); background:rgba(255,255,255,.4);
+    border:1px solid rgba(51,47,42,.28); border-radius:14px;
+  }
+  .help-btn span{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:15px; height:15px; border-radius:50%; flex:none;
+    background:var(--shu); color:#fff; font-size:11px; font-weight:700;
+  }
+  .help-btn:active{ transform:translateY(1px); }
+  /* あそびかた説明のオーバーレイ(投了確認と同じ挙動) */
+  #helpOverlay, #undoOverlay{
+    position:fixed; inset:0; z-index:60; display:flex;
+    align-items:center; justify-content:center;
+    background:rgba(30,26,20,.55);
+    opacity:0; pointer-events:none; transition:opacity .25s linear;
+  }
+  #helpOverlay.on, #undoOverlay.on{ opacity:1; pointer-events:auto; }
+  #helpOverlay .r-card, #undoOverlay .r-card{ transform:scale(.6); opacity:0; }
+  #helpOverlay.on .r-card, #undoOverlay.on .r-card{ transform:scale(1); opacity:1; }
+  .help-card{ width:min(88vw, 420px); align-items:stretch; }
+  .help-title{ font-size:22px; letter-spacing:.12em; text-align:center; color:var(--shu); font-weight:700; }
+  #helpOverlay .help-body{ font-size:14px; line-height:1.95; letter-spacing:.03em; text-align:left; }
+  /* 見出し: すみかっこをやめて色棒方式(全角かっこの左余白による「右ズレ錯覚」も解消) */
+  #helpOverlay .help-body .h-sec{
+    display:flex; align-items:center; gap:8px;
+    font-weight:700; letter-spacing:.1em; font-size:15px;
+  }
+  #helpOverlay .help-body .h-sec::before{
+    content:""; width:5px; height:17px; border-radius:2px; background:var(--sumi); flex:none;
+  }
+  #helpOverlay .help-body .h-sec.hl{ color:var(--shu); }
+  #helpOverlay .help-body .h-sec.hl::before{ background:var(--shu); }
+  #helpOverlay .help-body p{ margin:3px 0 0; }
+  #helpOverlay .help-body p + .h-sec{ margin-top:15px; }
+  .help-body .hl{ color:var(--shu); font-weight:700; }
+  .help-body b{ font-weight:700; }
+  /* 対局中の一時メッセージ(画面上部中央にふわっと) */
+  #toast{
+    position:fixed; left:50%; top:64px; transform:translate(-50%,-8px); z-index:70;
+    max-width:86vw; padding:9px 18px; border-radius:999px;
+    background:var(--sumi); color:#fff;
+    font-size:13px; letter-spacing:.06em; white-space:nowrap; text-align:center;
+    box-shadow:0 6px 18px rgba(0,0,0,.3);
+    opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease;
+  }
+  #toast.on{ opacity:1; transform:translate(-50%,0); }
   /* もくもく時: 画面のふちに碁石まわりと同じ「雲」がぽこぽこ湧く */
   .vig-puff{
     position:fixed; border-radius:50%; pointer-events:none; z-index:45;
@@ -317,6 +373,7 @@
     border:1px solid rgba(51,47,42,.35); border-radius:7px;
   }
   .txt-btn:active{ transform:translateY(1px); }
+  .txt-btn:disabled{ opacity:.35; cursor:default; pointer-events:none; }   /* 相手の思考中などはグレーアウト */
 
   /* ===== 結果 ===== */
   #resultOverlay{
@@ -463,11 +520,37 @@
   </div>
 
   <!-- タイトル画面のフッター(シーンの外・画面に直接固定するので隙間が出ない) -->
-  <a class="home-foot" id="homeFoot" href="./index.html">牧村制作ゲームリンク集へ</a>
+  <a class="home-foot" id="homeFoot" href="./index.html"><span>牧村制作ゲームリンク集へ</span></a>
+
+  <!-- 全画面共通: あそびかた(左上)。タイトルでも対局中でも見られる -->
+  <button class="help-btn" id="helpBtn" aria-label="あそびかた"><span>？</span>あそびかた</button>
 
   <!-- 全画面共通: 効果音のON/OFF -->
   <div class="snd-btns">
     <button class="snd-btn" id="seBtn"><svg viewBox="0 0 25 24"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor"/><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M15 9.4c1.3 1.3 1.3 3.9 0 5.2"/><path d="M17.6 7.6c2.2 2.2 2.2 6.6 0 8.8"/><path d="M20.2 5.8c3.1 3.1 3.1 9.3 0 12.4"/></g></svg>効果音</button>
+  </div>
+
+  <!-- 対局中の一時メッセージ(待った申し込み等) -->
+  <div id="toast"></div>
+
+  <!-- ===== あそびかた説明 ===== -->
+  <div id="helpOverlay">
+    <div class="r-card help-card">
+      <div class="help-title">あそびかた</div>
+      <div class="help-body" id="helpBody"></div>
+      <div class="sub-btns"><button class="txt-btn" id="helpClose">とじる</button></div>
+    </div>
+  </div>
+
+  <!-- ===== 待った(一手戻る)の確認 ===== -->
+  <div id="undoOverlay">
+    <div class="r-card">
+      <div class="cf-msg" id="undoMsg">あいてが「待った」を望んでいる</div>
+      <div class="sub-btns">
+        <button class="txt-btn" id="undoYes">許す</button>
+        <button class="txt-btn" id="undoNo">断る</button>
+      </div>
+    </div>
   </div>
 
   <!-- ===== 投了の確認 ===== -->
@@ -519,6 +602,7 @@
   const SB_KEY="sb_publishable_cak3-W9Mmgahnwawreoa1Q_CVuhmkKL";
   let sb=null, ch=null, online=false, isHost=false, startSent=false;
   let myRematch=false, peerRematch=false, joinWatch=0;
+  let undoPending=false;   // オンライン: 自分が「待った」を申し込んで返事待ちの間true
   const myId=Math.random().toString(36).slice(2,10);
 
   /* ---------- 盤の生成 ---------- */
@@ -669,8 +753,8 @@
     stones=[]; for(let r=0;r<N;r++){ stones.push(new Array(N).fill(null)); }
     cells.forEach(row=>row.forEach(d=>{ d.innerHTML=""; d.classList.remove("taken"); }));
     over=false; busy=false; placed=0; turn=BLACK; hist=[];
-    myRematch=false; peerRematch=false;
-    undoBtn.style.display = online ? "none" : "";   // 一手戻るはオンライン以外で使える
+    myRematch=false; peerRematch=false; undoPending=false;
+    undoBtn.style.display = "";   // 一手戻るは全モードで使える(オンラインは相手の許可制)
     if(mokuProb===0 && winLen===5){   // もくもく無しの五目 = ただの五目並べなので1枠にまとめる
       tagProb.style.display="none";
       tagWin.textContent="普通の五目並べ";
@@ -694,6 +778,7 @@
     else if(turn!==human){ busy=true; setTimeout(cpuMove, 750+Math.random()*550); }
     else busy=false;
     boardEl.classList.toggle("myturn", !busy);        // 打てる時だけhoverの赤丸を出す
+    undoBtn.disabled = busy || !hist.length || undoPending;   // 相手のターン中・戻す手がない・待った返事待ちは押せない
   }
   function switchTurn(){ turn=(turn===BLACK)?WHITE:BLACK; startTurn(); }
 
@@ -910,18 +995,31 @@
     if(stones[m.r][m.c]){ stones[m.r][m.c].remove(); stones[m.r][m.c]=null; }
     cells[m.r][m.c].classList.remove("taken");
   }
+  /* 自分の直前の一手まで巻き戻す(相手の応手ごと)。requester視点で使う共通処理 */
+  function undoToPlayer(requester){
+    let popped=false;
+    while(hist.length && !popped){ const m=hist.pop(); removeStoneAt(m); if(m.p===requester) popped=true; }
+    turn=requester; over=false;
+    startTurn();
+  }
   undoBtn.addEventListener("click",()=>{
-    if(over||busy||online||!hist.length) return;
+    if(over||busy||!hist.length) return;
     ensureAudio(); playSelect();
+    if(online){
+      if(turn!==human || undoPending) return;
+      // オンラインは相手の許可制(待った)。申し込んで返事を待つ
+      undoPending=true; undoBtn.disabled=true;
+      if(ch) ch.send({ type:"broadcast", event:"undoreq", payload:{} });
+      showToast("「待った」を申し込んだ。あいての返事を待て");
+      return;
+    }
     if(local){
       const m=hist.pop(); removeStoneAt(m); turn=m.p;   // 戻した石の持ち主の番からやり直し
+      startTurn();
     } else {
       if(turn!==human) return;
-      let popped=false;
-      while(hist.length && !popped){ const m=hist.pop(); removeStoneAt(m); if(m.p===human) popped=true; }   // ロボットの応手＋自分の一手を戻す
-      turn=human;
+      undoToPlayer(human);   // ロボットの応手＋自分の一手を戻す
     }
-    startTurn();
   });
   function setGiveupVisible(v){   // 終局後は投了・一手戻るを隠す(盤面眺めモードで違和感が出るため)
     giveupBtn.style.visibility = v ? "" : "hidden";
@@ -1006,6 +1104,23 @@
     ch.on("broadcast",{event:"restart"},({payload})=>{   // 再戦: 先手後手は毎回引き直し
       if(isHost) return;
       beginOnline(payload && payload.hc===BLACK ? WHITE : BLACK);
+    });
+    // 待った(一手戻る)の申し込みが相手から届いた → 許可を尋ねる
+    ch.on("broadcast",{event:"undoreq"},()=>{
+      if(!online||over||!hist.length) return;
+      undoOverlay.classList.add("on");
+    });
+    // 相手が許可 → 双方が同じ手数だけ巻き戻す(棋譜が一致しているので結果も一致)
+    ch.on("broadcast",{event:"undoyes"},()=>{
+      if(!online||!undoPending) return;
+      undoPending=false;
+      undoToPlayer(human);   // 相手の応手＋自分の一手を戻し、自分の番に戻す
+      showToast("「待った」が受け入れられた");
+    });
+    ch.on("broadcast",{event:"undono"},()=>{
+      if(!online||!undoPending) return;
+      undoPending=false; startTurn();
+      showToast("「待った」は断られた");
     });
     ch.subscribe(async (status)=>{
       if(status==="SUBSCRIBED"){ try{ await ch.track({}); }catch(e){} if(onReady) onReady(); }
@@ -1549,6 +1664,51 @@
   document.getElementById("cfYes").addEventListener("click",()=>{ ensureAudio(); confirmOverlay.classList.remove("on"); doResign(); });
   document.getElementById("cfNo").addEventListener("click",()=>{ ensureAudio(); playSelect(); confirmOverlay.classList.remove("on"); });
   confirmOverlay.addEventListener("click",(e)=>{ if(e.target===confirmOverlay){ ensureAudio(); playSelect(); confirmOverlay.classList.remove("on"); } });
+
+  /* 対局中の一時メッセージ */
+  const toastEl=document.getElementById("toast");
+  let toastTmr=0;
+  function showToast(msg, ms){
+    toastEl.textContent=msg; toastEl.classList.add("on");
+    clearTimeout(toastTmr); toastTmr=setTimeout(()=>toastEl.classList.remove("on"), ms||2400);
+  }
+
+  /* あそびかた説明: 現在のルール設定を反映して表示 */
+  const helpOverlay=document.getElementById("helpOverlay"), helpBody=document.getElementById("helpBody");
+  function openHelp(){
+    ensureAudio(); playSelect();
+    const nb=KAN[winLen]||winLen;
+    let html="<div class=\"h-sec\">基本ルール</div>"
+      +"<p>碁石を交互に置き<br>たて・よこ・ななめに<b>"+nb+"つ</b>揃えたら勝ち</p>";
+    html+="<div class=\"h-sec hl\">もくもく</div>";
+    if(mokuProb>0){
+      html+="<p>置いた碁石は<b>"+mokuProb+"%</b>の確率で煙となって消え<br>手番が相手に移る。運を味方につけよ</p>";
+    }else{
+      html+="<p>今回はもくもく無し。碁石は消えない、正真正銘の実力勝負。</p>";
+    }
+    html+="<div class=\"h-sec\">一手戻る</div>"
+      +"<p>自分の直前の一手をやり直せる<br>（オンラインは相手が許した時だけ）</p>";
+    helpBody.innerHTML=html;
+    helpOverlay.classList.add("on");
+  }
+  document.getElementById("helpBtn").addEventListener("click", openHelp);
+  document.getElementById("helpClose").addEventListener("click",()=>{ ensureAudio(); playSelect(); helpOverlay.classList.remove("on"); });
+  helpOverlay.addEventListener("click",(e)=>{ if(e.target===helpOverlay){ playSelect(); helpOverlay.classList.remove("on"); } });
+
+  /* 待った(オンラインの一手戻る)の許可ダイアログ */
+  const undoOverlay=document.getElementById("undoOverlay");
+  document.getElementById("undoYes").addEventListener("click",()=>{
+    ensureAudio(); playSelect(); undoOverlay.classList.remove("on");
+    if(!online||over||!hist.length) return;
+    if(ch) ch.send({ type:"broadcast", event:"undoyes", payload:{} });
+    const foe=(human===BLACK)?WHITE:BLACK;   // 申し込んだのは相手(自分のfoe)
+    undoToPlayer(foe);
+    showToast("「待った」を許した");
+  });
+  document.getElementById("undoNo").addEventListener("click",()=>{
+    ensureAudio(); playSelect(); undoOverlay.classList.remove("on");
+    if(ch) ch.send({ type:"broadcast", event:"undono", payload:{} });
+  });
   function goTitle(){
     over=true; stopVictory();
     document.getElementById("confirmOverlay").classList.remove("on");
