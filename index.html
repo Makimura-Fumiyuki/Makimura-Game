@@ -61,7 +61,16 @@
   .sec-h::before{ content:""; width:8px; height:22px; border-radius:3px; background:var(--red); flex:none; }
   #sections .sec-h:first-of-type{ margin-top:6px; }
   #sections > .games:first-child{ margin-top:26px; }   /* 一覧表示(見出しなし)の時もカードとの間隔を確保 */
+  /* リリース1ヶ月以内のゲームに付くNEWバッジ */
+  .new-badge{
+    position:absolute; top:18px; left:12px; z-index:2;
+    font-family:"DotGothic16",sans-serif; font-size:13px; letter-spacing:.14em; text-indent:.07em;
+    color:#fff; background:var(--red); border-radius:999px; padding:3px 13px 4px;
+    box-shadow:0 2px 6px rgba(255,54,22,.4);
+    transform:rotate(-3deg);
+  }
   .card{
+    position:relative;
     display:flex; flex-direction:column; text-decoration:none; color:var(--ink);
     background:#fff; border-radius:16px; overflow:hidden;
     box-shadow:0 2px 10px rgba(32,33,31,.08);
@@ -147,9 +156,9 @@
     <div class="sort-row">
       <span class="sort-label">並び替え</span>
       <select id="sortSel">
-        <option value="pop" selected>人気順</option>
+        <option value="release" selected>リリース順</option>
+        <option value="pop">人気順</option>
         <option value="cat">カテゴリ順</option>
-        <option value="release">リリース順</option>
       </select>
     </div>
     <div id="sections"></div>
@@ -301,9 +310,10 @@
     { id:"dox",  tpl:"tpl-dox",  release:"2026-07-06", cats:["スコアアタック"], clicks:0 },
     { id:"moku", tpl:"tpl-moku", release:"2026-07-07", cats:["対戦"], clicks:0 },
   ];
-  /* Newはリリースから31日以内のゲームが自動で入る(重複表示あり)。新しいものほど左 */
+  /* Newはリリースから31日以内のゲームが自動判定(カテゴリと NEWバッジの両方に使う) */
+  const isNew=g=>g.release && (Date.now()-new Date(g.release+"T00:00:00"))/86400000<=31;
   const SECTIONS=[
-    { label:"New", filter:g=>(Date.now()-new Date(g.release+"T00:00:00"))/86400000<=31 },
+    { label:"New", filter:isNew },
     { label:"対戦", filter:g=>g.cats.includes("対戦") },
     { label:"スコアアタック", filter:g=>g.cats.includes("スコアアタック") },
   ];
@@ -337,6 +347,7 @@
   function card(g){
     const el=document.getElementById(g.tpl).content.firstElementChild.cloneNode(true);
     if(g.id) el.addEventListener("click", ()=>logClick(g));
+    if(isNew(g)){ const b=document.createElement("span"); b.className="new-badge"; b.textContent="NEW"; el.appendChild(b); }
     return el;
   }
   function grid(list){ const d=document.createElement("div"); d.className="games"; list.forEach(g=>d.appendChild(card(g))); return d; }
