@@ -92,6 +92,7 @@
   .c-thumb svg{ width:100%; height:100%; display:block; }
   .c-thumb.t-dox{ background:#f4f4f1; }
   .c-thumb.t-moku{ background:#f3ead7; }
+  .c-thumb.t-maigo{ background:#f3ead7; }
   .c-body{ padding:22px 22px 20px; display:flex; flex-direction:column; flex:1; }
   .c-name{ font-size:26px; font-weight:800; letter-spacing:.04em; color:var(--red);
     display:flex; align-items:center; gap:10px; }
@@ -311,6 +312,72 @@
       </a>
     </template>
 
+    <template id="tpl-maigo">
+      <a class="card" href="./maigo.html">
+        <div class="c-bar"></div>
+        <div class="c-thumb t-maigo">
+          <!-- ま囲碁: 五もくもく並べと同じ木盤・碁石の質感。囲まれかけの白石と、迷子になって歩き出す黒石 -->
+          <svg viewBox="0 0 260 132" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="mgWood" x1="0" y1="0" x2=".8" y2="1">
+                <stop offset="0" stop-color="#e6bd7d"/><stop offset=".45" stop-color="#dcaf6e"/><stop offset="1" stop-color="#c99a58"/>
+              </linearGradient>
+              <radialGradient id="mgStB" cx=".35" cy=".3" r=".8">
+                <stop offset="0" stop-color="#6e6e6e"/><stop offset=".6" stop-color="#1c1c1c"/><stop offset="1" stop-color="#000"/>
+              </radialGradient>
+              <radialGradient id="mgStW" cx=".35" cy=".3" r=".8">
+                <stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#e9e2cf"/><stop offset="1" stop-color="#b9b2a0"/>
+              </radialGradient>
+              <radialGradient id="mgSheen" cx=".3" cy=".2" r=".9">
+                <stop offset="0" stop-color="rgba(255,255,255,.4)"/><stop offset=".55" stop-color="rgba(255,255,255,0)"/>
+              </radialGradient>
+            </defs>
+            <rect width="260" height="132" fill="#f3ead7"/>
+            <g transform="translate(130,70) rotate(-1.4)">
+              <rect x="-92" y="-56" width="184" height="116" rx="5" fill="#6e5330"/>
+              <rect x="-92" y="-58" width="184" height="114" rx="5" fill="url(#mgWood)"/>
+              <rect x="-92" y="-58" width="184" height="114" rx="5" fill="url(#mgSheen)"/>
+              <g stroke="#6b5236" stroke-width="1.3" opacity=".85">
+                <path d="M-66 -44 V 42 M-33 -44 V 42 M0 -44 V 42 M33 -44 V 42 M66 -44 V 42"/>
+                <path d="M-80 -30 H 80 M-80 -1 H 80 M-80 28 H 80"/>
+              </g>
+              <circle cx="0" cy="-1" r="2.4" fill="#6b5236"/>
+              <!-- 囲まれかけの白石(あと1つで取れる) -->
+              <g>
+                <circle cx="-33" cy="-1" r="12.5" fill="url(#mgStW)"/>
+                <circle cx="-66" cy="-1" r="12.5" fill="url(#mgStB)"/>
+                <circle cx="-33" cy="-30" r="12.5" fill="url(#mgStB)"/>
+                <circle cx="-33" cy="28" r="12.5" fill="url(#mgStB)"/>
+              </g>
+              <!-- 迷子になって歩き出した黒石(足あとと「？」つき) -->
+              <g fill="rgba(51,47,42,.4)">
+                <ellipse cx="8" cy="-4" rx="2.6" ry="3.6" transform="rotate(14 8 -4)"/>
+                <ellipse cx="20" cy="4" rx="2.6" ry="3.6" transform="rotate(22 20 4)"/>
+                <ellipse cx="33" cy="10" rx="2.6" ry="3.6" transform="rotate(30 33 10)"/>
+              </g>
+              <circle cx="52" cy="16" r="12.5" fill="url(#mgStB)" transform="rotate(8 52 16)"/>
+              <text x="63" y="-4" font-family="'Yuji Syuku','Hiragino Mincho ProN',serif" font-size="24" fill="#c73e2e" transform="rotate(9 63 -4)">？</text>
+            </g>
+          </svg>
+        </div>
+        <div class="c-body">
+          <div class="c-name">ま囲碁
+            <span class="c-players"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="7.2" r="4.2"/><path d="M9 13.4c-4.4 0-8 2.5-8 6.1V21h16v-1.5c0-3.6-3.6-6.1-8-6.1z"/><circle cx="17.5" cy="8.2" r="3.3"/><path d="M17.5 13.2c-.8 0-1.6.1-2.3.3 1.9 1.3 3.1 3.2 3.1 5.5V21H23v-1.3c0-3-2.5-5.5-5.5-5.5z"/></svg>1〜2人</span>
+          </div>
+          <div class="c-desc">
+            Q.普通の囲碁？ A.いいえ、置いた碁石が迷子になって消えるかも。友達と戦うのはもちろん、AIとも戦える…（※先に碁石を取ったら勝ちの簡易ルールを採用しています）
+          </div>
+          <div class="c-tags">
+            <!-- wrap-reverse: DOM順の逆から積む(下段=先頭の2つ / 上段=運まかせ) -->
+            <span class="tag">ローカル対戦</span><span class="tag">オンライン対戦</span>
+            <span class="t-brk"></span>
+            <span class="tag">運まかせ</span>
+          </div>
+          <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
+        </div>
+      </a>
+    </template>
+
     <template id="tpl-soon">
       <div class="card soon">
         <div class="c-body">
@@ -345,6 +412,7 @@
   /* ゲームのデータ: release=リリース日 / cats=カテゴリ / clicks=あそばれた回数(サーバー集計) */
   const GAMES=[
     { id:"dox",  tpl:"tpl-dox",  release:"2026-07-06", cats:["スコアアタック"], clicks:null },   // clicks: null=集計未着(表示しない)
+    { id:"maigo", tpl:"tpl-maigo", release:"2026-07-07", cats:["対戦"], clicks:null },   // 同日リリースはこの並び順が優先される(新しい方を先頭に)
     { id:"moku", tpl:"tpl-moku", release:"2026-07-07", cats:["対戦"], clicks:null },
   ];
   /* Newはリリースから31日以内のゲームが自動判定(カテゴリと NEWバッジの両方に使う) */
