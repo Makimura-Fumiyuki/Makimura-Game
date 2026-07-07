@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>牧村制作ゲームリンク集</title>
 <meta name="description" content="牧村が制作したブラウザゲームで遊べるハブページ。インストール不要、PCでもスマホでもすぐ遊べます。">
+<!-- LINEやDiscordでリンクを送った時に出るカードの内容(OGP)。文言はここを書き換えれば変わる -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="牧村が作ったゲーム集">
+<meta property="og:title" content="牧村が作ったゲーム集">
+<meta property="og:description" content="無料で遊び放題！たのしいよ">
+<meta property="og:url" content="https://makimura-gamehub.com/">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=DotGothic16&display=swap');
   :root{
@@ -119,20 +127,21 @@
   }
   .c-count svg{ width:16px; height:16px; fill:var(--teal); flex:none; opacity:.85; }
   .c-count b{ font-size:17px; color:var(--teal); }
-  /* ホバーで「あそばれた回数」の吹き出し(標準titleより速く・サイトの見た目で出す) */
+  /* ホバーで「あそばれた回数」の吹き出し(人数バッジと同じティール地×白文字)
+     本体を右に10px張り出させ、三角が角の丸みと重ならない平らな底辺に立つようにする */
   .c-count::after{
     content:"あそばれた回数";
-    position:absolute; bottom:calc(100% + 7px); right:0;
-    background:var(--ink); color:#fff;
+    position:absolute; bottom:calc(100% + 7px); right:-10px;
+    background:var(--teal); color:#fff;
     font-family:"Noto Sans JP","Hiragino Sans",sans-serif; font-weight:700;
     font-size:11px; letter-spacing:.08em;
     padding:5px 10px 6px; border-radius:7px; white-space:nowrap;
     opacity:0; transform:translateY(3px); pointer-events:none;
     transition:opacity .15s ease, transform .15s ease;
   }
-  .c-count::before{   /* 吹き出しの三角 */
-    content:""; position:absolute; bottom:calc(100% + 2px); right:14px;
-    border:5px solid transparent; border-top-color:var(--ink); border-bottom:none;
+  .c-count::before{   /* 吹き出しの三角(数字の末尾の真上) */
+    content:""; position:absolute; bottom:calc(100% + 2px); right:0;
+    border:5px solid transparent; border-top-color:var(--teal); border-bottom:none;
     opacity:0; transform:translateY(3px); pointer-events:none;
     transition:opacity .15s ease, transform .15s ease;
   }
