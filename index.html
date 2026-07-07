@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>牧村制作ゲームリンク集</title>
+<title>牧村が作ったゲーム集</title>
+<!-- スマホのホーム画面に追加した時のアイコン名。<title>より優先して使われるので明示しておく -->
+<meta name="apple-mobile-web-app-title" content="牧村が作ったゲーム集">
+<meta name="application-name" content="牧村が作ったゲーム集">
 <meta name="description" content="牧村が制作したブラウザゲームで遊べるハブページ。インストール不要、PCでもスマホでもすぐ遊べます。">
 <!-- LINEやDiscordでリンクを送った時に出るカードの内容(OGP)。文言はここを書き換えれば変わる -->
 <meta property="og:type" content="website">
@@ -154,7 +157,11 @@
     border:2.5px dashed rgba(32,33,31,.25); border-radius:16px; }
   .card.soon .c-bar{ display:none; }
   .card.soon .c-name{ color:rgba(32,33,31,.4); }
-  .card.soon .c-play{ background:rgba(32,33,31,.25); box-shadow:none; }
+  /* サムネ・タグが無いぶん詰まって見えるので、説明文とボタンの間隔を必ず確保する
+     (単独の行に来て他カードに引き伸ばされない画面幅でも近づきすぎない) */
+  .card.soon .c-body{ padding:34px 22px 30px; }
+  .card.soon .c-desc{ flex:none; }
+  .card.soon .c-play{ margin-top:28px; background:rgba(32,33,31,.25); box-shadow:none; }
 
   /* ===== このサイトについて ===== */
   .about{
@@ -165,6 +172,22 @@
   }
   .about h2{ font-size:19px; font-weight:800; letter-spacing:.06em; color:var(--teal); margin-bottom:12px; }
   .about p{ font-size:14px; font-weight:500; line-height:2; color:rgba(32,33,31,.75); }
+  /* 公式Discord・アンケートへのボタン */
+  .about-links{ margin-top:20px; display:flex; gap:12px; flex-wrap:wrap; }
+  .about-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:14px; font-weight:800; letter-spacing:.06em; text-decoration:none; color:#fff;
+    border-radius:999px; padding:10px 22px 11px;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .about-btn:hover{ transform:translateY(-2px); }
+  .about-btn svg{ width:17px; height:17px; flex:none; }
+  /* Discord = ブランドカラーの青紫(Blurple #5865F2) */
+  .about-btn.discord{ background:linear-gradient(150deg, #6f7cf7, #5865f2 60%, #4752c4); box-shadow:0 3px 8px rgba(88,101,242,.38); }
+  .about-btn.discord:hover{ box-shadow:0 6px 14px rgba(88,101,242,.5); }
+  /* アンケート = 暖色のアンバー(ロゴの赤とも喧嘩しない黄橙) */
+  .about-btn.survey{ background:linear-gradient(150deg, #ffb03a, #f59300 60%, #e07d00); box-shadow:0 3px 8px rgba(245,147,0,.38); }
+  .about-btn.survey:hover{ box-shadow:0 6px 14px rgba(245,147,0,.5); }
 
   /* ===== フッター(サブカラー) ===== */
   footer{
@@ -279,18 +302,22 @@
                 <path d="M-80 -30 H 80 M-80 -1 H 80 M-80 28 H 80"/>
               </g>
               <circle cx="0" cy="-1" r="2.4" fill="#6b5236"/>
+              <!-- 黒があと1つで五目そろう「リーチ」。5つ目がもくもくで消えかけ = 五もくもく並べそのもの -->
               <g>
+                <circle cx="-66" cy="-1" r="12.5" fill="url(#mkStB)"/>
                 <circle cx="-33" cy="-1" r="12.5" fill="url(#mkStB)"/>
-                <circle cx="0" cy="-30" r="12.5" fill="url(#mkStW)"/>
-                <circle cx="0" cy="28" r="12.5" fill="url(#mkStB)"/>
-                <circle cx="-66" cy="28" r="12.5" fill="url(#mkStW)"/>
+                <circle cx="0"   cy="-1" r="12.5" fill="url(#mkStB)"/>
+                <circle cx="33"  cy="-1" r="12.5" fill="url(#mkStB)"/>
               </g>
-              <!-- もくもくして消えかけの石と、立ちのぼる煙 -->
-              <circle cx="33" cy="-30" r="11.5" fill="url(#mkStB)" opacity=".4"/>
-              <circle cx="36" cy="-36" r="14" fill="url(#mkPuff)"/>
-              <circle cx="24" cy="-46" r="10" fill="url(#mkPuff)"/>
-              <circle cx="46" cy="-50" r="8" fill="url(#mkPuff)"/>
-              <circle cx="34" cy="-58" r="6" fill="url(#mkPuff)"/>
+              <!-- 白は攻防で絡む(対戦らしさ) -->
+              <circle cx="0"  cy="-30" r="12.5" fill="url(#mkStW)"/>
+              <circle cx="33" cy="28"  r="12.5" fill="url(#mkStW)"/>
+              <!-- 5つ目(66,-1)がもくもくして消えかけ、煙が立ちのぼる -->
+              <circle cx="66" cy="-1" r="11.5" fill="url(#mkStB)" opacity=".38"/>
+              <circle cx="68" cy="-8"  r="14" fill="url(#mkPuff)"/>
+              <circle cx="57" cy="-18" r="10" fill="url(#mkPuff)"/>
+              <circle cx="77" cy="-22" r="8"  fill="url(#mkPuff)"/>
+              <circle cx="66" cy="-30" r="6"  fill="url(#mkPuff)"/>
             </g>
           </svg>
         </div>
@@ -341,22 +368,23 @@
                 <path d="M-66 -44 V 42 M-33 -44 V 42 M0 -44 V 42 M33 -44 V 42 M66 -44 V 42"/>
                 <path d="M-80 -30 H 80 M-80 -1 H 80 M-80 28 H 80"/>
               </g>
-              <circle cx="0" cy="-1" r="2.4" fill="#6b5236"/>
-              <!-- 囲まれかけの白石(あと1つで取れる) -->
+              <!-- 天元(中央の点)は足あとと紛らわしいので、このサムネでは省く -->
+              <!-- 囲まれかけの白石(黒に三方から囲まれ、あと1つで取れる) -->
               <g>
                 <circle cx="-33" cy="-1" r="12.5" fill="url(#mgStW)"/>
                 <circle cx="-66" cy="-1" r="12.5" fill="url(#mgStB)"/>
                 <circle cx="-33" cy="-30" r="12.5" fill="url(#mgStB)"/>
                 <circle cx="-33" cy="28" r="12.5" fill="url(#mgStB)"/>
               </g>
-              <!-- 迷子になって歩き出した黒石(足あとと「？」つき) -->
-              <g fill="rgba(51,47,42,.4)">
-                <ellipse cx="8" cy="-4" rx="2.6" ry="3.6" transform="rotate(14 8 -4)"/>
-                <ellipse cx="20" cy="4" rx="2.6" ry="3.6" transform="rotate(22 20 4)"/>
-                <ellipse cx="33" cy="10" rx="2.6" ry="3.6" transform="rotate(30 33 10)"/>
+              <!-- 迷子になって歩き出した黒石。足あとは白石の右隣から始まり、右上へ「てくてく歩いた跡」に -->
+              <g fill="rgba(51,47,42,.34)">
+                <ellipse cx="0"   cy="-8"  rx="2.3" ry="3.4" transform="rotate(-24 0 -8)"/>
+                <ellipse cx="14"  cy="-14" rx="2.3" ry="3.4" transform="rotate(-24 14 -14)"/>
+                <ellipse cx="28"  cy="-20" rx="2.3" ry="3.4" transform="rotate(-24 28 -20)"/>
+                <ellipse cx="42"  cy="-26" rx="2.3" ry="3.4" transform="rotate(-24 42 -26)"/>
               </g>
-              <circle cx="52" cy="16" r="12.5" fill="url(#mgStB)" transform="rotate(8 52 16)"/>
-              <text x="63" y="-4" font-family="'Yuji Syuku','Hiragino Mincho ProN',serif" font-size="24" fill="#c73e2e" transform="rotate(9 63 -4)">？</text>
+              <circle cx="55" cy="-31" r="12.5" fill="url(#mgStB)" transform="rotate(8 55 -31)"/>
+              <text x="66" y="-40" font-family="'Yuji Syuku','Hiragino Mincho ProN',serif" font-size="24" fill="#c73e2e" transform="rotate(9 66 -40)">？</text>
             </g>
           </svg>
         </div>
@@ -394,6 +422,16 @@
         牧村の作ったゲームが遊び放題！サクっと遊べるミニゲームばかりなので、
         ちょっとした隙間時間に遊んでみてください。今後もゲームは随時追加していきます
       </p>
+      <div class="about-links">
+        <a class="about-btn discord" href="https://discord.gg/HPn4xXjNKd" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.3 5.4A18.3 18.3 0 0 0 15.9 4c-.2.4-.4.9-.6 1.3a17 17 0 0 0-6.6 0c-.2-.4-.4-.9-.6-1.3A18.3 18.3 0 0 0 3.7 5.4C1.2 9.1.6 12.7.9 16.3a18.6 18.6 0 0 0 5.5 2.7c.4-.6.8-1.2 1.1-1.9-.6-.2-1.2-.5-1.7-.8.1-.1.3-.2.4-.3a13 13 0 0 0 10.8 0l.4.3c-.6.3-1.1.6-1.7.8.3.7.7 1.3 1.1 1.9a18.6 18.6 0 0 0 5.5-2.7c.4-4.2-.7-7.8-2.9-10.9zM9 14.1c-.9 0-1.6-.8-1.6-1.8S8.1 10.5 9 10.5s1.7.8 1.6 1.8c0 1-.7 1.8-1.6 1.8zm6 0c-.9 0-1.6-.8-1.6-1.8s.7-1.8 1.6-1.8 1.7.8 1.6 1.8c0 1-.7 1.8-1.6 1.8z"/></svg>
+          公式Discordに参加
+        </a>
+        <a class="about-btn survey" href="https://forms.gle/TfUzLfsoyMEJaNw4A" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16v2H4zM4 8h16v12H4zm2 2v8h12v-8zM8 12h8v1.6H8zm0 3h8v1.6H8z"/></svg>
+          アンケートに答える
+        </a>
+      </div>
     </section>
   </main>
 

@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>五もくもく並べ</title>
+<meta name="apple-mobile-web-app-title" content="五もくもく並べ">
+<meta name="application-name" content="五もくもく並べ">
 <meta name="description" content="普通の五目並べ…のはずが、置いた石が時々「もくもく」して消える!? 運と実力の和風ボードゲーム。CPU対戦対応。">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Yuji+Syuku&display=swap');
@@ -123,6 +125,7 @@
     width:230px; padding:10px 6px; text-align:center; font-family:inherit;
     font-size:26px; letter-spacing:.25em; text-indent:.25em; text-transform:uppercase;
     color:var(--sumi); background:#fff; border:2px solid rgba(51,47,42,.45); border-radius:8px; outline:none;
+    line-height:1.2; caret-color:var(--sumi);   /* スマホ(WebKit)でletter-spacing付きの入力欄はカーソルが見えなくなる既知の癖があるため明示 */
   }
   @keyframes waitDots{ 0%,100%{ opacity:.35; } 50%{ opacity:1; } }
   .room-wait{ animation:waitDots 1.6s ease-in-out infinite; }
@@ -520,7 +523,7 @@
   </div>
 
   <!-- タイトル画面のフッター(シーンの外・画面に直接固定するので隙間が出ない) -->
-  <a class="home-foot" id="homeFoot" href="./index.html"><span>牧村制作ゲームリンク集へ</span></a>
+  <a class="home-foot" id="homeFoot" href="./index.html"><span>牧村が作ったゲーム集へ</span></a>
 
   <!-- 全画面共通: あそびかた(左上)。タイトルでも対局中でも見られる -->
   <button class="help-btn" id="helpBtn" aria-label="あそびかた"><span>？</span>あそびかた</button>
@@ -605,6 +608,10 @@
   let peerGone=false;   // あいてが部屋からいなくなった(再戦不可)
   let undoPending=false;   // オンライン: 自分が「待った」を申し込んで返事待ちの間true
   const myId=Math.random().toString(36).slice(2,10);
+  /* 一手の送信を確実に届ける仕組み: broadcastは届く保証がなく、通信が一瞬切れただけで
+     「両者とも相手の手番だと思い込み、誰も打てなくなる」進行不能に陥るため、
+     受け取った側が必ずackを返し、届くまで送った側が送り直す */
+  let mySeq=0, lastRecvSeq=0, pendingSeq=0, moveResendTimer=0;
 
   /* ---------- 盤の生成 ---------- */
   const cells=[];
@@ -755,6 +762,7 @@
     cells.forEach(row=>row.forEach(d=>{ d.innerHTML=""; d.classList.remove("taken"); }));
     over=false; busy=false; placed=0; turn=BLACK; hist=[];
     myRematch=false; peerRematch=false; undoPending=false; peerGone=false;
+    clearTimeout(moveResendTimer); moveResendTimer=0; mySeq=0; lastRecvSeq=0; pendingSeq=0;
     undoBtn.style.display = "";   // 一手戻るは全モードで使える(オンラインは相手の許可制)
     if(mokuProb===0 && winLen===5){   // もくもく無しの五目 = ただの五目並べなので1枠にまとめる
       tagProb.style.display="none";
@@ -784,7 +792,7 @@
   function switchTurn(){ turn=(turn===BLACK)?WHITE:BLACK; startTurn(); }
 
   function humanPlace(r,c){
-    if(over||busy) return;
+    if(over||busy||undoPending) return;   // 待ったの返事待ち中は打てない(打てると相手の許可と噛み合わなくなる)
     if(!local && turn!==human) return;   // ならんで遊ぶ: どちらの手番でもタップで打てる
     if(board[r][c]!==EMPTY) return;
     if(online){
@@ -792,11 +800,23 @@
       const moku=(Math.random()*100)<prob;
       const foe=(human===BLACK)?WHITE:BLACK;
       const fake=(!moku && prob>0 && (!!winLine(r,c,human) || !!winLine(r,c,foe) || Math.random()<0.05));   // 勝負を決める/阻止する一手は必ずため(0%設定なら無し)
-      if(ch) ch.send({ type:"broadcast", event:"move", payload:{ r,c,moku,fake } });
+      mySeq++; pendingSeq=mySeq;
+      sendMove({ r,c,moku,fake,seq:mySeq });
       tryPlace(r,c,moku,fake);
       return;
     }
     tryPlace(r,c);
+  }
+  /* 一手を送り、ack(moveack)が届くまで一定間隔で送り直す(通信の瞬断で進行不能になるのを防ぐ) */
+  function sendMove(payload){
+    if(!ch) return;
+    clearTimeout(moveResendTimer);
+    const send=()=>{
+      if(!online || !ch || payload.seq!==pendingSeq) return;   // 既に届いた・対局が終わった等なら打ち切り
+      ch.send({ type:"broadcast", event:"move", payload });
+      moveResendTimer=setTimeout(send, 1400);
+    };
+    send();
   }
 
   /* 碁笥から盤上のマスへ石が飛んでいく */
@@ -1066,7 +1086,7 @@
   function genCode(){ let s=""; for(let i=0;i<5;i++) s+=CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)]; return s; }
   function sbClient(){ if(!sb) sb=window.supabase.createClient(SB_URL, SB_KEY); return sb; }
   function leaveChannel(){
-    clearTimeout(joinWatch);
+    clearTimeout(joinWatch); clearTimeout(moveResendTimer); moveResendTimer=0;
     if(ch){ try{ sbClient().removeChannel(ch); }catch(e){} ch=null; }
     online=false; isHost=false; startSent=false;
   }
@@ -1113,11 +1133,20 @@
       beginOnline(payload && payload.hc===BLACK ? WHITE : BLACK);
     });
     ch.on("broadcast",{event:"move"},({payload})=>{
-      if(!online||over||!payload) return;
-      if(turn===human) return;   // 自分の番に相手の手は来ないはず(保険)
+      if(!online||!payload) return;
+      if(ch) ch.send({ type:"broadcast", event:"moveack", payload:{ seq:payload.seq } });   // 届いたことを必ず伝える(届かなければ相手が送り直してくる)
+      if(over) return;
+      if(typeof payload.seq==="number"){
+        if(payload.seq<=lastRecvSeq) return;   // 送り直しの重複 → ackだけ返して無視(二重に打たれるのを防ぐ)
+        lastRecvSeq=payload.seq;
+      }
+      if(turn===human) turn=(human===BLACK)?WHITE:BLACK;   // 手番のズレを検知したら、届いた一手を信頼して補正する(自己修復)
       const r=payload.r|0, c=payload.c|0;
       if(r<0||r>=N||c<0||c>=N||board[r][c]!==EMPTY) return;
       tryPlace(r, c, !!payload.moku, !!payload.fake);
+    });
+    ch.on("broadcast",{event:"moveack"},({payload})=>{
+      if(payload && payload.seq===pendingSeq){ clearTimeout(moveResendTimer); moveResendTimer=0; }
     });
     ch.on("broadcast",{event:"resign"},()=>{
       if(!online||over) return;

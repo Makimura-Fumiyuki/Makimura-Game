@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>dox</title>
+<meta name="apple-mobile-web-app-title" content="dox">
+<meta name="application-name" content="dox">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');  /* dot/pixel JP font */
   :root{
@@ -442,6 +444,15 @@
   .player-info.show{ opacity:.95; transform:translateX(0); pointer-events:auto; }   /* clearly visible */
   .pi-name{ font-size:28px; font-weight:800; letter-spacing:1px; white-space:nowrap; max-width:520px; overflow:hidden; text-overflow:ellipsis; }
   .hud-name{ display:flex; align-items:center; font-size:24px; font-weight:700; letter-spacing:1px; cursor:pointer; }
+  /* top-right: ハブへ戻る(ホーム画面追加時に戻る手段がなくなるための救済。title/result限定=プレイ中の誤タップを避ける) */
+  .hub-link{ position:absolute; right:18px; top:16px; z-index:55; display:flex; align-items:center; gap:9px;
+    font-family:"DotGothic16","Hiragino Sans","Yu Gothic",sans-serif; font-weight:700;
+    font-size:24px; letter-spacing:1px; color:rgba(30,30,30,.5); text-decoration:none;
+    opacity:0; transform:translateX(360px); pointer-events:none;
+    transition:opacity .3s linear, transform .3s cubic-bezier(.2,.8,.25,1); }
+  .hub-link svg{ width:26px; height:26px; flex:none; }
+  .hub-link.show{ opacity:.85; transform:translateX(0); pointer-events:auto; }
+  .hub-link:hover{ color:rgba(30,30,30,.85); }
   .hud-esc.show{ opacity:1; transform:translateX(0); }
   /* bottom-right click zone — active only after ~2s idle (synced with the Esc hint), so it can't cause mis-taps mid-game */
   .corner-home{ position:absolute; right:24px; bottom:16px; width:330px; height:96px; z-index:56; pointer-events:none; cursor:pointer; }   /* roughly the size of the "Esc:タイトルに戻る" hint, a touch larger */
@@ -885,6 +896,9 @@
       <div class="hud-name" id="hudName"><span class="key">Esc</span></div>
       <div class="pi-name" id="piName">名前を登録しよう</div>
     </div>
+    <a class="hub-link" id="hubLink" href="./index.html">   <!-- top-right: ゲーム集へ(title/result限定) -->
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 3 10.5h2.2V20h5.3v-5.5h3v5.5h5.3v-9.5H21z"/></svg>ゲーム集へ
+    </a>
     <div class="corner-home" id="cornerHome"></div>   <!-- bottom-right click zone: returns to the title during play -->
     <div class="name-modal" id="nameModal">
       <div class="nm-box">
@@ -1257,7 +1271,10 @@
 
   // ----- top-left name hint (title & result) -----
   const playerInfo=document.getElementById("playerInfo"), piName=document.getElementById("piName"), hudName=document.getElementById("hudName");
-  function updateNameHud(){ if(!playerInfo) return; const show=(scene==="title"||scene==="over") && !!playerName(); playerInfo.classList.toggle("show", show);   // only shown once a name exists (nothing before the first score)
+  const hubLink=document.getElementById("hubLink");
+  function updateNameHud(){
+    if(hubLink) hubLink.classList.toggle("show", scene==="title"||scene==="over");   // ゲーム集へ: プレイ中以外は常に出す(名前登録の有無は問わない)
+    if(!playerInfo) return; const show=(scene==="title"||scene==="over") && !!playerName(); playerInfo.classList.toggle("show", show);   // only shown once a name exists (nothing before the first score)
     if(show && piName) piName.textContent = playerName(); }
   if(playerInfo) playerInfo.addEventListener("click", ()=>{ if(!playerName()) return; ensureAudio(); openNameModal({ onDone:updateNameHud }); });   // whole top-left area (Esc icon + name) is tappable; no pre-play registration
 
