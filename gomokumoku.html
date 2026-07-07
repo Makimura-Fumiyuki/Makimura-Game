@@ -671,8 +671,14 @@
     over=false; busy=false; placed=0; turn=BLACK; hist=[];
     myRematch=false; peerRematch=false;
     undoBtn.style.display = online ? "none" : "";   // 一手戻るはオンライン以外で使える
-    tagProb.textContent="もくもく "+mokuProb+"%";
-    tagWin.textContent=KAN[winLen]+"目ならべ";
+    if(mokuProb===0 && winLen===5){   // もくもく無しの五目 = ただの五目並べなので1枠にまとめる
+      tagProb.style.display="none";
+      tagWin.textContent="普通の五目並べ";
+    }else{
+      tagProb.style.display="";
+      tagProb.textContent="もくもく "+mokuProb+"%";
+      tagWin.textContent=KAN[winLen]+"目ならべ";
+    }
     resultOverlay.classList.remove("on","peek");
     setGiveupVisible(true); stopVictory();
     document.getElementById("bowlTagB").textContent= local ? "先手" : (human===BLACK)?"自分":"あいて";
@@ -1122,138 +1128,322 @@
       if(bs>=10000000 && Math.random()<0.55) return block;   // 王手級だけ半々で対応
       return cand[Math.floor(Math.random()*cand.length)];
     }
-    // 中級/上級: 評価関数(攻め+守り)
-    // 上級はもくもく確率が高いほど守りを重く見る:
-    // 「相手に四を作られてから止める」計画は、止めの一手がもくもくすると即負けするため、
-    // 確率が高い対局では相手の三の段階で早めに潰しにいく
-    const defW=(cpuLv===2)?(1.0+prob*0.008):0.78;
+    // 上級: 専用エンジンに委譲(窓方式評価 + VCF/VCT必勝探索 + 反復深化。詳細はmakeExpertAI)
+    if(cpuLv===2) return expertMove(cpu, placed);
+    // 中級: 評価関数(攻め+守り)
+    const defW=0.78;
     const scored=cand.map(([r,c])=>{
       const s=lineScore(r,c,cpu)+defW*lineScore(r,c,human)
         + (12-(Math.abs(r-6)+Math.abs(c-6)))*2   // 中央寄り好み
-        + (cpuLv===2 ? 0 : Math.random()*10);
+        + Math.random()*10;
       return {r,c,s};
     }).sort((a,b)=>b.s-a.s);
     if(cpuLv===1 && Math.random()<0.3 && scored.length>2 && scored[0].s<10000000){
       return [scored[1].r, scored[1].c];   // 中級: 3割で最善を逃す
     }
-    if(cpuLv===2){
-      const opp=(cpu===BLACK)?WHITE:BLACK;
-      // 鬼(0): 即勝ちは何より優先
-      for(const [r,c] of cand){ if(winLine(r,c,cpu)) return [r,c]; }
-      // 鬼(1): 相手の即勝ちは必ず止める(自分が最も得する止め方を選ぶ)
-      let block=null, bs=-1;
-      for(const [r,c] of cand){
-        if(winLine(r,c,opp)){ const s=lineScore(r,c,cpu); if(s>bs){ bs=s; block=[r,c]; } }
-      }
-      if(block) return block;
-      // 鬼(2): 四追い必勝探索(最大16手先)
-      const vcf=findVCF(cpu, opp, 16);
-      if(vcf) return vcf;
-      // 鬼(3): 盤面全体評価つき6手読み
-      const mv=searchBest(cpu, opp);
-      if(mv) return mv;
-    }
     return [scored[0].r, scored[0].c];
   }
-  /* pの「次の一手で勝てるマス」を列挙 */
-  function winningCells(p){
-    const out=[];
-    for(const [r,c] of emptyNear(2)){ if(winLine(r,c,p)) out.push([r,c]); }
-    return out;
-  }
-  /* 四追い(VCF): 置くたびに「四」で王手をかけ、相手の応手を強制しながら勝ちに到達する手を探す */
-  function findVCF(p, q, depth){
-    if(depth<=0) return null;
-    for(const [r,c] of emptyNear(2)){
-      if(lineScore(r,c,p) < 100000) continue;    // 四(王手)を作らない手は forcing でない
-      board[r][c]=p;
-      const wins=winningCells(p);
-      if(wins.length>=2){ board[r][c]=EMPTY; return [r,c]; }   // 二重の四: 止めきれず勝ち確定
-      if(wins.length===1){
-        const [br,bc]=wins[0];
-        board[br][bc]=q;                          // 相手は止めるしかない
-        const deeper=findVCF(p, q, depth-2);      // 止められてもさらに四を重ねられるか
-        board[br][bc]=EMPTY;
-        if(deeper){ board[r][c]=EMPTY; return [r,c]; }
-      }
-      board[r][c]=EMPTY;
-    }
-    return null;
-  }
-  /* 上級専用: 攻め重視で候補を絞りながら読む(もくもく確率が高いほど相手の芽を早めに摘む) */
-  function topMoves(p, q, k){   // p=手番, q=相手, k=候補数
-    const dw=0.7+prob*0.009;   // 例: 20%→0.88 / 80%→1.42
-    const out=[];
-    for(const [r,c] of emptyNear(2)){
-      out.push({ r, c, s: lineScore(r,c,p)+dw*lineScore(r,c,q) });
-    }
-    out.sort((a,b)=>b.s-a.s);
-    return out.slice(0,k);
-  }
-  /* 盤上で q が「四(あと1手で勝ち)」を作れるマスの数。
-     もくもく世界では四を1本許すごとに「止めがもくもく→即死」のくじを引かされるため、
-     この数を徹底的に減らす手を高く評価する */
-  function fourChances(q){
-    let n=0;
-    for(const [r,c] of emptyNear(2)){
-      if(lineScore(r,c,q)>=120000) n++;
-    }
-    return n;
-  }
-  /* 盤面全体の評価: 全方向の連をパターン採点して差し引く(手の点数の積み上げより遥かに正確) */
-  function scanScore(pl){
-    let s=0;
-    for(let r=0;r<N;r++) for(let c=0;c<N;c++){
-      if(board[r][c]!==pl) continue;
+  /* ---------- 上級専用エンジン ----------
+     窓方式の差分評価(飛び三・飛び四も正しく数える) + VCF/VCT(四と開三を連打する必勝手順の探索)
+     + 強制手延長つき反復深化アルファベータ(最大10手読み・時間制)。
+     毎手番、盤面から状態を作り直すので、もくもく消滅・一手戻る・オンラインにも常に追従する */
+  function makeExpertAI(st){   // st={board,N,winLen,prob,budgetMs}
+    const now=(typeof performance!=="undefined"&&performance.now)?()=>performance.now():()=>Date.now();
+
+    /* 窓(winLenマスの直線)の事前列挙: winLenが変わったら作り直す */
+    let W=null;
+    function buildWindows(){
+      const n=st.N, L=st.winLen;
+      const list=[], cellWins=Array.from({length:n*n},()=>[]);
       for(const [dr,dc] of DIRS){
-        const pr=r-dr, pc=c-dc;
-        if(pr>=0&&pr<N&&pc>=0&&pc<N&&board[pr][pc]===pl) continue;   // 連の先頭マスだけ数える
-        let cnt=0, rr=r, cc=c;
-        while(rr>=0&&rr<N&&cc>=0&&cc<N&&board[rr][cc]===pl){ cnt++; rr+=dr; cc+=dc; }
-        let open=0;
-        if(rr>=0&&rr<N&&cc>=0&&cc<N&&board[rr][cc]===EMPTY) open++;
-        if(pr>=0&&pr<N&&pc>=0&&pc<N&&board[pr][pc]===EMPTY) open++;
-        s+=patScore(cnt,open);
+        for(let r=0;r<n;r++) for(let c=0;c<n;c++){
+          const er=r+dr*(L-1), ec=c+dc*(L-1);
+          if(er<0||er>=n||ec<0||ec>=n) continue;
+          const cells=new Int16Array(L);
+          for(let k=0;k<L;k++) cells[k]=(r+dr*k)*n+(c+dc*k);
+          const wi=list.length; list.push(cells);
+          for(const ci of cells) cellWins[ci].push(wi);
+        }
+      }
+      W={list, cellWins, len:L, n};
+    }
+
+    let cnt0,cnt1;        // 窓ごとの石数(色0/色1)
+    let tot0,tot1;        // 窓スコア合計
+    let four0,four1;      // 「あと1で勝ち」窓の本数
+    let cellArr;          // 盤(1次元) 0=空,1,2
+    let nearCnt;          // 2マス以内に石がある度合い(候補生成用)
+    let SCW;              // 窓スコア表(石数→点)
+    const WINV=100000000;
+
+    function rebuild(){
+      if(!W || W.len!==st.winLen || W.n!==st.N) buildWindows();
+      const n=st.N, L=st.winLen, M=W.list.length;
+      cnt0=new Int16Array(M); cnt1=new Int16Array(M);
+      tot0=0; tot1=0; four0=0; four1=0;
+      cellArr=new Int8Array(n*n); nearCnt=new Int16Array(n*n);
+      SCW=new Float64Array(L+1);
+      for(let i=1;i<L;i++) SCW[i]=Math.pow(9,i);
+      SCW[L]=WINV;
+      for(let r=0;r<n;r++) for(let c=0;c<n;c++){
+        const v=st.board[r][c];
+        if(v!==EMPTY) place(r*n+c, v-1);
       }
     }
-    return s;
-  }
-  function evalFor(p,q){ return scanScore(p)*1.08 - scanScore(q); }   // 手番側が少し有利(テンポ)
-  function searchBest(cpu, opp){
-    const DEPTH=6;                    // 6手読み。深い層ほど有望手だけに絞る
-    const K=[0, 4, 4, 6, 6, 8, 14];   // 各深さの候補数
-    const fourPen=prob*1200;          // もくもく世界だけ「相手に残る四の芽」を罰する(0%なら純粋な読み)
-    function ab(p, q, depth, alpha, beta){
-      const cand=topMoves(p, q, K[depth]||4);
-      if(!cand.length) return 0;
+    function place(ci,col){
+      cellArr[ci]=col+1;
+      const cw=W.cellWins[ci], L=W.len;
+      for(let k=0;k<cw.length;k++){
+        const wi=cw[k];
+        const a=(col===0)?cnt0[wi]:cnt1[wi], b=(col===0)?cnt1[wi]:cnt0[wi];
+        if(b===0){ if(col===0) tot0-=SCW[a]; else tot1-=SCW[a]; if(a===L-1){ if(col===0)four0--; else four1--; } }
+        if(a===0&&b>0){ if(col===0) tot1-=SCW[b]; else tot0-=SCW[b]; if(b===L-1){ if(col===0)four1--; else four0--; } }
+        if(col===0) cnt0[wi]=a+1; else cnt1[wi]=a+1;
+        if(b===0){ if(col===0) tot0+=SCW[a+1]; else tot1+=SCW[a+1]; if(a+1===L-1){ if(col===0)four0++; else four1++; } }
+      }
+      const n=W.n, r=(ci/n)|0, c=ci%n;
+      for(let dr=-2;dr<=2;dr++) for(let dc=-2;dc<=2;dc++){
+        const rr=r+dr, cc=c+dc;
+        if(rr>=0&&rr<n&&cc>=0&&cc<n) nearCnt[rr*n+cc]++;
+      }
+    }
+    function unplace(ci,col){
+      cellArr[ci]=0;
+      const cw=W.cellWins[ci], L=W.len;
+      for(let k=0;k<cw.length;k++){
+        const wi=cw[k];
+        const a=((col===0)?cnt0[wi]:cnt1[wi])-1, b=(col===0)?cnt1[wi]:cnt0[wi];
+        if(b===0){ if(col===0) tot0-=SCW[a+1]; else tot1-=SCW[a+1]; if(a+1===L-1){ if(col===0)four0--; else four1--; } }
+        if(col===0) cnt0[wi]=a; else cnt1[wi]=a;
+        if(b===0){ if(col===0) tot0+=SCW[a]; else tot1+=SCW[a]; if(a===L-1){ if(col===0)four0++; else four1++; } }
+        if(a===0&&b>0){ if(col===0) tot1+=SCW[b]; else tot0+=SCW[b]; if(b===L-1){ if(col===0)four1++; else four0++; } }
+      }
+      const n=W.n, r=(ci/n)|0, c=ci%n;
+      for(let dr=-2;dr<=2;dr++) for(let dc=-2;dc<=2;dc++){
+        const rr=r+dr, cc=c+dc;
+        if(rr>=0&&rr<n&&cc>=0&&cc<n) nearCnt[rr*n+cc]--;
+      }
+    }
+    /* colの「次の一手で勝てるマス」(重複なし)。fourカウンタが0なら即座に空を返す */
+    function winCellsOf(col){
+      if((col===0?four0:four1)===0) return [];
+      const L=W.len, cn=(col===0)?cnt0:cnt1, co=(col===0)?cnt1:cnt0;
+      const out=[], seen=new Set();
+      for(let wi=0;wi<W.list.length;wi++){
+        if(cn[wi]===L-1&&co[wi]===0){
+          const cells=W.list[wi];
+          for(let k=0;k<L;k++){ const ci=cells[k]; if(cellArr[ci]===0){ if(!seen.has(ci)){ seen.add(ci); out.push(ci); } break; } }
+        }
+      }
+      return out;
+    }
+    /* そのマスに置いた時の攻め得点(自分窓の伸び) + 相手窓を割る価値 */
+    function moveGain(ci,col){
+      const cw=W.cellWins[ci], cn=(col===0)?cnt0:cnt1, co=(col===0)?cnt1:cnt0;
+      let g=0;
+      for(let k=0;k<cw.length;k++){
+        const wi=cw[k], a=cn[wi], b=co[wi];
+        if(b===0) g+=SCW[a+1]-SCW[a];
+        else if(a===0) g+=SCW[b]*0.9;
+      }
+      return g;
+    }
+    function topK(col,k,defW){
+      const n=W.n, other=1-col, out=[];
+      for(let ci=0;ci<n*n;ci++){
+        if(cellArr[ci]===0&&nearCnt[ci]>0) out.push({ci, s:moveGain(ci,col)+defW*moveGain(ci,other)});
+      }
+      out.sort((a,b)=>b.s-a.s);
+      return out.slice(0,k);
+    }
+    /* colが一手で「四(勝ち直前)」を作れる窓を持つか */
+    function canMakeFour(col){
+      const cn=(col===0)?cnt0:cnt1, co=(col===0)?cnt1:cnt0, L=W.len;
+      for(let wi=0;wi<W.list.length;wi++){ if(cn[wi]===L-2 && co[wi]===0) return true; }
+      return false;
+    }
+
+    /* VCF/VCT: 四(と開三)を連打して勝ちに到達する手順の探索。勝ちへの最初の一手 or -1 */
+    let vcNodes=0, vcDeadline=0;
+    function forcedWin(me, depth, allowThree){
+      if(depth<=0) return -1;
+      if(vcNodes++>60000 || now()>vcDeadline) return -1;
+      const opp=1-me, L=W.len;
+      // 強制力のある手だけ試す: 四(または三)が作れる窓に絡むマス
+      const cw=(me===0)?cnt0:cnt1, co=(me===0)?cnt1:cnt0;
+      const marks=new Set();
+      const needThree=allowThree?3:2;
+      for(let wi=0;wi<W.list.length;wi++){
+        if(co[wi]!==0) continue;
+        if(cw[wi]>=L-needThree && cw[wi]>=1){
+          const cells=W.list[wi];
+          for(let k=0;k<L;k++){ const ci=cells[k]; if(cellArr[ci]===0) marks.add(ci); }
+        }
+      }
+      if(!marks.size) return -1;
+      const cand=[...marks].map(ci=>({ci, s:moveGain(ci,me)})).sort((a,b)=>b.s-a.s);
+      for(const {ci} of cand){
+        place(ci,me);
+        const myW=winCellsOf(me);
+        if(myW.length){
+          const oppW=winCellsOf(opp);
+          if(oppW.length===0){
+            if(myW.length>=2){ unplace(ci,me); return ci; }   // 両四: 止めきれない
+            const b=myW[0];
+            place(b,opp);
+            let ok=false;
+            if(winCellsOf(opp).length===0){                    // 止めが相手の四を完成させたら失敗
+              ok=forcedWin(me, depth-2, allowThree)>=0;
+            }
+            unplace(b,opp);
+            if(ok){ unplace(ci,me); return ci; }
+          }
+        }else if(allowThree && depth>=4 && winCellsOf(opp).length===0 && !canMakeFour(opp)){
+          // 開三は相手に1手の自由を与えるため、相手が四を作って走れる局面では強制と見なさない(安全側)
+          // この手の後「置けば両四(勝ち確定)になるマス」があるか
+          const dbl=[];
+          const cwn=(me===0)?cnt0:cnt1, con=(me===0)?cnt1:cnt0;
+          const eSet=new Set();
+          for(const wi of W.cellWins[ci]){
+            if(con[wi]===0&&cwn[wi]===L-2){
+              const cells=W.list[wi];
+              for(let k=0;k<L;k++){ const e=cells[k]; if(cellArr[e]===0) eSet.add(e); }
+            }
+          }
+          for(const e of eSet){
+            place(e,me);
+            if(winCellsOf(me).length>=2) dbl.push(e);
+            unplace(e,me);
+          }
+          if(dbl.length){
+            // 相手の受け: 両四点そのもの + 三の窓の空きマス。全部の受けを破れたら勝ち
+            const D=new Set(dbl);
+            for(const wi of W.cellWins[ci]){
+              if(con[wi]===0&&cwn[wi]===L-2){
+                const cells=W.list[wi];
+                for(let k=0;k<L;k++){ const e=cells[k]; if(cellArr[e]===0) D.add(e); }
+              }
+            }
+            let allFail=true;
+            for(const d of D){
+              place(d,opp);
+              let defended=true;
+              if(winCellsOf(opp).length===0){
+                defended=forcedWin(me, depth-2, allowThree)<0;
+              }               // 受けが相手の四になるなら受け成功扱い(安全側)
+              unplace(d,opp);
+              if(defended){ allFail=false; break; }
+            }
+            if(allFail){ unplace(ci,me); return ci; }
+          }
+        }
+        unplace(ci,me);
+      }
+      return -1;
+    }
+
+    /* 静かな局面の反復深化アルファベータ */
+    let abDeadline=0, abNodes=0;
+    const TIMEOUT={};
+    function evalSide(col,defE){
+      let v=(col===0)?(tot0-defE*tot1):(tot1-defE*tot0);
+      const opF=(col===0)?four1:four0;
+      // 相手に四が残る局面: 両四級はほぼ負け / 単発は止めに1手取られるテンポ損
+      if(opF) v-=(opF>=2 ? WINV*0.45 : SCW[W.len-1]*2.2);
+      return v;
+    }
+    function ab(col, depth, alpha, beta, ply, defW, defE, K){
+      abNodes++;
+      if((abNodes&511)===0 && now()>abDeadline) throw TIMEOUT;
+      const opp=1-col;
+      if(winCellsOf(col).length) return WINV-ply;            // 自分がすぐ勝てる
+      if(depth<=0) return evalSide(col,defE);
+      const oppW=winCellsOf(opp);
+      let cand, forced=false;
+      if(oppW.length>=2) return -(WINV-ply-1);               // 両四などは受からない
+      if(oppW.length===1){ cand=[{ci:oppW[0]}]; forced=true; }   // 止めるしかない
+      else cand=topK(col, K[depth]||4, defW);
+      const childDepth=(forced&&ply<24)?depth:depth-1;       // 強制手は深さを消費しない(四追いの応酬を読み切る)
       let best=-Infinity;
       for(const m of cand){
+        place(m.ci,col);
         let v;
-        if(winLine(m.r, m.c, p)){ v=9000000+depth*100000; }   // 早い勝ちほど高評価
-        else{
-          board[m.r][m.c]=p;
-          v=(depth===1) ? evalFor(p,q) : -ab(q, p, depth-1, -beta, -alpha);
-          board[m.r][m.c]=EMPTY;
-        }
+        try{ v=-ab(opp, childDepth, -beta, -alpha, ply+1, defW, defE, K); }
+        finally{ unplace(m.ci,col); }
         if(v>best) best=v;
         if(best>alpha) alpha=best;
-        if(alpha>=beta) break;   // 枝刈り
+        if(alpha>=beta) break;
       }
-      return best;
+      return (best===-Infinity)?evalSide(col,defE):best;
     }
-    const cand=topMoves(cpu, opp, K[DEPTH]);
-    let bestMv=null, bestV=-Infinity, alpha=-Infinity;
-    for(const m of cand){
-      if(winLine(m.r, m.c, cpu)) return [m.r, m.c];
-      board[m.r][m.c]=cpu;
-      let v=-ab(opp, cpu, DEPTH-1, -Infinity, -alpha);
-      if(fourPen) v-=fourChances(opp)*fourPen;
-      board[m.r][m.c]=EMPTY;
-      if(v>bestV){ bestV=v; bestMv=m; }
-      if(v>alpha) alpha=v;
-    }
-    return bestMv ? [bestMv.r, bestMv.c] : null;
+
+    /* 一手決定 */
+    return function(cpuColor, placed){
+      const n=st.N;
+      if(placed===0) return [(n>>1),(n>>1)];
+      rebuild();
+      const me=cpuColor-1, opp=1-me, L=st.winLen;
+      const budget=st.budgetMs||1100;
+      const t0=now();
+      const toRC=ci=>[(ci/n)|0, ci%n];
+      // 1) 即勝ち
+      const wins=winCellsOf(me);
+      if(wins.length) return toRC(wins[0]);
+      // 2) 相手の即勝ちを止める(複数あっても最も得な1つを塞ぐ)
+      const oppWins=winCellsOf(opp);
+      if(oppWins.length){
+        let best=oppWins[0], bs=-1;
+        for(const ci of oppWins){ const s=moveGain(ci,me); if(s>bs){ bs=s; best=ci; } }
+        return toRC(best);
+      }
+      const defW=0.95+st.prob*0.008;   // もくもく確率が高いほど守り重視(従来思想を継承)
+      const defE=1.0+st.prob*0.004;
+      if(L>=4){
+        // 3) 四追い(VCF)
+        vcNodes=0; vcDeadline=t0+budget*0.35;
+        const vcf=forcedWin(me, 24, false);
+        if(vcf>=0) return toRC(vcf);
+        // 4) 三四連続攻撃(VCT)。もくもく世界では長手順が崩れるので浅く
+        vcNodes=0; vcDeadline=t0+budget*0.6;
+        const vctDepth=(st.prob===0)?14:(st.prob<30?10:6);
+        const vct=forcedWin(me, vctDepth, true);
+        if(vct>=0) return toRC(vct);
+        // 5) 相手に四追いが見えているなら、受け候補を必ず読みに混ぜる
+        vcNodes=0; vcDeadline=t0+budget*0.7;
+        var oppVCF=forcedWin(opp, 16, false);
+      }
+      // 6) 反復深化アルファベータ(残り時間いっぱい・最大10手読み)
+      const K=[0, 5, 5, 6, 6, 7, 8, 8, 9, 10, 12];
+      abDeadline=t0+budget; abNodes=0;
+      let rootCand=topK(me, 14, defW);
+      if(typeof oppVCF!=="undefined" && oppVCF>=0 && !rootCand.some(m=>m.ci===oppVCF)){
+        rootCand.push({ci:oppVCF, s:0});
+      }
+      let bestMove=rootCand.length?rootCand[0].ci:-1;
+      try{
+        for(let depth=4; depth<=10; depth+=2){
+          let alpha=-Infinity, bestV=-Infinity, bestThis=-1;
+          for(const m of rootCand){
+            place(m.ci,me);
+            let v;
+            try{ v=-ab(opp, depth-1, -Infinity, -alpha, 1, defW, defE, K); }
+            finally{ unplace(m.ci,me); }
+            m.iterScore=v;
+            if(v>bestV){ bestV=v; bestThis=m.ci; }
+            if(v>alpha) alpha=v;
+          }
+          if(bestThis>=0) bestMove=bestThis;
+          rootCand.sort((a,b)=>(b.iterScore||0)-(a.iterScore||0));   // 次の深さは前回の並び順で
+          if(bestV>=WINV-64) break;                                  // 勝ち筋確定なら十分
+        }
+      }catch(e){ if(e!==TIMEOUT) throw e; }
+      if(bestMove<0){ // 保険: 空きマスならどこでも
+        for(let ci=0;ci<n*n;ci++) if(cellArr[ci]===0){ bestMove=ci; break; }
+      }
+      return toRC(bestMove);
+    };
   }
+  const expertMove=makeExpertAI({ get board(){return board}, N, get winLen(){return winLen}, get prob(){return prob}, budgetMs:1100 });
 
   /* ---------- タイトル/UI ---------- */
   // あそびかた選択: 選んだ方の設定ブロックだけ出現(ルール設定も選んだ側へ移動)

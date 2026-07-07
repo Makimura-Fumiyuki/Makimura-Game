@@ -102,13 +102,41 @@
     font-size:12px; letter-spacing:.05em;
     color:var(--teal); border:1.6px solid var(--teal); border-radius:999px; padding:2px 11px 3px;
   }
+  /* カード下段: あそぶボタン(左) + あそばれた回数(右) */
+  .c-foot{ margin-top:18px; display:flex; align-items:flex-end; justify-content:space-between; gap:10px; }
   .c-play{
-    margin-top:18px; align-self:flex-start;
+    align-self:flex-start; flex:none;
     font-size:14px; font-weight:800; letter-spacing:.18em; text-indent:.09em; color:#fff;
     background:linear-gradient(150deg, #ff4a2b, var(--red) 60%, var(--red-dark));
     border-radius:999px; padding:9px 26px 10px;
     box-shadow:0 3px 8px rgba(255,54,22,.35);
   }
+  .c-count{
+    position:relative; cursor:default;
+    display:inline-flex; align-items:center; gap:5px;
+    font-family:"DotGothic16",sans-serif; letter-spacing:.06em;
+    padding-bottom:5px; white-space:nowrap;
+  }
+  .c-count svg{ width:16px; height:16px; fill:var(--teal); flex:none; opacity:.85; }
+  .c-count b{ font-size:17px; color:var(--teal); }
+  /* ホバーで「あそばれた回数」の吹き出し(標準titleより速く・サイトの見た目で出す) */
+  .c-count::after{
+    content:"あそばれた回数";
+    position:absolute; bottom:calc(100% + 7px); right:0;
+    background:var(--ink); color:#fff;
+    font-family:"Noto Sans JP","Hiragino Sans",sans-serif; font-weight:700;
+    font-size:11px; letter-spacing:.08em;
+    padding:5px 10px 6px; border-radius:7px; white-space:nowrap;
+    opacity:0; transform:translateY(3px); pointer-events:none;
+    transition:opacity .15s ease, transform .15s ease;
+  }
+  .c-count::before{   /* 吹き出しの三角 */
+    content:""; position:absolute; bottom:calc(100% + 2px); right:14px;
+    border:5px solid transparent; border-top-color:var(--ink); border-bottom:none;
+    opacity:0; transform:translateY(3px); pointer-events:none;
+    transition:opacity .15s ease, transform .15s ease;
+  }
+  .c-count:hover::after, .c-count:hover::before{ opacity:1; transform:translateY(0); }
   .card:hover .c-play{ box-shadow:0 5px 14px rgba(255,54,22,.5); }
 
   /* 準備中カード */
@@ -203,7 +231,7 @@
           <div class="c-tags">
             <span class="tag">知育</span><span class="tag">ランキング</span><span class="tag">PC推奨</span>
           </div>
-          <span class="c-play">あそぶ ▶</span>
+          <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
         </div>
       </a>
     </template>
@@ -269,7 +297,7 @@
             <span class="t-brk"></span>
             <span class="tag">運まかせ</span>
           </div>
-          <span class="c-play">あそぶ ▶</span>
+          <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
         </div>
       </a>
     </template>
@@ -307,8 +335,8 @@
 (function(){
   /* ゲームのデータ: release=リリース日 / cats=カテゴリ / clicks=あそばれた回数(サーバー集計) */
   const GAMES=[
-    { id:"dox",  tpl:"tpl-dox",  release:"2026-07-06", cats:["スコアアタック"], clicks:0 },
-    { id:"moku", tpl:"tpl-moku", release:"2026-07-07", cats:["対戦"], clicks:0 },
+    { id:"dox",  tpl:"tpl-dox",  release:"2026-07-06", cats:["スコアアタック"], clicks:null },   // clicks: null=集計未着(表示しない)
+    { id:"moku", tpl:"tpl-moku", release:"2026-07-07", cats:["対戦"], clicks:null },
   ];
   /* Newはリリースから31日以内のゲームが自動判定(カテゴリと NEWバッジの両方に使う) */
   const isNew=g=>g.release && (Date.now()-new Date(g.release+"T00:00:00"))/86400000<=31;
@@ -341,12 +369,22 @@
   }
   /* ---- 並び替え ---- */
   const byRelease=(a,b)=>new Date(b.release)-new Date(a.release);          // 新しいものが左
-  const byPop=(a,b)=>(b.clicks-a.clicks)||byRelease(a,b);                  // 遊ばれた回数が多い順
+  const byPop=(a,b)=>((b.clicks||0)-(a.clicks||0))||byRelease(a,b);        // 遊ばれた回数が多い順
+  /* あそばれた回数の表記: 9,999までは実数 / 1万以上は「万」(1.2万→12万→123万) / 1億以上は「億」 */
+  function fmtPlays(n){
+    if(n>=100000000){ const m=n/100000000; return (m>=10 ? Math.round(m) : Math.round(m*10)/10)+"億"; }
+    if(n>=10000){ const m=n/10000; const s=(m>=10 ? Math.round(m) : Math.round(m*10)/10); return s>=10000 ? "1億" : s+"万"; }
+    return n.toLocaleString();
+  }
   const wrap=document.getElementById("sections");
   const sel=document.getElementById("sortSel");
   function card(g){
     const el=document.getElementById(g.tpl).content.firstElementChild.cloneNode(true);
     if(g.id) el.addEventListener("click", ()=>logClick(g));
+    const cnt=el.querySelector(".c-count");   // あそばれた回数(集計が届いてから表示)
+    if(cnt && g.clicks!=null){
+      cnt.innerHTML='<svg viewBox="0 0 24 24" role="img" aria-label="あそばれた回数"><path d="M21.58 16.09l-1.09-7.66C20.21 6.46 18.52 5 16.53 5H7.47C5.48 5 3.79 6.46 3.51 8.43l-1.09 7.66C2.2 17.63 3.39 19 4.94 19c.68 0 1.32-.27 1.8-.75L9 16h6l2.25 2.25c.48.48 1.13.75 1.8.75 1.56 0 2.75-1.37 2.53-2.91zM11 11H9v2H8v-2H6v-1h2V8h1v2h2v1zm4-1c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm2 3c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/></svg><b>'+fmtPlays(g.clicks)+'</b>';
+    }
     if(isNew(g)){ const b=document.createElement("span"); b.className="new-badge"; b.textContent="NEW"; el.appendChild(b); }
     return el;
   }
