@@ -50,6 +50,17 @@
 
   /* ===== ゲームカード ===== */
   .games{ display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:26px; }
+  /* 並び替え */
+  .sort-row{ display:flex; justify-content:flex-end; align-items:center; gap:8px; margin-bottom:4px; }
+  .sort-label{ font-size:12.5px; font-weight:700; color:rgba(32,33,31,.55); }
+  #sortSel{ font-family:inherit; font-size:13px; font-weight:700; color:var(--ink);
+    padding:6px 12px; border:1.6px solid rgba(32,33,31,.25); border-radius:8px; background:#fff; cursor:pointer; }
+  /* カテゴリ見出し */
+  .sec-h{ font-size:20px; font-weight:900; letter-spacing:.06em; color:var(--ink);
+    margin:34px 0 14px; display:flex; align-items:center; gap:10px; }
+  .sec-h::before{ content:""; width:8px; height:22px; border-radius:3px; background:var(--red); flex:none; }
+  #sections .sec-h:first-of-type{ margin-top:6px; }
+  #sections > .games:first-child{ margin-top:26px; }   /* 一覧表示(見出しなし)の時もカードとの間隔を確保 */
   .card{
     display:flex; flex-direction:column; text-decoration:none; color:var(--ink);
     background:#fff; border-radius:16px; overflow:hidden;
@@ -133,7 +144,17 @@
   </header>
 
   <main>
-    <div class="games">
+    <div class="sort-row">
+      <span class="sort-label">並び替え</span>
+      <select id="sortSel">
+        <option value="cat">カテゴリ順</option>
+        <option value="release">リリース順</option>
+        <option value="pop">人気順</option>
+      </select>
+    </div>
+    <div id="sections"></div>
+
+    <template id="tpl-dox">
       <a class="card" href="./dox.html">
         <div class="c-bar"></div>
         <div class="c-thumb t-dox">
@@ -176,7 +197,9 @@
           <span class="c-play">あそぶ ▶</span>
         </div>
       </a>
+    </template>
 
+    <template id="tpl-moku">
       <a class="card" href="./gomokumoku.html">
         <div class="c-bar"></div>
         <div class="c-thumb t-moku">
@@ -229,7 +252,7 @@
             <span class="c-players"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="7.2" r="4.2"/><path d="M9 13.4c-4.4 0-8 2.5-8 6.1V21h16v-1.5c0-3.6-3.6-6.1-8-6.1z"/><circle cx="17.5" cy="8.2" r="3.3"/><path d="M17.5 13.2c-.8 0-1.6.1-2.3.3 1.9 1.3 3.1 3.2 3.1 5.5V21H23v-1.3c0-3-2.5-5.5-5.5-5.5z"/></svg>1〜2人</span>
           </div>
           <div class="c-desc">
-            Q.普通の五目並べ？ A.いいえ、置いた碁石が煙になって消えるかも。友達と戦うのはもちろん、最強AIとも戦える…（本当に最強）
+            Q.普通の五目並べ？ A.いいえ、置いた碁石が煙になって消えるかも。友達と戦うのはもちろん、AIとも戦える…
           </div>
           <div class="c-tags">
             <!-- wrap-reverse: DOM順の逆から積む(下段=先頭の2つ / 上段=運まかせ) -->
@@ -240,15 +263,17 @@
           <span class="c-play">あそぶ ▶</span>
         </div>
       </a>
+    </template>
 
+    <template id="tpl-soon">
       <div class="card soon">
         <div class="c-body">
           <div class="c-name">???</div>
-          <div class="c-desc">リリースまでお待ちください</div>
+          <div class="c-desc">鋭意制作中。リリースまでお待ちください。</div>
           <span class="c-play">COMING SOON</span>
         </div>
       </div>
-    </div>
+    </template>
 
     <section class="about">
       <h2>このサイトについて</h2>
@@ -268,5 +293,74 @@
     <div class="f-mail">連絡先: <a href="mailto:zentyu721wood@gmail.com">zentyu721wood@gmail.com</a></div>
     <div class="copy">&copy; 2026 MAKIMURA</div>
   </footer>
+
+<script>
+(function(){
+  /* ゲームのデータ: release=リリース日 / cats=カテゴリ / clicks=あそばれた回数(サーバー集計) */
+  const GAMES=[
+    { id:"dox",  tpl:"tpl-dox",  release:"2026-07-06", cats:["スコアアタック"], clicks:0 },
+    { id:"moku", tpl:"tpl-moku", release:"2026-07-07", cats:["対戦"], clicks:0 },
+  ];
+  /* Newはリリースから31日以内のゲームが自動で入る(重複表示あり)。新しいものほど左 */
+  const SECTIONS=[
+    { label:"New", filter:g=>(Date.now()-new Date(g.release+"T00:00:00"))/86400000<=31 },
+    { label:"対戦", filter:g=>g.cats.includes("対戦") },
+    { label:"スコアアタック", filter:g=>g.cats.includes("スコアアタック") },
+  ];
+  /* ---- 人気順: クリック数をSupabaseに記録・集計(doxランキングと同じ場所を間借り) ---- */
+  const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co";
+  const SB_KEY="sb_publishable_cak3-W9Mmgahnwawreoa1Q_CVuhmkKL";
+  const SB_HEAD={ "apikey":SB_KEY, "Authorization":"Bearer "+SB_KEY };
+  function logClick(g){   // カードを開いた瞬間に1票(ページ遷移してもkeepaliveで届く)
+    try{
+      fetch(SB_URL+"/rest/v1/scores", { method:"POST", keepalive:true,
+        headers:{ ...SB_HEAD, "Content-Type":"application/json", "Prefer":"return=minimal" },
+        body:JSON.stringify({ name:"__hub__", mode:"hub_"+g.id, score:1 }) });
+    }catch(e){}
+  }
+  async function loadClicks(){
+    await Promise.all(GAMES.map(async g=>{
+      try{
+        const r=await fetch(SB_URL+"/rest/v1/scores?name=eq.__hub__&mode=eq.hub_"+g.id+"&select=id",
+          { method:"HEAD", headers:{ ...SB_HEAD, "Prefer":"count=exact" } });
+        const cr=r.headers.get("content-range");
+        g.clicks=cr ? (parseInt(cr.split("/")[1],10)||0) : 0;
+      }catch(e){}
+    }));
+    render();   // 集計が届いたら並びを更新
+  }
+  /* ---- 並び替え ---- */
+  const byRelease=(a,b)=>new Date(b.release)-new Date(a.release);          // 新しいものが左
+  const byPop=(a,b)=>(b.clicks-a.clicks)||byRelease(a,b);                  // 遊ばれた回数が多い順
+  const wrap=document.getElementById("sections");
+  const sel=document.getElementById("sortSel");
+  function card(g){
+    const el=document.getElementById(g.tpl).content.firstElementChild.cloneNode(true);
+    if(g.id) el.addEventListener("click", ()=>logClick(g));
+    return el;
+  }
+  function grid(list){ const d=document.createElement("div"); d.className="games"; list.forEach(g=>d.appendChild(card(g))); return d; }
+  function head(t){ const h=document.createElement("h2"); h.className="sec-h"; h.textContent=t; return h; }
+  function render(){
+    const sort=sel.value;
+    wrap.innerHTML="";
+    if(sort==="cat"){   // カテゴリ順: セクション分け(各セクション内は新しい順)
+      SECTIONS.forEach(sec=>{
+        const list=GAMES.filter(sec.filter).sort(byRelease);
+        if(!list.length) return;
+        wrap.appendChild(head(sec.label)); wrap.appendChild(grid(list));
+      });
+      wrap.appendChild(head("Coming Soon")); wrap.appendChild(grid([{tpl:"tpl-soon"}]));
+    } else {            // リリース順/人気順: カテゴリを分けず一覧で
+      const list=[...GAMES].sort(sort==="pop" ? byPop : byRelease);
+      const d=grid(list); d.appendChild(card({tpl:"tpl-soon"}));
+      wrap.appendChild(d);
+    }
+  }
+  sel.addEventListener("change", render);
+  render();
+  loadClicks();
+})();
+</script>
 </body>
 </html>

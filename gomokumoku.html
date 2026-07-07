@@ -1136,12 +1136,20 @@
     if(cpuLv===1 && Math.random()<0.3 && scored.length>2 && scored[0].s<10000000){
       return [scored[1].r, scored[1].c];   // 中級: 3割で最善を逃す
     }
-    if(cpuLv===2 && scored[0].s<10000000){
+    if(cpuLv===2){
       const opp=(cpu===BLACK)?WHITE:BLACK;
-      // 鬼(1): 四追い必勝探索(最大16手先)。相手の「止め」がもくもくすれば早期勝利のオマケ付き
+      // 鬼(0): 即勝ちは何より優先
+      for(const [r,c] of cand){ if(winLine(r,c,cpu)) return [r,c]; }
+      // 鬼(1): 相手の即勝ちは必ず止める(自分が最も得する止め方を選ぶ)
+      let block=null, bs=-1;
+      for(const [r,c] of cand){
+        if(winLine(r,c,opp)){ const s=lineScore(r,c,cpu); if(s>bs){ bs=s; block=[r,c]; } }
+      }
+      if(block) return block;
+      // 鬼(2): 四追い必勝探索(最大16手先)
       const vcf=findVCF(cpu, opp, 16);
       if(vcf) return vcf;
-      // 鬼(2): 6手読みアルファベータ探索
+      // 鬼(3): 盤面全体評価つき6手読み
       const mv=searchBest(cpu, opp);
       if(mv) return mv;
     }
@@ -1192,32 +1200,59 @@
     }
     return n;
   }
+  /* 盤面全体の評価: 全方向の連をパターン採点して差し引く(手の点数の積み上げより遥かに正確) */
+  function scanScore(pl){
+    let s=0;
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+      if(board[r][c]!==pl) continue;
+      for(const [dr,dc] of DIRS){
+        const pr=r-dr, pc=c-dc;
+        if(pr>=0&&pr<N&&pc>=0&&pc<N&&board[pr][pc]===pl) continue;   // 連の先頭マスだけ数える
+        let cnt=0, rr=r, cc=c;
+        while(rr>=0&&rr<N&&cc>=0&&cc<N&&board[rr][cc]===pl){ cnt++; rr+=dr; cc+=dc; }
+        let open=0;
+        if(rr>=0&&rr<N&&cc>=0&&cc<N&&board[rr][cc]===EMPTY) open++;
+        if(pr>=0&&pr<N&&pc>=0&&pc<N&&board[pr][pc]===EMPTY) open++;
+        s+=patScore(cnt,open);
+      }
+    }
+    return s;
+  }
+  function evalFor(p,q){ return scanScore(p)*1.08 - scanScore(q); }   // 手番側が少し有利(テンポ)
   function searchBest(cpu, opp){
-    const DEPTH=6;   // 6手読み(自分→相手→…)。深い層ほど有望手だけに絞る
-    const WIDTH=[0, 4, 4, 5, 6, 9, 16];   // 各深さの候補数
-    const fourPen=30000+prob*900;   // 四を1本許すごとの罰点(確率が高いほど重い)
-    function negamax(p, q, depth, alpha, beta){
-      const cand=topMoves(p, q, WIDTH[depth]||4);
+    const DEPTH=6;                    // 6手読み。深い層ほど有望手だけに絞る
+    const K=[0, 4, 4, 6, 6, 8, 14];   // 各深さの候補数
+    const fourPen=prob*1200;          // もくもく世界だけ「相手に残る四の芽」を罰する(0%なら純粋な読み)
+    function ab(p, q, depth, alpha, beta){
+      const cand=topMoves(p, q, K[depth]||4);
       if(!cand.length) return 0;
-      let best=-Infinity, bestMv=null;
+      let best=-Infinity;
       for(const m of cand){
-        let val;
-        if(m.s>=10000000){ val=10000000-(DEPTH-depth)*10000; }   // 早い勝ちほど高評価
-        else if(depth===1){ val=m.s; }
+        let v;
+        if(winLine(m.r, m.c, p)){ v=9000000+depth*100000; }   // 早い勝ちほど高評価
         else{
           board[m.r][m.c]=p;
-          val=m.s-0.85*negamax(q, p, depth-1, -beta, -Math.max(alpha,best));
-          if(depth===DEPTH) val-=fourChances(q)*fourPen;   // 根: この手の後に相手へ残る「四の芽」を罰する
+          v=(depth===1) ? evalFor(p,q) : -ab(q, p, depth-1, -beta, -alpha);
           board[m.r][m.c]=EMPTY;
         }
-        if(val>best){ best=val; bestMv=m; }
-        if(best>=beta) break;   // 枝刈り
+        if(v>best) best=v;
+        if(best>alpha) alpha=best;
+        if(alpha>=beta) break;   // 枝刈り
       }
-      if(depth===DEPTH) return bestMv;   // 根では手そのものを返す
       return best;
     }
-    const mv=negamax(cpu, opp, DEPTH, -Infinity, Infinity);
-    return mv ? [mv.r, mv.c] : null;
+    const cand=topMoves(cpu, opp, K[DEPTH]);
+    let bestMv=null, bestV=-Infinity, alpha=-Infinity;
+    for(const m of cand){
+      if(winLine(m.r, m.c, cpu)) return [m.r, m.c];
+      board[m.r][m.c]=cpu;
+      let v=-ab(opp, cpu, DEPTH-1, -Infinity, -alpha);
+      if(fourPen) v-=fourChances(opp)*fourPen;
+      board[m.r][m.c]=EMPTY;
+      if(v>bestV){ bestV=v; bestMv=m; }
+      if(v>alpha) alpha=v;
+    }
+    return bestMv ? [bestMv.r, bestMv.c] : null;
   }
 
   /* ---------- タイトル/UI ---------- */
