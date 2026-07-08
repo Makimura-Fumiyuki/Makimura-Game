@@ -132,6 +132,11 @@
   .stone-mini{ display:inline-block; width:16px; height:16px; border-radius:50%; vertical-align:-2px; margin-right:6px; border:1px solid rgba(0,0,0,.4); }
   .stone-mini.b{ background:radial-gradient(circle at 35% 30%, #666, #111 65%); }
   .stone-mini.w{ background:radial-gradient(circle at 35% 30%, #fff, #cfcabc 70%); }
+  /* おまかせ=黒(左上)に白(右下)を少し斜めに重ねる。テキストへ近づけるため右余白は詰める */
+  .stone-mini.rnd{ background:none; border:none; position:relative; top:-3px; width:22px; height:20px; margin-right:3px; vertical-align:middle; }
+  .stone-mini.rnd::before, .stone-mini.rnd::after{ content:""; position:absolute; width:15px; height:15px; border-radius:50%; border:1px solid rgba(0,0,0,.4); box-sizing:border-box; }
+  .stone-mini.rnd::before{ left:0; top:0; background:radial-gradient(circle at 35% 30%, #666, #111 65%); }   /* 黒(左上・奥) */
+  .stone-mini.rnd::after{ left:7px; top:5px; background:radial-gradient(circle at 35% 30%, #fff, #cfcabc 70%); }   /* 白(右下・手前) */
 
   .start-btn{
     margin-top:6px; padding:16px 58px 18px; cursor:pointer; white-space:nowrap;
@@ -277,7 +282,7 @@
   .bowl-tag{
     position:absolute; bottom:calc(16px + clamp(62px,17vw,102px) + 7px);
     width:clamp(62px,17vw,102px); text-align:center;
-    font-size:clamp(11px,3vw,14px); letter-spacing:.2em; white-space:nowrap;
+    font-size:clamp(11px,3vw,14px); letter-spacing:.06em; white-space:nowrap;
     color:rgba(51,47,42,.75); pointer-events:none;
   }
   .bowl-tag.bk-t{ left:12px; }
@@ -415,6 +420,7 @@
   .r-title{ font-size:clamp(24px,6.5vw,36px); letter-spacing:.12em; }
   .r-title.win{ color:var(--shu); }
   .r-sub{ font-size:14px; opacity:.7; letter-spacing:.1em; }
+  .r-foe{ display:inline-block; margin-top:4px; font-size:12px; opacity:.75; letter-spacing:.06em; color:var(--shu); }
 </style>
 </head>
 <body>
@@ -446,7 +452,7 @@
           <div class="rc-row"><button class="rc-btn" data-t="p" data-d="-1">−</button><span class="rc-val" id="probVal">20%</span><button class="rc-btn" data-t="p" data-d="1">＋</button></div>
         </div>
         <div class="rc">
-          <div class="rc-name">ならべる数</div>
+          <div class="rc-name">何個ならべたら勝ち</div>
           <div class="rc-row"><button class="rc-btn" data-t="w" data-d="-1">−</button><span class="rc-val" id="winVal">5</span><button class="rc-btn" data-t="w" data-d="1">＋</button></div>
         </div>
       </div>
@@ -469,6 +475,7 @@
         <div class="fuda-row" id="orderRow">
           <button class="fuda sel" data-first="1"><span class="stone-mini b"></span>先手<small>黒で打つ</small></button>
           <button class="fuda" data-first="0"><span class="stone-mini w"></span>後手<small>白で打つ</small></button>
+          <button class="fuda" data-first="r"><span class="stone-mini rnd"></span>おまかせ<small>先後ランダム</small></button>
         </div>
       </div>
       <button class="start-btn" id="startBtn">いざ、対局</button>
@@ -561,8 +568,8 @@
     <div class="r-card">
       <div class="cf-msg">まことに投了する？</div>
       <div class="sub-btns">
-        <button class="txt-btn" id="cfYes">投了する</button>
         <button class="txt-btn" id="cfNo">やめておく</button>
+        <button class="txt-btn" id="cfYes">投了する</button>
       </div>
     </div>
   </div>
@@ -592,6 +599,8 @@
   const rTitle=document.getElementById("rTitle"), rSub=document.getElementById("rSub");
 
   let board=[], stones=[], turn=BLACK, human=BLACK, cpuLv=1;
+  const LV_NAMES=["初級","中級","上級"];
+  let undoUsed=false;   // ロボット戦で一手戻るを使ったか(結果画面で「待ったなし」自慢に使う)
   let prob=0, over=false, busy=false, placed=0;
   let local=false;   // 1台で遊ぶ(交互に打つ)モード
   let hist=[];       // 打たれた石の履歴(一手戻る用)
@@ -760,7 +769,7 @@
     board=[]; for(let r=0;r<N;r++){ board.push(new Array(N).fill(EMPTY)); }
     stones=[]; for(let r=0;r<N;r++){ stones.push(new Array(N).fill(null)); }
     cells.forEach(row=>row.forEach(d=>{ d.innerHTML=""; d.classList.remove("taken"); }));
-    over=false; busy=false; placed=0; turn=BLACK; hist=[];
+    over=false; busy=false; placed=0; turn=BLACK; hist=[]; undoUsed=false;
     myRematch=false; peerRematch=false; undoPending=false; peerGone=false;
     clearTimeout(moveResendTimer); moveResendTimer=0; mySeq=0; lastRecvSeq=0; pendingSeq=0;
     undoBtn.style.display = "";   // 一手戻るは全モードで使える(オンラインは相手の許可制)
@@ -769,13 +778,14 @@
       tagWin.textContent="普通の五目並べ";
     }else{
       tagProb.style.display="";
-      tagProb.textContent="もくもく "+mokuProb+"%";
+      tagProb.textContent="もくもく確率"+mokuProb+"%";
       tagWin.textContent=KAN[winLen]+"目ならべ";
     }
     resultOverlay.classList.remove("on","peek");
     setGiveupVisible(true); stopVictory();
-    document.getElementById("bowlTagB").textContent= local ? "先手" : (human===BLACK)?"自分":"あいて";
-    document.getElementById("bowlTagW").textContent= local ? "後手" : (human===WHITE)?"自分":"あいて";
+    const foe = (!local && !online) ? LV_NAMES[cpuLv]+"ロボ" : "あいて";   // ロボット戦は相手の碁笥に階級を常時表示
+    document.getElementById("bowlTagB").textContent= local ? "先手" : (human===BLACK)?"自分":foe;
+    document.getElementById("bowlTagW").textContent= local ? "後手" : (human===WHITE)?"自分":foe;
     titleScene.classList.remove("on"); gameScene.classList.add("on");
     startTurn();
   }
@@ -1058,6 +1068,7 @@
       startTurn();
     } else {
       if(turn!==human) return;
+      undoUsed=true;   // ロボット戦で待った使用
       undoToPlayer(human);   // ロボットの応手＋自分の一手を戻す
     }
   });
@@ -1076,6 +1087,9 @@
       else if(local){ rTitle.textContent=(winner===BLACK?"先手":"後手")+"の勝ち！"; rTitle.className="r-title win"; rSub.textContent="みごと"+KAN[winLen]+"つ並べた"; playWin(); }
       else if(winner===human){ rTitle.textContent="あなたの勝ち！"; rTitle.className="r-title win"; rSub.textContent="みごと"+KAN[winLen]+"つ並べた"; playWin(); }
       else { rTitle.textContent=(online?"あいての勝ち…":"ロボットの勝ち…"); rTitle.className="r-title"; rSub.textContent="次はきっと勝てる"; playLose(); }
+      if(!local && !online){   // ロボット戦: 戦った階級と待ったの有無を表示(勝ちの自慢に)
+        rSub.innerHTML += '<br><span class="r-foe">'+LV_NAMES[cpuLv]+'ロボットと対局'+(undoUsed?'（一手戻りあり）':'（待ったなし）')+'</span>';
+      }
       resultOverlay.classList.add("on");
     }, line?900:300);
   }
@@ -1680,13 +1694,18 @@
       b.classList.add("sel"); cpuLv=+b.dataset.lv;
     });
   });
+  let orderRandom=false;
   document.querySelectorAll("#orderRow .fuda").forEach(b=>{
     b.addEventListener("click",()=>{ ensureAudio(); playSelect();
       document.querySelectorAll("#orderRow .fuda").forEach(x=>x.classList.remove("sel"));
-      b.classList.add("sel"); human=(+b.dataset.first)?BLACK:WHITE;
+      b.classList.add("sel");
+      if(b.dataset.first==="r"){ orderRandom=true; }
+      else { orderRandom=false; human=(+b.dataset.first)?BLACK:WHITE; }
     });
   });
-  document.getElementById("startBtn").addEventListener("click",()=>{ ensureAudio(); online=false; local=false; leaveChannel(); playStart(); startGame(); });
+  document.getElementById("startBtn").addEventListener("click",()=>{ ensureAudio(); online=false; local=false; leaveChannel();
+    if(orderRandom) human=(Math.random()<0.5)?BLACK:WHITE;   // おまかせ: 対局開始時に先後を抽選
+    playStart(); startGame(); });
   document.getElementById("startLocalBtn").addEventListener("click",()=>{ ensureAudio(); online=false; local=true; leaveChannel(); playStart(); startGame(); });
   document.getElementById("againBtn").addEventListener("click",()=>{
     ensureAudio();

@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>ま囲碁</title>
-<meta name="apple-mobile-web-app-title" content="ま囲碁">
-<meta name="application-name" content="ま囲碁">
-<meta name="description" content="囲んで取ったら勝ちの囲碁(ポン抜きルール)…のはずが、置いた碁石が時々「迷子」になって消える!? 運と実力の和風ボードゲーム。CPU対戦対応。">
+<title>ま囲碁もくもく並べ</title>
+<meta name="apple-mobile-web-app-title" content="ま囲碁もくもく並べ">
+<meta name="application-name" content="ま囲碁もくもく並べ">
+<meta name="description" content="囲碁と五目並べの合体!? 囲んで取っても、5つ並べても勝ち。しかも置いた碁石は時々「迷子」や「もくもく」で消える。運と実力の和風ボードゲーム。CPU対戦対応。">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Yuji+Syuku&display=swap');
   :root{
@@ -46,9 +46,12 @@
   #titleScene{ padding:9vh 20px 150px; gap:34px; }   /* 下余白はフッターの帯より深く(入室ボタン等が被らない) */
   .t-wrap{ position:relative; text-align:center; }
   .t-main{
-    font-size:clamp(40px, 11vw, 76px); letter-spacing:.08em; line-height:1.25;
+    font-size:clamp(33px, 8.4vw, 62px); letter-spacing:.05em; line-height:1.25;
     color:var(--sumi); text-shadow:0 2px 0 rgba(255,255,255,.6);
   }
+  .t-main .moku-moji{ color:var(--shu); display:inline-block; animation:mokuBob 2.6s ease-in-out infinite; }
+  .t-main .moku-moji:nth-of-type(2){ animation-delay:.35s; }
+  @keyframes mokuBob{ 0%,100%{ transform:translateY(0) scale(1); } 50%{ transform:translateY(-6px) scale(1.06); } }
   .t-main .maigo-moji{ color:var(--shu); display:inline-block; animation:maigoWander 7.5s ease-in-out infinite; }
   @keyframes maigoWander{   /* 「ま」が迷子のようにふらふら彷徨う: 左へふらり→立ち止まってきょろ→右へふらふら→戻ってくる */
     0%{ transform:translate(0,0) rotate(0); }
@@ -101,7 +104,7 @@
   .setup.on{ display:flex; animation:setupIn .3s cubic-bezier(.2,.9,.3,1); }
   @keyframes setupIn{ 0%{ opacity:0; transform:translateY(16px); } 100%{ opacity:1; transform:translateY(0); } }
   .prep-note{ font-size:clamp(12px,3.3vw,14px); letter-spacing:.1em; opacity:.65; text-align:center; }
-  /* ルール設定(迷子確率・とる数) */
+  /* ルール設定(消える確率・ならべる数・とる数) */
   #ruleBox{ display:none; flex-direction:column; align-items:center; gap:12px;
     background:rgba(255,255,255,.45); border:1px solid rgba(51,47,42,.2); border-radius:14px;
     padding:16px 30px 12px; box-shadow:0 2px 8px rgba(60,40,10,.08); }
@@ -112,7 +115,15 @@
   }
   .rc-reset:active{ transform:translateY(1px); }
   .setup.on #ruleBox, #ruleBox.on{ display:flex; }
-  .rule-ctrls{ display:flex; gap:34px; justify-content:center; }
+  .rule-ctrls{ display:flex; gap:22px; justify-content:center; flex-wrap:wrap; }
+  /* 勝ちのじょうけん(どちらか/両方)トグル */
+  .wm-row{ display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .wm-name{ font-size:13px; letter-spacing:.15em; opacity:.65; }
+  .wm-toggle{ display:flex; gap:10px; width:min(90vw, 340px); }
+  .wm-btn{ flex:1 1 0; min-width:0; padding:7px 8px 8px; cursor:pointer; font-family:inherit; font-size:14px; letter-spacing:.04em; white-space:nowrap; text-align:center;
+    color:var(--sumi); background:rgba(255,255,255,.5); border:1.5px solid rgba(51,47,42,.35); border-radius:7px; }
+  .wm-btn.sel{ color:#fff; background:linear-gradient(160deg,#e0684f,var(--shu) 55%,#9c2c1f); border-color:#7d2318; }
+  .wm-btn:active{ transform:translateY(1px); }
   .rc{ display:flex; flex-direction:column; align-items:center; gap:8px; }
   .rc-name{ font-size:13px; letter-spacing:.15em; opacity:.65; }
   .rc-row{ display:flex; align-items:center; gap:12px; }
@@ -185,6 +196,7 @@
     font-size:clamp(12px,3.4vw,15px); letter-spacing:.12em; color:rgba(51,47,42,.78);
     background:rgba(255,255,255,.48); border:1px dashed rgba(51,47,42,.35);
   }
+  .rule-tag .conn{ letter-spacing:0; margin:0 .04em; font-size:.82em; opacity:.7; }   /* or/and は前後を詰めて小さめに */
   /* 音ON/OFF(全画面共通・右上): 控えめな見た目 */
   .snd-btns{ position:fixed; right:10px; top:10px; z-index:80; display:flex; flex-direction:column; gap:6px; align-items:flex-end; }
   .snd-btn{
@@ -454,8 +466,8 @@
   <div class="scene on" id="titleScene">
     <div class="t-wrap">
       <div class="t-cloud c1"></div><div class="t-cloud c2"></div>
-      <div class="t-main"><span class="maigo-moji">ま</span>囲碁</div>
-      <div class="t-sub">― 置いた碁石、迷子になって消えるかも ―</div>
+      <div class="t-main"><span class="maigo-moji">ま</span>囲碁<span class="moku-moji">もく</span><span class="moku-moji">もく</span>並べ</div>
+      <div class="t-sub">― 置いた碁石、煙とか迷子になって消えるかも ―</div>
     </div>
 
     <div>
@@ -473,12 +485,23 @@
       <div class="sec-label">ルール</div>
       <div class="rule-ctrls">
         <div class="rc">
-          <div class="rc-name">迷子確率</div>
+          <div class="rc-name">消える確率</div>
           <div class="rc-row"><button class="rc-btn" data-t="p" data-d="-1">−</button><span class="rc-val" id="probVal">20%</span><button class="rc-btn" data-t="p" data-d="1">＋</button></div>
         </div>
         <div class="rc">
+          <div class="rc-name">何個ならべたら勝ち</div>
+          <div class="rc-row"><button class="rc-btn" data-t="l" data-d="-1">−</button><span class="rc-val" id="lineVal">5</span><button class="rc-btn" data-t="l" data-d="1">＋</button></div>
+        </div>
+        <div class="rc">
           <div class="rc-name">何個囲んだら勝ち</div>
-          <div class="rc-row"><button class="rc-btn" data-t="w" data-d="-1">−</button><span class="rc-val" id="winVal">1</span><button class="rc-btn" data-t="w" data-d="1">＋</button></div>
+          <div class="rc-row"><button class="rc-btn" data-t="c" data-d="-1">−</button><span class="rc-val" id="capVal">3</span><button class="rc-btn" data-t="c" data-d="1">＋</button></div>
+        </div>
+      </div>
+      <div class="wm-row">
+        <div class="wm-name">勝ちのじょうけん</div>
+        <div class="wm-toggle" id="wmToggle">
+          <button class="wm-btn sel" data-wm="or">どちらかで勝ち</button>
+          <button class="wm-btn" data-wm="and">両方で勝ち</button>
         </div>
       </div>
       <button class="rc-reset" id="ruleReset">初期設定に戻す</button>
@@ -624,14 +647,16 @@
   const rTitle=document.getElementById("rTitle"), rSub=document.getElementById("rSub");
 
   let board=[], stones=[], turn=BLACK, human=BLACK, cpuLv=1;
-  const LV_NAMES=["初級","中級","上級"];
-  let undoUsed=false;   // ロボット戦で一手戻るを使ったか(結果画面で「待ったなし」自慢に使う)
   let prob=0, over=false, busy=false;
   let capB=0, capW=0;   // とった石の数(黒がとった数 / 白がとった数)
   let local=false;   // 1台で遊ぶ(交互に打つ)モード
   let hist=[];       // 局面の履歴(一手戻る用。打つ前の盤面をまるごと保存)
   /* --- カスタムルール --- */
-  let maigoProb=20, normNum=1;   // 迷子確率% / 先に何目とったら勝ちか
+  let maigoProb=20, winLen=5, capNorm=3;   // 消える確率% / 何個ならべたら勝ち / 何個囲んだら勝ち
+  let winMode="or";   // "or"=どちらか達成で勝ち / "and"=両方達成で勝ち
+  let lastCapGlow=[];  // 直前に取った時、囲んでいた自分の石(勝利演出の光らせ用)
+  const LV_NAMES=["初級","中級","上級"];
+  let undoUsed=false;   // ロボット戦で一手戻るを使ったか
   const KAN=["","一","二","三","四","五","六","七","八","九","十"];
   const PROB_STEPS=(()=>{ const a=[]; for(let p=0;p<=95;p+=5)a.push(p); a.push(99); return a; })();   // 0,5,...,95,99
   let probIdx=PROB_STEPS.indexOf(20);
@@ -809,13 +834,12 @@
     myRematch=false; peerRematch=false; undoPending=false; peerGone=false;
     clearTimeout(moveResendTimer); moveResendTimer=0; mySeq=0; lastRecvSeq=0; pendingSeq=0;
     undoBtn.style.display = "";   // 一手戻るは全モードで使える(オンラインは相手の許可制)
-    if(maigoProb===0){   // 迷子なし = 普通の囲碁(ポン抜きルール)
+    tagWin.innerHTML=winLen+"並べる<span class=\"conn\">"+(winMode==="and"?"and":"or")+"</span>"+capNorm+"個かこむ";   // 2つの勝ち方(どちらか=or / 両方=and)。or/andは前後を詰める
+    if(maigoProb===0){   // 消えるなし
       tagProb.style.display="none";
-      tagWin.textContent=(normNum===1) ? "普通の囲碁" : normNum+"個とったら勝ち";
     }else{
       tagProb.style.display="";
-      tagProb.textContent="迷子確率"+maigoProb+"%";
-      tagWin.textContent=normNum+"個とったら勝ち";
+      tagProb.textContent="消える確率"+maigoProb+"%";
     }
     resultOverlay.classList.remove("on","peek");
     setGiveupVisible(true); stopVictory();
@@ -842,12 +866,13 @@
     if(board[r][c]!==EMPTY) return;
     if(!isLegal(board,r,c,turn)){ playNo(); showToast("そこには打てぬ(置いた瞬間に囲まれてしまう)"); return; }
     if(online){
-      // 迷子・フェイント抽選は打った側が行い、結果ごと相手に送る(両者の演出と盤面が必ず一致)
-      const maigo=(Math.random()*100)<prob;
-      const fake=(!maigo && prob>0 && (isCritical(r,c,human) || Math.random()<0.05));   // 決着級の一手は必ずきょろきょろ(0%設定なら無し)
+      // 消える・演出の抽選は打った側が行い、結果ごと相手に送る(両者の演出と盤面が必ず一致)
+      const gone=(Math.random()*100)<prob;
+      const gtype=gone ? (Math.random()<0.5?"maigo":"moku") : "";
+      const fake=(!gone && prob>0 && (isCritical(r,c,human) || Math.random()<0.05));   // 決着級の一手は必ずきょろきょろ(0%設定なら無し)
       mySeq++; pendingSeq=mySeq;
-      sendMove({ r,c,maigo,fake,seq:mySeq });
-      tryPlace(r,c,maigo,fake);
+      sendMove({ r,c,gone,gtype,fake,seq:mySeq });
+      tryPlace(r,c,gone,fake,gtype);
       return;
     }
     tryPlace(r,c);
@@ -989,15 +1014,16 @@
   }
   function stopVictory(){ clearInterval(victoryTimer); victoryTimer=0; }
 
-  /* 石を置く(迷子判定込み)。人間/ロボット/通信相手 共通
-     maigo: 迷子になって歩いて行き、盤から消える / fake: きょろきょろだけして結局そこに座る(いや迷子にならんのかい！) */
-  function tryPlace(r,c,forcedMaigo,forcedFake){
+  /* 石を置く(消える判定込み)。人間/ロボット/通信相手 共通
+     gone: 消える(迷子=歩いて盤外へ / もくもく=その場で煙) / fake: きょろきょろだけして結局そこに座る */
+  function tryPlace(r,c,forcedGone,forcedFake,forcedType){
     busy=true; boardEl.classList.remove("myturn");
     const me=turn;
-    const maigo=(forcedMaigo===undefined) ? (Math.random()*100)<prob : forcedMaigo;
-    // 石をとる一手・アタリの味方を助ける一手は必ず「きょろきょろ」を入れる(本物でも嘘でも)。通常の嘘きょろきょろは5%
+    const gone=(forcedGone===undefined) ? (Math.random()*100)<prob : forcedGone;
+    const gtype=gone ? (forcedType || (Math.random()<0.5?"maigo":"moku")) : "";   // 迷子 or もくもく
+    // 石をとる一手・アタリの味方を助ける一手は必ず「きょろきょろ」を入れる(本物でも嘘でも)。通常の嘘は5%
     const critical=prob>0 && isCritical(r,c,me);
-    const fake=(forcedFake===undefined) ? (!maigo && (critical || (prob>0 && Math.random()<0.05))) : forcedFake;
+    const fake=(forcedFake===undefined) ? (!gone && (critical || (prob>0 && Math.random()<0.05))) : forcedFake;
     hist.push({ p:me, snap:board.map(row=>row.slice()), capB, capW });   // 一手戻る用(打つ前の局面まるごと)
     flyStone(me, r, c, ()=>{
       const st=document.createElement("div");
@@ -1005,12 +1031,18 @@
       cells[r][c].appendChild(st);
       playStone();
       const tameMs=critical?1250:640, kyoroCls=critical?"kyoro long":"kyoro";   // 決着級の一手は長きょろきょろ
-      if(maigo){
-        setTimeout(()=>{   // きょろきょろ → 迷子になって歩き出し、盤の外へ消えていく
-          st.className+=" "+kyoroCls; playKyoro(tameMs/1000); qmarkAt(r,c,tameMs);
+      if(gone){
+        setTimeout(()=>{   // きょろきょろ → 消える
+          st.className+=" "+kyoroCls; playKyoro(tameMs/1000);
+          if(gtype!=="moku") qmarkAt(r,c,tameMs);   // 「？」は迷子だけ(もくもくは煙なので出さない)
           setTimeout(()=>{
-            st.remove();
-            walkOffBoard(me, r, c, ()=>{ if(!over) switchTurn(); });
+            if(gtype==="moku"){   // もくもく: その場で煙になって消える
+              st.remove(); spawnPuffs(r,c); playPuff();
+              setTimeout(()=>{ if(!over) switchTurn(); }, 520);
+            } else {              // 迷子: とてとて歩いて盤の外へ消える
+              st.remove();
+              walkOffBoard(me, r, c, ()=>{ if(!over) switchTurn(); });
+            }
           }, tameMs);
         }, 130);
         return;
@@ -1032,24 +1064,48 @@
       commitStone(r, c, me, st);
     });
   }
-  /* 石が盤に座る: とれる石をとり、勝敗を確かめ、手番を渡す */
+  /* 盤上でpが winLen連 を持っていれば、その石列を返す(勝ち判定・演出用) */
+  function findAnyLine(p){
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+      if(board[r][c]!==p) continue;
+      for(const [dr,dc] of DIRS){
+        const cellsRun=[[r,c]]; let ok=true;
+        for(let k=1;k<winLen;k++){ const rr=r+dr*k, cc=c+dc*k; if(rr<0||rr>=N||cc<0||cc>=N||board[rr][cc]!==p){ ok=false; break; } cellsRun.push([rr,cc]); }
+        if(ok) return cellsRun;
+      }
+    }
+    return null;
+  }
+  /* 石が盤に座る: とれる石をとり、勝敗を確かめ、手番を渡す(OR=どちらか / AND=両方) */
   function commitStone(r,c,p,st){
     board[r][c]=p; stones[r][c]=st; cells[r][c].classList.add("taken");
     const dead=deadNeighbors(board,r,c);
     let wait=200;
-    if(dead.length){
-      takeStones(p, dead);
-      if(over) return;   // ノルマ到達 → takeStones内でfinish済み
-      wait=560;
-    } else if(groupInfo(board,r,c).libs===0){
-      // 保険: 迷子が着地した瞬間に囲まれてしまう場所だったら、その石はそのまま昇天(誰の得点にもならない)
+    if(dead.length){ takeStones(p, dead); wait=560; }
+    else if(groupInfo(board,r,c).libs===0){
+      // 保険: 着地した瞬間に囲まれてしまう場所だったら、その石はそのまま昇天(誰の得点にもならない)
       board[r][c]=EMPTY; stones[r][c]=null; cells[r][c].classList.remove("taken");
       st.remove(); spawnPuffs(r,c); playPuff();
+      renderBowlTags();
+      setTimeout(()=>{ if(!over) switchTurn(); }, wait);
+      return;
     }
     renderBowlTags();
+    // 勝敗判定(石が盤に残っている時)
+    if(board[r][c]===p){
+      const line=findAnyLine(p);                 // 今 p が winLen連 を持っているか
+      const capMet=capOf(p)>=capNorm;            // 囲んだ数がノルマに達したか
+      const lineGlow=line ? line.map(([lr,lc])=>stones[lr][lc]).filter(Boolean) : null;
+      if(winMode==="and"){
+        if(capMet && line){ finish(p, lineGlow, "both"); return; }   // 両方達成
+      } else {
+        if(line){ finish(p, lineGlow, "line"); return; }              // 並べ勝ち
+        if(capMet){ finish(p, lastCapGlow, "capture"); return; }      // 囲み勝ち
+      }
+    }
     setTimeout(()=>{ if(!over) switchTurn(); }, wait);
   }
-  /* 相手の石をとる: とった石が自分の碁笥へ飛んでいき、ノルマに達したら勝ち */
+  /* 相手の石をとる: とった石が自分の碁笥へ飛んでいく(勝ち判定はcommitStone側でまとめて行う) */
   function takeStones(taker, dead){
     playCapture();
     const bowl=(taker===BLACK)?bowlB:bowlW;
@@ -1078,8 +1134,7 @@
     });
     setTimeout(()=>{ bowl.classList.remove("pop"); void bowl.offsetWidth; bowl.classList.add("pop"); setTimeout(()=>bowl.classList.remove("pop"),340); }, 470);
     if(taker===BLACK) capB+=dead.length; else capW+=dead.length;
-    renderBowlTags();
-    if(capOf(taker)>=normNum) finish(taker, [...glow], false);
+    lastCapGlow=[...glow];
   }
   function spawnPuffs(r,c){
     const base=cells[r][c];
@@ -1113,6 +1168,17 @@
     if(c>0) out.push([r,c-1]);
     if(c<N-1) out.push([r,c+1]);
     return out;
+  }
+  /* ---------- 並び判定(五目並べ側) ---------- */
+  const DIRS=[[0,1],[1,0],[1,1],[1,-1]];
+  function winLine(r,c,p){   // (r,c)にpを置いてタテ/ヨコ/ナナメにwinLen連ができたら、その石列を返す
+    for(const [dr,dc] of DIRS){
+      const line=[[r,c]];
+      for(let k=1;k<winLen;k++){ const rr=r+dr*k, cc=c+dc*k; if(rr<0||rr>=N||cc<0||cc>=N||board[rr][cc]!==p) break; line.push([rr,cc]); }
+      for(let k=1;k<winLen;k++){ const rr=r-dr*k, cc=c-dc*k; if(rr<0||rr>=N||cc<0||cc>=N||board[rr][cc]!==p) break; line.push([rr,cc]); }
+      if(line.length>=winLen) return line;
+    }
+    return null;
   }
   /* (r,c)の石とタテヨコでつながる同色のかたまりと、その呼吸点(息)の数 */
   function groupInfo(b,r,c){
@@ -1155,9 +1221,12 @@
     for(let r=0;r<N;r++) for(let c=0;c<N;c++) if(isLegal(b,r,c,p)) out.push([r,c]);
     return out;
   }
-  /* 決着級の一手か: 相手の石をとれる or アタリ(息1)の味方を本当に助けられる手 */
+  /* 決着級の一手か: ①相手の石をとれる ②winLen連が完成する ③相手のwinLen連を防ぐ ④アタリ(息1)の味方を本当に助ける */
   function isCritical(r,c,p){
-    if(capturedBy(board,r,c,p).length) return true;
+    const foe=(p===BLACK)?WHITE:BLACK;
+    if(capturedBy(board,r,c,p).length) return true;   // 取り
+    if(winLine(r,c,p)) return true;                    // 自分の並び完成
+    if(winLine(r,c,foe)) return true;                  // 相手の並びを止める(そこは相手の勝ち筋)
     let rescue=false;
     for(const [nr,nc] of neighborsOf(r,c)){
       if(board[nr][nc]===p && groupInfo(board,nr,nc).libs===1){ rescue=true; break; }
@@ -1172,8 +1241,8 @@
     const foe = (!local && !online) ? LV_NAMES[cpuLv]+"ロボ" : "あいて";   // ロボット戦は相手の碁笥に階級を常時表示
     const lb= local ? "先手" : (human===BLACK)?"自分":foe;
     const lw= local ? "後手" : (human===WHITE)?"自分":foe;
-    document.getElementById("bowlTagB").innerHTML=lb+"<b>"+capB+"/"+normNum+"</b>";
-    document.getElementById("bowlTagW").innerHTML=lw+"<b>"+capW+"/"+normNum+"</b>";
+    document.getElementById("bowlTagB").innerHTML=lb+"<b>"+capB+"/"+capNorm+"</b>";
+    document.getElementById("bowlTagW").innerHTML=lw+"<b>"+capW+"/"+capNorm+"</b>";
   }
   const giveupBtn=document.getElementById("giveupBtn");
   const undoBtn=document.getElementById("undoBtn");
@@ -1268,14 +1337,18 @@
     giveupBtn.style.visibility = v ? "" : "hidden";
     undoBtn.style.visibility = v ? "" : "hidden";
   }
-  function finish(winner, glowEls, byCount){
+  /* reason: "line"=並べ勝ち / "capture"=囲み勝ち / "count"=盤が詰まって数で決着 */
+  function finish(winner, glowEls, reason){
     over=true; busy=true; setGiveupVisible(false);
     document.getElementById("confirmOverlay").classList.remove("on");   // 開きっぱなしの投了確認を閉じる
-    // とった瞬間、囲んでいた自分の石たちが金色に光り出す
+    // 勝ちの瞬間、決め手になった石たち(並んだ列 or 囲んだ石)が金色に光り出す
     if(glowEls && glowEls.length) setTimeout(()=>{ glowEls.forEach(el=>{ if(el && el.isConnected) el.classList.add("win-glow"); }); }, 650);
     setTimeout(()=>{
       if(winner!==0) burstStones(winner);   // 勝利陣営の碁笥から碁石が吹き上がる
-      const subWin = byCount ? "とった石の数で勝負あり" : "みごと"+normNum+"個囲んだ";
+      const subWin = reason==="line" ? "みごと"+winLen+"つ並べた"
+                   : reason==="both" ? "囲んで、並べて、大勝利！"
+                   : reason==="count" ? "とった石の数で勝負あり"
+                   : "みごと"+capNorm+"個囲んだ";
       if(winner===0){ rTitle.textContent="引き分け"; rTitle.className="r-title"; rSub.textContent="打てる場所がなくなった"; }
       else if(local){ rTitle.textContent=(winner===BLACK?"先手":"後手")+"の勝ち！"; rTitle.className="r-title win"; rSub.textContent=subWin; playWin(); }
       else if(winner===human){ rTitle.textContent="あなたの勝ち！"; rTitle.className="r-title win"; rSub.textContent=subWin; playWin(); }
@@ -1288,7 +1361,7 @@
   }
   /* 打てる場所が無くなった: とった石の数の多いほうが勝ち */
   function finishByCount(){
-    finish(capB>capW ? BLACK : (capW>capB ? WHITE : 0), null, true);
+    finish(capB>capW ? BLACK : (capW>capB ? WHITE : 0), null, "count");
   }
 
   /* ---------- オンライン対戦 (Supabase Realtime / 合言葉方式) ---------- */
@@ -1307,12 +1380,12 @@
   function openChannel(code, asHost, onReady){
     leaveChannel();
     isHost=asHost;
-    ch=sbClient().channel("maigo_"+code, { config:{ presence:{ key:myId }, broadcast:{ self:false } } });
+    ch=sbClient().channel("maigomoku_"+code, { config:{ presence:{ key:myId }, broadcast:{ self:false } } });
     ch.on("presence",{event:"sync"},()=>{
       if(isHost && !startSent && presenceCount()>=2){
         startSent=true;
         const hc=(Math.random()<0.5)?BLACK:WHITE;   // 先手(黒)はランダム
-        ch.send({ type:"broadcast", event:"start", payload:{ hc, p:maigoProb, w:normNum } });
+        ch.send({ type:"broadcast", event:"start", payload:{ hc, p:maigoProb, l:winLen, w:capNorm, m:winMode } });
         beginOnline(hc);
       }
     });
@@ -1339,7 +1412,9 @@
       if(isHost) return;
       if(payload){   // 部屋主のルールを受け取って揃える
         if(typeof payload.p==="number") maigoProb=Math.max(0, Math.min(99, payload.p|0));
-        if(typeof payload.w==="number") normNum=Math.max(1, Math.min(30, payload.w|0));
+        if(typeof payload.l==="number") winLen=Math.max(2, Math.min(10, payload.l|0));
+        if(typeof payload.w==="number") capNorm=Math.max(1, Math.min(30, payload.w|0));
+        if(payload.m==="and"||payload.m==="or") winMode=payload.m;
       }
       beginOnline(payload && payload.hc===BLACK ? WHITE : BLACK);
     });
@@ -1354,7 +1429,7 @@
       if(turn===human) turn=(human===BLACK)?WHITE:BLACK;   // 手番のズレを検知したら、届いた一手を信頼して補正する(自己修復)
       const r=payload.r|0, c=payload.c|0;
       if(r<0||r>=N||c<0||c>=N||board[r][c]!==EMPTY) return;
-      tryPlace(r, c, !!payload.maigo, !!payload.fake);
+      tryPlace(r, c, !!payload.gone, !!payload.fake, payload.gtype||"");
     });
     ch.on("broadcast",{event:"moveack"},({payload})=>{
       if(payload && payload.seq===pendingSeq){ clearTimeout(moveResendTimer); moveResendTimer=0; }
@@ -1486,53 +1561,53 @@
     }
     return best;
   }
-  /* colのかたまりのうち、アタリ(息1)になっている数 */
-  function countAtari(b,color){
-    const seen=new Set(); let n=0;
-    for(let r=0;r<N;r++) for(let c=0;c<N;c++){
-      if(b[r][c]!==color || seen.has(r*N+c)) continue;
-      const g=groupInfo(b,r,c); g.stones.forEach(([a,bb])=>seen.add(a*N+bb));
-      if(g.libs===1) n++;
+  /* 並び(五目)の評価: winLenまでの距離と両端の空きで点をつける */
+  function patScore(cnt,open){
+    if(cnt>=winLen) return 1e7;
+    if(open===0) return 0;
+    const d=winLen-cnt;
+    if(d===1) return open===2?1e6:1.2e5;
+    if(d===2) return open===2?6e4:3500;
+    if(d===3) return open===2?900:150;
+    return open===2?45:12;
+  }
+  /* (r,c)にpを置いた時の並び価値(盤bは書き換えない)。win=winLen連が完成するか */
+  function lineScoreOn(b,r,c,p){
+    let total=0, win=false;
+    for(const [dr,dc] of DIRS){
+      let cnt=1, open=0, rr=r+dr, cc=c+dc;
+      while(rr>=0&&rr<N&&cc>=0&&cc<N&&b[rr][cc]===p){ cnt++; rr+=dr; cc+=dc; }
+      if(rr>=0&&rr<N&&cc>=0&&cc<N&&b[rr][cc]===EMPTY) open++;
+      rr=r-dr; cc=c-dc;
+      while(rr>=0&&rr<N&&cc>=0&&cc<N&&b[rr][cc]===p){ cnt++; rr-=dr; cc-=dc; }
+      if(rr>=0&&rr<N&&cc>=0&&cc<N&&b[rr][cc]===EMPTY) open++;
+      if(cnt>=winLen) win=true;
+      total+=patScore(cnt,open);
     }
-    return n;
+    return { score:total, win };
   }
-  /* 石のまわり(8近傍)の空点だけ集める(読みの枝刈り用) */
-  function nearEmpties(b){
-    const out=[];
-    for(let r=0;r<N;r++) for(let c=0;c<N;c++){
-      if(b[r][c]!==EMPTY) continue;
-      let near=false;
-      for(let dr=-1;dr<=1&&!near;dr++) for(let dc=-1;dc<=1;dc++){
-        const rr=r+dr, cc=c+dc;
-        if(rr>=0&&rr<N&&cc>=0&&cc<N&&b[rr][cc]!==EMPTY){ near=true; break; }
-      }
-      if(near) out.push([r,c]);
-    }
-    return out;
-  }
-  /* colにとっての最善の一手と、その評価・その後の盤面(上級の読み用) */
-  function bestReply(b,col){
-    let bv=-Infinity, bc=null;
-    const cells=nearEmpties(b);
-    for(const [r,c] of cells){ const v=scoreMove(b,r,c,col); if(v>bv){ bv=v; bc=[r,c]; } }
-    if(bc){ const s=simPlace(b,bc[0],bc[1],col); return { v:bv, b:s?s.b:b }; }
-    return { v:0, b:b };
-  }
-  /* 一手の評価: とる > 両アタリ > とられない > アタリをかける > 息をのばす > 中央・接近戦を好む */
+  /* 一手の評価: 取り勝ち/並べ勝ち > 相手の勝ち阻止 > 取り・並びを伸ばす > 息・中央・接近戦 */
   function scoreMove(b,r,c,cpu){
     const opp=(cpu===BLACK)?WHITE:BLACK;
     const sim=simPlace(b,r,c,cpu);
     if(!sim) return -Infinity;
     let s=Math.random()*8;
+    // --- 取り(囲碁側) ---
     if(sim.caps){
-      if(capOf(cpu)+sim.caps>=normNum) return 1e9;   // この一手で勝ち
+      if(capOf(cpu)+sim.caps>=capNorm) return 1e9;   // この一手で取り勝ち
       s+=sim.caps*3000;
     }
-    if(countAtari(sim.b, opp)>=2) s+=100000;    // 両アタリ: 相手は両方は守れない → 次に必ずどれか取れる
-    const oppNow=biggestThreat(b,opp), oppAfter=biggestThreat(sim.b,opp);   // 相手が次にとれる最大の石数
-    if(capOf(opp)+oppAfter>=normNum) s-=8e8;    // 打った直後に相手に勝たれる手はほぼ打たない
+    // --- 並び(五目側) ---
+    const myLine=lineScoreOn(b,r,c,cpu);
+    if(myLine.win) return 1e9;                        // この一手で並べ勝ち
+    const oppLine=lineScoreOn(b,r,c,opp);
+    if(oppLine.win) s+=7e8;                           // そこは相手の並び完成点 → 是が非でも止める
+    s+=myLine.score + 0.85*oppLine.score;             // 自分は並べたい / 相手の並びも止めたい
+    // --- 取られ対策(囲碁側) ---
+    const oppNow=biggestThreat(b,opp), oppAfter=biggestThreat(sim.b,opp);
+    if(capOf(opp)+oppAfter>=capNorm) s-=8e8;    // 打った直後に相手に取り勝ちされる手はほぼ打たない
     s+=(oppNow-oppAfter)*2500;                  // 自分のピンチを解消する(受け)
-    if(sim.myLibs===1) s-=2400;                 // 自分からアタリに突っ込む手は損
+    if(sim.myLibs===1) s-=2400;                 // 自分からアタリに突っ込む手は損(並びを作っても囲まれたら消される)
     if(sim.myLibs>=2) s+=biggestThreat(sim.b,cpu)*600;   // 安全な位置からアタリをかける(攻め)
     s+=sim.myLibs*30;
     s+=(8-(Math.abs(r-(N>>1))+Math.abs(c-(N>>1))))*6;    // 中央寄り好み
@@ -1546,17 +1621,119 @@
     if(!mv){ finishByCount(); return; }
     tryPlace(mv[0], mv[1]);
   }
+  /* ---------- 上級専用: 先読み探索(アルファベータ) ---------- */
+  const _now=(typeof performance!=="undefined"&&performance.now)?()=>performance.now():()=>Date.now();
+  let EXPCPU=WHITE, EXPOPP=BLACK, expDeadline=0;
+  /* (r,c)にpを置いた石を含む winLen連 が在るか */
+  function lineWinOn(b,r,c,p){
+    for(const [dr,dc] of DIRS){
+      let cnt=1, rr=r+dr, cc=c+dc;
+      while(rr>=0&&rr<N&&cc>=0&&cc<N&&b[rr][cc]===p){ cnt++; rr+=dr; cc+=dc; }
+      rr=r-dr; cc=c-dc;
+      while(rr>=0&&rr<N&&cc>=0&&cc<N&&b[rr][cc]===p){ cnt++; rr-=dr; cc-=dc; }
+      if(cnt>=winLen) return true;
+    }
+    return false;
+  }
+  /* 探索用の着手候補: 石の近く(8近傍)の合法手を、簡易並び評価で並べて上位beam手 */
+  function genMoves(b,col,beam){
+    const opp=(col===BLACK)?WHITE:BLACK, out=[];
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+      if(b[r][c]!==EMPTY) continue;
+      let near=false;
+      for(let dr=-1;dr<=1&&!near;dr++) for(let dc=-1;dc<=1;dc++){ const rr=r+dr,cc=c+dc; if(rr>=0&&rr<N&&cc>=0&&cc<N&&b[rr][cc]!==EMPTY){ near=true; break; } }
+      if(!near || !isLegal(b,r,c,col)) continue;
+      const q=lineScoreOn(b,r,c,col).score + 0.95*lineScoreOn(b,r,c,opp).score;   // 攻めと受けで手を並べる
+      out.push({r,c,q});
+    }
+    out.sort((a,b)=>b.q-a.q);
+    return out.slice(0,beam);
+  }
+  function winPot(k){ return k>=winLen ? 1e7 : Math.pow(7,k); }   // 並びの伸び(4連=2401, winLen=勝ち)
+  function capScore(x){ return x>=capNorm ? 1e7 : 3000*x + Math.pow(x/capNorm,2)*6000; }
+  /* CPU視点の静的評価(大きいほどCPU有利) */
+  function evalBoard(b, capCpu, capOpp){
+    let sc=capScore(capCpu)-capScore(capOpp);
+    for(const [dr,dc] of DIRS){
+      for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+        const er=r+dr*(winLen-1), ec=c+dc*(winLen-1);
+        if(er<0||er>=N||ec<0||ec>=N) continue;
+        let nc=0,no=0;
+        for(let k=0;k<winLen;k++){ const v=b[r+dr*k][c+dc*k]; if(v===EXPCPU)nc++; else if(v===EXPOPP)no++; }
+        if(nc&&!no) sc+=winPot(nc);
+        else if(no&&!nc) sc-=winPot(no);
+      }
+    }
+    sc += (biggestThreat(b,EXPCPU)-biggestThreat(b,EXPOPP))*250;   // 次に取れる石の差(アタリ)
+    return sc;
+  }
+  function evalSigned(b,col,capCpu,capOpp){ const v=evalBoard(b,capCpu,capOpp); return (col===EXPCPU)?v:-v; }
+  const WINV=1e9;
+  function nega(b,col,depth,alpha,beta,capCpu,capOpp){
+    if(_now()>expDeadline) return evalSigned(b,col,capCpu,capOpp);
+    const opp=(col===BLACK)?WHITE:BLACK;
+    const moves=genMoves(b,col, depth>=3?10:8);
+    if(!moves.length) return evalSigned(b,col,capCpu,capOpp);
+    let best=-1e18;
+    for(const m of moves){
+      const sim=simPlace(b,m.r,m.c,col); if(!sim) continue;
+      const myCap=(col===EXPCPU?capCpu:capOpp)+sim.caps;
+      let val;
+      if(lineWinOn(sim.b,m.r,m.c,col) || myCap>=capNorm){
+        val=WINV-(10-depth);
+      } else if(depth<=1){
+        val=evalSigned(sim.b, col, (col===EXPCPU)?myCap:capCpu, (col===EXPCPU)?capOpp:myCap);
+      } else {
+        const ncCpu=(col===EXPCPU)?myCap:capCpu, ncOpp=(col===EXPCPU)?capOpp:myCap;
+        val=-nega(sim.b, opp, depth-1, -beta, -alpha, ncCpu, ncOpp);
+      }
+      if(val>best) best=val;
+      if(best>alpha) alpha=best;
+      if(alpha>=beta) break;
+    }
+    return best;
+  }
+  function expertPick(){
+    EXPCPU=(human===BLACK)?WHITE:BLACK; EXPOPP=human;
+    if(placedCount()===0) return [N>>1, N>>1];
+    const root=genMoves(board, EXPCPU, 16);
+    if(!root.length){ const l=legalCells(board,EXPCPU); return l.length?l[Math.floor(Math.random()*l.length)]:null; }
+    // 1) 今すぐ勝てる手
+    for(const m of root){ const sim=simPlace(board,m.r,m.c,EXPCPU); if(sim && (lineWinOn(sim.b,m.r,m.c,EXPCPU) || capOf(EXPCPU)+sim.caps>=capNorm)) return [m.r,m.c]; }
+    // 2) 反復深化アルファベータ(残り時間まで)
+    expDeadline=_now()+750;
+    let best=[root[0].r,root[0].c];
+    for(let D=2; D<=6; D+=2){
+      let bv=-1e18, bm=null;
+      for(const m of root){
+        const sim=simPlace(board,m.r,m.c,EXPCPU); if(!sim) continue;
+        const myCap=capOf(EXPCPU)+sim.caps;
+        let val;
+        if(lineWinOn(sim.b,m.r,m.c,EXPCPU)||myCap>=capNorm) val=WINV;
+        else val=-nega(sim.b, EXPOPP, D-1, -1e18, 1e18, myCap, capOf(EXPOPP));
+        val+=Math.random()*4;   // わずかな揺らぎ(同点の打ち分け)
+        if(val>bv){ bv=val; bm=[m.r,m.c]; }
+        if(_now()>expDeadline) break;
+      }
+      if(bm) best=bm;
+      if(_now()>expDeadline || bv>=WINV-20) break;
+    }
+    return best;
+  }
   function pickMove(){
     const cpu=(human===BLACK)?WHITE:BLACK, opp=human;
     const cand=legalCells(board,cpu);
     if(!cand.length) return null;
     if(placedCount()===0) return [N>>1, N>>1];
     if(cpuLv===0){
-      // 初級: とれる手・とられそうな手だけ、半々の確率で気付く。基本は石の近くにランダム
+      // 初級: とれる手・とられそうな手・王手級の並びだけ、半々の確率で気付く。基本は石の近くにランダム
       let urgent=null, us=0;
       for(const [r,c] of cand){
         const sim=simPlace(board,r,c,cpu); if(!sim) continue;
-        const v=sim.caps*10 + (biggestThreat(board,opp)-biggestThreat(sim.b,opp))*8;
+        const myL=lineScoreOn(board,r,c,cpu), opL=lineScoreOn(board,r,c,opp);
+        let v=sim.caps*10 + (biggestThreat(board,opp)-biggestThreat(sim.b,opp))*8;
+        if(myL.win||opL.win) v+=100;              // 並べ勝ち/相手の並べ勝ち阻止は最優先
+        else v+=(myL.score+opL.score)/2e5;        // ゆるく並びも見る
         if(v>us){ us=v; urgent=[r,c]; }
       }
       if(urgent && us>=8 && Math.random()<0.55) return urgent;
@@ -1575,17 +1752,10 @@
       if(Math.random()<0.3 && scored.length>2 && scored[0].s<1e8) return [scored[1].r,scored[1].c];   // 中級: 3割で最善を逃す
       return [scored[0].r,scored[0].c];
     }
-    // 上級: 有望な上位14手を3手先まで読む(自分→相手の最善→自分の最善)。取り合い(シチョウ的な追いかけ)に強くなる
-    let best=scored[0], bv=-Infinity;
-    for(const m of scored.slice(0,14)){
-      if(m.s>=1e8) return [m.r,m.c];   // 勝ちが見えたら即決
-      const sim=simPlace(board,m.r,m.c,cpu); if(!sim) continue;
-      const opp1=bestReply(sim.b, opp);   // 相手の最善の反撃
-      const cpu2=bestReply(opp1.b, cpu);  // それに対する自分の最善の返し(取り返せるか)
-      const v=m.s - 0.9*opp1.v + 0.55*cpu2.v;
-      if(v>bv){ bv=v; best=m; }
-    }
-    return [best.r, best.c];
+    // 上級: 先読み探索(アルファベータ)に委譲。fork(二段構え)まで読んで受け・攻めを両立
+    const em=expertPick();
+    if(em) return em;
+    return [scored[0].r, scored[0].c];   // 保険
   }
 
   /* ---------- タイトル/UI ---------- */
@@ -1605,9 +1775,9 @@
       friendSetup.classList.toggle("on", mode==="friend");
     });
   });
-  // ルール設定: −/＋で 迷子確率(0〜99%)・とる数(1〜9)。長押しで連続変更
-  const probValEl=document.getElementById("probVal"), winValEl=document.getElementById("winVal");
-  function renderRules(){ probValEl.textContent=maigoProb+"%"; winValEl.textContent=normNum; }
+  // ルール設定: −/＋で 消える確率(0〜99%)・ならべる数(3〜8)・とる数(1〜10)。長押しで連続変更
+  const probValEl=document.getElementById("probVal"), lineValEl=document.getElementById("lineVal"), capValEl=document.getElementById("capVal");
+  function renderRules(){ probValEl.textContent=maigoProb+"%"; lineValEl.textContent=winLen; capValEl.textContent=capNorm; }
   document.querySelectorAll(".rc-btn").forEach(b=>{
     let holdTmr=0, holdIv=0;
     const step=()=>{
@@ -1616,9 +1786,12 @@
       if(b.dataset.t==="p"){
         const ni=Math.max(0, Math.min(PROB_STEPS.length-1, probIdx+d));
         if(ni!==probIdx){ probIdx=ni; maigoProb=PROB_STEPS[probIdx]; changed=true; }
+      } else if(b.dataset.t==="l"){
+        const nl=Math.max(2, Math.min(10, winLen+d));
+        if(nl!==winLen){ winLen=nl; changed=true; }
       } else {
-        const nw=Math.max(1, Math.min(30, normNum+d));
-        if(nw!==normNum){ normNum=nw; changed=true; }
+        const nc=Math.max(1, Math.min(30, capNorm+d));
+        if(nc!==capNorm){ capNorm=nc; changed=true; }
       }
       if(changed){ playTick(); renderRules(); }
     };
@@ -1627,11 +1800,16 @@
       holdTmr=setTimeout(()=>{ holdIv=setInterval(step, 90); }, 420); });
     ["pointerup","pointerleave","pointercancel"].forEach(ev=> b.addEventListener(ev, stop));
   });
+  // 勝ちのじょうけん: どちらか(or) / 両方(and)
+  function renderWinMode(){ document.querySelectorAll("#wmToggle .wm-btn").forEach(x=>x.classList.toggle("sel", x.dataset.wm===winMode)); }
+  document.querySelectorAll("#wmToggle .wm-btn").forEach(b=>{
+    b.addEventListener("click",()=>{ ensureAudio(); playSelect(); winMode=b.dataset.wm; renderWinMode(); });
+  });
   document.getElementById("ruleReset").addEventListener("click",()=>{
     ensureAudio(); playSelect();
-    probIdx=PROB_STEPS.indexOf(20); maigoProb=20; normNum=1; renderRules();
+    probIdx=PROB_STEPS.indexOf(20); maigoProb=20; winLen=5; capNorm=3; winMode="or"; renderRules(); renderWinMode();
   });
-  renderRules();
+  renderRules(); renderWinMode();
 
   // 効果音のON/OFF — 全画面共通・保存される
   const seBtn=document.getElementById("seBtn");
@@ -1711,16 +1889,19 @@
   const helpOverlay=document.getElementById("helpOverlay"), helpBody=document.getElementById("helpBody");
   function openHelp(){
     ensureAudio(); playSelect();
-    let html="<div class=\"h-sec\">基本ルール</div>"
-      +"<p>碁石を交互に置き<br>相手の碁石をたて・よこから囲めば取れる<br>先に<b>"+normNum+"個</b>とったら勝ち（ななめは囲めない）</p>";
-    html+="<div class=\"h-sec hl\">迷子</div>";
+    const goalTxt = (winMode==="and")
+      ? "①と②の<b>両方</b>達成で勝ち"
+      : "①か②の<b>どちらか</b>達成で勝ち";
+    let html="<div class=\"h-sec\">2つの勝ち方</div>"
+      +"<p>碁石を交互に置く。"+goalTxt+"<br>①相手の碁石をたて・よこから<b>囲んで"+capNorm+"個</b>とる<br>②自分の碁石をたて・よこ・ななめに<b>"+winLen+"個ならべる</b></p>";
+    html+="<div class=\"h-sec hl\">迷子・もくもく</div>";
     if(maigoProb>0){
-      html+="<p>置いた碁石は<b>"+maigoProb+"%</b>の確率で迷子になり<br>どこかへ消えてしまう。運を味方につけよ</p>";
+      html+="<p>置いた碁石は<b>"+maigoProb+"%</b>の確率で煙とか迷子になり<br>どこかへ消えてしまう。運を味方につけよ</p>";
     }else{
-      html+="<p>今回は迷子なし。碁石はどこにも行かない、正真正銘の腕くらべ。</p>";
+      html+="<p>今回は消えるナシ。碁石はどこにも行かない、正真正銘の腕くらべ。</p>";
     }
     html+="<div class=\"h-sec\">置けない場所</div>"
-      +"<p>置いた瞬間に自分を囲ってしまうところ</p>";
+      +"<p>置いた瞬間に自分を囲ってしまうところ<br>（相手の碁石をとれる時は置ける）</p>";
     html+="<div class=\"h-sec\">一手戻る</div>"
       +"<p>自分の直前の一手をやり直せる<br>（オンラインは相手が許した時だけ）</p>";
     helpBody.innerHTML=html;
