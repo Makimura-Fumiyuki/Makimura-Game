@@ -112,6 +112,15 @@
   }
   .rc-reset:active{ transform:translateY(1px); }
   .setup.on #ruleBox, #ruleBox.on{ display:flex; }
+  /* 迷子のゆくえ トグル(特殊ルール) */
+  .mg-row{ display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .mg-name{ font-size:13px; letter-spacing:.15em; opacity:.65; text-align:center; }
+  .mg-name small{ display:block; font-size:10px; letter-spacing:.1em; opacity:.7; margin-top:2px; }
+  .mg-toggle{ display:flex; gap:10px; width:min(90vw,320px); }
+  .mg-btn{ flex:1 1 0; min-width:0; padding:7px 8px 8px; cursor:pointer; font-family:inherit; font-size:13px; letter-spacing:.03em; white-space:nowrap; text-align:center;
+    color:var(--sumi); background:rgba(255,255,255,.5); border:1.5px solid rgba(51,47,42,.35); border-radius:7px; }
+  .mg-btn.sel{ color:#fff; background:linear-gradient(160deg,#e0684f,var(--shu) 55%,#9c2c1f); border-color:#7d2318; }
+  .mg-btn:active{ transform:translateY(1px); }
   .rule-ctrls{ display:flex; gap:34px; justify-content:center; }
   .rc{ display:flex; flex-direction:column; align-items:center; gap:8px; }
   .rc-name{ font-size:13px; letter-spacing:.15em; opacity:.65; }
@@ -481,6 +490,13 @@
           <div class="rc-row"><button class="rc-btn" data-t="w" data-d="-1">−</button><span class="rc-val" id="winVal">1</span><button class="rc-btn" data-t="w" data-d="1">＋</button></div>
         </div>
       </div>
+      <div class="mg-row">
+        <div class="mg-name">迷子のゆくえ</div>
+        <div class="mg-toggle" id="stayToggle">
+          <button class="mg-btn sel" data-stay="0">盤の外へ消える</button>
+          <button class="mg-btn" data-stay="1">盤の中へ移動</button>
+        </div>
+      </div>
       <button class="rc-reset" id="ruleReset">初期設定に戻す</button>
       <div class="rc-note" id="ruleNote"></div>
     </div>
@@ -632,6 +648,7 @@
   let hist=[];       // 局面の履歴(一手戻る用。打つ前の盤面をまるごと保存)
   /* --- カスタムルール --- */
   let maigoProb=20, normNum=1;   // 迷子確率% / 先に何目とったら勝ちか
+  let maigoStay=false;   // 特殊ルール: 迷子は盤の外へ消えず、盤上の別マスへ移動する(初期OFF)
   const KAN=["","一","二","三","四","五","六","七","八","九","十"];
   const PROB_STEPS=(()=>{ const a=[]; for(let p=0;p<=95;p+=5)a.push(p); a.push(99); return a; })();   // 0,5,...,95,99
   let probIdx=PROB_STEPS.indexOf(20);
@@ -783,10 +800,13 @@
   }
   function playSelect(){ if(actx) hyoshigi(actx.currentTime); }            // 選択 = 拍子木「カンッ」
   function playStart(){ if(actx){ const t=actx.currentTime; taiko(t,130,0.8); hyoshigi(t+0.09,0.5); } }   // 対局開始 = 「ドンッ、カッ」
-  function playWin(){    // 勝ち = 琴の平調子かき上げ + 締めの太鼓
+  function playWin(){    // 勝ち = 琴の華やかなかき上げ + 上オクターブ追い + 太鼓二連打 + きらめき(手応え強化)
     if(!actx) return; const t=actx.currentTime;
-    [294,330,349,440,587].forEach((f,i)=> pluck(f, t+i*0.09, 0.5, 0.24));
-    taiko(t+0.5, 150, 0.75); hyoshigi(t+0.62, 0.5);
+    [294,330,349,440,587].forEach((f,i)=> pluck(f, t+i*0.085, 0.55, 0.28));   // 平調子のかき上げ
+    [587,659,698,880].forEach((f,i)=> pluck(f, t+0.30+i*0.07, 0.5, 0.2));      // 上のオクターブで華やかに追い足す
+    taiko(t+0.5, 150, 0.85); taiko(t+0.66, 110, 0.6);                          // 締めの太鼓 二連打(ドン・ドンッ)
+    hyoshigi(t+0.5, 0.55); hyoshigi(t+0.66, 0.4);                              // 拍子木も重ねる
+    note(1319, t+0.62, 0.5, 0.13, "triangle"); note(1760, t+0.70, 0.6, 0.09, "sine");   // 最後に鈴のようなきらめき
   }
   function playLose(){   // 負け = 琴の下降 + 遠い太鼓
     if(!actx) return; const t=actx.currentTime;
@@ -845,9 +865,11 @@
       // 迷子・フェイント抽選は打った側が行い、結果ごと相手に送る(両者の演出と盤面が必ず一致)
       const maigo=(Math.random()*100)<prob;
       const fake=(!maigo && prob>0 && (isCritical(r,c,human) || Math.random()<0.05));   // 決着級の一手は必ずきょろきょろ(0%設定なら無し)
+      let dr=-1, dc=-1;
+      if(maigo && maigoStay){ const d=pickDest(human,r,c); if(d){ dr=d[0]; dc=d[1]; } }   // 盤内移動ルール: 行き先も打った側が決めて送る
       mySeq++; pendingSeq=mySeq;
-      sendMove({ r,c,maigo,fake,seq:mySeq });
-      tryPlace(r,c,maigo,fake);
+      sendMove({ r,c,maigo,fake,dr,dc,seq:mySeq });
+      tryPlace(r,c,maigo,fake,dr,dc);
       return;
     }
     tryPlace(r,c);
@@ -957,6 +979,34 @@
     };
     step();
   }
+  /* 特殊ルール用: 迷子の碁石が盤上の別マス(r1,c1)まで歩いて行く(消えずに移動) */
+  function walkToCell(color, r0,c0, r1,c1, done){
+    const a=cells[r0][c0].getBoundingClientRect(), b=cells[r1][c1].getBoundingClientRect();
+    const size=a.width*0.86;
+    const x0=a.left+a.width/2, y0=a.top+a.height/2, x1=b.left+b.width/2, y1=b.top+b.height/2;
+    const hops=Math.max(3, Math.min(9, Math.round(Math.hypot(x1-x0,y1-y0)/50)));
+    const el=document.createElement("div"); el.className="walker";
+    el.innerHTML='<div class="walker-in '+(color===BLACK?"b":"w")+'"></div>';
+    el.style.width=el.style.height=size+"px"; el.style.left=(x0-size/2)+"px"; el.style.top=(y0-size/2)+"px";
+    document.body.appendChild(el);
+    const HOP=180; let i=0;
+    const step=()=>{ i++; const t=i/hops, nx=(x1-x0)*t, ny=(y1-y0)*t;
+      el.style.transition="transform "+(HOP/1000)+"s cubic-bezier(.3,.7,.3,1)";
+      el.style.transform="translate("+nx+"px,"+ny+"px)";
+      playWalk(i); footprintAt(x0+nx-(x1-x0)/hops*0.5, y0+ny-(y1-y0)/hops*0.5+size*0.32);
+      if(i<hops) setTimeout(step, HOP); else setTimeout(()=>{ el.remove(); if(done) done(); }, HOP);
+    };
+    step();
+  }
+  /* 迷子の移動先: 座っても即取られない空きマスから運まかせに選ぶ(元の位置は除く)。無ければnull */
+  function pickDest(p, avoidR, avoidC){
+    const cand=[];
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+      if(r===avoidR && c===avoidC) continue;
+      if(board[r][c]===EMPTY && isLegal(board,r,c,p)) cand.push([r,c]);
+    }
+    return cand.length ? cand[Math.floor(Math.random()*cand.length)] : null;
+  }
   /* 勝利: 勝った側の碁笥から碁石が吹き上がる
      左下(黒)の碁笥→上から右へ大きく / 右下(白)の碁笥→上から左へ大きく */
   function emitStones(color, count, power){
@@ -991,12 +1041,14 @@
 
   /* 石を置く(迷子判定込み)。人間/ロボット/通信相手 共通
      maigo: 迷子になって歩いて行き、盤から消える / fake: きょろきょろだけして結局そこに座る(いや迷子にならんのかい！) */
-  function tryPlace(r,c,forcedMaigo,forcedFake){
+  function tryPlace(r,c,forcedMaigo,forcedFake,forcedDR,forcedDC){
     busy=true; boardEl.classList.remove("myturn");
     const me=turn;
     const maigo=(forcedMaigo===undefined) ? (Math.random()*100)<prob : forcedMaigo;
     // 石をとる一手・アタリの味方を助ける一手は必ず「きょろきょろ」を入れる(本物でも嘘でも)。通常の嘘きょろきょろは5%
     const critical=prob>0 && isCritical(r,c,me);
+    // winMove=この一手(消えずに座れば)自分の勝ちが決まる手。黄金演出はこの時だけ(相手の勝ちを防ぐだけの時は出さない)
+    const winMove=critical && (()=>{ const caps=capturedBy(board,r,c,me); return caps.length>0 && capOf(me)+caps.length>=normNum; })();
     const fake=(forcedFake===undefined) ? (!maigo && (critical || (prob>0 && Math.random()<0.05))) : forcedFake;
     hist.push({ p:me, snap:board.map(row=>row.slice()), capB, capW });   // 一手戻る用(打つ前の局面まるごと)
     flyStone(me, r, c, ()=>{
@@ -1006,11 +1058,24 @@
       playStone();
       const tameMs=critical?1250:640, kyoroCls=critical?"kyoro long":"kyoro";   // 決着級の一手は長きょろきょろ
       if(maigo){
-        setTimeout(()=>{   // きょろきょろ → 迷子になって歩き出し、盤の外へ消えていく
+        setTimeout(()=>{   // きょろきょろ → 迷子になって歩き出す
           st.className+=" "+kyoroCls; playKyoro(tameMs/1000); qmarkAt(r,c,tameMs);
           setTimeout(()=>{
             st.remove();
-            walkOffBoard(me, r, c, ()=>{ if(!over) switchTurn(); });
+            if(maigoStay){   // 特殊ルール: 盤の外へ出ず、盤上の別マスへ歩いて移動
+              let dest;
+              if(forcedDR===undefined) dest=pickDest(me,r,c);              // ローカル/ロボット: 自分で行き先を抽選
+              else dest = (forcedDR>=0) ? [forcedDR,forcedDC] : null;      // オンライン: 送られた行き先(-1=行き先なし)
+              if(dest){
+                walkToCell(me, r, c, dest[0], dest[1], ()=>{
+                  const st2=document.createElement("div"); st2.className="stone "+(me===BLACK?"b":"w");
+                  cells[dest[0]][dest[1]].appendChild(st2); playStone();
+                  commitStone(dest[0], dest[1], me, st2);   // 移動先で着地(取り・勝敗判定もここで)
+                });
+                return;
+              }
+            }
+            walkOffBoard(me, r, c, ()=>{ if(!over) switchTurn(); });       // 通常(OFF)/移動先が無い時は盤の外へ消える
           }, tameMs);
         }, 130);
         return;
@@ -1020,7 +1085,7 @@
           st.className+=" "+kyoroCls; playKyoro(tameMs/1000); qmarkAt(r,c,tameMs);
           setTimeout(()=>{
             st.classList.remove("kyoro","long");
-            if(critical){   // 決着級が迷子にならなかった！黄金の巨石に(1.3秒でもとの色・サイズへ戻る)
+            if(winMove){   // 勝ちを決める一手が迷子にならなかった！黄金の巨石に(1.3秒でもとの色・サイズへ戻る)
               st.classList.add("gold","shine"); spawnSparks(r,c); playShine();
               setTimeout(()=>{ st.classList.remove("gold","shine"); }, 1300);
             }
@@ -1312,7 +1377,7 @@
       if(isHost && !startSent && presenceCount()>=2){
         startSent=true;
         const hc=(Math.random()<0.5)?BLACK:WHITE;   // 先手(黒)はランダム
-        ch.send({ type:"broadcast", event:"start", payload:{ hc, p:maigoProb, w:normNum } });
+        ch.send({ type:"broadcast", event:"start", payload:{ hc, p:maigoProb, w:normNum, s:maigoStay?1:0 } });
         beginOnline(hc);
       }
     });
@@ -1340,6 +1405,7 @@
       if(payload){   // 部屋主のルールを受け取って揃える
         if(typeof payload.p==="number") maigoProb=Math.max(0, Math.min(99, payload.p|0));
         if(typeof payload.w==="number") normNum=Math.max(1, Math.min(30, payload.w|0));
+        if(typeof payload.s==="number") maigoStay=(payload.s===1);   // 盤内移動ルールを部屋主に合わせる
       }
       beginOnline(payload && payload.hc===BLACK ? WHITE : BLACK);
     });
@@ -1354,7 +1420,7 @@
       if(turn===human) turn=(human===BLACK)?WHITE:BLACK;   // 手番のズレを検知したら、届いた一手を信頼して補正する(自己修復)
       const r=payload.r|0, c=payload.c|0;
       if(r<0||r>=N||c<0||c>=N||board[r][c]!==EMPTY) return;
-      tryPlace(r, c, !!payload.maigo, !!payload.fake);
+      tryPlace(r, c, !!payload.maigo, !!payload.fake, (payload.dr==null)?-1:(payload.dr|0), (payload.dc==null)?-1:(payload.dc|0));
     });
     ch.on("broadcast",{event:"moveack"},({payload})=>{
       if(payload && payload.seq===pendingSeq){ clearTimeout(moveResendTimer); moveResendTimer=0; }
@@ -1627,11 +1693,16 @@
       holdTmr=setTimeout(()=>{ holdIv=setInterval(step, 90); }, 420); });
     ["pointerup","pointerleave","pointercancel"].forEach(ev=> b.addEventListener(ev, stop));
   });
+  // 迷子のゆくえ トグル(特殊ルール・初期OFF=盤の外へ消える)
+  function renderStay(){ document.querySelectorAll("#stayToggle .mg-btn").forEach(x=>x.classList.toggle("sel", (x.dataset.stay==="1")===maigoStay)); }
+  document.querySelectorAll("#stayToggle .mg-btn").forEach(b=>{
+    b.addEventListener("click",()=>{ ensureAudio(); playSelect(); maigoStay=(b.dataset.stay==="1"); renderStay(); });
+  });
   document.getElementById("ruleReset").addEventListener("click",()=>{
     ensureAudio(); playSelect();
-    probIdx=PROB_STEPS.indexOf(20); maigoProb=20; normNum=1; renderRules();
+    probIdx=PROB_STEPS.indexOf(20); maigoProb=20; normNum=1; maigoStay=false; renderRules(); renderStay();
   });
-  renderRules();
+  renderRules(); renderStay();
 
   // 効果音のON/OFF — 全画面共通・保存される
   const seBtn=document.getElementById("seBtn");

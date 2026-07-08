@@ -747,10 +747,13 @@
   }
   function playSelect(){ if(actx) hyoshigi(actx.currentTime); }            // 選択 = 拍子木「カンッ」
   function playStart(){ if(actx){ const t=actx.currentTime; taiko(t,130,0.8); hyoshigi(t+0.09,0.5); } }   // 対局開始 = 「ドンッ、カッ」
-  function playWin(){    // 勝ち = 琴の平調子かき上げ + 締めの太鼓
+  function playWin(){    // 勝ち = 琴の華やかなかき上げ + 上オクターブ追い + 太鼓二連打 + きらめき(手応え強化)
     if(!actx) return; const t=actx.currentTime;
-    [294,330,349,440,587].forEach((f,i)=> pluck(f, t+i*0.09, 0.5, 0.24));
-    taiko(t+0.5, 150, 0.75); hyoshigi(t+0.62, 0.5);
+    [294,330,349,440,587].forEach((f,i)=> pluck(f, t+i*0.085, 0.55, 0.28));   // 平調子のかき上げ
+    [587,659,698,880].forEach((f,i)=> pluck(f, t+0.30+i*0.07, 0.5, 0.2));      // 上のオクターブで華やかに追い足す
+    taiko(t+0.5, 150, 0.85); taiko(t+0.66, 110, 0.6);                          // 締めの太鼓 二連打(ドン・ドンッ)
+    hyoshigi(t+0.5, 0.55); hyoshigi(t+0.66, 0.4);                              // 拍子木も重ねる
+    note(1319, t+0.62, 0.5, 0.13, "triangle"); note(1760, t+0.70, 0.6, 0.09, "sine");   // 最後に鈴のようなきらめき
   }
   function playLose(){   // 負け = 琴の下降 + 遠い太鼓
     if(!actx) return; const t=actx.currentTime;
@@ -940,6 +943,7 @@
     // 勝ちが決まる一手・相手の勝ちを阻止する一手は必ず「ため」を入れる(本物でも嘘でも)。通常の嘘もくもくは10%
     const foe=(me===BLACK)?WHITE:BLACK;
     const critical=prob>0 && (!!winLine(r,c,me) || !!winLine(r,c,foe));   // 勝ち or 阻止の一手(もくもく0%設定なら演出なし)
+    const winMove=!!winLine(r,c,me);   // 黄金演出はこの一手で勝ちが決まる時だけ(相手の勝ちを阻止するだけの時は出さない)
     const fake=(forcedFake===undefined) ? (!moku && (critical || (prob>0 && Math.random()<0.05))) : forcedFake;
     flyStone(me, r, c, ()=>{
       const st=document.createElement("div");
@@ -971,7 +975,7 @@
           st.className+=" "+tameCls; playTame(tameMs/1000); tameWisps(r,c);
           setTimeout(()=>{
             st.classList.remove("tame","long");
-            if(critical){   // 決着級が耐えた！黄金の巨石に(1.3秒でもとの色・サイズへ戻る)
+            if(winMove){   // 勝ちを決める一手が耐えた！黄金の巨石に(1.3秒でもとの色・サイズへ戻る)
               st.classList.add("gold","shine"); spawnSparks(r,c); playShine();
               setTimeout(()=>{ st.classList.remove("gold","shine"); }, 1300);
             }
