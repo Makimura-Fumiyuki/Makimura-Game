@@ -91,22 +91,28 @@
   .card:active{ transform:translateY(-2px); }
   .c-bar{ height:6px; background:var(--red); flex:none; }
   /* ゲームのイメージ画(SVG) */
-  .c-thumb{ height:132px; flex:none; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .c-thumb{ position:relative; height:132px; flex:none; display:flex; align-items:center; justify-content:center; overflow:hidden; }
   .c-thumb svg{ width:100%; height:100%; display:block; }
   .c-thumb.t-dox{ background:#f4f4f1; }
   .c-thumb.t-moku{ background:#f3ead7; }
   .c-thumb.t-maigo{ background:#f3ead7; }
   .c-thumb.t-maigomoku{ background:#f3ead7; }
+  .c-thumb.t-bamiri{ background:#eef1ea; }
   .c-body{ padding:22px 22px 20px; display:flex; flex-direction:column; flex:1; }
-  .c-name{ font-size:26px; font-weight:800; letter-spacing:.04em; color:var(--red);
-    display:flex; align-items:center; gap:10px; }
-  /* プレイ人数バッジ */
+  .c-name{ font-size:22px; font-weight:800; letter-spacing:.02em; color:var(--red);
+    display:flex; align-items:center; gap:9px; }
+  /* プレイ人数バッジ(サムネ内・右下。背景は半透明) */
   .c-players{
     display:inline-flex; align-items:center; gap:4px; flex:none;
     font-size:12px; font-weight:700; letter-spacing:.05em; color:#fff;
     background:var(--teal); border-radius:999px; padding:3px 12px 4px;
   }
   .c-players svg{ width:12px; height:12px; }
+  .c-thumb .c-players{
+    position:absolute; right:10px; bottom:10px; z-index:2;
+    background:rgba(0,105,135,.72); backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px);
+    box-shadow:0 1px 4px rgba(32,33,31,.18);
+  }
   .c-desc{ margin-top:10px; font-size:14px; font-weight:500; line-height:1.85; color:rgba(32,33,31,.72); flex:1; }
   .c-tags{ margin-top:14px; display:flex; gap:4px 8px; flex-wrap:wrap-reverse; }   /* 行間はつめる(縦4px/横8px)。複数行になる時は下の行が長くなる */
   .t-brk{ width:100%; height:0; }   /* 行の強制区切り */
@@ -427,6 +433,69 @@
       </a>
     </template>
 
+    <template id="tpl-bamiri">
+      <a class="card" href="./bamiri.html">
+        <div class="c-bar"></div>
+        <div class="c-thumb t-bamiri">
+          <!-- バミリバーシ: 緑のリバーシ盤。黒に挟まれた白駒が黄色いバミリの上に居座って返らない図 -->
+          <svg viewBox="0 0 260 132" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="bmFelt" x1="0" y1="0" x2=".8" y2="1">
+                <stop offset="0" stop-color="#37a163"/><stop offset=".5" stop-color="#2f8f55"/><stop offset="1" stop-color="#256e42"/>
+              </linearGradient>
+              <radialGradient id="bmStB" cx=".35" cy=".3" r=".8">
+                <stop offset="0" stop-color="#6a6a6a"/><stop offset=".6" stop-color="#1a1a1a"/><stop offset="1" stop-color="#000"/>
+              </radialGradient>
+              <radialGradient id="bmStW" cx=".35" cy=".3" r=".8">
+                <stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#efece2"/><stop offset="1" stop-color="#c9c4b4"/>
+              </radialGradient>
+              <linearGradient id="bmTape" x1="0" y1="0" x2="1" y2=".3">
+                <stop offset="0" stop-color="#f7d666"/><stop offset=".55" stop-color="#f2c94c"/><stop offset="1" stop-color="#e5b93e"/>
+              </linearGradient>
+            </defs>
+            <rect width="260" height="132" fill="#eef1ea"/>
+            <g transform="translate(130,70) rotate(1.6)">
+              <rect x="-94" y="-60" width="188" height="120" rx="7" fill="#3a2f24"/>
+              <rect x="-87" y="-53" width="174" height="106" rx="3" fill="url(#bmFelt)"/>
+              <g stroke="rgba(0,0,0,.3)" stroke-width="1.2">
+                <path d="M-58 -53 V 53 M-29 -53 V 53 M0 -53 V 53 M29 -53 V 53 M58 -53 V 53"/>
+                <path d="M-87 -26 H 87 M-87 0 H 87 M-87 27 H 87"/>
+              </g>
+              <!-- 黒駒が白駒を挟んだ…のに、バミリの上の白駒だけ返らない -->
+              <circle cx="-43.5" cy="-13" r="11.5" fill="url(#bmStB)"/>
+              <circle cx="43.5"  cy="-13" r="11.5" fill="url(#bmStB)"/>
+              <circle cx="-14.5" cy="-13" r="11.5" fill="url(#bmStB)"/>
+              <!-- バミリテープ+居座る白駒 -->
+              <rect x="0" y="-16" width="30" height="9" rx="1" fill="url(#bmTape)" transform="rotate(-7 15 -12)" opacity=".95"/>
+              <circle cx="14.5" cy="-13" r="11.5" fill="url(#bmStW)"/>
+              <rect x="4" y="-7" width="21" height="7" rx="1" fill="url(#bmTape)" transform="rotate(-7 14 -4)" opacity=".9"/>
+              <!-- まわりの駒たち -->
+              <circle cx="-43.5" cy="14" r="11.5" fill="url(#bmStW)"/>
+              <circle cx="-14.5" cy="14" r="11.5" fill="url(#bmStB)"/>
+              <circle cx="14.5"  cy="40" r="11.5" fill="url(#bmStW)"/>
+              <circle cx="43.5"  cy="14" r="11.5" fill="url(#bmStW)"/>
+              <circle cx="72.5"  cy="-39" r="11.5" fill="url(#bmStB)"/>
+            </g>
+          </svg>
+        </div>
+        <div class="c-body">
+          <div class="c-name">バミリバーシ
+            <span class="c-players"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="7.2" r="4.2"/><path d="M9 13.4c-4.4 0-8 2.5-8 6.1V21h16v-1.5c0-3.6-3.6-6.1-8-6.1z"/><circle cx="17.5" cy="8.2" r="3.3"/><path d="M17.5 13.2c-.8 0-1.6.1-2.3.3 1.9 1.3 3.1 3.2 3.1 5.5V21H23v-1.3c0-3-2.5-5.5-5.5-5.5z"/></svg>1〜2人</span>
+          </div>
+          <div class="c-desc">
+            Q.普通のリバーシ？ A.いいえ、対局前にこっそり貼った「バミリ」のマスの駒は二度と返りません。どこに貼るかの心理戦
+          </div>
+          <div class="c-tags">
+            <!-- wrap-reverse: DOM順の逆から積む(下段=先頭の2つ / 上段=心理戦) -->
+            <span class="tag">ローカル対戦</span><span class="tag">オンライン対戦</span>
+            <span class="t-brk"></span>
+            <span class="tag">心理戦</span>
+          </div>
+          <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
+        </div>
+      </a>
+    </template>
+
     <template id="tpl-maigomoku">
       <a class="card" href="./maigomoku.html">
         <div class="c-bar"></div>
@@ -487,7 +556,7 @@
             <span class="c-players"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="7.2" r="4.2"/><path d="M9 13.4c-4.4 0-8 2.5-8 6.1V21h16v-1.5c0-3.6-3.6-6.1-8-6.1z"/><circle cx="17.5" cy="8.2" r="3.3"/><path d="M17.5 13.2c-.8 0-1.6.1-2.3.3 1.9 1.3 3.1 3.2 3.1 5.5V21H23v-1.3c0-3-2.5-5.5-5.5-5.5z"/></svg>1〜2人</span>
           </div>
           <div class="c-desc">
-            五もくもく並べとま囲碁が夢のコラボレーション！並べて勝ってもよし、囲んで勝ってもよし
+            『ま囲碁』と『五もくもく並べ』が夢のコラボレーション！並べて勝ってもよし、囲んで勝ってもよし
           </div>
           <div class="c-tags">
             <!-- wrap-reverse: DOM順の逆から積む(下段=先頭の2つ / 上段=運まかせ) -->
@@ -545,6 +614,7 @@
   /* ゲームのデータ: release=リリース日 / cats=カテゴリ / clicks=あそばれた回数(サーバー集計) */
   const GAMES=[
     { id:"dox",  tpl:"tpl-dox",  release:"2026-07-06", cats:["スコアアタック"], clicks:null, likes:null },   // clicks/likes: null=集計未着(表示しない)
+    { id:"bamiri", tpl:"tpl-bamiri", release:"2026-07-08", cats:["対戦"], clicks:null, likes:null },
     { id:"maigomoku", tpl:"tpl-maigomoku", release:"2026-07-08", cats:["対戦"], clicks:null, likes:null },
     { id:"maigo", tpl:"tpl-maigo", release:"2026-07-07", cats:["対戦"], clicks:null, likes:null },   // 同日リリースはこの並び順が優先される(新しい方を先頭に)
     { id:"moku", tpl:"tpl-moku", release:"2026-07-07", cats:["対戦"], clicks:null, likes:null },
@@ -619,6 +689,9 @@
   function card(g){
     const el=document.getElementById(g.tpl).content.firstElementChild.cloneNode(true);
     if(g.id) el.addEventListener("click", ()=>logClick(g));
+    // プレイ人数バッジはタイトル横ではなくサムネ右下へ移動(背景半透明)
+    const players=el.querySelector(".c-players"), thumb=el.querySelector(".c-thumb");
+    if(players && thumb) thumb.appendChild(players);
     const foot=el.querySelector(".c-foot");
     const cnt=el.querySelector(".c-count");   // あそばれた回数(集計が届いてから表示)
     if(cnt && g.clicks!=null){
