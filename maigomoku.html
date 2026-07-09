@@ -494,6 +494,21 @@
   .r-title.win{ color:var(--shu); }
   .r-sub{ font-size:14px; opacity:.7; letter-spacing:.1em; }
   .r-foe{ display:inline-block; margin-top:4px; font-size:12px; opacity:.75; letter-spacing:.06em; color:var(--shu); }
+  /* ===== スタンプ(オンライン中に気持ちを送る) ===== */
+  #stampBar{ position:fixed; left:50%; transform:translateX(-50%); bottom:10px; z-index:58; display:none; gap:9px; }
+  #stampBar.on{ display:flex; }
+  .stamp-btn{ width:46px; height:46px; padding:4px; border:none; border-radius:50%; cursor:pointer;
+    background:rgba(255,255,255,.85); box-shadow:0 2px 7px rgba(40,30,10,.3); }
+  .stamp-btn svg{ width:100%; height:100%; display:block; }
+  .stamp-btn:active{ transform:translateY(1px) scale(.93); }
+  .stamp-fly{ position:fixed; bottom:74px; width:92px; height:92px; z-index:59; pointer-events:none;
+    filter:drop-shadow(0 4px 8px rgba(0,0,0,.32)); animation:stampFloat 2.3s ease-out forwards; }
+  @keyframes stampFloat{
+    0%{ transform:translate(0,24px) scale(.3); opacity:0; }
+    12%{ transform:translate(0,0) scale(1); opacity:1; }
+    72%{ opacity:1; }
+    100%{ transform:translate(var(--dx,0),-64vh) scale(1.18); opacity:0; }
+  }
 </style>
 </head>
 <body>
@@ -679,6 +694,13 @@
   </div>
 
   <!-- ===== 結果 ===== -->
+  <!-- オンライン中のスタンプ(気持ちを送る。押すと画面下から浮き上がる) -->
+  <div id="stampBar">
+    <button class="stamp-btn" data-i="0" aria-label="泣き"></button>
+    <button class="stamp-btn" data-i="1" aria-label="うっとり"></button>
+    <button class="stamp-btn" data-i="2" aria-label="爆笑"></button>
+  </div>
+
   <div id="resultOverlay">
     <div class="r-card">
       <div class="r-title" id="rTitle"></div>
@@ -919,6 +941,7 @@
     clearTimeout(moveResendTimer); moveResendTimer=0; mySeq=0; lastRecvSeq=0; pendingSeq=0;
     undoBtn.style.display = "";   // 一手戻るは全モードで使える(オンラインは相手の許可制)
     markLast(null);
+    { const sb=document.getElementById("stampBar"); if(sb) sb.classList.toggle("on", online); }   // オンライン中はスタンプバー表示
     { const rcb=document.getElementById("ruleChgBtn"); if(rcb) rcb.style.display=(!online||isHost)?"":"none"; }   // ルール変更はオンラインでは部屋主だけ
     tagWin.innerHTML=winLen+"並べる<span class=\"conn\">"+(winMode==="and"?"and":"or")+"</span>"+capNorm+"個かこむ";   // 2つの勝ち方(どちらか=or / 両方=and)。or/andは前後を詰める
     if(maigoProb===0){   // 消えるなし
@@ -1627,6 +1650,7 @@
       rTitle.textContent="あいての投了！"; rTitle.className="r-title win";
       rSub.textContent="あなたの勝ち"; playWin(); bumpRoomStats("win"); resultOverlay.classList.add("on");
     });
+    ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) spawnStamp(payload.i|0); });
     ch.on("broadcast",{event:"rematch"},()=>{
       peerRematch=true;
       if(myRematch){ if(isHost) hostRestart(); }   // 両者合意: 部屋主が先手後手を引き直して開始合図を送る
@@ -2156,7 +2180,32 @@
     ensureAudio(); playSelect(); undoOverlay.classList.remove("on");
     if(ch) ch.send({ type:"broadcast", event:"undono", payload:{} });
   });
+  /* ===== スタンプ(オンライン中に気持ちを送る) ===== */
+  const STAMP_SVGS=[
+    '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="27" fill="#FFCF3F" stroke="#E39A00" stroke-width="2.5"/><path d="M16 30 Q22 24 28 30" fill="none" stroke="#5a3410" stroke-width="3" stroke-linecap="round"/><path d="M36 30 Q42 24 48 30" fill="none" stroke="#5a3410" stroke-width="3" stroke-linecap="round"/><path d="M17 31 q-3 8 0 15 q4 -6 3 -15 z" fill="#63C6F5"/><path d="M47 31 q3 8 0 15 q-4 -6 -3 -15 z" fill="#63C6F5"/><ellipse cx="32" cy="45" rx="7.5" ry="6.5" fill="#5a2a12"/></svg>',
+    '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="27" fill="#FFCF3F" stroke="#E39A00" stroke-width="2.5"/><path d="M22 22 C20.5 19 15.5 19.5 15.5 23.5 C15.5 27 20 29.5 22 31.5 C24 29.5 28.5 27 28.5 23.5 C28.5 19.5 23.5 19 22 22 Z" fill="#FF4B5C"/><path d="M42 22 C40.5 19 35.5 19.5 35.5 23.5 C35.5 27 40 29.5 42 31.5 C44 29.5 48.5 27 48.5 23.5 C48.5 19.5 43.5 19 42 22 Z" fill="#FF4B5C"/><path d="M22 40 Q32 53 42 40 Z" fill="#5a2a12"/><path d="M27 45 Q32 49 37 45 Q32 47 27 45 Z" fill="#ff8a97"/></svg>',
+    '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><g transform="rotate(-13 32 32)"><circle cx="32" cy="32" r="27" fill="#FFCF3F" stroke="#E39A00" stroke-width="2.5"/><path d="M15 31 Q21 25 27 31" fill="none" stroke="#5a3410" stroke-width="3" stroke-linecap="round"/><path d="M37 31 Q43 25 49 31" fill="none" stroke="#5a3410" stroke-width="3" stroke-linecap="round"/><path d="M12 33 q-2 4 0 6 q3 -2 2 -6 z" fill="#63C6F5"/><path d="M52 33 q2 4 0 6 q-3 -2 -2 -6 z" fill="#63C6F5"/><path d="M19 38 Q32 57 45 38 Q32 45 19 38 Z" fill="#5a2a12"/><path d="M26 43 Q32 49 38 43 Q32 46 26 43 Z" fill="#ff8a97"/></g></svg>'
+  ];
+  function spawnStamp(i){
+    i=Math.max(0, Math.min(2, i|0));
+    const el=document.createElement("div"); el.className="stamp-fly";
+    el.style.left=(14+Math.random()*60)+"%";
+    el.style.setProperty("--dx", (Math.random()*60-30).toFixed(0)+"px");
+    el.innerHTML=STAMP_SVGS[i];
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(), 2350);
+  }
+  function sendStamp(i){
+    spawnStamp(i);
+    if(online && ch){ try{ ch.send({ type:"broadcast", event:"stamp", payload:{ i } }); }catch(e){} }   // 相手にも届ける(ロストしても実害なし)
+  }
+  document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{
+    const i=+b.dataset.i; b.innerHTML=STAMP_SVGS[i];
+    b.addEventListener("click",()=>{ ensureAudio(); playSelect(); sendStamp(i); });
+  });
+
   function goTitle(){
+    { const sb=document.getElementById("stampBar"); if(sb) sb.classList.remove("on"); }   // タイトルに戻ったらスタンプバーを隠す
     over=true; stopVictory();
     if(online && ch){ try{ ch.send({ type:"broadcast", event:"bye", payload:{} }); }catch(e){} }   // あいてに「退出したよ」を明示的に伝える
     document.getElementById("confirmOverlay").classList.remove("on");
