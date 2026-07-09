@@ -6,7 +6,12 @@
 <title>バミリバーシ</title>
 <meta name="apple-mobile-web-app-title" content="バミリバーシ">
 <meta name="application-name" content="バミリバーシ">
-<meta name="description" content="戦う前にこっそり貼った「バミリ」のマスに置かれた駒は、二度とひっくり返らない!? 心理戦のリバーシ。CPU対戦・オンライン対戦対応。">
+<meta name="description" content="Q.普通のリバーシ？ A.いいえ、勝負前にこっそり「バミリ」を貼りましょう。そのマスの駒は二度とひっくり返りません…">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="牧村が作ったゲーム集">
+<meta property="og:title" content="バミリバーシ">
+<meta property="og:description" content="Q.普通のリバーシ？ A.いいえ、勝負前にこっそり「バミリ」を貼りましょう。そのマスの駒は二度とひっくり返りません…">
+<meta name="twitter:card" content="summary">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&family=DotGothic16&display=swap');
   :root{
@@ -165,6 +170,10 @@
     color:var(--ink); background:#fff; border:2px solid rgba(34,36,31,.45); border-radius:8px; outline:none;
     line-height:1.2; caret-color:var(--ink);   /* スマホ(WebKit)でletter-spacing付き入力欄のカーソルが見えなくなる癖への対策 */
   }
+  .code-row{ display:flex; align-items:center; gap:10px; }
+  .paste-btn{ flex:none; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:4px; background:none; border:none; color:var(--felt); }   /* 枠なし・アイコンのみ(コピーボタンと揃える) */
+  .paste-btn svg{ width:26px; height:26px; }
+  .paste-btn:active{ transform:translateY(1px); }
   .txt-btn{
     padding:8px 22px; cursor:pointer; font-family:inherit; font-size:15px; font-weight:700; letter-spacing:.12em;
     color:var(--ink); background:rgba(255,255,255,.75); white-space:nowrap;
@@ -224,6 +233,7 @@
   @keyframes discPop{ 0%{ transform:scale(.3); } 70%{ transform:scale(1.12); } 100%{ transform:scale(1); } }
   .disc.b{ background:radial-gradient(circle at 35% 30%, #6a6a6a, #1a1a1a 62%, #000); }
   .disc.w{ background:radial-gradient(circle at 35% 30%, #ffffff, #efece2 55%, #c9c4b4); }
+  .disc.last::after{ content:""; position:absolute; inset:34%; border-radius:50%; border:2px solid rgba(227,69,47,.9); box-sizing:border-box; pointer-events:none; }   /* 一番最後に置かれた駒の目印 */
   /* 固定駒(バミリの上): テープの端が駒の下からのぞく */
   .disc.fixed::before{
     content:""; position:absolute; left:-14%; right:-14%; top:30%; height:40%;
@@ -324,6 +334,13 @@
   .cf-msg{ font-size:clamp(19px,5.2vw,26px); font-weight:900; letter-spacing:.08em; }
   .r-card .sub-btns{ width:100%; }
   .r-card .txt-btn{ flex:1 1 0; min-width:120px; }
+  /* 部屋を抜けずにルール変更するダイアログ(結果画面の上に出す) */
+  #ruleOverlay{ position:fixed; inset:0; z-index:80; display:flex; align-items:center; justify-content:center;
+    background:rgba(24,26,22,.55); opacity:0; pointer-events:none; transition:opacity .3s linear; }
+  #ruleOverlay.on{ opacity:1; pointer-events:auto; }
+  #ruleOverlay .r-card{ transform:scale(.6); opacity:0; width:min(90vw,440px); }
+  #ruleOverlay.on .r-card{ transform:scale(1); opacity:1; }
+  #ruleOverlay .rule-box{ background:transparent; border:none; padding:0; }   /* ダイアログ内は枠を消してスッキリ */
   /* 結果のスコア表示: 「自分/あいて」ラベル+黒白の駒+数 */
   .r-score{ display:flex; align-items:flex-end; gap:16px; font-family:"DotGothic16",sans-serif; font-size:30px; }
   .r-score .rs-col{ display:flex; flex-direction:column; align-items:center; gap:6px; }
@@ -533,14 +550,29 @@
   </div>
 
   <!-- 結果 -->
+  <!-- ===== ルール変更(結果画面から・部屋を抜けずに) ===== -->
+  <div id="ruleOverlay">
+    <div class="r-card">
+      <div class="cf-msg">ルールを変える</div>
+      <div id="ruleSlot"></div>
+      <div class="sub-btns">
+        <button class="txt-btn" id="ruleOk">これでよし</button>
+      </div>
+    </div>
+  </div>
+
   <div id="resultOverlay">
     <div class="r-card">
       <div class="r-title" id="rTitle"></div>
       <div class="r-score" id="rScore"></div>
       <div class="r-sub" id="rSub"></div>
+      <div class="r-sub" id="rStats" style="display:none"></div>
       <div class="sub-btns">
         <button class="txt-btn" id="againBtn">もう一回</button>
         <button class="txt-btn" id="rHomeBtn">タイトルへ</button>
+      </div>
+      <div class="sub-btns">
+        <button class="txt-btn" id="ruleChgBtn">ルールを変える</button>
       </div>
     </div>
   </div>
@@ -686,6 +718,9 @@
     nb.textContent=b; nw.textContent=w;
   }
 
+  /* --- 一番最後に置かれた駒の目印 --- */
+  let lastDiscEl=null;
+  function markLast(el){ if(lastDiscEl && lastDiscEl.isConnected) lastDiscEl.classList.remove("last"); lastDiscEl=el||null; if(el) el.classList.add("last"); }
   function startGame(){
     board=[]; for(let r=0;r<N;r++) board.push(new Array(N).fill(EMPTY));
     discs=[]; for(let r=0;r<N;r++) discs.push(new Array(N).fill(null));
@@ -698,6 +733,8 @@
     myTapeDone=false; oppTapeCells=null;
     tagTape.textContent = tapeN===0 ? "普通のリバーシ" : "バミリ "+tapeN+"枚";
     resultOverlay.classList.remove("on","peek");
+    markLast(null);
+    { const rcb=document.getElementById("ruleChgBtn"); if(rcb) rcb.style.display=(!online||isHost)?"":"none"; }   // ルール変更は非オンライン or 部屋主のみ
     setGiveupVisible(true); stopVictory();
     document.getElementById("scoreTagB").textContent= local ? "先手" : (human===BLACK)?"自分":"あいて";
     document.getElementById("scoreTagW").textContent= local ? "後手" : (human===WHITE)?"自分":"あいて";
@@ -956,6 +993,7 @@
     flyDisc(me, r, c, ()=>{
       setDisc(r,c,me,true);
       playDisc();
+      markLast(discs[r][c]);   // 一番最後に置かれた駒の目印
       let tapeDelay=0;
       if(taped(i) && !revealed.has(i)){
         // バミリ公開！ 「返らない！」の瞬間
@@ -1134,6 +1172,23 @@
     });
     if(any){ playTape(); showToast("使われなかったバミリを公開！"); }
   }
+  /* --- この部屋での成績(オンライン連戦用) --- */
+  let roomWins=0, roomLosses=0, roomDraws=0, roomStreak=0;
+  function bumpRoomStats(res){
+    if(res==="win"){ roomWins++; roomStreak++; }
+    else if(res==="lose"){ roomLosses++; roomStreak=0; }
+    else { roomDraws++; roomStreak=0; }
+    renderRoomStats();
+  }
+  function renderRoomStats(){
+    const el=document.getElementById("rStats"); if(!el) return;
+    const total=roomWins+roomLosses;
+    if(!online || (total+roomDraws)===0){ el.style.display="none"; return; }
+    let t="この部屋の成績 "+roomWins+"勝"+roomLosses+"敗"+(roomDraws? roomDraws+"分":"");
+    if(total) t+="・勝率"+Math.round(roomWins*100/total)+"%";
+    if(roomStreak>=2) t+="・"+roomStreak+"連勝中";
+    el.style.display=""; el.textContent=t;
+  }
   function finishGame(){
     over=true; busy=true; setGiveupVisible(false);
     playEnd();   // 終局の合図
@@ -1150,6 +1205,7 @@
       else if(local){ rTitle.textContent=(winner===BLACK?"先手":"後手")+"の勝ち！"; rTitle.className="r-title win"; rSub.textContent="おみごと！"; playWin(); burstDiscs(winner); }
       else if(winner===human){ rTitle.textContent="あなたの勝ち！"; rTitle.className="r-title win"; rSub.textContent="おみごと！"; playWin(); burstDiscs(winner); }
       else{ rTitle.textContent=(online?"あいての勝ち…":"ロボットの勝ち…"); rTitle.className="r-title"; rSub.textContent="次はきっと勝てる"; playLose(); }
+      if(online) bumpRoomStats(winner===0?"draw":(winner===human?"win":"lose")); else renderRoomStats();   // この部屋での成績
       resultOverlay.classList.add("on");
     }, 900);
   }
@@ -1166,6 +1222,7 @@
     rTitle.textContent="降参…"; rTitle.className="r-title";
     rSub.textContent = local ? ((turn===BLACK?"先手":"後手")+"の降参") : "次はきっと勝てる";
     playLose();
+    if(online) bumpRoomStats("lose"); else renderRoomStats();   // 自分の降参=負け
     resultOverlay.classList.add("on");
   }
   giveupBtn.addEventListener("click",()=>{ if(over||phase!=="play") return; ensureAudio(); playSelect(); confirmOverlay.classList.add("on"); });
@@ -1174,7 +1231,7 @@
   confirmOverlay.addEventListener("click",(e)=>{ if(e.target===confirmOverlay){ ensureAudio(); playSelect(); confirmOverlay.classList.remove("on"); } });
 
   /* ---------- オンライン対戦 (Supabase Realtime / 合言葉方式) ---------- */
-  const CODE_CHARS="ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  const CODE_CHARS="ABCDEFGHJKMNPRSTUVWXYZ23456789";   // 紛らわしい文字は除外(Qは9と聞き間違えるので抜く。I/O/L/1/0も除外済み)
   function genCode(){ let s=""; for(let i=0;i<5;i++) s+=CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)]; return s; }
   function sbClient(){ if(!sb) sb=window.supabase.createClient(SB_URL, SB_KEY); return sb; }
   function leaveChannel(){
@@ -1276,7 +1333,7 @@
       const {b,w}=countDiscs();
       rScore.innerHTML=scoreHTML(b,w);
       rTitle.textContent="あいての降参！"; rTitle.className="r-title win";
-      rSub.textContent="あなたの勝ち"; playWin(); resultOverlay.classList.add("on");
+      rSub.textContent="あなたの勝ち"; playWin(); bumpRoomStats("win"); resultOverlay.classList.add("on");
     });
     ch.on("broadcast",{event:"rematch"},()=>{
       peerRematch=true;
@@ -1285,7 +1342,13 @@
     });
     ch.on("broadcast",{event:"restart"},({payload})=>{
       if(isHost) return;
+      applyNetRules(payload);
       beginOnline(payload && payload.hc===BLACK ? WHITE : BLACK);
+    });
+    ch.on("broadcast",{event:"rules"},({payload})=>{
+      if(isHost) return;
+      applyNetRules(payload);
+      showToast("あいてがルールを変えた");
     });
     ch.on("broadcast",{event:"undoreq"},()=>{
       if(!online||over||!hist.length||phase!=="play") return;
@@ -1311,7 +1374,7 @@
   }
   function hostRestart(){
     const hc=(Math.random()<0.5)?BLACK:WHITE;
-    if(ch) ch.send({ type:"broadcast", event:"restart", payload:{ hc } });
+    if(ch) ch.send({ type:"broadcast", event:"restart", payload:{ hc, ...rulePayload() } });
     beginOnline(hc);
   }
   function beginOnline(color){
@@ -1346,10 +1409,22 @@
   });
   document.getElementById("joinRoomBtn").addEventListener("click",()=>{
     ensureAudio(); playSelect();
-    roomStatus('<input class="code-input" id="codeInput" maxlength="5" autocomplete="off" spellcheck="false" placeholder="合言葉">'
+    roomStatus('<div class="code-row">'
+      +'<button class="paste-btn" id="pasteBtn" aria-label="合言葉を貼り付け"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3.4c0-.8.6-1.4 1.4-1.4h3.2c.8 0 1.4.6 1.4 1.4v1.1"/><path d="M9 10.5h6M9 14.5h6"/></svg></button>'
+      +'<input class="code-input" id="codeInput" maxlength="5" autocomplete="off" spellcheck="false" placeholder="合言葉">'
+      +'</div>'
       +'<button class="txt-btn" id="codeGo">入室</button>'
       +'<div class="room-note" id="joinNote"></div>');
     const inp=document.getElementById("codeInput"), note=document.getElementById("joinNote");
+    document.getElementById("pasteBtn").addEventListener("click", async ()=>{
+      ensureAudio();
+      try{
+        const t=await navigator.clipboard.readText();
+        const code=(t||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,5);
+        if(code){ inp.value=code; note.textContent="貼り付けた"; note.className="room-note"; }
+        else { note.textContent="コピーした合言葉が見つからない"; note.className="room-note err"; }
+      }catch(e){ note.textContent="貼り付けできない。手入力で頼む"; note.className="room-note err"; }
+    });
     document.getElementById("codeGo").addEventListener("click",()=>{
       const code=(inp.value||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
       if(code.length!==5){ note.textContent="合言葉は5文字"; note.className="room-note err"; return; }
@@ -1471,6 +1546,8 @@
   });
   const tapeValEl=document.getElementById("tapeVal");
   function renderRules(){ tapeValEl.textContent=tapeN+"枚"; }
+  function rulePayload(){ return { n:tapeN }; }   // 部屋主のルール(start/restart/rulesで同送)
+  function applyNetRules(payload){ if(!payload) return; if(typeof payload.n==="number"){ tapeN=Math.max(0, Math.min(30, payload.n|0)); } renderRules(); }
   document.querySelectorAll(".rc-btn").forEach(b=>{
     let holdTmr=0, holdIv=0;
     const step=()=>{
@@ -1485,6 +1562,24 @@
   });
   document.getElementById("ruleReset").addEventListener("click",()=>{ ensureAudio(); playSelect(); tapeN=5; renderRules(); });
   renderRules();
+  /* 部屋を抜けずにルール変更(結果画面から) */
+  const ruleOverlay=document.getElementById("ruleOverlay"), ruleSlot=document.getElementById("ruleSlot");
+  let ruleBoxHome=null;
+  document.getElementById("ruleChgBtn").addEventListener("click",()=>{
+    ensureAudio(); playSelect();
+    ruleBoxHome={ parent:ruleBox.parentNode, next:ruleBox.nextSibling };
+    ruleBox.style.display=""; ruleSlot.appendChild(ruleBox);
+    ruleOverlay.classList.add("on");
+  });
+  function closeRuleDlg(){
+    if(!ruleOverlay.classList.contains("on")) return;
+    ruleOverlay.classList.remove("on");
+    if(ruleBoxHome && ruleBoxHome.parent) ruleBoxHome.parent.insertBefore(ruleBox, ruleBoxHome.next);
+    if(online && ch && isHost) ch.send({ type:"broadcast", event:"rules", payload:rulePayload() });   // 相手にも通知(届かなくても再戦時のrestartで再同期)
+    showToast("次の一局から新しいルールで打つ");
+  }
+  document.getElementById("ruleOk").addEventListener("click",()=>{ ensureAudio(); playSelect(); closeRuleDlg(); });
+  ruleOverlay.addEventListener("click",(e)=>{ if(e.target===ruleOverlay){ ensureAudio(); playSelect(); closeRuleDlg(); } });
 
   const seBtn=document.getElementById("seBtn");
   function renderSnd(){ seBtn.classList.toggle("off", !seOn); }
