@@ -717,6 +717,12 @@
   function playLose(){ if(!actx) return; const t=actx.currentTime;
     [440,392,330].forEach((f,i)=>note(f,t+i*0.16,0.3,0.26,"sine"));
   }
+  function playStamp(i){   // スタンプ別の音(0泣く / 1うっとり / 2爆笑)
+    if(!actx) return; const t=actx.currentTime;
+    if(i===0){ note(523,t,0.2,0.3,"sine"); note(392,t+0.15,0.22,0.3,"sine"); note(300,t+0.32,0.36,0.26,"sine"); }
+    else if(i===1){ note(523,t,0.34,0.22,"sine"); note(784,t+0.11,0.38,0.24,"sine"); note(1047,t+0.24,0.62,0.2,"sine"); note(1568,t+0.34,0.55,0.1,"triangle"); note(2349,t+0.46,0.5,0.06,"sine"); }
+    else{ const seq=[900,680,850,640,800,600,760,560]; seq.forEach((f,k)=>note(f, t+k*0.072, 0.07, 0.26, "triangle")); note(400, t+seq.length*0.072, 0.16, 0.24, "triangle"); }
+  }
   function playEnd(){   // 終局の合図: パチ、パチ、と締めのふた鳴き
     if(!actx) return; const t=actx.currentTime;
     clickSe(t,800,0.6); clickSe(t+0.18,600,0.6); note(196,t+0.18,0.3,0.22,"sine");
@@ -1522,6 +1528,47 @@
     s-=legalOn(sim.b, other(cpu)).length*6;                 // 相手の選択肢を減らす(モビリティ)
     return s;
   }
+  /* ---- 上級エンジン: αβ探索(位置評価+モビリティ+枚数、終盤は読み切り) ---- */
+  function evalBoardR(b, me, known){
+    const foe=other(me); let pos=0, mine=0, theirs=0;
+    for(let r=0;r<N;r++)for(let c=0;c<N;c++){ const v=b[r][c]; if(v===EMPTY) continue;
+      let w=W_TABLE[idxOf(r,c)]; if(known.has(idxOf(r,c))) w+=30;   // 固定テープ(返らない)は資産価値大
+      if(v===me){ pos+=w; mine++; } else { pos-=w; theirs++; } }
+    const empties=N*N-mine-theirs;
+    let s=pos + (legalOn(b,me).length-legalOn(b,foe).length)*8;
+    if(empties<=14) s+=(mine-theirs)*14;                    // 終盤は枚数重視
+    return s;
+  }
+  function negamaxR(b, color, depth, alpha, beta, known, passed){
+    const moves=legalOn(b,color);
+    if(!moves.length){
+      if(passed){ let mine=0,th=0; for(let r=0;r<N;r++)for(let c=0;c<N;c++){ if(b[r][c]===color) mine++; else if(b[r][c]===other(color)) th++; } return (mine-th)*1000; }
+      return -negamaxR(b, other(color), depth, -beta, -alpha, known, true);
+    }
+    if(depth<=0) return evalBoardR(b,color,known);
+    moves.sort((m,n)=>W_TABLE[idxOf(n[0],n[1])]-W_TABLE[idxOf(m[0],m[1])]);
+    let best=-Infinity;
+    for(const [r,c] of moves){
+      const sim=simPlace(b,r,c,color,known);
+      const v=-negamaxR(sim.b, other(color), depth-1, -beta, -alpha, known, false);
+      if(v>best) best=v; if(best>alpha) alpha=best; if(alpha>=beta) break;
+    }
+    return best;
+  }
+  function expertReversi(cpu, known){
+    const moves=legalOn(board,cpu);
+    if(!moves.length) return null;
+    let empties=0; for(let r=0;r<N;r++)for(let c=0;c<N;c++) if(board[r][c]===EMPTY) empties++;
+    const depth = empties<=11 ? empties : 4;   // 終盤は読み切り、中盤は4手先
+    moves.sort((m,n)=>W_TABLE[idxOf(n[0],n[1])]-W_TABLE[idxOf(m[0],m[1])]);
+    let best=moves[0], bv=-Infinity;
+    for(const [r,c] of moves){
+      const sim=simPlace(board,r,c,cpu,known);
+      const v=-negamaxR(sim.b, other(cpu), depth-1, -Infinity, Infinity, known, false) + Math.random()*2;
+      if(v>bv){ bv=v; best=[r,c]; }
+    }
+    return best;
+  }
   function cpuMove(){
     if(over||phase!=="play") return;
     const cpu=turn;
@@ -1539,20 +1586,9 @@
       if(cpuLv===1 && Math.random()<0.25 && scored.length>2) { tryPlace(scored[1].r,scored[1].c); return; }
       tryPlace(scored[0].r,scored[0].c); return;
     }
-    // 上級: 上位候補について相手の最善応手まで読む(2手読み)
-    let best=scored[0], bv=-Infinity;
-    for(const m of scored.slice(0,7)){
-      const sim=simPlace(board,m.r,m.c,cpu,known);
-      const oppMoves=legalOn(sim.b, other(cpu));
-      let oppBest=0;
-      for(const [orr,occ] of oppMoves){
-        const os=W_TABLE[idxOf(orr,occ)]*3 + simPlace(sim.b,orr,occ,other(cpu),known).flipped*4;
-        if(os>oppBest) oppBest=os;
-      }
-      const v=m.s - oppBest*0.8;
-      if(v>bv){ bv=v; best=m; }
-    }
-    tryPlace(best.r,best.c);
+    // 上級: αβ探索(中盤4手先・終盤読み切り)
+    const mv=expertReversi(cpu, known);
+    if(mv){ tryPlace(mv[0], mv[1]); } else { tryPlace(scored[0].r, scored[0].c); }
   }
 
   /* ---------- タイトル/UI ---------- */
@@ -1720,6 +1756,7 @@
     el.style.setProperty("--rise", "-"+(24+(1-central)*16).toFixed(0)+"vh");   // 中央は低め(盤の下側に少しかぶる程度)・両端は高め(従来通り)
     el.style.setProperty("--dx", (Math.random()*24-12).toFixed(0)+"px");
     el.innerHTML=STAMP_SVGS[i];
+    if(seOn) playStamp(i);   // スタンプ別の効果音
     (document.getElementById("gameScene")||document.body).appendChild(el);   // 碁笥/駒と同じ重なり文脈に入れる(盤より前・碁石入れより後ろ)
     setTimeout(()=>el.remove(), 2350);
   }
@@ -1729,7 +1766,7 @@
   }
   document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{
     const i=+b.dataset.i; b.innerHTML=STAMP_SVGS[i];
-    b.addEventListener("click",()=>{ ensureAudio(); playSelect(); sendStamp(i); });
+    b.addEventListener("click",()=>{ ensureAudio(); sendStamp(i); });
   });
 
   function goTitle(){

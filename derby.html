@@ -8,7 +8,7 @@
 <meta name="application-name" content="俺たちダービー">
 <meta name="description" content="パドックを走るのは馬じゃない、俺たちだ！お題に数字で答え、誰が1位かをチップで予想するパーティ賭けゲーム。1台をみんなで回して遊べます。">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&family=M+PLUS+Rounded+1c:wght@700;800;900&display=swap');
   :root{
     --bg:#f4f1e9;
     --ink:#22241f;
@@ -18,8 +18,13 @@
     --gold:#f2b035;
     --gold-dark:#d0900f;
     --red:#e3452f;
+    --fnum:"M PLUS Rounded 1c","Noto Sans JP","Hiragino Sans",sans-serif;   /* 数字・値用のサブフォント(丸ゴシックで太く見やすく) */
   }
   *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  /* 数字・値はサブフォント(丸ゴシック・太め) */
+  .code-show .cs-code, .wait-prog, .num-input, .bet-amount .ba-val, .my-chips b,
+  .rounds-row .rv, .timer, .rb-delta, .rr2-num, .pool-col .pc-amt, .chk-row .chk-amt,
+  .bet-live .bl-amt, .rank-row .rk, .rank-row .rr-chips, .runner .r-num, .lr-ro{ font-family:var(--fnum) !important; font-weight:800; }
   html,body{ height:100%; }
   body{
     background:
@@ -92,7 +97,11 @@
   .room-area{ display:flex; flex-direction:column; align-items:center; gap:12px; min-height:36px; text-align:center; }
   .code-show{ display:inline-flex; align-items:center; gap:12px; background:#fff; border:2.5px solid var(--turf); border-radius:12px; padding:8px 20px 10px 16px; cursor:pointer; }
   .code-show .cs-copy{ width:24px; height:24px; flex:none; fill:none; stroke:var(--turf); stroke-width:2; }
-  .code-show .cs-code{ font-family:"Noto Sans JP","Hiragino Sans",sans-serif; font-size:40px; letter-spacing:.28em; text-indent:.28em; color:var(--turf-dark); }
+  .code-show .cs-code{ font-family:"Noto Sans JP","Hiragino Sans",sans-serif; font-weight:900; font-size:40px; letter-spacing:.28em; text-indent:.28em; color:var(--turf-dark); }
+  .code-row{ display:flex; align-items:center; gap:6px; }
+  .paste-btn{ flex:none; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:4px; background:none; border:none; color:var(--turf); }
+  .paste-btn svg{ width:26px; height:26px; }
+  .paste-btn:active{ transform:translateY(1px); }
   .code-input{ width:220px; padding:10px 6px; text-align:center; font-family:inherit; font-weight:900; font-size:26px; letter-spacing:.24em; text-indent:.24em; text-transform:uppercase; color:var(--ink); background:#fff; border:2px solid rgba(34,36,31,.4); border-radius:8px; outline:none; caret-color:var(--ink); }
   .room-note{ font-size:13.5px; font-weight:700; opacity:.75; letter-spacing:.06em; }
   .room-note.err{ color:var(--red); opacity:1; }
@@ -108,10 +117,23 @@
   .lobby-row .p-dot{ width:24px; height:24px; }
   .lobby-row .lr-nm{ flex:1 1 0; font-weight:900; text-align:left; }
   .lobby-row .lr-host{ font-size:11px; font-weight:700; color:var(--gold-dark); background:rgba(242,176,53,.16); border-radius:999px; padding:2px 9px 3px; }
-  .wait-prog{ font-family:"Noto Sans JP","Hiragino Sans",sans-serif; font-size:20px; color:var(--turf-dark); }
+  .wait-prog{ font-family:"Noto Sans JP","Hiragino Sans",sans-serif; font-weight:900; font-size:20px; color:var(--turf-dark); }
   .wait-who{ display:flex; flex-wrap:wrap; gap:7px; justify-content:center; }
   .wait-chip{ display:inline-flex; align-items:center; gap:5px; font-size:12.5px; font-weight:700; background:#fff; border-radius:999px; padding:4px 11px 5px; opacity:.5; }
   .wait-chip.done{ opacity:1; background:rgba(31,155,220,.14); color:var(--turf-dark); }
+  .enter-done{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .enter-done:empty{ display:none; }
+  .enter-done .dr-chips{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
+  .back-btn{ opacity:.75; }
+  /* 全員のかけ確認(1台) */
+  .chk-list{ display:flex; flex-direction:column; gap:8px; width:100%; }
+  .chk-row{ display:flex; align-items:center; gap:8px; background:#fff; border-radius:11px; padding:10px 13px; font-size:15px; font-weight:700; cursor:pointer; }
+  .chk-row:active{ transform:scale(.99); }
+  .chk-row .p-dot{ width:20px; height:20px; }
+  .chk-row .chk-nm{ font-weight:900; }
+  .chk-row .chk-arrow{ opacity:.45; font-weight:900; }
+  .chk-row .chk-amt{ margin-left:auto; color:var(--gold-dark); font-weight:900; display:flex; align-items:center; gap:4px; white-space:nowrap; }
+  .chk-row .chk-none{ margin-left:auto; color:var(--red); font-weight:900; }
   .wait-chip .p-dot{ width:14px; height:14px; }
   /* 賭け中のオッズ表示 */
   .cand .c-odds{ font-family:"Noto Sans JP","Hiragino Sans",sans-serif; font-size:13px; color:var(--gold-dark); margin-left:auto; }
@@ -141,7 +163,7 @@
   .txt-btn:active{ transform:translateY(1px); }
 
   /* ===== 進行画面(ラウンド) ===== */
-  #gameScene{ padding:15vh 16px 70px; gap:0; justify-content:flex-start; }
+  #gameScene{ padding:19vh 16px 80px; gap:0; justify-content:flex-start; }
   .panel{ display:none; flex-direction:column; align-items:center; gap:20px; width:min(96vw, 480px); }
   .panel.on{ display:flex; animation:panelIn .32s cubic-bezier(.2,.9,.3,1); }
   @keyframes panelIn{ from{ opacity:0; transform:translateY(16px); } to{ opacity:1; transform:translateY(0); } }
@@ -162,6 +184,13 @@
   .dir-badge svg{ width:15px; height:15px; flex:none; }
   .dir-badge.hi{ background:linear-gradient(150deg,#ff7a5f,var(--red)); box-shadow:0 2px 6px rgba(227,69,47,.35); }
   .dir-badge.lo{ background:linear-gradient(150deg,#41b4ec,var(--turf-dark)); box-shadow:0 2px 6px rgba(18,123,180,.4); }
+  .timer{ position:fixed; top:calc(clamp(12px,4.5vh,40px) + 42px); left:50%; transform:translateX(-50%); z-index:19;
+    display:inline-flex; align-items:center; gap:6px; font-size:15px; font-weight:800; letter-spacing:.02em; color:#3a2c05;
+    background:linear-gradient(150deg,#ffe08a,var(--gold) 70%,#e6a51c); border:none; border-radius:999px; padding:5px 15px 6px; white-space:nowrap;
+    box-shadow:0 2px 7px rgba(210,144,20,.45); }
+  .timer svg{ width:15px; height:15px; flex:none; }
+  .timer.urgent{ color:#fff; background:var(--red); box-shadow:0 2px 9px rgba(227,69,47,.55); animation:tPulse .5s ease-in-out infinite; }
+  @keyframes tPulse{ 0%,100%{ transform:translateX(-50%) scale(1); } 50%{ transform:translateX(-50%) scale(1.12); } }
   .big-q{ font-size:clamp(20px,5.4vw,26px); font-weight:900; text-align:center; letter-spacing:.04em; line-height:1.45; }
   .big-q .em{ color:var(--red); }
   .hint{ font-size:13px; opacity:.62; font-weight:700; letter-spacing:.06em; text-align:center; }
@@ -170,8 +199,12 @@
   .field-wrap{ position:relative; width:100%; }
   .field-tag{ position:absolute; left:14px; top:-10px; z-index:1; background:var(--turf); color:#fff;
     font-size:11px; font-weight:900; letter-spacing:.1em; padding:2px 11px 3px; border-radius:999px; }
+  .theme-row{ display:flex; align-items:stretch; gap:8px; width:100%; }
+  .omakase-btn{ flex:none; padding:0 14px; border:none; border-radius:12px; cursor:pointer; font-family:inherit; font-weight:900; font-size:14px; letter-spacing:.04em; white-space:nowrap;
+    color:#fff; background:linear-gradient(150deg,#5cc0f0,var(--turf) 60%,var(--turf-dark)); box-shadow:0 3px 0 #0f6396; touch-action:manipulation; }
+  .omakase-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 #0f6396; }
   .theme-input{
-    width:100%; font-family:inherit; font-size:20px; font-weight:700; text-align:center; color:var(--ink);
+    flex:1 1 0; min-width:0; font-family:inherit; font-size:20px; font-weight:700; text-align:center; color:var(--ink);
     padding:16px 12px 14px; border:2px dashed rgba(34,36,31,.3); border-radius:12px; background:#fbfaf6; outline:none;
     box-shadow:inset 0 2px 5px rgba(34,36,31,.09);
   }
@@ -183,13 +216,14 @@
     color:var(--ink); background:linear-gradient(#ffffff,#efece3); border:2px solid rgba(34,36,31,.16);
     box-shadow:0 3px 0 rgba(34,36,31,.18); text-align:center; line-height:1.3; transition:transform .1s, box-shadow .1s;
   }
+  .dir-btn .dir-ic{ width:17px; height:17px; vertical-align:-3px; margin-right:5px; }
   .dir-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(34,36,31,.18); }
   .dir-btn.sel{ background:linear-gradient(150deg,#ffdd82,var(--gold) 70%,#e6a51c); border-color:var(--gold-dark);
     color:#3a2c05; box-shadow:0 3px 0 var(--gold-dark); }
 
   /* 秘密の数字入力 */
   .num-input{
-    width:min(80vw,320px); font-family:"Noto Sans JP","Hiragino Sans",sans-serif; font-size:44px; text-align:center; color:var(--turf-dark);
+    width:min(80vw,320px); font-family:"Noto Sans JP","Hiragino Sans",sans-serif; font-weight:900; font-size:44px; text-align:center; color:var(--turf-dark);
     padding:12px; border:2.5px solid var(--turf); border-radius:14px; background:#fff; outline:none; letter-spacing:.06em;
     -moz-appearance:textfield; appearance:textfield;
   }
@@ -206,11 +240,14 @@
   .cand .p-dot{ width:24px; height:24px; }
   .cand .c-nm{ flex:1 1 0; font-weight:900; font-size:17px; }
   .cand .c-me{ font-size:11px; font-weight:700; color:var(--turf-dark); background:rgba(31,155,220,.14); border-radius:999px; padding:2px 9px 3px; }
-  .bet-amount{ display:flex; align-items:center; gap:12px; }
-  .bet-amount .ba-btn{ width:44px; height:44px; border:none; border-radius:11px; cursor:pointer; font-size:24px; font-weight:900; color:#fff;
-    background:linear-gradient(150deg,#ffd166,var(--gold) 60%,#dc9c14); box-shadow:0 3px 0 var(--gold-dark); line-height:1; }
+  .bet-amount{ display:flex; align-items:center; gap:7px; justify-content:center; flex-wrap:nowrap; }
+  .bet-amount .ba-btn{ min-width:44px; height:46px; padding:0 7px; border:none; border-radius:11px; cursor:pointer; font-size:18px; font-weight:900; color:#fff;
+    background:linear-gradient(150deg,#ffd166,var(--gold) 60%,#dc9c14); box-shadow:0 3px 0 var(--gold-dark); line-height:1;
+    font-family:inherit; white-space:nowrap; touch-action:manipulation; -webkit-user-select:none; user-select:none; }
+  .bet-amount .ba-btn.ba-wide{ min-width:52px; }
   .bet-amount .ba-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--gold-dark); }
-  .bet-amount .ba-val{ min-width:96px; text-align:center; font-family:"Noto Sans JP","Hiragino Sans",sans-serif; font-size:32px; color:var(--gold-dark); }
+  .bet-amount .ba-btn.dim{ opacity:.3; pointer-events:none; box-shadow:0 3px 0 #9a9a90; }
+  .bet-amount .ba-val{ min-width:72px; text-align:center; font-family:"Noto Sans JP","Hiragino Sans",sans-serif; font-weight:900; font-size:30px; color:var(--gold-dark); }
   .bet-allin{ font-size:13px; font-weight:800; letter-spacing:.08em; color:var(--red); background:none; border:none; cursor:pointer; text-decoration:underline; font-family:inherit; }
   .my-chips{ font-family:"Noto Sans JP","Hiragino Sans",sans-serif; font-size:16px; color:var(--ink); }
   .my-chips b{ color:var(--gold-dark); font-size:20px; }
@@ -222,6 +259,11 @@
     overflow:hidden;
   }
   .lane{ position:relative; height:46px; border-bottom:1px dashed rgba(255,255,255,.35); }
+  .track.compact .r-dot{ width:22px; height:22px; font-size:11px; }
+  .track.compact .runner .r-num{ font-size:12px; bottom:22px; }
+  .runner.cheer .r-dot{ box-shadow:0 0 0 3px var(--gold), 0 0 10px rgba(242,176,53,.8), inset 0 2px 4px rgba(255,255,255,.45), 0 2px 5px rgba(0,0,0,.3); }
+  .cheer-tag{ position:absolute; top:100%; left:50%; transform:translateX(-50%); margin-top:2px; z-index:4;
+    font-size:9px; font-weight:900; color:#3a2c05; background:var(--gold); border-radius:6px; padding:0 5px 1px; white-space:nowrap; box-shadow:0 1px 2px rgba(0,0,0,.3); }
   .lane:last-child{ border-bottom:none; }
   .goal{ position:absolute; top:0; bottom:0; right:22px; width:6px; z-index:1;
     background:repeating-linear-gradient(45deg,#fff 0 6px,#111 6px 12px); opacity:.85; }
@@ -249,6 +291,8 @@
   .burst{ position:fixed; border-radius:2px; z-index:60; pointer-events:none;
     animation:burstFly 1.6s cubic-bezier(.2,.7,.4,1) forwards; }
   @keyframes burstFly{ 0%{ transform:translate(0,0) rotate(0); opacity:1; } 100%{ transform:translate(var(--bx,0),var(--by,-260px)) rotate(540deg); opacity:0; } }
+  .confetti{ position:fixed; top:-14px; z-index:62; pointer-events:none; border-radius:2px; animation:confFall linear forwards; }
+  @keyframes confFall{ 0%{ transform:translateY(0) rotate(0); opacity:1; } 100%{ transform:translateY(112vh) rotate(var(--rot,540deg)); opacity:.15; } }
 
   /* ===== オーバーレイ(交代/結果/確認/あそびかた) ===== */
   #handoffOverlay, #resultOverlay, #confirmOverlay, #helpOverlay, #champOverlay{
@@ -266,6 +310,8 @@
   #handoffOverlay.on .r-card, #resultOverlay.on .r-card, #confirmOverlay.on .r-card, #helpOverlay.on .r-card, #champOverlay.on .r-card{ transform:scale(1); opacity:1; }
   .r-title{ font-size:clamp(22px,6vw,32px); font-weight:900; letter-spacing:.08em; }
   .r-title.win{ color:var(--red); }
+  .r-title.res-hit{ color:var(--gold-dark); }
+  .r-title.res-miss{ color:rgba(34,36,31,.5); }
   .ho-name{ font-size:clamp(28px,8vw,44px); font-weight:900; color:var(--turf-dark); }
   .ho-dot{ width:40px; height:40px; border-radius:50%; box-shadow:inset 0 2px 4px rgba(255,255,255,.4), 0 2px 5px rgba(0,0,0,.25); }
   .r-card .sub-btns{ display:flex; gap:14px; width:100%; }
@@ -291,17 +337,29 @@
   .rank-row .rr-nm{ flex:1 1 0; font-weight:900; text-align:left; }
   .rank-row .rr-chips{ font-family:"Noto Sans JP","Hiragino Sans",sans-serif; color:var(--ink); }
 
-  /* レース数ステッパー */
+  /* レース数・制限時間ステッパー */
+  .rule-frame{ display:flex; gap:22px; justify-content:center; flex-wrap:wrap; align-items:flex-start;
+    background:rgba(255,255,255,.55); border:2px solid rgba(31,155,220,.35); border-radius:16px; padding:14px 22px 16px; }
+  .rule-col{ display:flex; flex-direction:column; align-items:center; gap:8px; }
   .rounds-box{ display:flex; flex-direction:column; align-items:center; gap:10px; }
-  .rounds-row{ display:flex; align-items:center; justify-content:center; gap:16px; }
+  .rounds-row{ display:flex; align-items:center; justify-content:center; gap:14px; }
   .rounds-box .rl{ font-size:13px; font-weight:900; letter-spacing:.3em; text-indent:.3em; opacity:.6; }
   .stp-btn{ width:42px; height:42px; border:none; border-radius:12px; cursor:pointer; font-size:24px; font-weight:900; color:#fff; line-height:1;
-    background:linear-gradient(150deg,#5cc0f0,var(--turf) 60%,var(--turf-dark)); box-shadow:0 3px 0 #0f6396; }
+    background:linear-gradient(150deg,#5cc0f0,var(--turf) 60%,var(--turf-dark)); box-shadow:0 3px 0 #0f6396;
+    touch-action:manipulation; -webkit-user-select:none; user-select:none; }
   .stp-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 #0f6396; }
   .stp-btn.dim{ opacity:.3; pointer-events:none; }
-  .rounds-row .rv{ min-width:78px; text-align:center; font-weight:900; color:var(--turf-dark); }
+  .rounds-row .rv{ min-width:64px; text-align:center; font-weight:900; color:var(--turf-dark); }
   .rounds-row .rv b{ font-size:34px; }
-  .rounds-row .rv small{ font-size:15px; opacity:.65; margin-left:3px; font-weight:900; }
+  /* ロビーのレース数 / 名前入力 */
+  .lobby-rounds{ display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .lobby-rounds:empty{ display:none; }
+  .lobby-rounds .rec-btn{ background:none; border:none; cursor:pointer; font-family:inherit; font-weight:900; font-size:13px;
+    color:var(--turf-dark); text-decoration:underline; text-underline-offset:3px; letter-spacing:.02em; }
+  .lobby-rounds .rec-btn:active{ opacity:.7; }
+  .lobby-rounds .lr-ro{ font-size:15px; font-weight:900; color:var(--turf-dark); letter-spacing:.08em; }
+  .name-block{ display:flex; flex-direction:column; align-items:center; gap:12px; width:min(94vw,440px); }
+  .online-name{ width:min(80vw,320px); text-align:center; font-size:22px; padding:14px 12px; letter-spacing:.04em; }
 
   /* +/- グレーアウト */
   .bet-amount .ba-btn.dim{ opacity:.3; pointer-events:none; box-shadow:0 3px 0 #9a9a90; }
@@ -310,57 +368,64 @@
   .bet-live{ display:flex; flex-direction:column; gap:6px; width:100%; }
   .bet-live:empty{ display:none; }
   .bl-head{ font-size:11px; font-weight:900; letter-spacing:.2em; opacity:.55; text-align:center; }
+  .bet-live.undoable .bl-row{ cursor:pointer; }
+  .bet-live.undoable .bl-row:active{ transform:scale(.98); }
+  .bl-undo{ margin-left:6px; font-size:10.5px; font-weight:900; color:var(--red); opacity:.75; }
   .bet-live .bl-row{ display:flex; align-items:center; gap:7px; font-size:13.5px; font-weight:700;
-    background:rgba(255,255,255,.72); border-radius:9px; padding:6px 11px; animation:panelIn .25s ease; }
+    background:rgba(255,255,255,.72); border-radius:9px; padding:6px 11px; }
+  .bet-live .bl-row.pick{ opacity:.72; background:rgba(255,255,255,.5); border:1.5px dashed rgba(34,36,31,.25); }
+  .bet-live .bl-ok{ margin-left:4px; width:16px; height:16px; color:var(--turf-dark); flex:none; }
+  .bet-live .bl-sel{ margin-left:auto; font-size:11px; font-weight:900; opacity:.6; }
   .bet-live .p-dot{ width:17px; height:17px; }
   .bet-live .bl-arrow{ opacity:.45; font-weight:900; }
   .bet-live .bl-amt{ margin-left:auto; color:var(--gold-dark); font-weight:900; display:flex; align-items:center; gap:4px; white-space:nowrap; }
-  .chip-ico{ width:13px; height:13px; border-radius:50%; background:radial-gradient(circle at 35% 30%,#ffe08a,var(--gold)); box-shadow:0 0 0 1.5px var(--gold-dark); flex:none; }
+  .chip-ico{ width:16px; height:16px; border-radius:50%; flex:none; position:relative;
+    background:radial-gradient(circle at 38% 32%,#ffe9a8,var(--gold) 68%,#dc9c14);
+    box-shadow:0 1px 2px rgba(0,0,0,.3), inset 0 0 0 2px rgba(255,255,255,.6); }
+  .chip-ico::after{ content:""; position:absolute; inset:4px; border-radius:50%; border:1.5px dashed rgba(255,255,255,.7); }
 
   /* レース中のチップ山 */
   .pool-view{ display:flex; flex-wrap:wrap; justify-content:center; align-items:flex-end; gap:16px; width:100%; }
   .pool-view:empty{ display:none; }
-  .pool-col{ display:flex; flex-direction:column; align-items:center; gap:5px; }
-  .pool-stack{ display:flex; flex-direction:column; align-items:center; justify-content:flex-end; min-height:16px; }
-  .pool-chip{ width:28px; height:9px; border-radius:50%; margin-bottom:-4px; box-shadow:0 1px 2px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.45); }
-  .pool-col .pc-nm{ font-size:11.5px; font-weight:900; display:flex; align-items:center; gap:4px; }
+  .pool-col{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .pool-stack{ display:flex; flex-direction:column-reverse; align-items:center; justify-content:flex-start; min-height:14px; padding-bottom:2px; }
+  .pool-chip{ width:40px; height:12px; border-radius:50%; margin-top:-8px; position:relative;
+    box-shadow:0 2px 0 rgba(0,0,0,.26), inset 0 -2px 3px rgba(0,0,0,.28), inset 0 2px 2px rgba(255,255,255,.55); }
+  .pool-col .pc-nm{ font-size:11.5px; font-weight:900; display:flex; align-items:center; gap:4px; margin-top:3px; }
   .pool-col .pc-nm .p-dot{ width:14px; height:14px; }
   .pool-col .pc-amt{ font-size:12.5px; font-weight:900; color:var(--gold-dark); }
 
-  /* 結果ブレイクダウン表 */
+  /* 結果(メイン=賭け / サブ=レース順位) */
   .res-wrap{ display:flex; flex-direction:column; align-items:center; }
-  .res-table{ width:100%; display:flex; flex-direction:column; gap:6px; max-height:46vh; overflow-y:auto; }
-  .res-row{ display:grid; grid-template-columns:auto 1fr auto; align-items:center; column-gap:9px; row-gap:1px;
-    background:#fff; border-radius:11px; padding:8px 12px; font-size:14px; text-align:left; }
-  .res-row.win{ background:linear-gradient(150deg,#fff5da,#ffe9a8); box-shadow:0 2px 7px rgba(210,144,20,.22); }
-  .res-row .rs-dot{ width:24px; height:24px; grid-row:span 2; }
-  .res-row .rs-nm{ font-weight:900; display:flex; align-items:baseline; gap:6px; }
-  .res-row .rs-num b{ color:var(--turf-dark); }
-  .res-row .rs-crown{ color:var(--gold-dark); font-weight:900; font-size:12px; }
-  .res-row .rs-bet{ grid-column:2; font-size:11.5px; opacity:.72; font-weight:700; }
-  .res-row .rs-delta{ grid-column:3; grid-row:span 2; font-weight:900; font-size:17px; text-align:right; white-space:nowrap; }
-  .rs-delta.plus{ color:var(--turf-dark); }
-  .rs-delta.minus{ color:var(--red); opacity:.85; }
-  .rs-delta.zero{ opacity:.4; }
+  .res-sec-label{ align-self:flex-start; font-size:12px; font-weight:900; letter-spacing:.12em; color:var(--turf-dark); margin:2px 0 -2px 2px; }
+  .res-sec-label.sub{ color:rgba(34,36,31,.55); }
+  .res-table{ width:100%; display:flex; flex-direction:column; gap:6px; max-height:34vh; overflow-y:auto; }
+  .rb-row{ display:flex; align-items:center; gap:9px; background:#fff; border-radius:11px; padding:9px 12px; font-size:15px; text-align:left; }
+  .rb-row.hit{ background:linear-gradient(150deg,#fff5da,#ffe9a8); box-shadow:0 2px 7px rgba(210,144,20,.22); }
+  .rb-row .rb-dot{ width:22px; height:22px; flex:none; }
+  .rb-row .rb-nm{ font-weight:900; flex:none; }
+  .rb-row .rb-bet{ flex:1 1 0; min-width:0; font-size:12px; opacity:.75; font-weight:700; display:flex; align-items:center; gap:4px; }
+  .rb-row .rb-tdot{ width:13px; height:13px; flex:none; }
+  .rb-row .rb-delta{ font-weight:900; font-size:18px; white-space:nowrap; }
+  .rb-delta.plus{ color:var(--turf-dark); }
+  .rb-delta.minus{ color:var(--red); opacity:.85; }
+  .rb-delta.zero{ opacity:.4; }
+  .res-sub{ width:100%; margin-top:4px; padding-top:10px; border-top:1.5px dashed rgba(34,36,31,.18); display:flex; flex-direction:column; gap:6px; }
+  .res-race{ width:100%; display:flex; flex-direction:column; gap:4px; max-height:26vh; overflow-y:auto; }
+  .rr2-row{ display:flex; align-items:center; gap:8px; font-size:13.5px; padding:4px 8px; border-radius:8px; text-align:left; }
+  .rr2-row.win{ background:rgba(242,176,53,.16); }
+  .rr2-row .rr2-rk{ width:20px; font-weight:900; color:var(--gold-dark); text-align:center; flex:none; }
+  .rr2-row .rr2-dot{ width:16px; height:16px; flex:none; }
+  .rr2-row .rr2-nm{ flex:1 1 0; font-weight:700; }
+  .rr2-row .rr2-num{ font-weight:900; color:var(--turf-dark); }
 
   /* 枠外リンク(中断する) */
   .link-out{ margin-top:16px; background:none; border:none; cursor:pointer; font-family:inherit;
     color:rgba(255,255,255,.92); text-decoration:underline; text-underline-offset:3px; font-size:14px; font-weight:700; letter-spacing:.12em; }
   .link-out:active{ opacity:.7; }
 
-  /* レース演出 */
-  .race-call{ position:fixed; left:50%; top:40%; transform:translate(-50%,-50%); z-index:65;
-    font-size:clamp(30px,9vw,54px); font-weight:900; color:#fff; letter-spacing:.06em; pointer-events:none; opacity:0;
-    text-shadow:0 3px 0 var(--red), 0 6px 18px rgba(0,0,0,.5); white-space:nowrap; }
-  .race-call.on{ animation:raceCall 1.4s cubic-bezier(.2,1.4,.4,1) forwards; }
-  @keyframes raceCall{ 0%{ opacity:0; transform:translate(-50%,-50%) scale(.5); } 16%{ opacity:1; transform:translate(-50%,-50%) scale(1.12); } 74%{ opacity:1; transform:translate(-50%,-50%) scale(1); } 100%{ opacity:0; transform:translate(-50%,-50%) scale(1.06); } }
-  .runner .r-dot::before{ content:""; position:absolute; right:100%; top:50%; height:3px; border-radius:3px; margin-right:2px;
-    background:linear-gradient(to left, rgba(255,255,255,.75), transparent); transform:translateY(-50%); width:0; transition:width .2s; }
-  .track.running .runner .r-dot::before{ width:22px; }
-  .runner.lead .r-dot{ box-shadow:0 0 0 3px rgba(255,255,255,.55), inset 0 2px 4px rgba(255,255,255,.45), 0 2px 7px rgba(0,0,0,.35); }
-
   /* あそびかた */
-  #helpOverlay .help-body{ font-size:14px; line-height:1.9; letter-spacing:.02em; text-align:left; font-weight:500; }
+  #helpOverlay .help-body{ font-size:14px; line-height:1.9; letter-spacing:.02em; text-align:left; font-weight:700; }
   #helpOverlay .help-body .h-sec{ display:flex; align-items:center; gap:8px; font-weight:900; letter-spacing:.08em; font-size:15px; }
   #helpOverlay .help-body .h-sec::before{ content:""; width:5px; height:17px; border-radius:2px; background:var(--turf); flex:none; }
   #helpOverlay .help-body .h-sec.hl{ color:var(--gold-dark); }
@@ -377,6 +442,10 @@
   }
   .help-btn span{ display:inline-flex; align-items:center; justify-content:center; width:17px; height:17px; border-radius:50%; background:var(--turf); color:#fff; font-size:11.5px; font-weight:900; }
   .help-btn:active{ transform:translateY(1px); }
+  .back-fixed{ position:fixed; left:10px; top:48px; z-index:80; cursor:pointer;
+    font-family:inherit; font-size:12.5px; font-weight:700; letter-spacing:.08em; color:var(--turf-dark);
+    background:rgba(255,255,255,.85); border:1.5px solid var(--turf); border-radius:999px; padding:6px 15px 7px; }
+  .back-fixed:active{ transform:translateY(1px); }
   .snd-btns{ position:fixed; right:10px; top:10px; z-index:80; }
   .snd-btn{
     display:inline-flex; align-items:center; gap:6px; cursor:pointer;
@@ -396,9 +465,9 @@
 
   .home-foot{
     position:fixed; left:0; right:0; bottom:0; z-index:40; display:block; text-align:center;
-    padding:32px 0 16px; font-size:13px; font-weight:900; letter-spacing:.2em;
-    color:#fff; text-shadow:0 1px 2px rgba(20,50,30,.5);
-    background:linear-gradient(to top, rgba(18,123,180,.6), rgba(18,123,180,.3) 50%, rgba(18,123,180,0));
+    padding:32px 0 14px; font-size:12px; font-weight:800; letter-spacing:.2em;
+    color:rgba(34,36,31,.42); text-shadow:none;
+    background:linear-gradient(to top, rgba(31,155,220,.12), rgba(31,155,220,.04) 55%, transparent);
     text-decoration:none; opacity:0; pointer-events:none; transition:opacity .32s linear;
   }
   .home-foot span{ pointer-events:none; }
@@ -425,33 +494,27 @@
         <div class="players-list" id="playersList"></div>
         <button class="p-add" id="addPlayer">＋ メンバーを追加</button>
       </div>
-      <div class="rounds-box">
-        <div class="rl">レース数</div>
-        <div class="rounds-row">
-          <button class="stp-btn" data-rd="-1">−</button>
-          <div class="rv"><b class="rVal">5</b><small>レース</small></div>
-          <button class="stp-btn" data-rd="1">＋</button>
+      <div class="rule-frame">
+        <div class="rule-col">
+          <div class="rl">レース数</div>
+          <div class="rounds-row">
+            <button class="stp-btn" data-rd="-1">−</button>
+            <div class="rv"><b class="rVal">5</b></div>
+            <button class="stp-btn" data-rd="1">＋</button>
+          </div>
         </div>
       </div>
       <button class="btn-main" id="startBtn">出走</button>
     </div>
 
     <div class="setup-block" id="onlineSetup">
-      <div class="card-box">
+      <div class="name-block">
         <div class="sec-label">あなたの名前</div>
-        <input class="p-input" id="onlineName" maxlength="8" placeholder="なまえ" autocomplete="off">
-      </div>
-      <div class="rounds-box">
-        <div class="rl">レース数<span style="opacity:.6;font-weight:700;letter-spacing:0;text-indent:0;">（部屋を作る人が設定）</span></div>
-        <div class="rounds-row">
-          <button class="stp-btn" data-rd="-1">−</button>
-          <div class="rv"><b class="rVal">5</b><small>レース</small></div>
-          <button class="stp-btn" data-rd="1">＋</button>
-        </div>
+        <input class="p-input online-name" id="onlineName" maxlength="8" placeholder="なまえ" autocomplete="off">
       </div>
       <div class="room-btns">
         <button class="mode-btn sm" id="makeRoom">部屋を作る<small>合言葉を発行</small></button>
-        <button class="mode-btn sm" id="joinRoom">部屋に入る<small>合言葉で入る</small></button>
+        <button class="mode-btn sm" id="joinRoom">部屋に入る<small>合言葉で入室</small></button>
       </div>
       <div class="room-area" id="roomArea"></div>
     </div>
@@ -463,8 +526,9 @@
     <!-- ロビー(オンライン) -->
     <div class="panel" id="lobbyPanel">
       <div class="big-q">出走メンバーを待っています</div>
-      <div class="lobby-code" id="lobbyCode"></div>
       <div class="lobby-list" id="lobbyList"></div>
+      <div class="lobby-code" id="lobbyCode"></div>
+      <div class="lobby-rounds" id="lobbyRounds"></div>
       <div class="hint" id="lobbyHint"></div>
       <button class="btn-main" id="lobbyStart" style="display:none;">出走</button>
       <button class="txt-btn" id="lobbyBack">← タイトルにもどる</button>
@@ -482,13 +546,15 @@
     <div class="panel" id="themePanel">
       <div class="big-q"><span id="repName" class="em"></span>さん、お題を決めよう</div>
       <div class="field-wrap">
-        <span class="field-tag">お題</span>
-        <input class="theme-input" id="themeInput" maxlength="24" placeholder="例：インスタのフォロワー数" autocomplete="off">
+        <div class="theme-row">
+          <button class="omakase-btn" id="omakaseBtn" aria-label="おまかせ">おまかせ</button>
+          <input class="theme-input" id="themeInput" maxlength="24" placeholder="お題" autocomplete="off">
+        </div>
       </div>
       <div class="hint">勝敗の決め方</div>
       <div class="dir-row">
-        <button class="dir-btn sel" data-dir="hi">大きいほど勝ち</button>
-        <button class="dir-btn" data-dir="lo">小さいほど勝ち</button>
+        <button class="dir-btn sel" data-dir="hi"><svg class="dir-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V5M6 11l6-6 6 6"/></svg>大きいほど勝ち</button>
+        <button class="dir-btn" data-dir="lo"><svg class="dir-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15M6 13l6 6 6-6"/></svg>小さいほど勝ち</button>
       </div>
       <button class="btn-main" id="themeGo">決定</button>
     </div>
@@ -499,6 +565,7 @@
       <input class="num-input" id="numInput" type="number" inputmode="numeric" min="0" placeholder="0" autocomplete="off">
       <button class="btn-main" id="numGo">決定</button>
       <div class="secret-note">※ まわりの人に見られないように！</div>
+      <div class="enter-done" id="enterDone"></div>
     </div>
 
     <!-- 賭ける -->
@@ -507,13 +574,22 @@
       <div class="my-chips">持ちチップ <b id="betChips">0</b></div>
       <div class="cand-list" id="candList"></div>
       <div class="bet-amount">
-        <button class="ba-btn" id="baMinus">−</button>
+        <button class="ba-btn ba-wide" data-d="-10">-10</button>
+        <button class="ba-btn" data-d="-1">-1</button>
         <div class="ba-val" id="baVal">10</div>
-        <button class="ba-btn" id="baPlus">＋</button>
+        <button class="ba-btn" data-d="1">+1</button>
+        <button class="ba-btn ba-wide" data-d="10">+10</button>
       </div>
       <button class="bet-allin" id="baAllin">全ブッパ</button>
       <button class="btn-gold" id="betGo">この予想で賭ける</button>
       <div class="bet-live" id="betLive"></div>
+    </div>
+
+    <!-- 全員のかけ状況確認(1台) -->
+    <div class="panel" id="checkPanel">
+      <div class="big-q">みんなのかけ、これでOK？<br><span class="hint">タップでやり直し</span></div>
+      <div class="chk-list" id="checkList"></div>
+      <button class="btn-gold" id="checkGo">全員OK！レースへ</button>
     </div>
 
     <!-- レース -->
@@ -530,12 +606,15 @@
     <div class="round-pill" id="roundPill"></div>
     <div class="dir-badge" id="dirBadge"></div>
   </div>
+  <div class="timer" id="timer" style="display:none;"></div>
 
   <!-- タイトルへ戻るフッター -->
   <a class="home-foot" id="homeFoot" href="./index.html"><span>牧村が作ったゲーム集へ</span></a>
 
   <!-- 左上あそびかた -->
   <button class="help-btn" id="helpBtn" aria-label="あそびかた"><span>？</span>あそびかた</button>
+  <!-- 左上・一つ前に戻る(1台) -->
+  <button class="back-fixed" id="backFixed" style="display:none;">← もどる</button>
   <!-- 右上効果音 -->
   <div class="snd-btns">
     <button class="snd-btn" id="seBtn"><svg viewBox="0 0 25 24"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor"/><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M15 9.4c1.3 1.3 1.3 3.9 0 5.2"/><path d="M17.6 7.6c2.2 2.2 2.2 6.6 0 8.8"/></g></svg>効果音</button>
@@ -555,10 +634,14 @@
   <div id="resultOverlay">
     <div class="res-wrap">
       <div class="r-card result-card">
-        <div class="r-title win" id="resWin"></div>
-        <div class="result-head" id="resHead"></div>
-        <div class="res-table" id="resTable"></div>
+        <div class="r-title" id="resWin"></div>
+        <div class="res-sec-label">賭けの結果</div>
+        <div class="res-table" id="resBet"></div>
         <div class="carry-note" id="carryNote"></div>
+        <div class="res-sub">
+          <div class="res-sec-label sub" id="resRaceLabel">レース結果</div>
+          <div class="res-race" id="resRace"></div>
+        </div>
         <button class="btn-main" id="nextBtn" style="width:100%;">次のレース</button>
       </div>
       <button class="link-out" id="endBtn">中断する</button>
@@ -597,20 +680,42 @@
     </div>
   </div>
 
-  <div class="race-call" id="raceCall"></div>
   <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
   "use strict";
-  const COLORS=["#e3452f","#2f7de3","#2f9e55","#f39a1f","#8a5cd6","#17a2a2","#e35a9c","#8a6a3f"];
-  const THEMES=["スマホの充電残量","LINEの未読数","昨日の睡眠時間","シャトルランの回数","カメラロールの写真の枚数","スマホの昨日の利用時間","入れてるアプリの数","Twitterのフォロワー数","インスタのフォロワー数"];
-  function randTheme(){ return THEMES[Math.floor(Math.random()*THEMES.length)]; }
+  const COLORS=["#e3452f","#2f7de3","#2f9e55","#f39a1f","#8a5cd6","#17a2a2","#e35a9c","#8a6a3f",
+    "#c0392b","#2472c8","#27ae60","#e67e22","#7b4bc0","#0f9b8e","#d6336c","#6b7280",
+    "#d35400","#3b4b8a","#b8930f","#2a9d8f"];
+  const THEMES=[
+    "スマホの充電残量","LINEの未読数","昨日の睡眠時間","シャトルランの回数","カメラロールの写真の枚数",
+    "スマホの昨日の利用時間","入れてるアプリの数","Twitterのフォロワー数","インスタのフォロワー数","今目の前に見えた数字",
+    "今日歩いた歩数","財布の中の小銭の枚数","今月の外食の回数","好きな数字","今日飲んだ水の杯数",
+    "持ってる靴の数","今日見た広告の数","今週見た夢の数","今日送ったLINEの数","カバンの中のレシートの枚数",
+    "今年行った旅行の回数","今日食べたお菓子の数","1日のコーヒーの杯数","冷蔵庫の中の飲み物の数","今月読んだ本の冊数",
+    "今日開いたアプリの数","1週間の自炊の回数","持ってる漫画の冊数","今年泣いた回数","昨日のスクショの枚数",
+    "今月のコンビニ利用の回数","好きな人の数","今のバッテリー残量","スマホの空き容量(GB)","今週のアラーム設定の数",
+    "手持ちの現金","今年観た映画の本数","一番高い持ち物の値段","今日会話した人数","持ってる靴下の数(片方)",
+    "昨日もらったいいねの数","今日のあくびの回数","持ってる充電ケーブルの数","今週の遅刻の回数","好きな食べ物の数",
+    "1週間のシャワーの回数","スマホを落とした回数(通算)","今年ひいた風邪の回数","財布のカードの枚数","今日のため息の回数",
+    "今月の課金額","プレイリストの曲数","今日会ったペットの数","1週間の飲み会の回数","今年買った服の数",
+    "持ってるマグカップの数","今の体感気温","今日のぼった階段の段数","今週作った料理の品数","好きな映画の本数",
+    "今月のサブスクの数","今持ってるポイントカードの数","スマホのホーム画面のアプリ数","今日見た猫の数","今月のカレンダーの予定数",
+    "今年撮った自撮りの枚数","今日言った「ありがとう」の回数","1日のトイレの回数","今日踏んだ横断歩道の数","持ってるペンの数",
+    "今週のゲーム時間","昨日の歩数","今日のスワイプ回数(推定)","1年のカラオケ回数","今日のまばたき(推定)",
+    "今月の残業時間","今日のスクロール距離(m/推定)","好きなYouTuberの数","今日の残り歩数(目標まで)","持ってるTシャツの数",
+    "今年泊まったホテルの数","今日見た信号の数","1週間のカップ麺の数","今月の映画館の回数","今のやる気(100点満点)"
+  ];
+  let lastTheme="";
+  function randTheme(){ let t; do{ t=THEMES[Math.floor(Math.random()*THEMES.length)]; }while(THEMES.length>1 && t===lastTheme); lastTheme=t; return t; }
   const INIT_CHIPS=100, MIN_BET=10, RESCUE=20;
-  const MAXP=8, MINP=2;
+  const MAXP=20, MINP=2;
   const MIN_ROUNDS=1, MAX_ROUNDS=30;
   let totalRounds=5;   // 何レースで総合結果か(部屋主/1台の設定)
+  const TIME_OPTS=[15,30,45,60,90,0];   // 0=無制限
+  let timeLimit=30;    // 各操作の制限時間(秒)。0で無制限
 
   let players=[];        // {name,color,chips}
   let round=0, repIdx=0, carry=0;
@@ -647,16 +752,18 @@
     o.connect(g); g.connect(seBus); o.start(t); o.stop(t+1.05); }
 
   /* ---------- タイトル: メンバー設定 ---------- */
-  const DEFAULT_NAMES=["メンバー1","メンバー2"];
+  const DEFAULT_NAMES=["1","2"];
   function renderPlayersSetup(){
     playersList.innerHTML="";
     playersSetup.forEach((nm,i)=>{
+      const c=COLORS[i%COLORS.length];
       const row=document.createElement("div"); row.className="p-row";
-      row.innerHTML='<span class="p-dot" style="background:radial-gradient(circle at 35% 30%, '+tint(COLORS[i])+', '+COLORS[i]+')"></span>'
+      row.innerHTML='<span class="p-dot" style="background:radial-gradient(circle at 35% 30%, '+tint(c)+', '+c+')"></span>'
         +'<input class="p-input" maxlength="8" placeholder="なまえ" value="'+esc(nm)+'">'
         +(playersSetup.length>MINP?'<button class="p-del" aria-label="削除">×</button>':'');
       const inp=row.querySelector(".p-input");
       inp.addEventListener("input",()=>{ playersSetup[i]=inp.value; });
+      inp.addEventListener("focus",()=>{ setTimeout(()=>{ try{ inp.select(); }catch(e){} },0); });   // 選択時は全選択(すぐ書き換えられる)
       const del=row.querySelector(".p-del");
       if(del) del.addEventListener("click",()=>{ ensureAudio(); playSelect(); playersSetup.splice(i,1); renderPlayersSetup(); });
       playersList.appendChild(row);
@@ -670,27 +777,55 @@
     return "rgb("+Math.min(255,r)+","+Math.min(255,g)+","+Math.min(255,b)+")";
   }
   document.getElementById("addPlayer").addEventListener("click",()=>{ ensureAudio(); playSelect();
-    if(playersSetup.length>=MAXP) return; playersSetup.push(""); renderPlayersSetup();
-    const inps=playersList.querySelectorAll(".p-input"); inps[inps.length-1].focus();
+    if(playersSetup.length>=MAXP) return; playersSetup.push(String(playersSetup.length+1)); renderPlayersSetup();
+    const inps=playersList.querySelectorAll(".p-input"); const last=inps[inps.length-1]; last.focus(); try{ last.select(); }catch(e){}
   });
   renderPlayersSetup();
 
-  // レース数ステッパー(1台/オンライン共通・同じ値を反映)
+  // 長押し対応(押しっぱなしで連続実行。レース数・賭けチップ増減で共用)
+  function attachHold(btn, fn){
+    let t1=0,t2=0;
+    const stop=()=>{ clearTimeout(t1); clearInterval(t2); t1=t2=0; };
+    const start=(e)=>{ if(e) e.preventDefault(); if(btn.classList.contains("dim")) return; fn(); stop();
+      t1=setTimeout(()=>{ t2=setInterval(()=>{ if(btn.classList.contains("dim")){ stop(); return; } fn(); }, 90); }, 420); };
+    btn.addEventListener("pointerdown", start);
+    ["pointerup","pointerleave","pointercancel"].forEach(ev=>btn.addEventListener(ev, stop));
+  }
+  // レース数ステッパー(タイトル1台側 + オンラインはロビーで)
   function renderRounds(){
     document.querySelectorAll(".rVal").forEach(el=>el.textContent=totalRounds);
-    document.querySelectorAll(".stp-btn").forEach(b=>{ const d=+b.dataset.rd;
+    document.querySelectorAll(".stp-btn[data-rd]").forEach(b=>{ const d=+b.dataset.rd;
       b.classList.toggle("dim", (d<0&&totalRounds<=MIN_ROUNDS)||(d>0&&totalRounds>=MAX_ROUNDS)); });
   }
-  document.querySelectorAll(".stp-btn").forEach(b=>{
-    b.addEventListener("click",()=>{ ensureAudio(); const d=+b.dataset.rd;
-      const nv=Math.max(MIN_ROUNDS,Math.min(MAX_ROUNDS,totalRounds+d));
-      if(nv!==totalRounds){ totalRounds=nv; playTick(); renderRounds(); } });
-  });
-  renderRounds();
+  function changeRounds(d){
+    const nv=Math.max(MIN_ROUNDS,Math.min(MAX_ROUNDS,totalRounds+d));
+    if(nv!==totalRounds){ totalRounds=nv; playTick(); renderRounds(); if(mode==="online"&&isHost&&oPhase==="lobby") broadcastSnap(); }
+  }
+  // 制限時間ステッパー
+  function fmtTime(v){ return (v && v>0) ? (v+"秒") : "無制限"; }
+  function renderTime(){
+    document.querySelectorAll(".tVal").forEach(el=>el.textContent=fmtTime(timeLimit));
+    let idx=TIME_OPTS.indexOf(timeLimit); if(idx<0) idx=1;
+    document.querySelectorAll(".stp-btn[data-tm]").forEach(b=>{ const d=+b.dataset.tm;
+      b.classList.toggle("dim", (d<0&&idx<=0)||(d>0&&idx>=TIME_OPTS.length-1)); });
+  }
+  function changeTime(d){
+    let idx=TIME_OPTS.indexOf(timeLimit); if(idx<0) idx=1;
+    const ni=Math.max(0,Math.min(TIME_OPTS.length-1, idx+d));
+    if(ni!==idx){ timeLimit=TIME_OPTS[ni]; playTick(); renderTime(); if(mode==="online"&&isHost&&oPhase==="lobby") broadcastSnap(); }
+  }
+  function wireRoundStepper(scope){
+    (scope||document).querySelectorAll(".stp-btn[data-rd]").forEach(b=>{
+      if(b._wired) return; b._wired=true; attachHold(b, ()=>{ ensureAudio(); changeRounds(+b.dataset.rd); }); });
+    (scope||document).querySelectorAll(".stp-btn[data-tm]").forEach(b=>{
+      if(b._wired) return; b._wired=true; attachHold(b, ()=>{ ensureAudio(); changeTime(+b.dataset.tm); }); });
+  }
+  wireRoundStepper(document.getElementById("localSetup"));
+  renderRounds(); renderTime();
 
   document.getElementById("startBtn").addEventListener("click",()=>{
     ensureAudio(); playConfirm();
-    const names=playersSetup.map((s,i)=>(s||"").trim()||("メンバー"+(i+1)));
+    const names=playersSetup.map((s,i)=>(s||"").trim()||String(i+1));
     if(names.length<MINP){ showToast("2人以上でね"); return; }
     players=names.map((nm,i)=>({name:nm, color:COLORS[i%COLORS.length], chips:INIT_CHIPS}));
     mode="local"; round=0; carry=0;
@@ -701,8 +836,8 @@
   /* ---------- ラウンド進行 ---------- */
   const panels={ lobby:document.getElementById("lobbyPanel"), wait:document.getElementById("waitPanel"),
     theme:document.getElementById("themePanel"), enter:document.getElementById("enterPanel"),
-    bet:document.getElementById("betPanel"), race:document.getElementById("racePanel") };
-  function showPanel(name){ Object.keys(panels).forEach(k=> panels[k].classList.toggle("on", k===name)); }
+    bet:document.getElementById("betPanel"), check:document.getElementById("checkPanel"), race:document.getElementById("racePanel") };
+  function showPanel(name){ Object.keys(panels).forEach(k=> panels[k].classList.toggle("on", k===name)); try{ updateBackBtn(); }catch(e){} }
   function dotStyle(c){ return "background:radial-gradient(circle at 35% 30%, "+tint(c)+", "+c+")"; }
 
   let mode="local";   // "local" | "online"
@@ -737,6 +872,37 @@
     b.innerHTML=dirArrowSVG(dir)+"<span>"+(dir==="hi"?"大きいほど勝ち":"小さいほど勝ち")+"</span>";
   }
 
+  // ---- 制限時間タイマー(自分の操作画面で作動。0=無制限) ----
+  let timerInt=0, timerEnd=0;
+  function startTimer(){
+    stopTimer();
+    if(mode==="local") return;   // 1台回しは制限時間なし(無限)
+    if(!timeLimit || timeLimit<=0) return;
+    timerEnd=Date.now()+timeLimit*1000;
+    const el=document.getElementById("timer"); el.style.display="";
+    const clock='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>';
+    const tick=()=>{ const rem=Math.max(0,Math.ceil((timerEnd-Date.now())/1000));
+      el.innerHTML=clock+'<span>'+rem+'</span>'; el.classList.toggle("urgent", rem<=5);
+      if(rem<=0){ stopTimer(); onTimeout(); } };
+    tick(); timerInt=setInterval(tick,250);
+  }
+  function stopTimer(){ if(timerInt){ clearInterval(timerInt); timerInt=0; } const el=document.getElementById("timer"); if(el){ el.style.display="none"; el.classList.remove("urgent"); } }
+  function onTimeout(){   // 時間切れ→現在の画面を自動確定(未入力はランダム/最低額)
+    if(panels.theme.classList.contains("on")){ const ti=document.getElementById("themeInput"); if(!ti.value.trim()) ti.value=randTheme(); document.getElementById("themeGo").click(); return; }
+    if(panels.enter.classList.contains("on")){ const inp=document.getElementById("numInput"); if(inp.value.trim()===""||isNaN(Number(inp.value))) inp.value=String(Math.floor(Math.random()*100)); document.getElementById("numGo").click(); return; }
+    if(panels.bet.classList.contains("on")){ if(curCand<0) curCand=Math.floor(Math.random()*players.length); document.getElementById("betGo").click(); return; }
+  }
+  // ホスト側の強制進行(誰かが放置しても進める。クライアントより少し遅らせる)
+  let hostTimer=0;
+  function startHostTimer(){ if(!isHost) return; clearTimeout(hostTimer); if(!timeLimit||timeLimit<=0) return; hostTimer=setTimeout(hostForce,(timeLimit+3)*1000); }
+  function stopHostTimer(){ clearTimeout(hostTimer); hostTimer=0; }
+  function hostForce(){
+    if(!isHost) return;
+    if(oPhase==="theme"){ if(!theme){ theme=randTheme(); dir="hi"; } oPhase="enter"; broadcastSnap(); startHostTimer(); }
+    else if(oPhase==="enter"){ activeIdxs().forEach(i=>{ if(numbers[i]==null) numbers[i]=Math.floor(Math.random()*100); }); oPhase="bet"; broadcastSnap(); startHostTimer(); }
+    else if(oPhase==="bet"){ activeIdxs().forEach(i=>{ if(bets[i]==null){ const amt=Math.min(MIN_BET,players[i].chips); bets[i]={on:Math.floor(Math.random()*players.length),amt}; players[i].chips-=amt; } }); stopHostTimer(); oPhase="race"; broadcastSnap(); }
+  }
+
   function startRound(){
     const elim=rescueOrEliminate();
     if(players.length<MINP){ if(elim.length) showToast(elim.join("・")+" が脱落。ゲーム終了！",2600); setDirBadge(false); showChampion(); return; }
@@ -749,14 +915,14 @@
     document.getElementById("roundPill").textContent="第"+round+" / "+totalRounds+" レース";
     // お題入力へ
     document.getElementById("repName").textContent=players[repIdx].name;
-    document.getElementById("themeInput").value="";
-    document.getElementById("themeInput").placeholder="例："+randTheme();
+    document.getElementById("themeInput").value=randTheme();
     document.querySelectorAll("#themePanel .dir-btn").forEach(b=>b.classList.toggle("sel", b.dataset.dir==="hi"));
-    handoff(repIdx, "お題を決める", ()=>{ showPanel("theme"); setTimeout(()=>document.getElementById("themeInput").focus(),80); });
+    handoff(repIdx, "お題を決める", ()=>{ showPanel("theme"); startTimer(); setTimeout(()=>document.getElementById("themeInput").focus(),80); });
   }
 
   // 交代画面: 端末を渡してから続行
   function handoff(idx, hint, done){
+    stopTimer();
     const ov=document.getElementById("handoffOverlay");
     document.getElementById("hoDot").style.cssText=dotStyle(players[idx].color);
     document.getElementById("hoName").textContent=players[idx].name;
@@ -776,6 +942,11 @@
       document.querySelectorAll("#themePanel .dir-btn").forEach(x=>x.classList.remove("sel"));
       b.classList.add("sel"); });
   });
+  // お題欄: タッチで全選択 / おまかせでランダム
+  { const ti=document.getElementById("themeInput");
+    ti.addEventListener("focus",()=>{ setTimeout(()=>{ try{ ti.select(); }catch(e){} },0); }); }
+  document.getElementById("omakaseBtn").addEventListener("click",()=>{ ensureAudio(); playSelect();
+    const ti=document.getElementById("themeInput"); ti.value=randTheme(); ti.focus(); try{ ti.select(); }catch(e){} });
   document.getElementById("themeGo").addEventListener("click",()=>{
     ensureAudio();
     const t=document.getElementById("themeInput").value.trim();
@@ -794,8 +965,13 @@
     handoff(idx, "お題を見て数字を入力", ()=>{
       document.getElementById("enterQ").innerHTML='お題「<span class="em">'+esc(theme)+'</span>」<br>'+esc(players[idx].name)+'さんは数字を入力';
       const inp=document.getElementById("numInput"); inp.value="";
+      document.getElementById("enterDone").innerHTML=""; document.getElementById("enterDone")._sig="";
+      startTimer();
       showPanel("enter"); setTimeout(()=>inp.focus(),80);
     });
+  }
+  function doEnterBack(){   // 数字入力: 1人前へ(1人目は戻る不可=ボタン非表示)
+    if(seatIdx>0){ ensureAudio(); playSelect(); seatIdx--; numbers[seatIdx]=null; nextEnter(); }
   }
   document.getElementById("numGo").addEventListener("click",()=>{
     ensureAudio();
@@ -807,31 +983,95 @@
     seatIdx++; nextEnter();
   });
 
-  // 賭けループ
+  // 賭けループ(1台。全員で見ながら順番に。最後に全員確認画面へ)
+  let editSeat=null, editOrig=null;
   function nextBet(){
-    if(seatIdx>=players.length){ startRace(); return; }
-    const idx=seatIdx; betIdx=idx;
-    // 賭けは全員で見ながら順番に(端末は回さない)
-    curCand=-1; curBet=MIN_BET;
+    if(seatIdx>=players.length){ showBetCheck(); return; }
+    editSeat=null; editOrig=null; curCand=-1; curBet=MIN_BET; openBetPanel(seatIdx);
+  }
+  function openBetPanel(idx){
+    betIdx=idx;
     document.getElementById("betQ").innerHTML='<span class="em">'+esc(players[idx].name)+'</span>さんの予想<br><span class="hint">お題「'+esc(theme)+'」で1位は？</span>';
     document.getElementById("betChips").textContent=players[idx].chips;
     renderCandidates(idx);
+    if(curCand>=0){ const els=document.querySelectorAll("#candList .cand"); if(els[curCand]) els[curCand].classList.add("sel"); }
     updateBetVal();
     renderBetLive(document.getElementById("betLive"));
+    startTimer();
     showPanel("bet");
   }
-  // 「誰が誰に賭けているか」ライブ表示
+  function showBetCheck(){
+    editSeat=null; editOrig=null; stopTimer();
+    showPanel("check");
+    const list=document.getElementById("checkList"); list.innerHTML="";
+    players.forEach((p,i)=>{
+      const b=bets[i];
+      const right = b ? ('<span class="p-dot" style="'+dotStyle((players[b.on]||{}).color||"#999")+'"></span><span>'+esc((players[b.on]||{}).name||"?")+'</span><span class="chk-amt"><span class="chip-ico"></span>'+b.amt+'</span>')
+                      : '<span class="chk-none">未</span>';
+      const row=document.createElement("div"); row.className="chk-row";
+      row.innerHTML='<span class="p-dot" style="'+dotStyle(p.color)+'"></span><span class="chk-nm">'+esc(p.name)+'</span><span class="chk-arrow">→</span>'+right;
+      row.addEventListener("click",()=>editBet(i));
+      list.appendChild(row);
+    });
+  }
+  function editBet(seat){
+    ensureAudio(); playSelect();
+    editSeat=seat; const b=bets[seat];
+    if(b){ players[seat].chips+=b.amt; editOrig={on:b.on,amt:b.amt}; curCand=b.on; curBet=b.amt; bets[seat]=null; }
+    else{ editOrig=null; curCand=-1; curBet=MIN_BET; }
+    openBetPanel(seat);
+  }
+  document.getElementById("checkGo").addEventListener("click",()=>{ ensureAudio(); playConfirm(); startRace(); });
+  function doBetBack(){
+    ensureAudio(); playSelect();
+    if(editSeat!=null){ if(editOrig){ bets[editSeat]={on:editOrig.on,amt:editOrig.amt}; players[editSeat].chips-=editOrig.amt; } editSeat=null; editOrig=null; showBetCheck(); return; }
+    if(seatIdx>0){ seatIdx--; if(bets[seatIdx]){ players[seatIdx].chips+=bets[seatIdx].amt; bets[seatIdx]=null; } curCand=-1; curBet=MIN_BET; openBetPanel(seatIdx); return; }
+    seatIdx=players.length-1; nextEnter();   // 先頭でのもどる→数字入力に戻る
+  }
+  // 左上の固定「もどる」(1台のみ・数字入力1人目とお題は不可)
+  function updateBackBtn(){
+    const b=document.getElementById("backFixed");
+    let show=false;
+    if(mode==="local"){
+      if(panels.bet.classList.contains("on")) show=true;
+      else if(panels.enter.classList.contains("on") && (seatIdx>0 || editSeat!=null)) show=true;
+    }
+    b.style.display = show ? "" : "none";
+  }
+  document.getElementById("backFixed").addEventListener("click",()=>{
+    if(panels.bet.classList.contains("on")) doBetBack();
+    else if(panels.enter.classList.contains("on")) doEnterBack();
+  });
+  // 「誰が誰に賭けているか」ライブ表示(確定=✓、オンラインは仮選択も表示。1台では行タップで賭け直し可)
+  const CHECK_SVG='<svg class="bl-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>';
   function renderBetLive(el){
     if(!el) return;
     const rows=[];
-    players.forEach((p,i)=>{ const b=bets[i]; if(b){ rows.push({from:p, to:(players[b.on]||{name:"?",color:"#999"}), amt:b.amt}); } });
-    if(!rows.length){ el.innerHTML=""; return; }
-    let html='<div class="bl-head">賭け状況</div>';
-    rows.forEach(r=>{ html+='<div class="bl-row"><span class="p-dot" style="'+dotStyle(r.from.color)+'"></span>'
+    players.forEach((p,i)=>{
+      const b=bets[i];
+      if(b){ rows.push({seat:i, from:p, to:(players[b.on]||{name:"?",color:"#999"}), amt:b.amt, ok:true}); }
+      else if(mode==="online"){ const pk=picks[p.id]; if(pk!=null && players[pk]){ rows.push({seat:i, from:p, to:players[pk], amt:null, ok:false}); } }
+    });
+    const canUndo=(mode==="local");
+    const sig=(canUndo?"u":"")+rows.map(r=>r.seat+">"+(r.to?r.to.name:"")+":"+(r.ok?r.amt:"?")).join("|");
+    if(el._sig===sig) return;   // 変化がなければ作り直さない(点滅防止)
+    el._sig=sig;
+    if(!rows.length){ el.innerHTML=""; el.classList.remove("undoable"); return; }
+    let html='<div class="bl-head">賭け状況'+(canUndo?'（タップでやり直し）':'')+'</div>';
+    rows.forEach(r=>{ html+='<div class="bl-row'+(r.ok?'':' pick')+'" data-seat="'+r.seat+'"><span class="p-dot" style="'+dotStyle(r.from.color)+'"></span>'
       +'<span>'+esc(r.from.name)+'</span><span class="bl-arrow">→</span>'
       +'<span class="p-dot" style="'+dotStyle(r.to.color)+'"></span><span>'+esc(r.to.name)+'</span>'
-      +'<span class="bl-amt"><span class="chip-ico"></span>'+r.amt+'</span></div>'; });
+      + (r.ok ? '<span class="bl-amt"><span class="chip-ico"></span>'+r.amt+'</span>'+CHECK_SVG
+              : '<span class="bl-sel">選択中…</span>')
+      +'</div>'; });
     el.innerHTML=html;
+    el.classList.toggle("undoable", canUndo);
+    if(canUndo){ el.querySelectorAll(".bl-row").forEach(row=>row.addEventListener("click",()=>undoBetLocal(+row.dataset.seat))); }
+  }
+  function undoBetLocal(seat){
+    ensureAudio(); playSelect();
+    for(let i=seatIdx-1;i>=seat;i--){ if(bets[i]){ players[i].chips+=bets[i].amt; bets[i]=null; } }
+    seatIdx=seat; nextBet();
   }
   function renderCandidates(betterIdx){
     const list=document.getElementById("candList"); list.innerHTML="";
@@ -840,7 +1080,8 @@
       el.innerHTML='<span class="p-dot" style="'+dotStyle(p.color)+'"></span><span class="c-nm">'+esc(p.name)+'</span>'
         +(i===betterIdx?'<span class="c-me">じぶん</span>':'');
       el.addEventListener("click",()=>{ ensureAudio(); playSelect();
-        curCand=i; list.querySelectorAll(".cand").forEach(c=>c.classList.remove("sel")); el.classList.add("sel"); });
+        curCand=i; list.querySelectorAll(".cand").forEach(c=>c.classList.remove("sel")); el.classList.add("sel");
+        if(mode==="online") sendPick(i); });
       list.appendChild(el);
     });
   }
@@ -851,11 +1092,11 @@
     if(curBet>max) curBet=max;
     if(curBet<MIN_BET) curBet=Math.min(MIN_BET,max);
     document.getElementById("baVal").textContent=curBet;
-    document.getElementById("baMinus").classList.toggle("dim", curBet-10<MIN_BET);
-    document.getElementById("baPlus").classList.toggle("dim", curBet+10>max);
+    document.querySelectorAll("#betPanel .ba-btn").forEach(b=>{ const d=+b.dataset.d;
+      b.classList.toggle("dim", (d<0 && curBet<=MIN_BET) || (d>0 && curBet>=max)); });
   }
-  document.getElementById("baMinus").addEventListener("click",()=>{ ensureAudio(); if(curBet-10>=MIN_BET){ curBet-=10; playTick(); updateBetVal(); } });
-  document.getElementById("baPlus").addEventListener("click",()=>{ ensureAudio(); if(curBet+10<=betterChips()){ curBet+=10; playTick(); updateBetVal(); } });
+  function betStep(d){ const max=betterChips(); const nv=Math.max(MIN_BET, Math.min(max, curBet+d)); if(nv!==curBet){ curBet=nv; playTick(); updateBetVal(); } }
+  document.querySelectorAll("#betPanel .ba-btn").forEach(b=>attachHold(b, ()=>{ ensureAudio(); betStep(+b.dataset.d); }));
   document.getElementById("baAllin").addEventListener("click",()=>{ ensureAudio(); playChip(); curBet=betterChips(); updateBetVal(); });
   document.getElementById("betGo").addEventListener("click",()=>{
     ensureAudio();
@@ -864,6 +1105,9 @@
     if(amt<Math.min(MIN_BET, betterChips())){ showToast("賭けチップが足りない"); return; }
     playChip();
     if(mode==="online"){ sendAct("bet",{on:curCand, amt}); showWait("みんなの予想を待っています",false); return; }
+    if(editSeat!=null){   // 確認画面からの修正 → 保存して確認画面へ戻る
+      bets[editSeat]={on:curCand, amt}; players[editSeat].chips-=amt; editSeat=null; editOrig=null; showBetCheck(); return;
+    }
     bets[seatIdx]={on:curCand, amt};
     players[seatIdx].chips-=amt;
     seatIdx++; nextBet();
@@ -898,6 +1142,7 @@
     el.innerHTML=html;
   }
   function startRace(){
+    stopTimer();
     showPanel("race"); setDirBadge(true);
     document.getElementById("raceTheme").innerHTML='お題「<span class="em">'+esc(theme)+'</span>」';
     document.getElementById("raceResultBtn").style.display="none";
@@ -906,63 +1151,76 @@
     // ランク付け(勝者=先頭)。同値は同着扱い
     const order=players.map((p,i)=>i).sort((a,b)=> dir==="hi" ? (numbers[b]-numbers[a]) : (numbers[a]-numbers[b]));
     const rankOf={}; order.forEach((idx,r)=>rankOf[idx]=r);
-    // トラック描画
+    // トラック描画(人数が多い時はレーンを細くして収める)
+    const N=players.length;
+    const laneH = N>14 ? 24 : (N>8 ? 32 : 46);
     const track=document.getElementById("track"); track.innerHTML="";
-    track.style.height=(players.length*46)+"px";
+    track.classList.toggle("compact", N>8);
+    track.style.height=(N*laneH)+"px";
     const goal=document.createElement("div"); goal.className="goal"; track.appendChild(goal);
     const tape=document.createElement("div"); tape.className="goal-tape"; track.appendChild(tape);
     const runners=[];
     players.forEach((p,i)=>{
-      const lane=document.createElement("div"); lane.className="lane";
+      const lane=document.createElement("div"); lane.className="lane"; lane.style.height=laneH+"px";
       const run=document.createElement("div"); run.className="runner";
       run.innerHTML='<span class="r-dot" style="'+dotStyle(p.color)+'">'+esc(p.name.slice(0,1))+'</span><span class="r-num"></span>';
       lane.appendChild(run); track.appendChild(lane);
       runners.push(run);
     });
+    // 自分が賭けた馬(応援している馬)を強調(オンライン)
+    if(mode==="online"){ const mi=myIndex(); if(mi>=0 && bets[mi] && runners[bets[mi].on]){
+      const rc=runners[bets[mi].on]; rc.classList.add("cheer");
+      const tag=document.createElement("span"); tag.className="cheer-tag"; tag.textContent="応援"; rc.appendChild(tag);
+    } }
     // レースアニメ(rAF)。ゴール手前で止める(ゴール帯=右24px + 余白)
     const W=track.clientWidth, finish=W-46;
     runRace(runners, rankOf, set, finish, tape);
   }
-  let raceDone=false, raceCallShown=false;
-  function showRaceCall(txt){ const el=document.getElementById("raceCall"); el.textContent=txt; el.classList.remove("on"); void el.offsetWidth; el.classList.add("on"); }
+  let raceDone=false;
   function runRace(runners, rankOf, winSet, finish, tape){
     playGo();
-    raceDone=false; raceCallShown=false;
-    const track=document.getElementById("track"); track.classList.add("running");
-    const DUR=10000, gap=0.06;
-    // 各馬の揺らぎ(抜きつ抜かれつ)。終盤に収束して本来の順位へ
-    const osc=runners.map(()=>({p1:Math.random()*6.283, p2:Math.random()*6.283,
-      f1:0.9+Math.random()*1.0, f2:2.4+Math.random()*1.6, amp:0.05+Math.random()*0.05}));
-    const back=runners.map((_,i)=>rankOf[i]*gap);   // 最終的な後れ幅
+    raceDone=false;
+    const N=runners.length, DUR=10000;
+    const gap=0.5/Math.max(1,N-1);   // 最下位が中央あたりに来る程度の順位差
+    // 各馬のドラマ: 序盤の位置(順位と無関係=弱い奴が前もあり)・揺らぎ・急減速(こけ)・突然の加速(まくり)
+    const dram=runners.map(()=>({
+      early:(Math.random()*2-1),
+      amp:0.03+Math.random()*0.055, f1:0.8+Math.random()*1.3, p1:Math.random()*6.283,
+      f2:1.8+Math.random()*1.6, p2:Math.random()*6.283,
+      stumble: Math.random()<0.45 ? {at:0.15+Math.random()*0.4, dur:0.05+Math.random()*0.06, depth:0.1+Math.random()*0.13} : null,
+      surge:   Math.random()<0.5  ? {at:0.3+Math.random()*0.4, dur:0.07+Math.random()*0.07, amp:0.08+Math.random()*0.1} : null
+    }));
+    const back=runners.map((_,i)=>rankOf[i]*gap);
     const smooth=x=>{ x=Math.max(0,Math.min(1,x)); return x*x*(3-2*x); };
-    const endRace=()=>{ if(raceDone) return; raceDone=true; track.classList.remove("running"); finishRace(runners, winSet, tape); };
-    let start=null, lastGallop=0;
+    const endRace=()=>{ if(raceDone) return; raceDone=true; finishRace(runners, winSet, tape); };
+    let start=null, lastGallop=0, crowdDone=false;
     function frame(ts){
       if(raceDone) return;
       if(start==null) start=ts;
       const el=ts-start, t=Math.min(1, el/DUR);
-      const F=Math.min(1, t*1.02);                 // 隊列の先頭(ほぼ等速で直線を進む)
-      const S=smooth((t-0.55)/0.45);               // 終盤で隊列がばらけ、本来の順位が出る
-      let leadIdx=0, leadProg=-1;
+      const F=Math.min(1, t*1.02);                 // 隊列の先頭(ほぼ等速)
+      const W=smooth((t-0.66)/0.34);               // 終盤に本来の順位へ一気に収束(強い奴が急浮上)
+      const E=Math.max(0,1-t/0.78);                // 序盤の順位無関係なばらけ(中盤で消える)
+      const sec=el/1000;
       runners.forEach((run,i)=>{
-        const o=osc[i];
-        const sec=el/1000;
-        const j=(Math.sin(sec*o.f1*6.283+o.p1)*0.62 + Math.sin(sec*o.f2*6.283+o.p2)*0.38)*o.amp*(1-S);
-        let prog=F - back[i]*S + j;
+        const d=dram[i];
+        const jostle=(Math.sin(sec*d.f1*6.283+d.p1)*0.6 + Math.sin(sec*d.f2*6.283+d.p2)*0.4)*d.amp*(1-W*0.8);
+        const earlySpread=d.early*0.15*E;
+        let dip=0; if(d.stumble && t>d.stumble.at){ const x=(t-d.stumble.at)/d.stumble.dur; dip=d.stumble.depth*Math.exp(-x*x); }
+        let sg=0; if(d.surge && t>d.surge.at){ const x=(t-d.surge.at)/d.surge.dur; sg=d.surge.amp*Math.exp(-x*x)*(1-W*0.6); }
+        let prog=F + earlySpread - back[i]*W + jostle - dip + sg;
         prog=Math.max(0, Math.min(t<0.955?0.98:1, prog));
         run.style.left=(4 + prog*(finish-4))+"px";
-        if(prog>leadProg){ leadProg=prog; leadIdx=i; }
       });
-      runners.forEach((run,i)=>run.classList.toggle("lead", i===leadIdx && t<0.97));
-      if(!raceCallShown && t>=0.58){ raceCallShown=true; showRaceCall("最後の直線ッ！"); playStretch(); }
-      const gi=Math.max(95, 235-165*t);            // 終盤ほど蹄の音が速くなる
-      if(ts-lastGallop>gi){ lastGallop=ts; playGallop(Math.floor(el/110)); }
+      if(!crowdDone && t>=0.7){ crowdDone=true; if(seOn) playStretch(); }   // 最終直線の歓声スウェル
+      const gi=Math.max(80, 235-160*t);            // 終盤ほど蹄の音が速くなる
+      if(ts-lastGallop>gi){ lastGallop=ts; playGallop(Math.floor(el/100)); }
       if(t<1){ requestAnimationFrame(frame); }
       else endRace();
     }
     requestAnimationFrame(frame);
     // 保険: タブが裏でrAFが止まっても必ず完走させる
-    setTimeout(()=>{ runners.forEach((run,i)=>{ run.style.left=(4+(1-rankOf[i]*gap)*(finish-4))+"px"; run.classList.remove("lead"); }); endRace(); }, DUR+500);
+    setTimeout(()=>{ runners.forEach((run,i)=>{ run.style.left=(4+(1-rankOf[i]*gap)*(finish-4))+"px"; }); endRace(); }, DUR+500);
   }
   function finishRace(runners, winSet, tape){
     tape.classList.add("broken");
@@ -977,6 +1235,7 @@
       runners[i].classList.add("win");
       burstAt(runners[i]);
     });
+    spawnConfetti();
     if(seOn) playWin();
     // 1台回しは「結果を見る」ボタンで進む。オンラインはホストが自動集計する
     if(mode==="local") setTimeout(()=>{ document.getElementById("raceResultBtn").style.display=""; }, 900);
@@ -994,6 +1253,21 @@
       el.style.setProperty("--by",(Math.sin(a)*d-100).toFixed(0)+"px");
       el.style.animationDelay=(Math.random()*0.25)+"s";
       document.body.appendChild(el); setTimeout(()=>el.remove(),1800);
+    }
+  }
+  // ゴール時の画面全体の紙吹雪
+  function spawnConfetti(){
+    const cols=["var(--gold)","var(--red)","var(--turf)","#fff","#ffd166","#2f9e55"];
+    for(let i=0;i<46;i++){
+      const el=document.createElement("div"); el.className="confetti";
+      const w=6+Math.random()*7, h=9+Math.random()*9;
+      el.style.width=w+"px"; el.style.height=h+"px";
+      el.style.left=(Math.random()*100)+"vw";
+      el.style.background=cols[Math.floor(Math.random()*cols.length)];
+      el.style.setProperty("--rot",(Math.random()*720-360)+"deg");
+      el.style.animationDuration=(1.3+Math.random()*1.2)+"s";
+      el.style.animationDelay=(Math.random()*0.5)+"s";
+      document.body.appendChild(el); setTimeout(()=>el.remove(),3200);
     }
   }
   document.getElementById("raceResultBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); settlePayout(); });
@@ -1023,24 +1297,47 @@
   }
   function showResult(best, set, someoneWon, deltas){
     const ov=document.getElementById("resultOverlay");
-    const winNames=set.map(i=>players[i]?players[i].name:"").filter(Boolean).join("・");
-    document.getElementById("resWin").textContent="1位　"+winNames+"！";
-    document.getElementById("resHead").textContent="お題「"+theme+"」＝ "+best+"（"+(dir==="hi"?"最大":"最小")+"）";
-    // 数字の順位(1位が上)に並べて、数字・賭け先・損益をまとめて表示
-    const order=players.map((p,i)=>i).sort((a,b)=> dir==="hi" ? (numbers[b]-numbers[a]) : (numbers[a]-numbers[b]));
-    const tbl=document.getElementById("resTable"); tbl.innerHTML="";
-    order.forEach(i=>{
-      const p=players[i]; if(!p) return;
-      const d=deltas[i]||0, isWin=set.includes(i), b=bets[i];
-      const betTxt = b ? ('賭け → '+esc((players[b.on]||{}).name||"?")+' に '+b.amt+'枚') : '賭けなし';
+    // タイトル: オンラインは自分視点(大当たり/ざんぱい)、1台は当たった人名(or 大当たりなし)
+    const winEl=document.getElementById("resWin"); winEl.className="r-title";
+    const isCorrect=i=> !!(bets[i] && set.includes(bets[i].on));   // 1位を当てたか
+    if(mode==="online"){
+      const mi=myIndex();
+      if(mi>=0){
+        if(isCorrect(mi)){ winEl.textContent="大当たり！"; winEl.classList.add("res-hit"); }
+        else{ winEl.textContent="ざんぱい…"; winEl.classList.add("res-miss"); }
+      }else{ winEl.textContent="レース結果"; winEl.classList.add("res-miss"); }
+    }else{
+      const names=players.map((p,i)=>({p,ok:isCorrect(i)})).filter(x=>x.ok).map(x=>x.p.name);
+      if(names.length){ winEl.textContent=names.join("・")+" 大当たり！"; winEl.classList.add("res-hit"); }
+      else{ winEl.textContent="大当たりなし"; winEl.classList.add("res-miss"); }
+    }
+    document.getElementById("resRaceLabel").textContent="お題「"+theme+"」レース結果";
+    // 【メイン】賭けの結果(損益の大きい順)
+    const betEl=document.getElementById("resBet"); betEl.innerHTML="";
+    const byDelta=players.map((p,i)=>i).sort((a,b)=>(deltas[b]||0)-(deltas[a]||0));
+    byDelta.forEach(i=>{
+      const p=players[i]; if(!p) return; const d=deltas[i]||0, b=bets[i];
       const sign=d>0?"+":(d<0?"":"±"); const cls=d>0?"plus":(d<0?"minus":"zero");
-      const row=document.createElement("div"); row.className="res-row"+(isWin?" win":"");
-      row.innerHTML='<span class="rs-dot p-dot" style="'+dotStyle(p.color)+'"></span>'
-        +'<span class="rs-nm">'+esc(p.name)+(isWin?'<span class="rs-crown">1位</span>':'')
-        +' <span class="rs-num">数字 <b>'+(numbers[i]!=null?numbers[i]:"-")+'</b></span></span>'
-        +'<span class="rs-bet">'+betTxt+'</span>'
-        +'<span class="rs-delta '+cls+'">'+sign+d+'</span>';
-      tbl.appendChild(row);
+      const to=b?(players[b.on]||{name:"?",color:"#999"}):null;
+      const betTxt=b?('→ <span class="p-dot rb-tdot" style="'+dotStyle(to.color)+'"></span>'+esc(to.name)+' に '+b.amt):'賭けなし';
+      const row=document.createElement("div"); row.className="rb-row"+(isCorrect(i)?" hit":"");
+      row.innerHTML='<span class="rb-dot p-dot" style="'+dotStyle(p.color)+'"></span>'
+        +'<span class="rb-nm">'+esc(p.name)+'</span>'
+        +'<span class="rb-bet">'+betTxt+'</span>'
+        +'<span class="rb-delta '+cls+'">'+sign+d+'</span>';
+      betEl.appendChild(row);
+    });
+    // 【サブ】レース結果(数字の順位)＋みんなの数字
+    const raceEl=document.getElementById("resRace"); raceEl.innerHTML="";
+    const order=players.map((p,i)=>i).sort((a,b)=> dir==="hi" ? (numbers[b]-numbers[a]) : (numbers[a]-numbers[b]));
+    order.forEach((i,rank)=>{
+      const p=players[i]; if(!p) return; const isWin=set.includes(i);
+      const row=document.createElement("div"); row.className="rr2-row"+(isWin?" win":"");
+      row.innerHTML='<span class="rr2-rk">'+(rank+1)+'</span>'
+        +'<span class="rr2-dot p-dot" style="'+dotStyle(p.color)+'"></span>'
+        +'<span class="rr2-nm">'+esc(p.name)+'</span>'
+        +'<span class="rr2-num">'+(numbers[i]!=null?numbers[i]:"-")+'</span>';
+      raceEl.appendChild(row);
     });
     document.getElementById("carryNote").textContent = someoneWon
       ? (carry>0?"端数 "+carry+"枚 は次のレースへ持ち越し":"")
@@ -1073,6 +1370,7 @@
         +'<span class="rr-nm">'+esc(p.name)+'</span><span class="rr-chips">'+p.chips+'</span>';
       list.appendChild(row);
     });
+    tuneChampButtons();
     document.getElementById("champOverlay").classList.add("on");
     playWin();
   }
@@ -1080,19 +1378,17 @@
     document.getElementById("champOverlay").classList.remove("on");
     if(mode==="online"){ oRestart(); return; }
     players.forEach(p=>p.chips=INIT_CHIPS); round=0; carry=0; startRound(); });
-  document.getElementById("champHome").addEventListener("click",()=>{ ensureAudio(); playSelect(); goTitle(); });
+  document.getElementById("champHome").addEventListener("click",()=>{ ensureAudio(); playSelect();
+    if(mode==="online"){ if(isHost) oToLobby(); return; }   // オンラインは待機画面(ロビー)へ戻す
+    goTitle(); });
 
   /* ---------- あそびかた ---------- */
   const helpOverlay=document.getElementById("helpOverlay");
   document.getElementById("helpBtn").addEventListener("click",()=>{ ensureAudio(); playSelect();
     let html="<div class=\"h-sec\">ながれ</div>"
-      +"<p>① 代表がお題を出す（例：インスタのフォロワー数）<br>② 全員が自分の数字を<b>こっそり</b>入力<br>③ 1位はだれかを予想して、チップを賭ける<br>④ レースで結果発表！ 数字が一番の人が1位</p>";
+      +"<p>① 代表者がお題を出す（例：スマホの充電残量）<br>② 全員が自分の数字をこっそり入力<br>③ 1位を予想してチップを賭ける<br>④ レースで結果発表！ 数字が1番の人が1位</p>";
     html+="<div class=\"h-sec hl\">チップ</div>"
-      +"<p>賭けは1人ずつ「好きな枚数」。当てた人で、みんなの賭け金を山分け<br>当てた人が少ないほど、もらえるチップは多い（大穴ねらい）<br>だれも当てなければ、プールは次のレースに持ち越し</p>";
-    html+="<div class=\"h-sec\">じゆう</div>"
-      +"<p>お題は自由・自分に賭けてもOK・「小さいほど勝ち」も選べる<br>数字はみんな正直に（盛ってもバレたら気まずいよ）</p>";
-    html+="<div class=\"h-sec\">あそびかた2つ</div>"
-      +"<p><b>1台でみんなで</b>：端末を回して順番に入力<br><b>オンライン</b>：合言葉で集まって、各自のスマホで同時に入力</p>";
+      +"<p>当てた人で、みんなの賭け金を山分け<br>誰も当てなければ、集まったチップは次のレースに持ち越す</p>";
     document.getElementById("helpBody").innerHTML=html;
     helpOverlay.classList.add("on");
   });
@@ -1112,6 +1408,8 @@
     clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("on"), ms||1800); }
   function goTitle(){
     if(mode==="online"){ leaveChannel(); }
+    stopTimer(); stopHostTimer();
+    document.getElementById("backFixed").style.display="none";
     mode="local"; setDirBadge(false);
     ["handoffOverlay","resultOverlay","confirmOverlay","champOverlay","helpOverlay"].forEach(id=>document.getElementById(id).classList.remove("on"));
     gameScene.classList.remove("on"); titleScene.classList.add("on");
@@ -1121,6 +1419,7 @@
     document.getElementById("onlineSetup").classList.remove("on");
     document.getElementById("roomArea").innerHTML="";
     { const lc=document.getElementById("lobbyCode"); lc.innerHTML=""; lc.dataset.code=""; }
+    { const lr=document.getElementById("lobbyRounds"); lr.innerHTML=""; lr.dataset.built=""; }
     playersSetup=(players.length&&!players[0].id)?players.map(p=>p.name):DEFAULT_NAMES.slice(); renderPlayersSetup();
   }
 
@@ -1136,12 +1435,14 @@
   let pendingActs={}, actSeq=0;                 // guest: aid -> {payload, timer}
   let members={};                               // id -> {name, t}
   let lastRacedRound=-1;
+  let picks={};                                 // 賭けフェーズの仮選択: id -> 候補index
   // ホスト権威の状態
   let oPhase="lobby";
 
   function sbClient(){ if(!sb) sb=window.supabase.createClient(SB_URL, SB_KEY); return sb; }
   function leaveChannel(){
     clearInterval(hbTimer); hbTimer=0; clearInterval(presTimer); presTimer=0;
+    stopHostTimer();
     Object.values(pendingActs).forEach(p=>clearInterval(p.timer)); pendingActs={};
     if(ch){ try{ sbClient().removeChannel(ch); }catch(e){} ch=null; }
   }
@@ -1165,13 +1466,8 @@
     myName=(document.getElementById("onlineName").value||"").trim();
     if(!myName){ showToast("名前を入れてね"); return; }
     code=genCode(); isHost=true;
-    const area=document.getElementById("roomArea");
-    area.innerHTML='<div class="room-note">合言葉（タップでコピー）</div>'
-      +'<div class="code-show" id="codeShow"><svg class="cs-copy" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg><span class="cs-code">'+code+'</span></div>'
-      +'<div class="room-note room-wait">友だちの入室を待っています…</div>';
-    document.getElementById("codeShow").addEventListener("click", async ()=>{
-      try{ await navigator.clipboard.writeText(code); showToast("合言葉をコピーした"); }catch(e){}
-    });
+    // 合言葉はここでは出さず、出走メンバーを待つ画面でのみ表示する
+    document.getElementById("roomArea").innerHTML='<div class="room-note room-wait">部屋を作成中…</div>';
     joinRoom(code, true);
   });
   document.getElementById("joinRoom").addEventListener("click",()=>{
@@ -1179,9 +1475,21 @@
     myName=(document.getElementById("onlineName").value||"").trim();
     if(!myName){ showToast("名前を入れてね"); return; }
     const area=document.getElementById("roomArea");
-    area.innerHTML='<input class="code-input" id="codeInput" maxlength="5" autocomplete="off" spellcheck="false" placeholder="合言葉">'
+    area.innerHTML='<div class="code-row">'
+      +'<button class="paste-btn" id="pasteBtn" aria-label="合言葉を貼り付け"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3.4c0-.8.6-1.4 1.4-1.4h3.2c.8 0 1.4.6 1.4 1.4v1.1"/><path d="M9 10.5h6M9 14.5h6"/></svg></button>'
+      +'<input class="code-input" id="codeInput" maxlength="5" autocomplete="off" spellcheck="false" placeholder="合言葉">'
+      +'</div>'
       +'<button class="txt-btn" id="codeGo">入室</button><div class="room-note" id="joinNote"></div>';
     const inp=document.getElementById("codeInput"), note=document.getElementById("joinNote");
+    document.getElementById("pasteBtn").addEventListener("click", async ()=>{
+      ensureAudio(); playSelect();
+      try{
+        const t=await navigator.clipboard.readText();
+        const c=(t||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,5);
+        if(c){ inp.value=c; note.textContent="貼り付けた"; note.className="room-note"; }
+        else{ note.textContent="コピーした合言葉が見つからない"; note.className="room-note err"; }
+      }catch(e){ note.textContent="貼り付けできない。手入力してね"; note.className="room-note err"; }
+    });
     document.getElementById("codeGo").addEventListener("click",()=>{
       ensureAudio();
       const c=(inp.value||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
@@ -1246,8 +1554,9 @@
     repIdx=(round-1)%players.length;
     numbers=new Array(players.length).fill(null);
     bets=new Array(players.length).fill(null);
+    picks={};
     theme=""; dir="hi"; oPhase="theme";
-    broadcastSnap();
+    broadcastSnap(); startHostTimer();
   }
   function onAct(a){   // ホストがゲストの操作を受信
     if(!a || a.id==null) return;
@@ -1257,13 +1566,16 @@
     if(a.kind==="theme"){
       if(oPhase!=="theme" || players[repIdx].id!==a.id) return;
       theme=String(a.theme||"").slice(0,24); dir=(a.dir==="lo"?"lo":"hi"); oPhase="enter";
-      broadcastSnap();
+      broadcastSnap(); startHostTimer();
     }else if(a.kind==="num"){
       if(oPhase!=="enter") return;
       if(numbers[i]==null){ numbers[i]=Number(a.n)||0; broadcastSnap(); maybeAdvance(); }
+    }else if(a.kind==="pick"){   // 仮選択(確定前)。ライブ表示用
+      if(oPhase!=="bet" || bets[i]!=null) return;
+      picks[a.id]=(a.on|0); broadcastSnap();
     }else if(a.kind==="bet"){
       if(oPhase!=="bet") return;
-      if(bets[i]==null){ const amt=Math.max(0,Math.min(a.amt|0, players[i].chips)); bets[i]={on:(a.on|0), amt}; players[i].chips-=amt; broadcastSnap(); maybeAdvance(); }
+      if(bets[i]==null){ const amt=Math.max(0,Math.min(a.amt|0, players[i].chips)); bets[i]={on:(a.on|0), amt}; players[i].chips-=amt; delete picks[a.id]; broadcastSnap(); maybeAdvance(); }
     }
   }
   // ホスト自身の操作もこの窓口に流す
@@ -1272,10 +1584,10 @@
   function maybeAdvance(){
     if(oPhase==="enter"){
       const act=activeIdxs();
-      if(act.length>=1 && act.every(i=>numbers[i]!=null)){ oPhase="bet"; broadcastSnap(); }
+      if(act.length>=1 && act.every(i=>numbers[i]!=null)){ oPhase="bet"; broadcastSnap(); startHostTimer(); }
     }else if(oPhase==="bet"){
       const act=activeIdxs();
-      if(act.length>=1 && act.every(i=>bets[i]!=null)){ oPhase="race"; broadcastSnap(); }
+      if(act.length>=1 && act.every(i=>bets[i]!=null)){ stopHostTimer(); oPhase="race"; broadcastSnap(); }
     }
   }
   function oSettle(){   // レース後、ホストが集計
@@ -1285,11 +1597,12 @@
   }
   function oEnd(){ oPhase="champ"; broadcastSnap(); }
   function oRestart(){ players.forEach(p=>p.chips=INIT_CHIPS); round=0; carry=0; oNextRound(); }
+  function oToLobby(){ stopHostTimer(); oPhase="lobby"; round=0; carry=0; picks={}; broadcastSnap(); }   // 完全終了→出走メンバー待機画面へ
 
   function broadcastSnap(){
     if(!isHost || !ch) return;
     ver++;
-    const snap={ ver, phase:oPhase, round, totalRounds, repId:players[repIdx]?players[repIdx].id:null,
+    const snap={ ver, phase:oPhase, round, totalRounds, timeLimit, repId:players[repIdx]?players[repIdx].id:null,
       theme, dir, carry,
       players:players.map(p=>({id:p.id,name:p.name,color:p.color,chips:p.chips})),
       entered: players.filter((_,i)=>numbers[i]!=null).map(p=>p.id),
@@ -1301,6 +1614,7 @@
     if(oPhase==="bet"||oPhase==="race"||oPhase==="result"||oPhase==="champ"){
       snap.bets=bets.map(b=>b?{on:b.on,amt:b.amt}:null);
     }
+    if(oPhase==="bet"){ snap.picks=picks; }   // 仮選択のライブ共有
     if(oPhase==="race"||oPhase==="result"||oPhase==="champ"){
       snap.numbers=numbers.slice();
     }
@@ -1317,10 +1631,12 @@
     players=s.players.map(p=>({id:p.id,name:p.name,color:p.color,chips:p.chips}));
     theme=s.theme||""; dir=s.dir||"hi"; carry=s.carry||0; round=s.round||0;
     totalRounds=s.totalRounds||totalRounds;
+    if(s.timeLimit!=null) timeLimit=s.timeLimit;
     repIdx=Math.max(0, players.findIndex(p=>p.id===s.repId));
     // ホストは自分が権威なので上書きしない。ゲストは届いた分だけ反映(数字はレース時のみ届く)
     if(s.numbers) numbers=s.numbers.slice();
     if(s.bets) bets=s.bets.map(b=>b?{on:b.on,amt:b.amt}:null);
+    if(!isHost) picks = s.picks || {};
     oPhase=s.phase;
     document.getElementById("roundPill").textContent = s.phase==="lobby" ? "ロビー" : ("第"+round+" / "+totalRounds+" レース");
     setDirBadge(s.phase==="enter"||s.phase==="bet"||s.phase==="race"||s.phase==="result");
@@ -1336,11 +1652,10 @@
     if(s.phase==="theme"){
       if(s.repId===myId){
         if(!on("theme")){   // 入力中は作り直さない(入力が消えるのを防ぐ)
-          document.getElementById("themeInput").value="";
-          document.getElementById("themeInput").placeholder="例："+randTheme();
+          document.getElementById("themeInput").value=randTheme();
           document.querySelectorAll("#themePanel .dir-btn").forEach(b=>b.classList.toggle("sel", b.dataset.dir==="hi"));
           document.querySelector("#themePanel .big-q").innerHTML='<span class="em">'+esc(myName)+'</span>さん、お題を決めよう';
-          showPanel("theme"); setTimeout(()=>document.getElementById("themeInput").focus(),60);
+          showPanel("theme"); startTimer(); setTimeout(()=>document.getElementById("themeInput").focus(),60);
         }
       }else{
         const rep=players[repIdx]?players[repIdx].name:"だれか";
@@ -1353,8 +1668,9 @@
       if(mi>=0 && !myNumDoneFor(round)){
         if(!on("enter")){
           document.getElementById("enterQ").innerHTML='お題「<span class="em">'+esc(theme)+'</span>」<br>あなたは数字を入力';
-          const inp=document.getElementById("numInput"); inp.value=""; showPanel("enter"); setTimeout(()=>inp.focus(),60);
+          const inp=document.getElementById("numInput"); inp.value=""; showPanel("enter"); startTimer(); setTimeout(()=>inp.focus(),60);
         }
+        renderDoneRoster(document.getElementById("enterDone"), s.entered, "入力ずみ");   // 誰が入力済みか
       }else{
         showWaitProgress("みんなの入力を待っています", s.entered, false);
       }
@@ -1367,7 +1683,7 @@
           betIdx=mi; curCand=-1; curBet=MIN_BET;
           document.querySelector("#betPanel .big-q").innerHTML='あなたの予想<br><span class="hint">お題「'+esc(theme)+'」で1位は？</span>';
           document.getElementById("betChips").textContent=players[mi].chips;
-          renderCandidates(mi); updateBetVal(); showPanel("bet");
+          renderCandidates(mi); updateBetVal(); showPanel("bet"); startTimer();
         }
         renderBetLive(document.getElementById("betLive"));
       }else{
@@ -1378,6 +1694,7 @@
     }
     if(s.phase==="race"){
       if(lastRacedRound!==round){ lastRacedRound=round; startRace(); }
+      else { showPanel("race"); if(!document.getElementById("poolView").innerHTML) renderPoolView(); }   // 保険: 再配信で画面がズレても必ずレース画面を出す
       return;
     }
     if(s.phase==="result"){
@@ -1408,6 +1725,27 @@
       try{ await navigator.clipboard.writeText(code); showToast("合言葉をコピーした"); }catch(e){}
     });
   }
+  function renderLobbyRounds(cnt){
+    const box=document.getElementById("lobbyRounds");
+    if(isHost){
+      if(box.dataset.built!=="host"){
+        box.dataset.built="host";
+        box.innerHTML='<div class="rule-frame">'
+          +'<div class="rule-col"><div class="rl">レース数</div><div class="rounds-row"><button class="stp-btn" data-rd="-1">−</button><div class="rv"><b class="rVal">'+totalRounds+'</b></div><button class="stp-btn" data-rd="1">＋</button></div></div>'
+          +'<div class="rule-col"><div class="rl">制限時間</div><div class="rounds-row"><button class="stp-btn" data-tm="-1">−</button><div class="rv"><b class="tVal">'+fmtTime(timeLimit)+'</b></div><button class="stp-btn" data-tm="1">＋</button></div></div>'
+          +'</div>'
+          +'<button class="rec-btn" id="lobbyRec">おすすめ：参加人数と同じレース数</button>';
+        wireRoundStepper(box);
+        document.getElementById("lobbyRec").addEventListener("click",()=>{ ensureAudio(); playSelect();
+          const n=Math.max(MIN_ROUNDS,Math.min(MAX_ROUNDS, orderedMembers().length||MINP));
+          if(n!==totalRounds){ totalRounds=n; renderRounds(); if(oPhase==="lobby") broadcastSnap(); } });
+      }
+      renderRounds(); renderTime();
+    }else{
+      box.dataset.built="guest";
+      box.innerHTML='<div class="lr-ro">レース数：'+totalRounds+' ／ 制限：'+fmtTime(timeLimit)+'</div>';
+    }
+  }
   function renderLobby(s){
     showPanel("lobby");
     renderLobbyCode();
@@ -1420,6 +1758,7 @@
       list.appendChild(row);
     });
     const cnt=roster.length;
+    renderLobbyRounds(cnt);
     if(isHost){
       document.getElementById("lobbyHint").textContent=cnt<MINP?("2人以上集まったら出走できます（現在"+cnt+"人）"):"みんな集まった？ 出走できます";
       document.getElementById("lobbyStart").style.display= cnt>=MINP ? "" : "none";
@@ -1430,12 +1769,23 @@
   }
 
   document.getElementById("lobbyStart").addEventListener("click",()=>{ ensureAudio(); playConfirm(); if(isHost) oStartGame(); });
-  function showLobbyWaiting(){ showPanel("lobby"); renderLobbyCode(); document.getElementById("lobbyHint").textContent="部屋に入りました。ホストの開始を待っています…"; document.getElementById("lobbyStart").style.display="none"; document.getElementById("lobbyList").innerHTML=""; }
+  function showLobbyWaiting(){ showPanel("lobby"); renderLobbyCode(); renderLobbyRounds(0); document.getElementById("lobbyHint").textContent="部屋に入りました。ホストの開始を待っています…"; document.getElementById("lobbyStart").style.display="none"; document.getElementById("lobbyList").innerHTML=""; }
   document.getElementById("lobbyBack").addEventListener("click",()=>{ ensureAudio(); playSelect(); goTitle(); });
 
   // 待機画面
-  function showWait(msg, dots){ showPanel("wait"); document.getElementById("waitMsg").innerHTML=msg; document.getElementById("waitProg").textContent=""; document.getElementById("waitWho").innerHTML=""; document.getElementById("betLiveWait").innerHTML=""; document.getElementById("waitMsg").className="big-q"; }
+  function showWait(msg, dots){ stopTimer(); showPanel("wait"); document.getElementById("waitMsg").innerHTML=msg; document.getElementById("waitProg").textContent=""; document.getElementById("waitWho").innerHTML=""; document.getElementById("betLiveWait").innerHTML=""; document.getElementById("waitMsg").className="big-q"; }
+  // 入力済みロスター(数字入力中に表示)
+  function renderDoneRoster(el, doneIds, label){
+    if(!el) return;
+    const done=new Set(doneIds||[]);
+    const sig=label+":"+players.map(p=>p.id+(done.has(p.id)?"1":"0")).join(",");
+    if(el._sig===sig) return; el._sig=sig;
+    let html='<div class="bl-head">'+label+' '+done.size+' / '+players.length+'</div><div class="dr-chips">';
+    players.forEach(p=>{ html+='<span class="wait-chip'+(done.has(p.id)?" done":"")+'"><span class="p-dot" style="'+dotStyle(p.color)+'"></span>'+esc(p.name)+'</span>'; });
+    el.innerHTML=html+'</div>';
+  }
   function showWaitProgress(msg, doneIds, isBet){
+    stopTimer();
     showPanel("wait");
     document.getElementById("waitMsg").textContent=msg;
     if(!isBet) document.getElementById("betLiveWait").innerHTML="";
@@ -1456,8 +1806,13 @@
     next.style.display=isHost?"":"none"; end.style.display=isHost?"":"none";
   }
   function tuneChampButtons(){
-    const again=document.getElementById("champAgain");
-    again.style.display=(mode==="online"&&!isHost)?"none":"";
+    const again=document.getElementById("champAgain"), home=document.getElementById("champHome");
+    if(mode==="online"){
+      home.textContent="ロビーへ"; home.style.display=isHost?"":"none";
+      again.style.display=isHost?"":"none";
+    }else{
+      home.textContent="タイトルへ"; home.style.display=""; again.style.display="";
+    }
   }
 
   // ---- ゲスト→ホスト 送信(ack再送) ----
@@ -1472,6 +1827,11 @@
     pendingActs[aid]={ payload, timer:setInterval(send, 1200) };
   }
   function ackAct(aid){ if(ch && aid){ try{ ch.send({ type:"broadcast", event:"actack", payload:{aid} }); }catch(e){} } }
+  // 仮選択(確定前)の送信。ackなし・最新優先(ロストしても実害なし)
+  function sendPick(on){
+    if(isHost){ onAct({id:myId, kind:"pick", on}); return; }
+    if(!ch) return; try{ ch.send({ type:"broadcast", event:"act", payload:{id:myId, kind:"pick", on} }); }catch(e){}
+  }
 })();
 </script>
 </body>

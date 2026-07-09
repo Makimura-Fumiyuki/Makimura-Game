@@ -504,6 +504,7 @@
   .stamp-fly{ position:fixed; bottom:-30px; width:96px; height:96px; z-index:5; pointer-events:none;
     display:flex; align-items:center; justify-content:center; font-size:80px; line-height:1;
     filter:drop-shadow(0 5px 9px rgba(0,0,0,.28)); animation:stampFloat 2.2s cubic-bezier(.2,.75,.35,1) forwards; }
+  .stamp-fly.over-dialog{ z-index:95; }   /* ダイアログ表示中は前面に */
   @keyframes stampFloat{
     0%{ transform:translate(0,96px) scale(.5); opacity:0; }      /* 画面の外(下)から登場 */
     17%{ transform:translate(0,0) scale(1.06); opacity:1; }
@@ -924,6 +925,12 @@
     if(!actx) return; const t=actx.currentTime;
     [440,349,294].forEach((f,i)=> pluck(f, t+i*0.16, 0.6, 0.2));
     taiko(t+0.52, 90, 0.5);
+  }
+  function playStamp(i){   // スタンプ別の音(0泣く / 1うっとり / 2爆笑)
+    if(!actx) return; const t=actx.currentTime;
+    if(i===0){ note(523,t,0.2,0.3,"sine"); note(392,t+0.15,0.22,0.3,"sine"); note(300,t+0.32,0.36,0.26,"sine"); }
+    else if(i===1){ note(523,t,0.34,0.22,"sine"); note(784,t+0.11,0.38,0.24,"sine"); note(1047,t+0.24,0.62,0.2,"sine"); note(1568,t+0.34,0.55,0.1,"triangle"); note(2349,t+0.46,0.5,0.06,"sine"); }
+    else{ const seq=[900,680,850,640,800,600,760,560]; seq.forEach((f,k)=>note(f, t+k*0.072, 0.07, 0.26, "triangle")); note(400, t+seq.length*0.072, 0.16, 0.24, "triangle"); }
   }
 
   /* ---------- 進行 ---------- */
@@ -1903,7 +1910,7 @@
   function nega(b,col,depth,alpha,beta,capCpu,capOpp){
     if(_now()>expDeadline) return evalSigned(b,col,capCpu,capOpp);
     const opp=(col===BLACK)?WHITE:BLACK;
-    const moves=genMoves(b,col, depth>=3?10:8);
+    const moves=genMoves(b,col, depth>=3?12:9);
     if(!moves.length) return evalSigned(b,col,capCpu,capOpp);
     let best=-1e18;
     for(const m of moves){
@@ -1927,14 +1934,14 @@
   function expertPick(){
     EXPCPU=(human===BLACK)?WHITE:BLACK; EXPOPP=human;
     if(placedCount()===0) return [N>>1, N>>1];
-    const root=genMoves(board, EXPCPU, 16);
+    const root=genMoves(board, EXPCPU, 20);
     if(!root.length){ const l=legalCells(board,EXPCPU); return l.length?l[Math.floor(Math.random()*l.length)]:null; }
     // 1) 今すぐ勝てる手
     for(const m of root){ const sim=simPlace(board,m.r,m.c,EXPCPU); if(sim && (lineWinOn(sim.b,m.r,m.c,EXPCPU) || capOf(EXPCPU)+sim.caps>=capNorm)) return [m.r,m.c]; }
     // 2) 反復深化アルファベータ(残り時間まで)
-    expDeadline=_now()+750;
+    expDeadline=_now()+1900;
     let best=[root[0].r,root[0].c];
-    for(let D=2; D<=6; D+=2){
+    for(let D=2; D<=10; D+=2){
       let bv=-1e18, bm=null;
       for(const m of root){
         const sim=simPlace(board,m.r,m.c,EXPCPU); if(!sim) continue;
@@ -2196,7 +2203,10 @@
     el.style.setProperty("--rise", "-"+(24+(1-central)*16).toFixed(0)+"vh");   // 中央は低め(盤の下側に少しかぶる程度)・両端は高め(従来通り)
     el.style.setProperty("--dx", (Math.random()*24-12).toFixed(0)+"px");
     el.innerHTML=STAMP_SVGS[i];
-    (document.getElementById("gameScene")||document.body).appendChild(el);   // 碁笥/駒と同じ重なり文脈に入れる(盤より前・碁石入れより後ろ)
+    if(seOn) playStamp(i);   // スタンプ別の効果音
+    const overlayOpen=document.getElementById("resultOverlay").classList.contains("on")||document.getElementById("confirmOverlay").classList.contains("on");
+    if(overlayOpen){ el.classList.add("over-dialog"); document.body.appendChild(el); }
+    else{ (document.getElementById("gameScene")||document.body).appendChild(el); }   // 碁笥/駒と同じ重なり文脈に入れる(盤より前・碁石入れより後ろ)
     setTimeout(()=>el.remove(), 2350);
   }
   function sendStamp(i){
@@ -2205,7 +2215,7 @@
   }
   document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{
     const i=+b.dataset.i; b.innerHTML=STAMP_SVGS[i];
-    b.addEventListener("click",()=>{ ensureAudio(); playSelect(); sendStamp(i); });
+    b.addEventListener("click",()=>{ ensureAudio(); sendStamp(i); });
   });
 
   function goTitle(){

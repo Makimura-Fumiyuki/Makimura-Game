@@ -6,12 +6,12 @@
 <title>五もくもく並べ</title>
 <meta name="apple-mobile-web-app-title" content="五もくもく並べ">
 <meta name="application-name" content="五もくもく並べ">
-<meta name="description" content="Q.普通の五目並べ？ A.いいえ、置いた碁石が煙になって別の場所へワープするかも。友達と戦うのはもちろん、AIとも戦える…">
+<meta name="description" content="Q.普通の五目並べ？ A.いいえ、置いた碁石が煙になって別の場所へワープするかも。">
 <!-- リンクを人に送った時のカード(OGP)。文言はハブのゲームカードと同じ -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="牧村が作ったゲーム集">
 <meta property="og:title" content="五もくもく並べ">
-<meta property="og:description" content="Q.普通の五目並べ？ A.いいえ、置いた碁石が煙になって別の場所へワープするかも。友達と戦うのはもちろん、AIとも戦える…">
+<meta property="og:description" content="Q.普通の五目並べ？ A.いいえ、置いた碁石が煙になって別の場所へワープするかも。">
 <meta name="twitter:card" content="summary">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Yuji+Syuku&display=swap');
@@ -474,6 +474,7 @@
   .stamp-fly{ position:fixed; bottom:-30px; width:96px; height:96px; z-index:5; pointer-events:none;
     display:flex; align-items:center; justify-content:center; font-size:80px; line-height:1;
     filter:drop-shadow(0 5px 9px rgba(0,0,0,.28)); animation:stampFloat 2.2s cubic-bezier(.2,.75,.35,1) forwards; }
+  .stamp-fly.over-dialog{ z-index:95; }   /* ダイアログ表示中は前面に */
   @keyframes stampFloat{
     0%{ transform:translate(0,96px) scale(.5); opacity:0; }      /* 画面の外(下)から登場 */
     17%{ transform:translate(0,0) scale(1.06); opacity:1; }
@@ -870,6 +871,12 @@
     if(!actx) return; const t=actx.currentTime;
     [440,349,294].forEach((f,i)=> pluck(f, t+i*0.16, 0.6, 0.2));
     taiko(t+0.52, 90, 0.5);
+  }
+  function playStamp(i){   // スタンプ別の音(0泣く=しょんぼり下降 / 1うっとり=きらめき上昇 / 2爆笑=ぴょこぴょこ煽り)
+    if(!actx) return; const t=actx.currentTime;
+    if(i===0){ note(523,t,0.2,0.3,"sine"); note(392,t+0.15,0.22,0.3,"sine"); note(300,t+0.32,0.36,0.26,"sine"); }
+    else if(i===1){ note(523,t,0.34,0.22,"sine"); note(784,t+0.11,0.38,0.24,"sine"); note(1047,t+0.24,0.62,0.2,"sine"); note(1568,t+0.34,0.55,0.1,"triangle"); note(2349,t+0.46,0.5,0.06,"sine"); }
+    else{ const seq=[900,680,850,640,800,600,760,560]; seq.forEach((f,k)=>note(f, t+k*0.072, 0.07, 0.26, "triangle")); note(400, t+seq.length*0.072, 0.16, 0.24, "triangle"); }
   }
 
   /* ---------- 進行 ---------- */
@@ -1785,7 +1792,7 @@
         if(vcf>=0) return toRC(vcf);
         // 4) 三四連続攻撃(VCT)。もくもく世界では長手順が崩れるので浅く
         vcNodes=0; vcDeadline=t0+budget*0.6;
-        const vctDepth=(st.prob===0)?14:(st.prob<30?10:6);
+        const vctDepth=(st.prob===0)?18:(st.prob<30?13:8);
         const vct=forcedWin(me, vctDepth, true);
         if(vct>=0) return toRC(vct);
         // 5) 相手に四追いが見えているなら、受け候補を必ず読みに混ぜる
@@ -1793,15 +1800,15 @@
         var oppVCF=forcedWin(opp, 16, false);
       }
       // 6) 反復深化アルファベータ(残り時間いっぱい・最大10手読み)
-      const K=[0, 5, 5, 6, 6, 7, 8, 8, 9, 10, 12];
+      const K=[0, 5, 5, 6, 6, 7, 8, 8, 9, 10, 12, 12, 12, 12, 12];
       abDeadline=t0+budget; abNodes=0;
-      let rootCand=topK(me, 14, defW);
+      let rootCand=topK(me, 18, defW);
       if(typeof oppVCF!=="undefined" && oppVCF>=0 && !rootCand.some(m=>m.ci===oppVCF)){
         rootCand.push({ci:oppVCF, s:0});
       }
       let bestMove=rootCand.length?rootCand[0].ci:-1;
       try{
-        for(let depth=4; depth<=10; depth+=2){
+        for(let depth=4; depth<=14; depth+=2){
           let alpha=-Infinity, bestV=-Infinity, bestThis=-1;
           for(const m of rootCand){
             place(m.ci,me);
@@ -1823,7 +1830,7 @@
       return toRC(bestMove);
     };
   }
-  const expertMove=makeExpertAI({ get board(){return board}, N, get winLen(){return winLen}, get prob(){return prob}, budgetMs:1100 });
+  const expertMove=makeExpertAI({ get board(){return board}, N, get winLen(){return winLen}, get prob(){return prob}, budgetMs:2400 });
 
   /* ---------- タイトル/UI ---------- */
   // あそびかた選択: 選んだ方の設定ブロックだけ出現(ルール設定も選んだ側へ移動)
@@ -2020,7 +2027,11 @@
     el.style.setProperty("--rise", "-"+(24+(1-central)*16).toFixed(0)+"vh");   // 中央は低め(盤の下側に少しかぶる程度)・両端は高め(従来通り)
     el.style.setProperty("--dx", (Math.random()*24-12).toFixed(0)+"px");
     el.innerHTML=STAMP_SVGS[i];
-    (document.getElementById("gameScene")||document.body).appendChild(el);   // 碁笥/駒と同じ重なり文脈に入れる(盤より前・碁石入れより後ろ)
+    if(seOn) playStamp(i);   // スタンプ別の効果音
+    // ダイアログ表示中(結果・投了確認)は前面に出して見えるようにする
+    const overlayOpen=document.getElementById("resultOverlay").classList.contains("on")||document.getElementById("confirmOverlay").classList.contains("on");
+    if(overlayOpen){ el.classList.add("over-dialog"); document.body.appendChild(el); }
+    else{ (document.getElementById("gameScene")||document.body).appendChild(el); }   // 碁笥/駒と同じ重なり文脈に入れる(盤より前・碁石入れより後ろ)
     setTimeout(()=>el.remove(), 2350);
   }
   function sendStamp(i){
@@ -2029,7 +2040,7 @@
   }
   document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{
     const i=+b.dataset.i; b.innerHTML=STAMP_SVGS[i];
-    b.addEventListener("click",()=>{ ensureAudio(); playSelect(); sendStamp(i); });
+    b.addEventListener("click",()=>{ ensureAudio(); sendStamp(i); });
   });
 
   function goTitle(){
