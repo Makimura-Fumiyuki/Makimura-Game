@@ -250,6 +250,7 @@
     padding:11px 14px; border-radius:12px; background:#fff; border:2px solid rgba(34,36,31,.15);
   }
   .cand.sel{ border-color:var(--gold); background:rgba(242,176,53,.12); }
+  .cand.dim{ opacity:.4; pointer-events:none; }
   .cand .p-dot{ width:24px; height:24px; }
   .cand .c-nm{ flex:1 1 0; font-weight:900; font-size:17px; }
   .cand .c-me{ font-size:11px; font-weight:700; color:var(--turf-dark); background:rgba(31,155,220,.14); border-radius:999px; padding:2px 9px 3px; }
@@ -366,12 +367,14 @@
   @keyframes chipFall{ 0%{ transform:translate(0,0) rotate(0); opacity:0; } 8%{ opacity:1; } 100%{ transform:translate(var(--cx,0),115vh) rotate(var(--cr,540deg)); opacity:.9; } }
 
   /* ===== オーバーレイ(交代/結果/確認/あそびかた) ===== */
-  #handoffOverlay, #resultOverlay, #confirmOverlay, #helpOverlay, #champOverlay, #chipsOverlay{
+  #handoffOverlay, #resultOverlay, #confirmOverlay, #helpOverlay, #champOverlay, #chipsOverlay, #begOverlay{
     position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center;
     background:rgba(24,26,22,.5); opacity:0; pointer-events:none; transition:opacity .3s linear;
   }
   #chipsOverlay{ z-index:82; }   /* チップボタン(z81)から開くので少し上に */
-  #handoffOverlay.on, #resultOverlay.on, #confirmOverlay.on, #helpOverlay.on, #champOverlay.on, #chipsOverlay.on{ opacity:1; pointer-events:auto; }
+  #begOverlay{ z-index:78; }
+  #handoffOverlay.on, #resultOverlay.on, #confirmOverlay.on, #helpOverlay.on, #champOverlay.on, #chipsOverlay.on, #begOverlay.on{ opacity:1; pointer-events:auto; }
+  .nego-retire{ color:var(--red); }
   #chipsOverlay.on .r-card{ transform:scale(1); opacity:1; }
   /* 結果ダイアログは上に見切れないよう、下寄せ＋スクロール */
   #resultOverlay{ align-items:flex-start; overflow-y:auto; padding:9vh 0 5vh; scrollbar-width:none; }
@@ -386,7 +389,7 @@
     padding:28px 24px 24px; width:min(90vw, 440px); text-align:center;
     transform:scale(.6); opacity:0; transition:transform .3s cubic-bezier(.3,1.4,.5,1), opacity .25s linear;
   }
-  #handoffOverlay.on .r-card, #resultOverlay.on .r-card, #confirmOverlay.on .r-card, #helpOverlay.on .r-card, #champOverlay.on .r-card{ transform:scale(1); opacity:1; }
+  #handoffOverlay.on .r-card, #resultOverlay.on .r-card, #confirmOverlay.on .r-card, #helpOverlay.on .r-card, #champOverlay.on .r-card, #begOverlay.on .r-card{ transform:scale(1); opacity:1; }
   .r-title{ font-size:clamp(22px,6vw,32px); font-weight:900; letter-spacing:.08em; }
   .r-title.win{ color:var(--red); }
   .r-title.res-hit{ color:var(--gold-dark); }
@@ -665,6 +668,7 @@
       <div class="wait-prog" id="waitProg"></div>
       <div class="wait-who" id="waitWho"></div>
       <div class="bet-live" id="betLiveWait"></div>
+      <button class="txt-btn" id="waitBack" style="display:none;">← 変更する</button>
     </div>
 
     <!-- お題を決める -->
@@ -716,6 +720,14 @@
       <div class="chk-hint hint">タップで編集</div>
       <div class="chk-list" id="checkList"></div>
       <button class="btn-gold" id="checkGo">レーススタート</button>
+    </div>
+
+    <!-- チップ切れ→交渉(だれかにチップをねだる) -->
+    <div class="panel" id="negoPanel">
+      <div class="big-q" id="negoQ"></div>
+      <div class="chk-hint hint" id="negoHint">チップをくれそうな人をタップしてねだろう</div>
+      <div class="cand-list" id="negoList"></div>
+      <button class="txt-btn nego-retire" id="negoRetire">あきらめてリタイア（脱落）</button>
     </div>
 
     <!-- レース -->
@@ -774,6 +786,16 @@
       <div class="ho-name" id="hoName"></div>
       <div class="hint" id="hoHint">に、はしを渡してね</div>
       <button class="btn-main" id="hoGo">準備OK</button>
+    </div>
+  </div>
+
+  <!-- チップをねだられた側の返事 -->
+  <div id="begOverlay">
+    <div class="r-card">
+      <div class="r-title" id="begTitle">申請が来ました</div>
+      <div class="hint" id="begBody"></div>
+      <button class="btn-main" id="begYes">あげる</button>
+      <button class="txt-btn" id="begNo">ことわる</button>
     </div>
   </div>
 
@@ -1001,7 +1023,8 @@
   /* ---------- ラウンド進行 ---------- */
   const panels={ lobby:document.getElementById("lobbyPanel"), wait:document.getElementById("waitPanel"),
     theme:document.getElementById("themePanel"), enter:document.getElementById("enterPanel"),
-    bet:document.getElementById("betPanel"), check:document.getElementById("checkPanel"), race:document.getElementById("racePanel") };
+    bet:document.getElementById("betPanel"), check:document.getElementById("checkPanel"), race:document.getElementById("racePanel"),
+    nego:document.getElementById("negoPanel") };
   function showPanel(name){ Object.keys(panels).forEach(k=> panels[k].classList.toggle("on", k===name)); try{ updateBackBtn(); }catch(e){} }
   function dotStyle(c){ return "background:radial-gradient(circle at 35% 30%, "+tint(c)+", "+c+")"; }
 
@@ -1047,7 +1070,7 @@
   // ---- 制限時間タイマー(自分の操作画面で作動。0=無制限) ----
   let timerInt=0, timerEnd=0;
   function startTimer(){
-    stopTimer();
+    stopTimer(); stopDisplayTimer();
     if(mode==="local") return;   // 1台回しは制限時間なし(無限)
     if(!timeLimit || timeLimit<=0) return;
     timerEnd=Date.now()+timeLimit*1000;
@@ -1059,10 +1082,23 @@
     tick(); timerInt=setInterval(tick,250);
   }
   function stopTimer(){ if(timerInt){ clearInterval(timerInt); timerInt=0; } const el=document.getElementById("timer"); if(el){ el.style.display="none"; el.classList.remove("urgent"); } }
-  function onTimeout(){   // 時間切れ→現在の画面を自動確定(未入力はランダム/最低額)
+  // 待機中のプレイヤーにも残り時間を見せる表示専用タイマー(自動確定はしない)
+  let dispTimerInt=0, dispKey="";
+  function startDisplayTimer(sec, key){
+    if(dispKey===key && dispTimerInt) return;   // 同じ局面では作り直さない(再描画で戻らない)
+    stopDisplayTimer(); dispKey=key;
+    if(!sec || sec<=0) return;
+    const end=Date.now()+sec*1000;
+    const el=document.getElementById("timer"); el.style.display="";
+    const clock='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>';
+    const tick=()=>{ const rem=Math.max(0,Math.ceil((end-Date.now())/1000)); el.innerHTML=clock+'<span>'+rem+'</span>'; el.classList.toggle("urgent", rem<=5); if(rem<=0) stopDisplayTimer(); };
+    tick(); dispTimerInt=setInterval(tick,250);
+  }
+  function stopDisplayTimer(){ if(dispTimerInt){ clearInterval(dispTimerInt); dispTimerInt=0; } dispKey=""; const el=document.getElementById("timer"); if(el && !timerInt){ el.style.display="none"; el.classList.remove("urgent"); } }
+  function onTimeout(){   // 時間切れ→お題は自動確定(お題は必須)、数字/賭けは「間に合わなかった=不参加/賭けなし」で自動確定しない
     if(panels.theme.classList.contains("on")){ const ti=document.getElementById("themeInput"); if(!ti.value.trim()) ti.value=randTheme(); document.getElementById("themeGo").click(); return; }
-    if(panels.enter.classList.contains("on")){ const inp=document.getElementById("numInput"); if(inp.value.trim()===""||isNaN(Number(inp.value))) inp.value=String(Math.floor(Math.random()*100)); document.getElementById("numGo").click(); return; }
-    if(panels.bet.classList.contains("on")){ if(curCand<0) curCand=Math.floor(Math.random()*players.length); document.getElementById("betGo").click(); return; }
+    if(panels.enter.classList.contains("on")){ enterGaveUp=round; showWait("時間切れ…今回のレースは不参加<br>次のレースを待ってね", true); return; }
+    if(panels.bet.classList.contains("on")){ betGaveUp=round; showWait("時間切れ…今回は賭けなし<br>レースを待ってね", true); return; }
   }
   // ホスト側の強制進行(誰かが放置しても進める。クライアントより少し遅らせる)
   let hostTimer=0;
@@ -1071,25 +1107,97 @@
   function hostForce(){
     if(!isHost) return;
     if(oPhase==="theme"){ if(!theme){ theme=randTheme(); dir="hi"; } oPhase="enter"; broadcastSnap(); startHostTimer(); }
-    else if(oPhase==="enter"){ activeIdxs().forEach(i=>{ if(numbers[i]==null) numbers[i]=Math.floor(Math.random()*100); }); oPhase="bet"; broadcastSnap(); startHostTimer(); }
-    else if(oPhase==="bet"){ activeIdxs().forEach(i=>{ if(bets[i]==null){ const amt=Math.min(MIN_BET,players[i].chips); bets[i]={on:Math.floor(Math.random()*players.length),amt}; players[i].chips-=amt; } }); stopHostTimer(); oPhase="race"; broadcastSnap(); }
+    else if(oPhase==="enter"){ endEnterPhase(); }   // 時間切れ=未入力の人は不参加(数字を埋めない)
+    else if(oPhase==="bet"){ endBetPhase(); }        // 時間切れ=未入力の賭けはそのまま(賭けなし)
   }
-
-  function startRound(){
-    const elim=rescueOrEliminate();
-    if(players.length<MINP){ if(elim.length) showToast(elim.join("・")+" が脱落。ゲーム終了！",2600); setDirBadge(false); showChampion(); return; }
-    round++;
-    repIdx=(round-1)%players.length;
-    if(elim.length) showToast(elim.join("・")+" はチップ切れで脱落…",2600);
+  // 参加者=数字を入れた人。時間切れ時に確定
+  function participantIdxs(){ return players.map((p,i)=>i).filter(i=>numbers[i]!=null); }
+  function endEnterPhase(){
+    const parts=participantIdxs();
+    if(parts.length<=1){ voidRound(); return; }   // 参加者が1人以下なら無効レース(レース数は消費しない)
+    stopHostTimer(); oPhase="bet"; broadcastSnap(); startHostTimer();
+  }
+  function endBetPhase(){ stopHostTimer(); oPhase="race"; broadcastSnap(); }
+  function voidRound(){   // 無効レース: レース数を消費せず、同じ回をやり直す
     numbers=new Array(players.length).fill(null);
     bets=new Array(players.length).fill(null);
-    theme=""; dir="hi"; setDirBadge(false);
-    document.getElementById("roundPill").textContent="第"+round+" / "+totalRounds+" レース";
-    // お題入力へ
-    document.getElementById("repName").textContent=players[repIdx].name;
-    document.getElementById("themeInput").value=randTheme();
-    document.querySelectorAll("#themePanel .dir-btn").forEach(b=>b.classList.toggle("sel", b.dataset.dir==="hi"));
-    handoff(repIdx, "お題を決める", ()=>{ showPanel("theme"); startTimer(); setTimeout(()=>document.getElementById("themeInput").focus(),80); });
+    picks={}; theme=""; dir="hi"; oPhase="theme";
+    noticeId++; lastNotice="参加者が少ないため無効レース。もう一度どうぞ";
+    broadcastSnap(); startHostTimer();
+  }
+  let noticeId=0, lastNotice="";
+
+  function startRound(){
+    // チップ切れの人がいれば交渉(ねだる/リタイア)を先に済ませてから開始
+    localNego(()=>{
+      if(players.length<MINP){ setDirBadge(false); showChampion(); return; }
+      round++;
+      repIdx=(round-1)%players.length;
+      numbers=new Array(players.length).fill(null);
+      bets=new Array(players.length).fill(null);
+      theme=""; dir="hi"; setDirBadge(false);
+      document.getElementById("roundPill").textContent="第"+round+" / "+totalRounds+" レース";
+      // お題入力へ
+      document.getElementById("repName").textContent=players[repIdx].name;
+      document.getElementById("themeInput").value=randTheme();
+      document.querySelectorAll("#themePanel .dir-btn").forEach(b=>b.classList.toggle("sel", b.dataset.dir==="hi"));
+      handoff(repIdx, "お題を決める", ()=>{ showPanel("theme"); startTimer(); setTimeout(()=>document.getElementById("themeInput").focus(),80); });
+    });
+  }
+
+  /* ---------- チップ切れ交渉(ねだる/リタイア) ---------- */
+  const NEG_GIFT=RESCUE;   // ねだって受け取る額(=20)
+  function negoDonorEligible(donorIdx, brokeIdx, refusedSet){
+    return donorIdx!==brokeIdx && players[donorIdx] && !refusedSet.has(donorIdx) && (players[donorIdx].chips-NEG_GIFT>=MIN_BET);
+  }
+  // 交渉パネル描画(1台・オンライン共通)。onPick(donorIdx)/onRetire()
+  function renderNegoPanel(brokeIdx, refusedSet, onPick, onRetire){
+    document.getElementById("negoQ").innerHTML='<span class="em">'+esc(players[brokeIdx].name)+'</span>さんはチップ切れ…<br>だれかに'+NEG_GIFT+'枚ねだろう';
+    const list=document.getElementById("negoList"); list.innerHTML=""; let any=false;
+    players.forEach((p,i)=>{
+      if(i===brokeIdx) return;
+      const el=document.createElement("div"); el.className="cand";
+      const ok=negoDonorEligible(i, brokeIdx, refusedSet), refused=refusedSet.has(i);
+      if(!ok) el.classList.add("dim");
+      el.innerHTML='<span class="p-dot" style="'+dotStyle(p.color)+'"></span><span class="c-nm">'+esc(p.name)+'</span>'
+        +(refused?'<span class="c-me">ことわられた</span>':(!ok?'<span class="c-me">よゆうなし</span>':''));
+      if(ok){ any=true; el.addEventListener("click",()=>{ ensureAudio(); playSelect(); onPick(i); }); }
+      list.appendChild(el);
+    });
+    document.getElementById("negoHint").textContent = any ? "チップをくれそうな人をタップしてねだろう" : "くれる人がいない…リタイアしかない";
+    document.getElementById("negoRetire").onclick=()=>{ ensureAudio(); playSelect(); onRetire(); };
+    showPanel("nego");
+  }
+  // ねだられた側の返事ダイアログ。cb(ok)
+  function showBegOverlay(donor, beggar, cb){
+    document.getElementById("begTitle").textContent="申請が来ました";
+    document.getElementById("begBody").innerHTML='<span class="em">'+esc(beggar.name)+'</span>さんに '+NEG_GIFT+'枚 ねだられています。あげる？';
+    const ov=document.getElementById("begOverlay"); ov.classList.add("on");
+    document.getElementById("begYes").onclick=()=>{ ensureAudio(); playSelect(); ov.classList.remove("on"); cb(true); };
+    document.getElementById("begNo").onclick=()=>{ ensureAudio(); playSelect(); ov.classList.remove("on"); cb(false); };
+  }
+  // 1台: チップ切れの人を順に交渉させる。全員終わったら done()
+  function localNego(done){
+    const bp=players.find(p=>p.chips<MIN_BET);
+    if(!bp){ done(); return; }
+    const refused=new Set();
+    const attempt=()=>{
+      const brokeIdx=players.indexOf(bp);
+      handoff(brokeIdx, "チップが足りない！ねだろう", ()=>{
+        renderNegoPanel(brokeIdx, refused, (donorIdx)=>{
+          handoff(donorIdx, "チップをねだられています", ()=>{
+            showBegOverlay(players[donorIdx], bp, (ok)=>{
+              if(ok){ players[donorIdx].chips-=NEG_GIFT; bp.chips+=NEG_GIFT; showToast(players[donorIdx].name+" が "+NEG_GIFT+"枚くれた！",2000); localNego(done); }
+              else{ refused.add(donorIdx); attempt(); }
+            });
+          });
+        }, ()=>{   // リタイア
+          const bi=players.indexOf(bp); bp._out=true; if(bi>=0) players.splice(bi,1);
+          showToast(bp.name+" はリタイア…",2200); localNego(done);
+        });
+      });
+    };
+    attempt();
   }
 
   // 交代画面: 端末を渡してから続行
@@ -1171,7 +1279,7 @@
     editSeat=null; editOrig=null; editReturn=null; curCand=-1; curBet=MIN_BET; openBetPanel(seatIdx);
   }
   function openBetPanel(idx){
-    betIdx=idx;
+    betIdx=idx; reBet=false;
     const editing=(editSeat!=null);
     document.getElementById("betGo").textContent = editing ? "編集完了" : "この予想で賭ける";
     // お題は常に表示(編集中も). 編集中は名前の横にピルを出すだけ=レイアウト不変
@@ -1300,7 +1408,8 @@
     });
   }
   let betIdx=0;   // いま賭けている人のindex(1台=seatIdx / オンライン=自分)
-  function betterChips(){ return players[betIdx].chips; }
+  let reBet=false;   // 賭け直し中(待機画面の「変更する」から)。元の賭けを一時的に持ち金へ戻して計算
+  function betterChips(){ return players[betIdx].chips + (reBet && bets[betIdx] ? bets[betIdx].amt : 0); }
   function updateBetVal(){
     const max=betterChips();
     if(curBet>max) curBet=max;
@@ -1360,12 +1469,14 @@
     document.getElementById("cheerBtn").style.display="";   // レース中は応援ボタンを出す(ゴールで隠す)
     renderPoolView();
     const {set}=winnersOf();
+    // レースに出るのは「数字を入れた人(参加者)」だけ。時間切れで未入力の人は不参加
+    const parts=players.map((p,i)=>i).filter(i=>numbers[i]!=null);
     // ランク付け(勝者=先頭)。同値は同着=同じ順位(同点1位は両方ゴールする)
-    const order=players.map((p,i)=>i).sort((a,b)=> dir==="hi" ? (numbers[b]-numbers[a]) : (numbers[a]-numbers[b]));
+    const order=parts.slice().sort((a,b)=> dir==="hi" ? (numbers[b]-numbers[a]) : (numbers[a]-numbers[b]));
     const rankOf={}; let rk=0;
     order.forEach((idx,i)=>{ if(i>0 && numbers[idx]!==numbers[order[i-1]]) rk=i; rankOf[idx]=rk; });
     // トラック描画(人数が多い時はレーンを細くして収める。最大99人まで)
-    const N=players.length;
+    const N=parts.length;
     const laneH = N>40 ? 14 : N>24 ? 18 : N>14 ? 24 : N>8 ? 32 : 46;
     const dirLeft = (dir==="lo");   // 小さいほど勝ち=左向きに走る
     const track=document.getElementById("track"); track.innerHTML="";
@@ -1374,13 +1485,14 @@
     track.classList.toggle("rtl", dirLeft);
     track.style.height=(N*laneH+10)+"px";   // 上下ボーダー5px分を足す=最下段が細くならない
     const goal=document.createElement("div"); goal.className="goal"; track.appendChild(goal);
-    const runners=[];
-    players.forEach((p,i)=>{
+    const runners=new Array(players.length).fill(null);   // プレイヤーindexで引ける(不参加はnull)
+    parts.forEach(i=>{
+      const p=players[i];
       const lane=document.createElement("div"); lane.className="lane"; lane.style.height=laneH+"px";
       const run=document.createElement("div"); run.className="runner";
       run.innerHTML='<span class="r-dot" style="'+dotStyle(p.color)+'">'+esc(p.name.slice(0,1))+'</span><span class="r-num"></span>';
       lane.appendChild(run); track.appendChild(lane);
-      runners.push(run);
+      runners[i]=run;
     });
     // 自分が賭けた馬(応援している馬)はアウトラインで強調(オンライン)。「応援」の文字は出さない
     raceRunners=runners;
@@ -1394,7 +1506,7 @@
   function runRace(runners, rankOf, winSet, W, dirLeft){
     playGo();
     raceDone=false;
-    const N=runners.length, DUR=10000;
+    const N=runners.filter(Boolean).length, DUR=10000;   // 参加者のみ(不参加スロットはnull)
     const gap=0.5/Math.max(1,N-1);
     const startX = dirLeft ? (W-46) : 4;      // 左向きなら右端スタート
     const endX   = dirLeft ? 4 : (W-46);      // ゴール側
@@ -1405,9 +1517,9 @@
     const jn=runners.map(()=>({ amp:(0.16+Math.random()*0.34)*drama, f:0.5+Math.random()*1.3, p:Math.random()*6.283 }));
     const jRaw=(o,t)=> t + (o.amp/(6.283*o.f))*(Math.sin(6.283*o.f*t+o.p)-Math.sin(o.p));   // 単調増加の道のり
     const jEnd=jn.map(o=>jRaw(o,1)||1);
-    const finalP=runners.map((_,i)=>1 - rankOf[i]*gap);   // 同順位(同点)は同じ到達点=一緒にゴール
+    const finalP=runners.map((run,i)=> run ? (1 - (rankOf[i]||0)*gap) : 0);   // 同順位(同点)は同じ到達点=一緒にゴール
     const smooth=x=>{ x=Math.max(0,Math.min(1,x)); return x*x*(3-2*x); };
-    const endRace=()=>{ if(raceDone) return; raceDone=true; runners.forEach(r=>r.classList.remove("surge")); finishRace(runners, winSet); };
+    const endRace=()=>{ if(raceDone) return; raceDone=true; runners.forEach(r=>{ if(r) r.classList.remove("surge"); }); finishRace(runners, winSet); };
     let start=null, lastGallop=0, crowdDone=false, prevTs=0;
     // 汗は「本当にだれかが失速した瞬間」だけ・全体で数回まで(ゴール前に全員汗の再発防止)
     let sweatBudget = Math.min(5, 1+Math.round(N*0.12)), lastSweatTs=-9999;
@@ -1419,6 +1531,7 @@
       const dt=Math.max(1, ts-prevTs); prevTs=ts;
       const conv=smooth((t-0.72)/0.28);   // 収束は遅めに始めてラストの追い込みを際立たせる(波乱→真の順位)
       runners.forEach((run,i)=>{
+        if(!run) return;   // 不参加スロットは飛ばす
         const j=Math.max(0,Math.min(1, jRaw(jn[i],t)/jEnd[i]));
         let prog=j*(1-conv) + finalP[i]*conv;               // 波乱→真の順位(1位が急浮上・見せかけ先頭が急失速)
         if(t>0.88 && rankOf[i]<=1){ const u=(t-0.88)/0.12; prog=prog+(finalP[i]-prog)*(u*u); }   // 1位2位はラスト全力
@@ -1440,7 +1553,7 @@
     }
     requestAnimationFrame(frame);
     // 保険: タブが裏でrAFが止まっても必ず完走させる
-    setTimeout(()=>{ runners.forEach((run,i)=>setLeft(run, finalP[i])); endRace(); }, DUR+500);
+    setTimeout(()=>{ runners.forEach((run,i)=>{ if(run) setLeft(run, finalP[i]); }); endRace(); }, DUR+500);
   }
   function finishRace(runners, winSet){
     playFinish();
@@ -1449,8 +1562,8 @@
     const trackEl=document.getElementById("track");
     trackEl.classList.remove("goalhit"); void trackEl.offsetWidth; trackEl.classList.add("goalhit");
     setTimeout(()=>trackEl.classList.remove("goalhit"),640);
-    // 数字はゴール側から順に出す(大きいほど勝ち=右から / 小さいほど勝ち=左から)
-    const revealOrder=runners.map((_,i)=>i).sort((a,b)=>{
+    // 数字はゴール側から順に出す(大きいほど勝ち=右から / 小さいほど勝ち=左から)。不参加スロットは除外
+    const revealOrder=runners.map((_,i)=>i).filter(i=>runners[i]).sort((a,b)=>{
       const la=parseFloat(runners[a].style.left)||0, lb=parseFloat(runners[b].style.left)||0;
       return dir==="lo" ? (la-lb) : (lb-la);
     });
@@ -1460,6 +1573,7 @@
     });
     // 勝者を強調＋チップ噴き上げ
     winSet.forEach(i=>{
+      if(!runners[i]) return;
       runners[i].classList.add("win");
       burstAt(runners[i]);
     });
@@ -1535,8 +1649,8 @@
     if(!raceRunners.length) return;
     let targets=[];
     if(mode==="online"){ const mi=myIndex(); if(mi>=0 && bets[mi] && raceRunners[bets[mi].on]) targets=[raceRunners[bets[mi].on]]; }
-    if(!targets.length) targets=raceRunners;   // 1台/賭けなしは全員を震わせる
-    targets.forEach(r=>{ r.classList.remove("cheershake"); void r.offsetWidth; r.classList.add("cheershake"); spawnHeart(r); });
+    if(!targets.length) targets=raceRunners.filter(Boolean);   // 1台/賭けなしは全参加者を震わせる
+    targets.forEach(r=>{ if(!r) return; r.classList.remove("cheershake"); void r.offsetWidth; r.classList.add("cheershake"); spawnHeart(r); });
     if(seOn) playCheer();
   }
   function spawnHeart(run){   // 進行方向の逆側(hi=左 / lo=右)に少しハート
@@ -1547,6 +1661,25 @@
     run.appendChild(h); setTimeout(()=>h.remove(), 780);
   }
   document.getElementById("cheerBtn").addEventListener("click",()=>{ ensureAudio(); cheerShake(); });
+  // 待機中に「変更する」: 数字/賭けを入れ直す(まだそのフェーズが続いている間だけ有効)
+  document.getElementById("waitBack").addEventListener("click",()=>{
+    ensureAudio(); playSelect();
+    const ctx=document.getElementById("waitBack").dataset.ctx, mi=myIndex(); if(mi<0) return;
+    if(ctx==="enter" && oPhase==="enter"){
+      numDoneRound=-1;
+      document.getElementById("enterQ").innerHTML='お題「<span class="em">'+esc(theme)+'</span>」<br>数字を入れ直せます';
+      const inp=document.getElementById("numInput"); inp.value=(myNum!=null?String(myNum):""); showPanel("enter"); startTimer(); setTimeout(()=>{ inp.focus(); try{inp.select();}catch(e){} },60);
+    }else if(ctx==="bet" && oPhase==="bet"){
+      betDoneRound=-1; reBet=true; betIdx=mi;
+      const b=bets[mi]; curCand=(b?b.on:-1); curBet=(b?b.amt:MIN_BET);
+      gameScene.classList.remove("editing");
+      document.getElementById("betGo").textContent="この予想で賭ける";
+      document.querySelector("#betPanel .big-q").innerHTML='賭けを変更<br><span class="hint">お題「'+esc(theme)+'」で1位は？</span>';
+      document.getElementById("betChips").textContent=betterChips(); renderMyChips(mi); renderCandidates(mi);
+      if(curCand>=0){ const els=document.querySelectorAll("#candList .cand"); if(els[curCand]) els[curCand].classList.add("sel"); }
+      updateBetVal(); showPanel("bet"); startTimer();
+    }
+  });
 
   /* ---------- スタンプ(気持ちを送る) ---------- */
   const STAMP_SVGS=['😭','😍','🤣'];
@@ -1775,7 +1908,7 @@
   const myId=Math.random().toString(36).slice(2,10);
   let myName="";
   let myNum=null, myBetDone=false, myNumDone=false;
-  let ver=0, lastVer=-1, hbTimer=0, presTimer=0;
+  let ver=0, lastVer=-1, hbTimer=0, presTimer=0, lastNoticeShown=0;
   let pendingActs={}, actSeq=0;                 // guest: aid -> {payload, timer}
   let members={};                               // id -> {name, t}
   let lastRacedRound=-1;
@@ -1893,7 +2026,12 @@
   }
   function idxOfId(id){ return players.findIndex(p=>p.id===id); }
   function oNextRound(){
-    rescueOrEliminate();
+    // チップ切れの人がいれば交渉フェーズへ。全員解決したらoProceedRound()
+    if(players.some(p=>p.chips<MIN_BET)){ startOnlineNego(); return; }
+    oProceedRound();
+  }
+  function oProceedRound(){
+    nego=null;
     if(players.length<MINP){ oPhase="champ"; broadcastSnap(); return; }
     round++;
     repIdx=(round-1)%players.length;
@@ -1902,6 +2040,24 @@
     picks={};
     theme=""; dir="hi"; oPhase="theme";
     broadcastSnap(); startHostTimer();
+  }
+  // ---- オンラインのチップ切れ交渉(ホスト権威) ----
+  let nego=null;   // { begId, refused:[ids], pending:id|null }
+  function onlineDonors(){
+    if(!nego) return [];
+    const ref=new Set(nego.refused);
+    return players.filter(p=>p.id!==nego.begId && !ref.has(p.id) && p.chips-NEG_GIFT>=MIN_BET);
+  }
+  function startOnlineNego(){
+    stopHostTimer();
+    const bp=players.find(p=>p.chips<MIN_BET);
+    if(!bp){ oProceedRound(); return; }
+    nego={ begId:bp.id, refused:[], pending:null };
+    oPhase="nego"; broadcastSnap();
+  }
+  function retireBeggarOnline(){
+    const bi=idxOfId(nego.begId); if(bi>=0) players.splice(bi,1);
+    startOnlineNego();   // 次のチップ切れ or 進行
   }
   function onAct(a){   // ホストがゲストの操作を受信
     if(!a || a.id==null) return;
@@ -1914,13 +2070,26 @@
       broadcastSnap(); startHostTimer();
     }else if(a.kind==="num"){
       if(oPhase!=="enter") return;
-      if(numbers[i]==null){ numbers[i]=Number(a.n)||0; broadcastSnap(); maybeAdvance(); }
+      numbers[i]=Number(a.n)||0; broadcastSnap(); maybeAdvance();   // 入れ直しOK(enter中は上書き)
     }else if(a.kind==="pick"){   // 仮選択(確定前)。ライブ表示用
       if(oPhase!=="bet" || bets[i]!=null) return;
       picks[a.id]=(a.on|0); broadcastSnap();
     }else if(a.kind==="bet"){
       if(oPhase!=="bet") return;
-      if(bets[i]==null){ const amt=Math.max(0,Math.min(a.amt|0, players[i].chips)); bets[i]={on:(a.on|0), amt}; players[i].chips-=amt; delete picks[a.id]; broadcastSnap(); maybeAdvance(); }
+      if(bets[i]) players[i].chips += bets[i].amt;   // 賭け直し: 前の賭けをいったん戻す
+      const amt=Math.max(0,Math.min(a.amt|0, players[i].chips)); bets[i]={on:(a.on|0), amt}; players[i].chips-=amt; delete picks[a.id]; broadcastSnap(); maybeAdvance();
+    }else if(a.kind==="beg"){   // 交渉: 貧乏人が to にねだる
+      if(oPhase!=="nego" || !nego || nego.pending || nego.begId!==a.id) return;
+      const to=a.to|0; if(!players[to] || !onlineDonors().some(p=>p.id===players[to].id)) return;
+      nego.pending=players[to].id; broadcastSnap();
+    }else if(a.kind==="begReply"){   // ねだられた側の返事
+      if(oPhase!=="nego" || !nego || nego.pending!==a.id) return;
+      const beg=idxOfId(nego.begId);
+      if(a.ok){ if(players[i].chips-NEG_GIFT>=MIN_BET && beg>=0){ players[i].chips-=NEG_GIFT; players[beg].chips+=NEG_GIFT; } nego.pending=null; startOnlineNego(); }
+      else{ nego.refused.push(players[i].id); nego.pending=null; if(!onlineDonors().length){ retireBeggarOnline(); } else broadcastSnap(); }
+    }else if(a.kind==="retire"){   // 貧乏人が自らリタイア
+      if(oPhase!=="nego" || !nego || nego.begId!==a.id) return;
+      retireBeggarOnline();
     }
   }
   // ホスト自身の操作もこの窓口に流す
@@ -1929,10 +2098,11 @@
   function maybeAdvance(){
     if(oPhase==="enter"){
       const act=activeIdxs();
-      if(act.length>=1 && act.every(i=>numbers[i]!=null)){ oPhase="bet"; broadcastSnap(); startHostTimer(); }
+      if(act.length>=1 && act.every(i=>numbers[i]!=null)){ endEnterPhase(); }
     }else if(oPhase==="bet"){
-      const act=activeIdxs();
-      if(act.length>=1 && act.every(i=>bets[i]!=null)){ stopHostTimer(); oPhase="race"; broadcastSnap(); }
+      // 賭けるのは参加者(数字を入れた人)だけ。全参加者が賭けたらレースへ
+      const parts=participantIdxs();
+      if(parts.length>=1 && parts.every(i=>bets[i]!=null)){ endBetPhase(); }
     }
   }
   function oSettle(){   // レース後、ホストが集計
@@ -1942,7 +2112,7 @@
   }
   function oEnd(){ oPhase="champ"; broadcastSnap(); }
   function oRestart(){ players.forEach(p=>p.chips=initChips); round=0; carry=0; oNextRound(); }
-  function oToLobby(){ stopHostTimer(); oPhase="lobby"; round=0; carry=0; picks={}; broadcastSnap(); }   // 完全終了→出走メンバー待機画面へ
+  function oToLobby(){ stopHostTimer(); oPhase="lobby"; round=0; carry=0; picks={}; nego=null; broadcastSnap(); }   // 完全終了→出走メンバー待機画面へ
 
   function broadcastSnap(){
     if(!isHost || !ch) return;
@@ -1953,6 +2123,7 @@
       entered: players.filter((_,i)=>numbers[i]!=null).map(p=>p.id),
       betDone: players.filter((_,i)=>bets[i]!=null).map(p=>p.id),
       present: presentIds(),
+      notice: lastNotice, noticeId,
       lobby: orderedMembers().map(id=>({id, name:members[id].name, host:!!members[id].host}))
     };
     // 賭けフェーズは「誰が誰に賭けたか」をライブ共有(数字はレースまで秘密)
@@ -1964,6 +2135,7 @@
       snap.numbers=numbers.slice();
     }
     if(oPhase==="result" && window.__lastResult){ snap.result=window.__lastResult; }
+    if(oPhase==="nego"){ snap.nego = nego ? {begId:nego.begId, refused:nego.refused.slice(), pending:nego.pending} : null; }
     try{ ch.send({ type:"broadcast", event:"snap", payload:snap }); }catch(e){}
     if(isHost) applySnap(snap);   // ホスト自身も同じ描画経路
   }
@@ -1984,6 +2156,7 @@
     if(s.bets) bets=s.bets.map(b=>b?{on:b.on,amt:b.amt}:null);
     if(!isHost) picks = s.picks || {};
     oPhase=s.phase;
+    if(s.noticeId && s.noticeId>lastNoticeShown){ lastNoticeShown=s.noticeId; if(s.notice) showToast(s.notice, 2600); }   // 無効レース等のお知らせ
     document.getElementById("roundPill").textContent = s.phase==="lobby" ? "ロビー" : ("第"+round+" / "+totalRounds+" レース");
     setDirBadge(s.phase==="enter"||s.phase==="bet"||s.phase==="race"||s.phase==="result");
     renderByPhase(s);
@@ -1994,8 +2167,29 @@
     // フェーズが結果/総合でなければ、開きっぱなしのオーバーレイを閉じる(次ラウンドへの遷移など)
     if(s.phase!=="result") document.getElementById("resultOverlay").classList.remove("on");
     if(s.phase!=="champ") document.getElementById("champOverlay").classList.remove("on");
+    if(s.phase!=="nego") document.getElementById("begOverlay").classList.remove("on");
+    if(s.phase==="race"||s.phase==="result"||s.phase==="champ"||s.phase==="lobby") stopDisplayTimer();
     if(s.phase==="lobby"){ renderLobby(s); return; }
+    if(s.phase==="nego"){
+      const neg=s.nego, mi=myIndex();
+      if(!neg){ showWait("チップの交渉中…", true); return; }
+      const begName=(players.find(p=>p.id===neg.begId)||{}).name||"だれか";
+      if(neg.pending===myId){                    // 自分がねだられている→返事ダイアログ
+        showWait(begName+" と交渉中…", true);
+        showBegOverlay(players[mi], (players.find(p=>p.id===neg.begId)||{name:begName}), (ok)=>{ document.getElementById("begOverlay").classList.remove("on"); sendAct("begReply",{ok:!!ok}); });
+      }else if(mi>=0 && players[mi].id===neg.begId){   // 自分が交渉者
+        document.getElementById("begOverlay").classList.remove("on");
+        if(neg.pending){ showWait("返事を待っています…", true); }
+        else{ const refusedSet=new Set((neg.refused||[]).map(id=>idxOfId(id)).filter(x=>x>=0));
+          renderNegoPanel(idxOfId(neg.begId), refusedSet, (donorIdx)=>sendAct("beg",{to:donorIdx}), ()=>sendAct("retire",{})); }
+      }else{                                       // 傍観
+        document.getElementById("begOverlay").classList.remove("on");
+        showWait(begName+" がチップを交渉中…", true);
+      }
+      return;
+    }
     if(s.phase==="theme"){
+      numDoneRound=-1; betDoneRound=-1; enterGaveUp=-1; betGaveUp=-1;   // 新しいお題(無効レースのやり直し含む)で全リセット
       if(s.repId===myId){
         if(!on("theme")){   // 入力中は作り直さない(入力が消えるのを防ぐ)
           document.getElementById("themeInput").value=randTheme();
@@ -2006,27 +2200,35 @@
       }else{
         const rep=players[repIdx]?players[repIdx].name:"だれか";
         if(!on("wait")||document.getElementById("waitMsg").dataset.k!=="theme"+round){ showWait(esc(rep)+" がお題を考え中…", true); document.getElementById("waitMsg").dataset.k="theme"+round; }
+        startDisplayTimer(timeLimit, "theme"+round);   // 待機側にも残り時間を表示
       }
       return;
     }
     if(s.phase==="enter"){
-      const mi=myIndex();
-      if(mi>=0 && !myNumDoneFor(round)){
+      const mi=myIndex(), gave=(enterGaveUp===round);
+      if(mi>=0 && !myNumDoneFor(round) && !gave){
         if(!on("enter")){
           document.getElementById("enterQ").innerHTML='お題「<span class="em">'+esc(theme)+'</span>」<br>あなたは数字を入力';
           const inp=document.getElementById("numInput"); inp.value=""; showPanel("enter"); startTimer(); setTimeout(()=>inp.focus(),60);
         }
         renderDoneRoster(document.getElementById("enterDone"), s.entered, "入力ずみ");   // 誰が入力済みか
+      }else if(gave){
+        showWait("時間切れ…今回のレースは不参加<br>次のレースを待ってね", true);
+        startDisplayTimer(timeLimit, "enter"+round);
       }else{
         showWaitProgress("みんなの入力を待っています", s.entered, false);
+        startDisplayTimer(timeLimit, "enter"+round);   // 待機側にも残り時間
+        if(myNumDoneFor(round)){ const wb=document.getElementById("waitBack"); wb.style.display=""; wb.dataset.ctx="enter"; }   // まだ変更できる
       }
       return;
     }
     if(s.phase==="bet"){
-      const mi=myIndex();
-      if(mi>=0 && !myBetDoneFor(round)){
+      const mi=myIndex(), gave=(betGaveUp===round);
+      const iAmIn = mi>=0 && s.entered && s.entered.includes(myId);   // 数字を入れた人=このレースの参加者
+      if(mi>=0 && !iAmIn){ showWait("入力が間に合わず、今回は不参加…<br>次のレースを待っています", true); renderBetLive(document.getElementById("betLiveWait")); return; }
+      if(mi>=0 && !myBetDoneFor(round) && !gave){
         if(!on("bet")){
-          betIdx=mi; curCand=-1; curBet=MIN_BET;
+          betIdx=mi; curCand=-1; curBet=MIN_BET; reBet=false;
           gameScene.classList.remove("editing");
           document.getElementById("betGo").textContent="この予想で賭ける";
           document.querySelector("#betPanel .big-q").innerHTML='あなたの予想<br><span class="hint">お題「'+esc(theme)+'」で1位は？</span>';
@@ -2034,9 +2236,14 @@
           renderCandidates(mi); updateBetVal(); showPanel("bet"); startTimer();
         }
         renderBetLive(document.getElementById("betLive"));
+      }else if(gave){
+        showWait("時間切れ…今回は賭けなし<br>レースを待ってね", true);
+        startDisplayTimer(timeLimit, "bet"+round);
       }else{
         showWaitProgress("みんなの予想を待っています", s.betDone, true);
         renderBetLive(document.getElementById("betLiveWait"));
+        startDisplayTimer(timeLimit, "bet"+round);   // 待機側にも残り時間
+        if(myBetDoneFor(round)){ const wb=document.getElementById("waitBack"); wb.style.display=""; wb.dataset.ctx="bet"; }   // まだ変更できる
       }
       return;
     }
@@ -2059,7 +2266,7 @@
     }
   }
   // 自分がこのラウンドで送信済みか(snapのentered/betDoneでも判定できるが、送信直後の即時反映用)
-  let numDoneRound=-1, betDoneRound=-1;
+  let numDoneRound=-1, betDoneRound=-1, enterGaveUp=-1, betGaveUp=-1;
   function myNumDoneFor(r){ return numDoneRound===r; }
   function myBetDoneFor(r){ return betDoneRound===r; }
 
@@ -2121,7 +2328,7 @@
   document.getElementById("lobbyBack").addEventListener("click",()=>{ ensureAudio(); playSelect(); goTitle(); });
 
   // 待機画面
-  function showWait(msg, dots){ stopTimer(); showPanel("wait"); document.getElementById("waitMsg").innerHTML=msg; document.getElementById("waitProg").textContent=""; document.getElementById("waitWho").innerHTML=""; document.getElementById("betLiveWait").innerHTML=""; document.getElementById("waitMsg").className="big-q"; }
+  function showWait(msg, dots){ stopTimer(); showPanel("wait"); document.getElementById("waitMsg").innerHTML=msg; document.getElementById("waitProg").textContent=""; document.getElementById("waitWho").innerHTML=""; document.getElementById("betLiveWait").innerHTML=""; document.getElementById("waitMsg").className="big-q"; document.getElementById("waitBack").style.display="none"; }
   // 入力済みロスター(数字入力中に表示)
   function renderDoneRoster(el, doneIds, label){
     if(!el) return;
@@ -2135,6 +2342,7 @@
   function showWaitProgress(msg, doneIds, isBet){
     stopTimer();
     showPanel("wait");
+    document.getElementById("waitBack").style.display="none";
     document.getElementById("waitMsg").textContent=msg;
     if(!isBet) document.getElementById("betLiveWait").innerHTML="";
     const done=new Set(doneIds||[]);
