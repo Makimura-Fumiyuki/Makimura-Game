@@ -515,6 +515,8 @@
     100%{ transform:translate(var(--dx,0),var(--rise,-40vh)) scale(1.02); opacity:0; }   /* 到達点は横位置で変える(中央は低め) */
   }
 </style>
+<!-- Google AdSense -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8539036056022595" crossorigin="anonymous"></script>
 </head>
 <body>
 
@@ -1554,6 +1556,8 @@
   function finish(winner, glowEls, reason){
     over=true; busy=true; setGiveupVisible(false); markLast(null);
     document.getElementById("confirmOverlay").classList.remove("on");   // 開きっぱなしの投了確認を閉じる
+    // 勝ち確定の瞬間に「特別な音」を即鳴らす(結果ダイアログのplayWinファンファーレは従来どおり後で)
+    if(winner!==0 && (local || winner===human)) playShine();
     // 勝ちの瞬間、決め手になった石たち(並んだ列 or 囲んだ石)が金色に光り出す
     if(glowEls && glowEls.length) setTimeout(()=>{ glowEls.forEach(el=>{ if(el && el.isConnected){ el.classList.remove("gold","shine","kyoro","long","last"); el.classList.add("win-gold"); } }); }, 150);
     setTimeout(()=>{
