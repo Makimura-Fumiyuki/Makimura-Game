@@ -471,9 +471,12 @@
     background:rgba(255,255,255,.85); box-shadow:0 2px 7px rgba(40,30,10,.3);
     display:flex; align-items:center; justify-content:center; font-size:27px; line-height:1; }
   .stamp-btn:active{ transform:translateY(1px) scale(.93); }
-  .stamp-fly{ position:fixed; bottom:-30px; width:96px; height:96px; z-index:5; pointer-events:none;
-    display:flex; align-items:center; justify-content:center; font-size:80px; line-height:1;
+  .stamp-fly{ position:fixed; bottom:-30px; width:96px; z-index:5; pointer-events:none;
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
     filter:drop-shadow(0 5px 9px rgba(0,0,0,.28)); animation:stampFloat 2.2s cubic-bezier(.2,.75,.35,1) forwards; }
+  .stamp-fly .s-emoji{ font-size:80px; line-height:1; }
+  .stamp-fly .s-name{ margin-top:2px; font-size:15px; font-weight:900; color:#fff; white-space:nowrap;
+    letter-spacing:.04em; }
   .stamp-fly.over-dialog{ z-index:95; }   /* ダイアログ表示中は前面に */
   @keyframes stampFloat{
     0%{ transform:translate(0,96px) scale(.5); opacity:0; }      /* 画面の外(下)から登場 */
@@ -1347,7 +1350,7 @@
       rTitle.textContent="あいての投了！"; rTitle.className="r-title win";
       rSub.textContent="あなたの勝ち"; playWin(); bumpRoomStats("win"); resultOverlay.classList.add("on");
     });
-    ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) spawnStamp(payload.i|0); });
+    ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) spawnStamp(payload.i|0, "あいて"); });
     ch.on("broadcast",{event:"rematch"},()=>{
       peerRematch=true;
       if(myRematch){ if(isHost) hostRestart(); }   // 両者合意: 部屋主が先手後手を引き直して開始合図を送る
@@ -2018,7 +2021,7 @@
     '😍',
     '🤣'
   ];
-  function spawnStamp(i){
+  function spawnStamp(i, who){
     i=Math.max(0, Math.min(2, i|0));
     const el=document.createElement("div"); el.className="stamp-fly";
     const hx=0.06+Math.random()*0.88;                        // 横位置: 画面全幅(両端も含む)
@@ -2026,7 +2029,8 @@
     const central=1-Math.abs(hx-0.5)*2;                      // 0(両端)〜1(中央)
     el.style.setProperty("--rise", "-"+(24+(1-central)*16).toFixed(0)+"vh");   // 中央は低め(盤の下側に少しかぶる程度)・両端は高め(従来通り)
     el.style.setProperty("--dx", (Math.random()*24-12).toFixed(0)+"px");
-    el.innerHTML=STAMP_SVGS[i];
+    const nm=who||"自分";
+    el.innerHTML='<span class="s-emoji">'+STAMP_SVGS[i]+'</span><span class="s-name">'+nm+'</span>';
     if(seOn) playStamp(i);   // スタンプ別の効果音
     // ダイアログ表示中(結果・投了確認)は前面に出して見えるようにする
     const overlayOpen=document.getElementById("resultOverlay").classList.contains("on")||document.getElementById("confirmOverlay").classList.contains("on");
@@ -2035,7 +2039,7 @@
     setTimeout(()=>el.remove(), 2350);
   }
   function sendStamp(i){
-    spawnStamp(i);
+    spawnStamp(i, "自分");
     if(online && ch){ try{ ch.send({ type:"broadcast", event:"stamp", payload:{ i } }); }catch(e){} }   // 相手にも届ける(ロストしても実害なし)
   }
   document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{

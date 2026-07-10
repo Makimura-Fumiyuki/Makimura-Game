@@ -98,6 +98,7 @@
   .c-thumb.t-maigo{ background:#f3ead7; }
   .c-thumb.t-maigomoku{ background:#f3ead7; }
   .c-thumb.t-bamiri{ background:#eef1ea; }
+  .c-thumb.t-derby{ background:#f4f1e9; }
   .c-body{ padding:22px 22px 20px; display:flex; flex-direction:column; flex:1; }
   .c-name{ font-size:22px; font-weight:800; letter-spacing:.02em; color:var(--red);
     display:flex; align-items:center; gap:9px; }
@@ -260,6 +261,7 @@
         <option value="play">あそばれた回数順</option>
         <option value="fav">お気に入り順</option>
         <option value="cat">カテゴリ順</option>
+        <option value="rec">牧村おすすめ順</option>
       </select>
     </div>
     <div id="sections"></div>
@@ -601,6 +603,70 @@
       </a>
     </template>
 
+    <template id="tpl-derby">
+      <a class="card" href="./derby.html">
+        <div class="c-bar"></div>
+        <div class="c-thumb t-derby">
+          <!-- 俺たちダービー: 本編と同じ明るいクリーム地。緑のトラックを丸アイコンがレース、先頭(赤)が金オーラ+後方流線でゴール、勝利の金コインが弾け飛ぶ -->
+          <svg viewBox="0 0 260 132" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="dbSky" cx=".5" cy="-.1" r="1.1">
+                <stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#f6f3ec"/><stop offset="1" stop-color="#eef1f2"/>
+              </radialGradient>
+              <linearGradient id="dbTurf" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#49b06e"/><stop offset=".55" stop-color="#3a9e5c"/><stop offset="1" stop-color="#2c7d47"/>
+              </linearGradient>
+              <radialGradient id="dbAura" cx=".5" cy=".5" r=".5">
+                <stop offset="0" stop-color="rgba(255,214,102,.85)"/><stop offset="1" stop-color="rgba(255,214,102,0)"/>
+              </radialGradient>
+              <pattern id="dbGoal" width="8" height="8" patternUnits="userSpaceOnUse">
+                <rect width="8" height="8" fill="#f4f4f1"/>
+                <rect width="4" height="4" fill="#1a1a1a"/><rect x="4" y="4" width="4" height="4" fill="#1a1a1a"/>
+              </pattern>
+            </defs>
+            <rect width="260" height="132" fill="url(#dbSky)"/>
+            <!-- コースは上下中央に配置(数px上へ)。走者は少し小さめでレース端に被らないように -->
+            <g transform="translate(0,-4)">
+              <!-- レーストラック -->
+              <rect x="10" y="26" width="240" height="88" rx="9" fill="#245c39"/>
+              <rect x="10" y="25" width="240" height="88" rx="9" fill="url(#dbTurf)"/>
+              <g stroke="rgba(255,255,255,.4)" stroke-width="1.4" stroke-dasharray="6 6">
+                <path d="M12 43.6 H248 M12 61.2 H248 M12 78.8 H248 M12 96.4 H248"/>
+              </g>
+              <!-- ゴール(チェッカー) -->
+              <rect x="214" y="27" width="9" height="85" fill="url(#dbGoal)" opacity=".92"/>
+              <!-- 先頭ランナー(赤)の金オーラ+後方流線 -->
+              <circle cx="206" cy="70" r="16" fill="url(#dbAura)"/>
+              <g stroke="#ffd666" stroke-width="2" stroke-linecap="round" opacity=".85">
+                <path d="M189 66 h-15"/><path d="M187 70 h-20"/><path d="M189 74 h-15"/>
+              </g>
+              <!-- 丸アイコンのランナー(1レーン1頭)。先頭(赤)がゴール目前 -->
+              <g transform="translate(150,35)"><circle r="8" fill="#2f7de3" stroke="#fff" stroke-width="2.2"/><ellipse cx="-2.2" cy="-2.6" rx="2.7" ry="1.9" fill="rgba(255,255,255,.55)"/></g>
+              <g transform="translate(132,52)"><circle r="8" fill="#f39a1f" stroke="#fff" stroke-width="2.2"/><ellipse cx="-2.2" cy="-2.6" rx="2.7" ry="1.9" fill="rgba(255,255,255,.55)"/></g>
+              <g transform="translate(144,88)"><circle r="8" fill="#8a5cd6" stroke="#fff" stroke-width="2.2"/><ellipse cx="-2.2" cy="-2.6" rx="2.7" ry="1.9" fill="rgba(255,255,255,.55)"/></g>
+              <g transform="translate(120,105)"><circle r="8" fill="#17a2a2" stroke="#fff" stroke-width="2.2"/><ellipse cx="-2.2" cy="-2.6" rx="2.7" ry="1.9" fill="rgba(255,255,255,.55)"/></g>
+              <g transform="translate(206,70)"><circle r="9" fill="#e3452f" stroke="#fff" stroke-width="2.4"/><ellipse cx="-2.4" cy="-2.8" rx="3" ry="2" fill="rgba(255,255,255,.6)"/></g>
+            </g>
+          </svg>
+        </div>
+        <div class="c-body">
+          <div class="c-name">俺たちダービー
+            <span class="c-players"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6.5" cy="9" r="2.6"/><path d="M6.5 12.6c-2.6 0-4.5 1.5-4.5 3.6V18h9v-1.8c0-2.1-1.9-3.6-4.5-3.6z"/><circle cx="17.5" cy="9" r="2.6"/><path d="M17.5 12.6c-2.6 0-4.5 1.5-4.5 3.6V18h9v-1.8c0-2.1-1.9-3.6-4.5-3.6z"/><circle cx="12" cy="6.5" r="3"/><path d="M12 10.6c-3 0-5.2 1.8-5.2 4.2V17.4h10.4v-2.6c0-2.4-2.2-4.2-5.2-4.2z"/></svg>2〜99人</span>
+          </div>
+          <div class="c-desc">
+            「コースを走るのは馬じゃない。俺たちだ」お題に数字で答え、誰が１位になるかチップで予想しよう
+          </div>
+          <div class="c-tags">
+            <!-- wrap-reverse: DOM順の逆から積む(下段=先頭の2つ / 上段=大人数) -->
+            <span class="tag">ローカル対戦</span><span class="tag">オンライン対戦</span>
+            <span class="t-brk"></span>
+            <span class="tag">大人数</span>
+          </div>
+          <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
+        </div>
+      </a>
+    </template>
+
     <template id="tpl-soon">
       <div class="card soon">
         <div class="c-body">
@@ -636,8 +702,8 @@
       <a href="./index.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 3 10.5h2.2V20h5.3v-5.5h3v5.5h5.3v-9.5H21z"/></svg>ホーム</a>
       <a href="./guideline.html"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="6.5" width="13" height="11" rx="2"/><path d="M16.5 10.5 22 7v10l-5.5-3.5z"/></svg>実況ガイドライン</a>
       <a href="./privacy.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5 20 5.5v5.8c0 4.8-3.4 8.2-8 10.7-4.6-2.5-8-5.9-8-10.7V5.5z"/></svg>プライバシーポリシー</a>
+      <a href="./contact.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>お問い合わせ</a>
     </nav>
-    <div class="f-mail">連絡先: <a href="mailto:zentyu721wood@gmail.com">zentyu721wood@gmail.com</a></div>
     <div class="copy">&copy; 2026 MAKIMURA</div>
   </footer>
 
@@ -645,6 +711,7 @@
 (function(){
   /* ゲームのデータ: release=リリース日 / cats=カテゴリ / clicks=あそばれた回数(サーバー集計) */
   const GAMES=[
+    { id:"derby", tpl:"tpl-derby", release:"2026-07-10", cats:["パーティ"], clicks:null, likes:null },
     { id:"dox",  tpl:"tpl-dox",  release:"2026-07-06", cats:["スコアアタック"], clicks:null, likes:null },   // clicks/likes: null=集計未着(表示しない)
     { id:"bamiri", tpl:"tpl-bamiri", release:"2026-07-08", cats:["対戦"], clicks:null, likes:null },
     { id:"maigomoku", tpl:"tpl-maigomoku", release:"2026-07-08", cats:["対戦"], clicks:null, likes:null },
@@ -656,6 +723,7 @@
   const SECTIONS=[
     { label:"New", filter:isNew },
     { label:"対戦", filter:g=>g.cats.includes("対戦") },
+    { label:"パーティ", filter:g=>g.cats.includes("パーティ") },
     { label:"スコアアタック", filter:g=>g.cats.includes("スコアアタック") },
   ];
   /* ---- 集計: あそばれた回数(hub_<id>)と いいね(hub_like_<id>)をSupabaseに記録・集計 ---- */
@@ -709,6 +777,9 @@
   const byPop=(a,b)=>((b.likes||0)-(a.likes||0))||byRelease(a,b);          // 人気順=いいねが多い順
   const byPlay=(a,b)=>((b.clicks||0)-(a.clicks||0))||byRelease(a,b);       // あそばれた回数が多い順
   const byFav=(a,b)=>((hasLiked(b.id)?1:0)-(hasLiked(a.id)?1:0))||byRelease(a,b);   // お気に入り=自分がいいねした作品を上に
+  const REC_ORDER=["derby","moku","maigo","maigomoku","bamiri","dox"];   // 牧村おすすめ順(手動)
+  const recIdx=id=>{ const i=REC_ORDER.indexOf(id); return i<0?999:i; };
+  const byRec=(a,b)=>(recIdx(a.id)-recIdx(b.id))||byRelease(a,b);
   /* あそばれた回数の表記: 9,999までは実数 / 1万以上は「万」(1.2万→12万→123万) / 1億以上は「億」 */
   function fmtPlays(n){
     if(n>=100000000){ const m=n/100000000; return (m>=10 ? Math.round(m) : Math.round(m*10)/10)+"億"; }
@@ -785,7 +856,7 @@
       });
       wrap.appendChild(head("Coming Soon")); wrap.appendChild(grid([{tpl:"tpl-soon"}]));
     } else {            // リリース順/人気順/あそばれた回数順/お気に入り: カテゴリを分けず一覧で
-      const cmp = sort==="pop" ? byPop : sort==="play" ? byPlay : sort==="fav" ? byFav : byRelease;
+      const cmp = sort==="pop" ? byPop : sort==="play" ? byPlay : sort==="fav" ? byFav : sort==="rec" ? byRec : byRelease;
       const list=[...GAMES].sort(soonLast(cmp));
       const d=grid(list); d.appendChild(card({tpl:"tpl-soon"}));
       wrap.appendChild(d);

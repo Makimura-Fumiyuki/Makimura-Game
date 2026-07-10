@@ -6,7 +6,13 @@
 <title>俺たちダービー</title>
 <meta name="apple-mobile-web-app-title" content="俺たちダービー">
 <meta name="application-name" content="俺たちダービー">
-<meta name="description" content="パドックを走るのは馬じゃない、俺たちだ！お題に数字で答え、誰が1位かをチップで予想するパーティ賭けゲーム。1台をみんなで回して遊べます。">
+<meta name="description" content="「コースを走るのは馬じゃない。俺たちだ」お題に数字で答え、誰が１位になるかチップで予想しよう">
+<meta property="og:type" content="website">
+<meta property="og:title" content="俺たちダービー">
+<meta property="og:description" content="「コースを走るのは馬じゃない。俺たちだ」お題に数字で答え、誰が１位になるかチップで予想しよう">
+<meta property="og:url" content="https://makimura-gamehub.com/derby.html">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
   :root{
@@ -184,6 +190,12 @@
   .dir-badge svg{ width:15px; height:15px; flex:none; }
   .dir-badge.hi{ background:linear-gradient(150deg,#ff7a5f,var(--red)); box-shadow:0 2px 6px rgba(227,69,47,.35); }
   .dir-badge.lo{ background:linear-gradient(150deg,#41b4ec,var(--turf-dark)); box-shadow:0 2px 6px rgba(18,123,180,.4); }
+  .theme-badge{ display:none; align-items:center; max-width:96vw; font-size:13px; font-weight:900; letter-spacing:.02em; color:var(--ink);
+    background:rgba(255,255,255,.9); border:1.6px solid var(--gold); border-radius:999px; padding:5px 15px 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .theme-badge .em{ color:var(--red); font-weight:900; }
+  .setter-badge{ display:none; align-items:center; gap:5px; font-size:12px; font-weight:800; letter-spacing:.04em; color:var(--gold-dark);
+    background:rgba(242,176,53,.16); border:1.6px solid var(--gold); border-radius:999px; padding:4px 11px 5px; white-space:nowrap; max-width:96vw; overflow:hidden; text-overflow:ellipsis; }
+  .setter-badge .p-dot{ width:14px; height:14px; flex:none; }
   .timer{ position:fixed; top:calc(clamp(12px,4.5vh,40px) + 42px); left:50%; transform:translateX(-50%); z-index:19;
     display:inline-flex; align-items:center; gap:6px; font-size:15px; font-weight:800; letter-spacing:.02em; color:#3a2c05;
     background:linear-gradient(150deg,#ffe08a,var(--gold) 70%,#e6a51c); border:none; border-radius:999px; padding:5px 15px 6px; white-space:nowrap;
@@ -285,8 +297,21 @@
   .track.tiny .r-dot{ width:15px; height:15px; font-size:8px; }
   .track.tiny .runner .r-num{ font-size:10px; bottom:15px; padding:0 5px 1px; }
   .runner.cheer .r-dot{ box-shadow:0 0 0 3px var(--gold), 0 0 10px rgba(242,176,53,.8), inset 0 2px 4px rgba(255,255,255,.45), 0 2px 5px rgba(0,0,0,.3); }
-  .cheer-tag{ position:absolute; top:100%; left:50%; transform:translateX(-50%); margin-top:2px; z-index:4;
-    font-size:9px; font-weight:900; color:#3a2c05; background:var(--gold); border-radius:6px; padding:0 5px 1px; white-space:nowrap; box-shadow:0 1px 2px rgba(0,0,0,.3); }
+  /* 応援ボタンで対象アイコンがプルッと震える(結果には影響しない) */
+  .runner.cheershake .r-dot{ animation:runnerShake .5s cubic-bezier(.36,.07,.19,.97); }
+  @keyframes runnerShake{ 0%,100%{ transform:translateX(0) rotate(0); } 15%{ transform:translateX(-2.5px) rotate(-7deg); } 30%{ transform:translateX(2.5px) rotate(7deg); } 45%{ transform:translateX(-2px) rotate(-5deg); } 60%{ transform:translateX(2px) rotate(5deg); } 75%{ transform:translateX(-1px) rotate(-2deg); } }
+  .cheer-btn{ margin-top:14px; width:88px; height:88px; padding:0; border-radius:50%; cursor:pointer; align-self:center;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-family:inherit; font-size:21px; font-weight:900; letter-spacing:.06em; color:#7a3a12;
+    background:linear-gradient(150deg,#ffe08a,var(--gold) 65%,#e6a51c); border:none;
+    box-shadow:0 5px 0 var(--gold-dark), 0 7px 15px rgba(230,165,28,.42); touch-action:manipulation; }
+  .cheer-btn:active{ transform:translateY(3px); box-shadow:0 2px 0 var(--gold-dark), 0 3px 8px rgba(230,165,28,.4); }
+  /* 応援時: 対象アイコンの進行方向の逆側に、ふわっとハート */
+  .cheer-heart{ position:absolute; top:50%; width:16px; height:16px; z-index:4; pointer-events:none; animation:heartPop .75s ease-out forwards; }
+  .cheer-heart svg{ width:100%; height:100%; display:block; filter:drop-shadow(0 1px 2px rgba(0,0,0,.25)); }
+  .cheer-heart.hl{ right:100%; margin-right:2px; }
+  .cheer-heart.hr{ left:100%; margin-left:2px; }
+  @keyframes heartPop{ 0%{ transform:translateY(-50%) scale(.3); opacity:0; } 35%{ transform:translateY(-85%) scale(1.15); opacity:1; } 100%{ transform:translateY(-160%) scale(.9); opacity:0; } }
   .lane:last-child{ border-bottom:none; }
   .goal{ position:absolute; top:0; bottom:0; right:22px; width:6px; z-index:1;
     background:repeating-linear-gradient(45deg,#fff 0 6px,#111 6px 12px); opacity:.85; }
@@ -528,7 +553,7 @@
     filter:drop-shadow(0 5px 9px rgba(0,0,0,.28)); animation:stampFloat 2.2s cubic-bezier(.2,.75,.35,1) forwards; }
   .stamp-fly .s-emoji{ font-size:80px; line-height:1; }
   .stamp-fly .s-name{ margin-top:2px; font-size:15px; font-weight:900; color:#fff; white-space:nowrap;
-    letter-spacing:.04em; text-shadow:0 1px 3px rgba(0,0,0,.55),0 0 2px rgba(0,0,0,.5); max-width:120px; overflow:hidden; text-overflow:ellipsis; }
+    letter-spacing:.04em; max-width:120px; overflow:hidden; text-overflow:ellipsis; }
   .stamp-fly.over-dialog{ z-index:84; }   /* 結果ダイアログ(z82)表示中も前面に */
   @keyframes stampFloat{
     0%{ transform:translate(0,96px) scale(.5); opacity:0; }      /* 画面の外(下)から登場 */
@@ -572,7 +597,7 @@
   <div class="scene on" id="titleScene">
     <div>
       <div class="t-main">俺たち<span class="em">ダービー</span></div>
-      <div class="t-sub">ー走るのは馬じゃない。俺たちだー</div>
+      <div class="t-sub">ーコースを走るのは馬じゃない。俺たちだー</div>
     </div>
     <div class="mode-row" id="modeSelect">
       <button class="mode-btn" data-mode="local">1台で遊ぶ<small>近くの友達とダービー</small></button>
@@ -662,7 +687,7 @@
     <!-- 秘密の数字入力 -->
     <div class="panel" id="enterPanel">
       <div class="big-q" id="enterQ"></div>
-      <input class="num-input" id="numInput" type="text" inputmode="numeric" maxlength="9" placeholder="0" autocomplete="off">
+      <input class="num-input" id="numInput" type="text" inputmode="decimal" maxlength="12" placeholder="0" autocomplete="off">
       <button class="btn-main" id="numGo">決定</button>
       <div class="secret-note">※ まわりの人に見られないように！</div>
       <div class="enter-done" id="enterDone"></div>
@@ -698,6 +723,7 @@
       <div class="big-q" id="raceTheme"></div>
       <div class="track" id="track"></div>
       <div class="pool-view" id="poolView"></div>
+      <button class="cheer-btn" id="cheerBtn" aria-label="応援する">応援</button>
       <button class="btn-gold" id="raceResultBtn" style="display:none;">結果を見る</button>
     </div>
   </div>
@@ -706,6 +732,8 @@
   <div class="top-bar" id="topBar">
     <div class="round-pill" id="roundPill"></div>
     <div class="dir-badge" id="dirBadge"></div>
+    <div class="setter-badge" id="setterBadge" style="display:none;"></div>
+    <div class="theme-badge" id="themeBadge" style="display:none;"></div>
   </div>
   <div class="timer" id="timer" style="display:none;"></div>
 
@@ -834,7 +862,7 @@
   const MIN_ROUNDS=1, MAX_ROUNDS=30;
   let totalRounds=5;   // 何レースで総合結果か(部屋主/1台の設定)
   const TIME_OPTS=[15,30,45,60,90,0];   // 0=無制限
-  let timeLimit=30;    // 各操作の制限時間(秒)。0で無制限
+  let timeLimit=0;     // 各操作の制限時間(秒)。初期=無制限(0)、そこから減らせる
   const MIN_CHIPS=10, MAX_CHIPS=10000;
   let initChips=INIT_CHIPS;   // 初期チップ枚数(設定可能・10刻み)
 
@@ -956,7 +984,7 @@
   }
   wireRoundStepper(document.getElementById("localSetup"));
   // ルールを初期設定に戻す(レース数5・制限時間30秒・初期チップ100)
-  function resetRules(){ totalRounds=5; timeLimit=30; initChips=INIT_CHIPS; renderRounds(); renderTime(); renderInit(); }
+  function resetRules(){ totalRounds=5; timeLimit=0; initChips=INIT_CHIPS; renderRounds(); renderTime(); renderInit(); }
   document.getElementById("localRec").addEventListener("click",()=>{ ensureAudio(); playSelect(); resetRules(); });
   renderRounds(); renderTime(); renderInit();
 
@@ -1002,11 +1030,18 @@
       : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15M6 13l6 6 6-6"/></svg>';
   }
   function setDirBadge(show){
-    const b=document.getElementById("dirBadge");
-    if(!show){ b.style.display="none"; return; }
+    const b=document.getElementById("dirBadge"), tb=document.getElementById("themeBadge");
+    if(!show){ b.style.display="none"; if(tb) tb.style.display="none"; return; }
     b.style.display="inline-flex";
     b.className="dir-badge "+(dir==="hi"?"hi":"lo");
     b.innerHTML=dirArrowSVG(dir)+"<span>"+(dir==="hi"?"大きいほど勝ち":"小さいほど勝ち")+"</span>";
+    // お題を上部に常時表示(数字入力・チップ賭け・レース中ずっと見える)
+    if(tb){ if(theme){ tb.style.display="inline-flex"; tb.innerHTML='お題「<span class="em">'+esc(theme)+'</span>」'; } else tb.style.display="none"; }
+    // 出題者(お題を出した代表者)も近くに表示
+    const sb=document.getElementById("setterBadge");
+    if(sb){ const rep=players[repIdx];
+      if(theme && rep){ sb.style.display="inline-flex"; sb.innerHTML='<span class="p-dot" style="'+dotStyle(rep.color)+'"></span>出題者 '+esc(rep.name); }
+      else sb.style.display="none"; }
   }
 
   // ---- 制限時間タイマー(自分の操作画面で作動。0=無制限) ----
@@ -1110,9 +1145,13 @@
   function doEnterBack(){   // 数字入力: 1人前へ(1人目は戻る不可=ボタン非表示)。前の数字は保持
     if(seatIdx>0){ ensureAudio(); playSelect(); seatIdx--; nextEnter(); }
   }
-  function zen2han(s){ return (s||"").replace(/[０-９]/g, c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/[－ー−―]/g,"-"); }   // 全角数字/マイナス→半角
+  function zen2han(s){ return (s||"").replace(/[０-９]/g, c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/[－ー−―]/g,"-").replace(/[．。]/g,"."); }   // 全角数字/マイナス/小数点→半角
   document.getElementById("numInput").addEventListener("input",function(){
-    let h=zen2han(this.value); const neg=h[0]==="-"; h=(neg?"-":"")+h.replace(/[^0-9]/g,"");   // 先頭のマイナスだけ許可
+    let h=zen2han(this.value); const neg=h[0]==="-";
+    h=h.replace(/[^0-9.]/g,"");            // 数字と小数点のみ
+    const parts=h.split(".");             // 小数点は1つだけに
+    h=parts.shift()+(parts.length?"."+parts.join(""):"");
+    h=(neg?"-":"")+h;
     if(h!==this.value) this.value=h;
   });
   document.getElementById("numGo").addEventListener("click",()=>{
@@ -1318,6 +1357,7 @@
     showPanel("race"); setDirBadge(true);
     document.getElementById("raceTheme").innerHTML='お題「<span class="em">'+esc(theme)+'</span>」';
     document.getElementById("raceResultBtn").style.display="none";
+    document.getElementById("cheerBtn").style.display="";   // レース中は応援ボタンを出す(ゴールで隠す)
     renderPoolView();
     const {set}=winnersOf();
     // ランク付け(勝者=先頭)。同値は同着=同じ順位(同点1位は両方ゴールする)
@@ -1342,15 +1382,15 @@
       lane.appendChild(run); track.appendChild(lane);
       runners.push(run);
     });
-    // 自分が賭けた馬(応援している馬)を強調(オンライン)
+    // 自分が賭けた馬(応援している馬)はアウトラインで強調(オンライン)。「応援」の文字は出さない
+    raceRunners=runners;
     if(mode==="online"){ const mi=myIndex(); if(mi>=0 && bets[mi] && runners[bets[mi].on]){
-      const rc=runners[bets[mi].on]; rc.classList.add("cheer");
-      const tag=document.createElement("span"); tag.className="cheer-tag"; tag.textContent="応援"; rc.appendChild(tag);
+      runners[bets[mi].on].classList.add("cheer");
     } }
     const W=track.clientWidth;
     runRace(runners, rankOf, set, W, dirLeft);
   }
-  let raceDone=false;
+  let raceDone=false, raceRunners=[];
   function runRace(runners, rankOf, winSet, W, dirLeft){
     playGo();
     raceDone=false;
@@ -1404,14 +1444,19 @@
   }
   function finishRace(runners, winSet){
     playFinish();
+    document.getElementById("cheerBtn").style.display="none";   // ゴール後は応援ボタンを隠す
     // ゴールの瞬間をはっきり: レーンのウィンドウごとガッと傾いて着地
     const trackEl=document.getElementById("track");
     trackEl.classList.remove("goalhit"); void trackEl.offsetWidth; trackEl.classList.add("goalhit");
     setTimeout(()=>trackEl.classList.remove("goalhit"),640);
-    // 数字を頭上に出す
-    runners.forEach((run,i)=>{
-      const num=run.querySelector(".r-num"); num.textContent=numbers[i];
-      setTimeout(()=>num.classList.add("show"), 100+i*70);
+    // 数字はゴール側から順に出す(大きいほど勝ち=右から / 小さいほど勝ち=左から)
+    const revealOrder=runners.map((_,i)=>i).sort((a,b)=>{
+      const la=parseFloat(runners[a].style.left)||0, lb=parseFloat(runners[b].style.left)||0;
+      return dir==="lo" ? (la-lb) : (lb-la);
+    });
+    revealOrder.forEach((idx,k)=>{
+      const num=runners[idx].querySelector(".r-num"); num.textContent=numbers[idx];
+      setTimeout(()=>num.classList.add("show"), 100+k*70);
     });
     // 勝者を強調＋チップ噴き上げ
     winSet.forEach(i=>{
@@ -1484,6 +1529,24 @@
     }
   }
   document.getElementById("raceResultBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); settlePayout(); });
+  // 応援ボタン: 自分が賭けた馬(1台は全員)をプルッと震わせる。結果には一切影響しない
+  function playCheer(){ if(!actx) return; const t=actx.currentTime; note(660,t,0.1,0.18,"triangle"); note(880,t+0.06,0.12,0.16,"triangle"); note(1180,t+0.13,0.14,0.12,"sine"); }
+  function cheerShake(){
+    if(!raceRunners.length) return;
+    let targets=[];
+    if(mode==="online"){ const mi=myIndex(); if(mi>=0 && bets[mi] && raceRunners[bets[mi].on]) targets=[raceRunners[bets[mi].on]]; }
+    if(!targets.length) targets=raceRunners;   // 1台/賭けなしは全員を震わせる
+    targets.forEach(r=>{ r.classList.remove("cheershake"); void r.offsetWidth; r.classList.add("cheershake"); spawnHeart(r); });
+    if(seOn) playCheer();
+  }
+  function spawnHeart(run){   // 進行方向の逆側(hi=左 / lo=右)に少しハート
+    const dot=run.querySelector(".r-dot"); if(!dot) return;
+    const back = (dir==="lo") ? "hr" : "hl";
+    const h=document.createElement("div"); h.className="cheer-heart "+back;
+    h.innerHTML='<svg viewBox="0 0 24 24" fill="#ff4d6d"><path d="M12 21C6.5 16.7 3 13.4 3 9.3 3 6.6 5.1 4.6 7.7 4.6c1.6 0 3.2.8 4.3 2.2 1.1-1.4 2.7-2.2 4.3-2.2C18.9 4.6 21 6.6 21 9.3c0 4.1-3.5 7.4-9 11.7z"/></svg>';
+    run.appendChild(h); setTimeout(()=>h.remove(), 780);
+  }
+  document.getElementById("cheerBtn").addEventListener("click",()=>{ ensureAudio(); cheerShake(); });
 
   /* ---------- スタンプ(気持ちを送る) ---------- */
   const STAMP_SVGS=['😭','😍','🤣'];
@@ -1513,8 +1576,10 @@
   function sendStamp(i){
     if(mode==="online"){
       const mi=myIndex(), me=mi>=0?players[mi]:null;
-      spawnStamp(i, me?me.name:"", me?me.color:"#fff");
-      if(ch){ try{ ch.send({ type:"broadcast", event:"stamp", payload:{ i, name:me?me.name:"", color:me?me.color:"" } }); }catch(e){} }
+      const nm=me?me.name:(myName||"");   // ロビー等でindex未確定でも登録名を出す
+      const col=me?me.color:"var(--gold)";
+      spawnStamp(i, nm, col);
+      if(ch){ try{ ch.send({ type:"broadcast", event:"stamp", payload:{ i, name:nm, color:col } }); }catch(e){} }
     }else{
       spawnStamp(i);   // 1台回しは押した人が特定できないので名前は出さない
     }
@@ -1522,31 +1587,6 @@
   document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{
     const i=+b.dataset.i; b.textContent=STAMP_SVGS[i];
     b.addEventListener("click",()=>{ ensureAudio(); sendStamp(i); });
-  });
-
-  /* ---------- デバッグ: レース演出を見る(タイトル or レース画面で「d」キー) ---------- */
-  function debugRace(forceDir, count){
-    ensureAudio(); mode="local";
-    const n=count || (3+Math.floor(Math.random()*4));   // 既定3〜6頭
-    players=[]; for(let i=0;i<n;i++) players.push({name:String(i+1), color:COLORS[i%COLORS.length], chips:100});
-    theme="デバッグ"; dir=forceDir||(Math.random()<0.5?"hi":"lo");
-    numbers=players.map(()=>Math.floor(Math.random()*100));
-    bets=players.map(()=>({on:Math.floor(Math.random()*n), amt:10+Math.floor(Math.random()*6)*10}));
-    bets.forEach((b,i)=>{ players[i].chips-=b.amt; });
-    carry=0; round=1; totalRounds=5; lastRacedRound=-1;
-    titleScene.classList.remove("on"); gameScene.classList.add("on");
-    setDirBadge(true);
-    document.getElementById("roundPill").textContent="デバッグレース";
-    startRace();
-  }
-  document.addEventListener("keydown",e=>{
-    const k=e.key.toLowerCase();
-    if(k!=="d"&&k!=="s"&&k!=="f") return;
-    if(titleScene.classList.contains("on") || panels.race.classList.contains("on")){
-      e.preventDefault();
-      if(k==="f") debugRace(Math.random()<0.5?"hi":"lo", 99);
-      else debugRace(k==="s"?"lo":"hi");
-    }
   });
 
   /* ---------- 配当 ---------- */
@@ -1669,7 +1709,9 @@
   /* ---------- あそびかた ---------- */
   const helpOverlay=document.getElementById("helpOverlay");
   document.getElementById("helpBtn").addEventListener("click",()=>{ ensureAudio(); playSelect();
-    let html="<div class=\"h-sec\">ながれ</div>"
+    let html="<div class=\"h-sec\">基本ルール</div>"
+      +"<p>遊べば絶対に分かる！とりあえず遊んでみよう</p>";
+    html+="<div class=\"h-sec\">ながれ</div>"
       +"<p>① 代表者がお題を出す（例：スマホの充電残量）<br>② 全員が自分の数字をこっそり入力<br>③ 1位を予想してチップを賭ける<br>④ レースで結果発表！ 数字が1番の人が1位</p>";
     html+="<div class=\"h-sec hl\">チップ</div>"
       +"<p>当てた人で、みんなの賭け金を山分け<br>誰も当てなければ、集まったチップは次のレースに持ち越す</p>";
