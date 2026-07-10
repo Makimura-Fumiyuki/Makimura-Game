@@ -8,7 +8,7 @@
 <meta name="application-name" content="俺たちダービー">
 <meta name="description" content="パドックを走るのは馬じゃない、俺たちだ！お題に数字で答え、誰が1位かをチップで予想するパーティ賭けゲーム。1台をみんなで回して遊べます。">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&family=M+PLUS+Rounded+1c:wght@700;800;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
   :root{
     --bg:#f4f1e9;
     --ink:#22241f;
@@ -18,13 +18,13 @@
     --gold:#f2b035;
     --gold-dark:#d0900f;
     --red:#e3452f;
-    --fnum:"M PLUS Rounded 1c","Noto Sans JP","Hiragino Sans",sans-serif;   /* 数字・値用のサブフォント(丸ゴシックで太く見やすく) */
+    --fnum:"Noto Sans JP","Hiragino Sans",sans-serif;   /* 数字・値も源ノ角ゴシック(Noto Sans JP)で統一。太字で見やすく */
   }
   *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
   /* 数字・値はサブフォント(丸ゴシック・太め) */
   .code-show .cs-code, .wait-prog, .num-input, .bet-amount .ba-val, .my-chips b,
   .rounds-row .rv, .timer, .rb-delta, .rr2-num, .pool-col .pc-amt, .chk-row .chk-amt,
-  .bet-live .bl-amt, .rank-row .rk, .rank-row .rr-chips, .runner .r-num, .lr-ro{ font-family:var(--fnum) !important; font-weight:800; }
+  .bet-live .bl-amt, .rank-row .rk, .rank-row .rr-chips, .runner .r-num, .lr-ro{ font-family:var(--fnum) !important; font-weight:900; }
   html,body{ height:100%; }
   body{
     background:
@@ -218,8 +218,9 @@
   }
   .dir-btn .dir-ic{ width:17px; height:17px; vertical-align:-3px; margin-right:5px; }
   .dir-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(34,36,31,.18); }
-  .dir-btn.sel{ background:linear-gradient(150deg,#ffdd82,var(--gold) 70%,#e6a51c); border-color:var(--gold-dark);
-    color:#3a2c05; box-shadow:0 3px 0 var(--gold-dark); }
+  .dir-btn.sel{ color:#fff; }   /* 選択時は大小それぞれの色(ゲーム中の大小バッジと同じ) */
+  .dir-btn[data-dir="hi"].sel{ background:linear-gradient(150deg,#ff7a5f,var(--red)); border-color:#c5361f; box-shadow:0 3px 0 #a82c17; }
+  .dir-btn[data-dir="lo"].sel{ background:linear-gradient(150deg,#5cc0f0,var(--turf) 60%,var(--turf-dark)); border-color:var(--turf-dark); box-shadow:0 3px 0 #0f6396; }
 
   /* 秘密の数字入力 */
   .num-input{
@@ -251,25 +252,45 @@
   .bet-allin{ font-size:13px; font-weight:800; letter-spacing:.08em; color:var(--red); background:none; border:none; cursor:pointer; text-decoration:underline; font-family:inherit; }
   .my-chips{ font-family:"Noto Sans JP","Hiragino Sans",sans-serif; font-size:16px; color:var(--ink); }
   .my-chips b{ color:var(--gold-dark); font-size:20px; }
+  .my-chips-row{ display:flex; align-items:flex-end; justify-content:center; gap:14px; min-height:30px; }
+  .my-chip-stack{ display:flex; flex-direction:row; align-items:flex-end; gap:8px; }
+  .my-chip-stack .chip-pile{ display:flex; flex-direction:column-reverse; align-items:center; }
+  .my-chip-stack .pool-chip{ width:30px; height:9px; margin-top:-6px; }
+  .chk-hint{ margin-bottom:-12px; opacity:.6; }
+  /* 編集中の目印: 名前行にインラインの金色ピル(点滅)。お題表示はそのまま=レイアウト不変 */
+  .edit-pill{ display:inline-flex; align-items:center; gap:5px; vertical-align:3px; margin-left:8px;
+    font-size:14px; font-weight:900; letter-spacing:.08em; color:#3a2c05;
+    background:linear-gradient(150deg,#ffdd82,var(--gold) 70%,#e6a51c); border-radius:999px; padding:2px 12px 3px;
+    box-shadow:0 2px 7px rgba(210,144,20,.4); animation:editPulse 1.1s ease-in-out infinite; }
+  .edit-pill svg{ width:14px; height:14px; }
+  @keyframes editPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
 
   /* ===== レース ===== */
   .track{
     position:relative; width:min(96vw,480px); background:linear-gradient(180deg,#43a866,#3a9e5c 60%,#2c7d47);
     border-radius:12px; border:5px solid #fff; box-shadow:0 8px 22px rgba(34,36,31,.28), inset 0 0 24px rgba(0,0,0,.14);
-    overflow:hidden;
+    overflow:visible; margin-top:10px;   /* 一番上のレーンの数字が見切れないように */
+  }
+  .track.goalhit{ animation:goalHit .62s cubic-bezier(.2,.8,.3,1) both; transform-origin:50% 50%; }
+  @keyframes goalHit{
+    0%{ transform:rotate(0deg) scale(1); }
+    16%{ transform:rotate(-2.4deg) scale(1.045); box-shadow:0 8px 22px rgba(34,36,31,.28), inset 0 0 24px rgba(0,0,0,.14), 0 0 0 4px var(--gold); }
+    40%{ transform:rotate(1.5deg) scale(1.02); }
+    64%{ transform:rotate(-.7deg) scale(1.006); }
+    100%{ transform:rotate(0deg) scale(1); }
   }
   .lane{ position:relative; height:46px; border-bottom:1px dashed rgba(255,255,255,.35); }
   .track.compact .r-dot{ width:22px; height:22px; font-size:11px; }
   .track.compact .runner .r-num{ font-size:12px; bottom:22px; }
+  .track.tiny .r-dot{ width:15px; height:15px; font-size:8px; }
+  .track.tiny .runner .r-num{ font-size:10px; bottom:15px; padding:0 5px 1px; }
   .runner.cheer .r-dot{ box-shadow:0 0 0 3px var(--gold), 0 0 10px rgba(242,176,53,.8), inset 0 2px 4px rgba(255,255,255,.45), 0 2px 5px rgba(0,0,0,.3); }
   .cheer-tag{ position:absolute; top:100%; left:50%; transform:translateX(-50%); margin-top:2px; z-index:4;
     font-size:9px; font-weight:900; color:#3a2c05; background:var(--gold); border-radius:6px; padding:0 5px 1px; white-space:nowrap; box-shadow:0 1px 2px rgba(0,0,0,.3); }
   .lane:last-child{ border-bottom:none; }
   .goal{ position:absolute; top:0; bottom:0; right:22px; width:6px; z-index:1;
     background:repeating-linear-gradient(45deg,#fff 0 6px,#111 6px 12px); opacity:.85; }
-  .goal-tape{ position:absolute; top:0; bottom:0; right:24px; width:3px; background:var(--red); z-index:4;
-    box-shadow:0 0 8px rgba(227,69,47,.6); transition:transform .3s ease, opacity .3s ease; transform-origin:top; }
-  .goal-tape.broken{ transform:scaleY(1.15) rotate(4deg); opacity:0; }
+  .track.rtl .goal{ right:auto; left:22px; }   /* 小さいほど勝ち=ゴールは左 */
   .runner{
     position:absolute; left:4px; top:50%; transform:translate(0,-50%);
     display:flex; align-items:center; gap:6px; z-index:3; will-change:left;
@@ -280,11 +301,30 @@
     display:flex; align-items:center; justify-content:center; color:#fff; font-weight:900; font-size:14px;
   }
   .runner .r-num{
-    position:absolute; bottom:34px; left:50%; transform:translateX(-50%);
-    font-family:"Noto Sans JP","Hiragino Sans",sans-serif; font-size:15px; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.6);
+    position:absolute; bottom:36px; left:50%; transform:translateX(-50%);
+    font-family:"Noto Sans JP","Hiragino Sans",sans-serif; font-size:14px; color:#fff;
+    background:rgba(20,28,22,.72); border-radius:999px; padding:1px 9px 2px;   /* 濃い座布団で数字を読みやすく */
     white-space:nowrap; opacity:0; transition:opacity .2s linear;
   }
   .runner .r-num.show{ opacity:1; }
+  /* 加速中: みなぎる金オーラ + 後方に流れるアニメ調の集中線(進行方向の逆へビュンと) */
+  .runner.surge .r-dot{ box-shadow:0 0 0 2px rgba(255,214,102,.95), 0 0 16px rgba(255,196,60,.95), inset 0 2px 4px rgba(255,255,255,.5), 0 2px 5px rgba(0,0,0,.3); }
+  .runner.surge .r-dot::after{ content:""; position:absolute; right:100%; top:50%; transform:translateY(-50%); margin-right:3px;
+    width:34px; height:26px; opacity:.9;
+    background:
+      linear-gradient(to left, rgba(255,236,150,.95), transparent) no-repeat 0 3px / 34px 3px,
+      linear-gradient(to left, rgba(255,255,255,.95), transparent) no-repeat 0 11px / 28px 3px,
+      linear-gradient(to left, rgba(255,236,150,.95), transparent) no-repeat 0 19px / 34px 3px;
+    animation:dashStreak .22s linear infinite; }
+  @keyframes dashStreak{ 0%{ opacity:.35; transform:translateY(-50%) scaleX(.7); } 50%{ opacity:1; transform:translateY(-50%) scaleX(1.15); } 100%{ opacity:.35; transform:translateY(-50%) scaleX(.7); } }
+  .track.rtl .runner.surge .r-dot::after{ right:auto; left:100%; margin-right:0; margin-left:3px; transform:translateY(-50%) scaleX(-1); }   /* 左向き走行は右へ流線 */
+  /* 減速中: アニメ調の青い汗が後ろへポーンと飛ぶ */
+  .sweat{ position:fixed; z-index:61; pointer-events:none; width:14px; height:19px;
+    border-radius:50% 50% 50% 50% / 58% 58% 42% 42%; transform-origin:center;
+    background:radial-gradient(circle at 32% 26%, #eaf7ff 0 12%, #4db4f0 45%, #1785d8 78%, #0a63b0 100%);
+    box-shadow:0 1px 3px rgba(10,60,110,.35), inset -1px -1px 2px rgba(0,50,100,.4), inset 2px 2px 3px rgba(255,255,255,.6);
+    animation:sweatFly .55s cubic-bezier(.3,.6,.5,1) forwards; }
+  @keyframes sweatFly{ 0%{ transform:translate(0,0) scale(.5) rotate(0); opacity:0; } 20%{ opacity:1; } 100%{ transform:translate(var(--sx,-16px),var(--sy,-16px)) scale(1) rotate(var(--sr,-40deg)); opacity:0; } }
   .runner.win .r-dot{ animation:winBob .5s ease-in-out infinite; box-shadow:0 0 0 3px var(--gold), inset 0 2px 4px rgba(255,255,255,.45), 0 3px 6px rgba(0,0,0,.3); }
   @keyframes winBob{ 0%,100%{ transform:translateY(0) scale(1); } 50%{ transform:translateY(-3px) scale(1.08); } }
 
@@ -293,13 +333,27 @@
   @keyframes burstFly{ 0%{ transform:translate(0,0) rotate(0); opacity:1; } 100%{ transform:translate(var(--bx,0),var(--by,-260px)) rotate(540deg); opacity:0; } }
   .confetti{ position:fixed; top:-14px; z-index:62; pointer-events:none; border-radius:2px; animation:confFall linear forwards; }
   @keyframes confFall{ 0%{ transform:translateY(0) rotate(0); opacity:1; } 100%{ transform:translateY(112vh) rotate(var(--rot,540deg)); opacity:.15; } }
+  /* 大当たりの金チップ噴き上げ */
+  .chiprain{ position:fixed; top:-40px; z-index:90; pointer-events:none; border-radius:50%;
+    background:radial-gradient(circle at 38% 32%,#ffe9a8,var(--gold) 66%,#dc9c14);
+    box-shadow:0 1px 3px rgba(0,0,0,.35), inset 0 0 0 3px rgba(255,255,255,.55);
+    animation:chipFall linear forwards; }
+  @keyframes chipFall{ 0%{ transform:translate(0,0) rotate(0); opacity:0; } 8%{ opacity:1; } 100%{ transform:translate(var(--cx,0),115vh) rotate(var(--cr,540deg)); opacity:.9; } }
 
   /* ===== オーバーレイ(交代/結果/確認/あそびかた) ===== */
-  #handoffOverlay, #resultOverlay, #confirmOverlay, #helpOverlay, #champOverlay{
+  #handoffOverlay, #resultOverlay, #confirmOverlay, #helpOverlay, #champOverlay, #chipsOverlay{
     position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center;
     background:rgba(24,26,22,.5); opacity:0; pointer-events:none; transition:opacity .3s linear;
   }
-  #handoffOverlay.on, #resultOverlay.on, #confirmOverlay.on, #helpOverlay.on, #champOverlay.on{ opacity:1; pointer-events:auto; }
+  #chipsOverlay{ z-index:82; }   /* チップボタン(z81)から開くので少し上に */
+  #handoffOverlay.on, #resultOverlay.on, #confirmOverlay.on, #helpOverlay.on, #champOverlay.on, #chipsOverlay.on{ opacity:1; pointer-events:auto; }
+  #chipsOverlay.on .r-card{ transform:scale(1); opacity:1; }
+  /* 結果ダイアログは上に見切れないよう、下寄せ＋スクロール */
+  #resultOverlay{ align-items:flex-start; overflow-y:auto; padding:9vh 0 5vh; scrollbar-width:none; }
+  #resultOverlay::-webkit-scrollbar{ display:none; }
+  /* 枠外タップでダイアログと暗幕をいったん消す(後ろのレースを見られる)。もう一度タップで復帰 */
+  #resultOverlay.on.peek{ background:rgba(24,26,22,0); }
+  #resultOverlay.on.peek .res-wrap{ opacity:0; pointer-events:none; transition:opacity .2s linear; }
   .r-card{
     display:flex; flex-direction:column; align-items:center; gap:18px;
     background:var(--bg); border-radius:18px; border-top:10px solid var(--turf);
@@ -343,7 +397,7 @@
   .rule-col{ display:flex; flex-direction:column; align-items:center; gap:8px; }
   .rounds-box{ display:flex; flex-direction:column; align-items:center; gap:10px; }
   .rounds-row{ display:flex; align-items:center; justify-content:center; gap:14px; }
-  .rounds-box .rl{ font-size:13px; font-weight:900; letter-spacing:.3em; text-indent:.3em; opacity:.6; }
+  .rounds-box .rl, .rule-col .rl{ font-family:"Noto Sans JP","Hiragino Sans",sans-serif; font-size:13px; font-weight:900; letter-spacing:.3em; text-indent:.3em; opacity:.6; }
   .stp-btn{ width:42px; height:42px; border:none; border-radius:12px; cursor:pointer; font-size:24px; font-weight:900; color:#fff; line-height:1;
     background:linear-gradient(150deg,#5cc0f0,var(--turf) 60%,var(--turf-dark)); box-shadow:0 3px 0 #0f6396;
     touch-action:manipulation; -webkit-user-select:none; user-select:none; }
@@ -354,9 +408,9 @@
   /* ロビーのレース数 / 名前入力 */
   .lobby-rounds{ display:flex; flex-direction:column; align-items:center; gap:8px; }
   .lobby-rounds:empty{ display:none; }
-  .lobby-rounds .rec-btn{ background:none; border:none; cursor:pointer; font-family:inherit; font-weight:900; font-size:13px;
+  .rec-btn{ background:none; border:none; cursor:pointer; font-family:inherit; font-weight:900; font-size:13px;
     color:var(--turf-dark); text-decoration:underline; text-underline-offset:3px; letter-spacing:.02em; }
-  .lobby-rounds .rec-btn:active{ opacity:.7; }
+  .rec-btn:active{ opacity:.7; }
   .lobby-rounds .lr-ro{ font-size:15px; font-weight:900; color:var(--turf-dark); letter-spacing:.08em; }
   .name-block{ display:flex; flex-direction:column; align-items:center; gap:12px; width:min(94vw,440px); }
   .online-name{ width:min(80vw,320px); text-align:center; font-size:22px; padding:14px 12px; letter-spacing:.04em; }
@@ -398,8 +452,9 @@
   /* 結果(メイン=賭け / サブ=レース順位) */
   .res-wrap{ display:flex; flex-direction:column; align-items:center; }
   .res-sec-label{ align-self:flex-start; font-size:12px; font-weight:900; letter-spacing:.12em; color:var(--turf-dark); margin:2px 0 -2px 2px; }
-  .res-sec-label.sub{ color:rgba(34,36,31,.55); }
-  .res-table{ width:100%; display:flex; flex-direction:column; gap:6px; max-height:34vh; overflow-y:auto; }
+  .res-sec-label.sub{ color:rgba(34,36,31,.55); margin-bottom:4px; }
+  .res-table{ width:100%; display:flex; flex-direction:column; gap:6px; max-height:34vh; overflow-y:auto; scrollbar-width:none; }
+  .res-table::-webkit-scrollbar, .res-race::-webkit-scrollbar{ display:none; }
   .rb-row{ display:flex; align-items:center; gap:9px; background:#fff; border-radius:11px; padding:9px 12px; font-size:15px; text-align:left; }
   .rb-row.hit{ background:linear-gradient(150deg,#fff5da,#ffe9a8); box-shadow:0 2px 7px rgba(210,144,20,.22); }
   .rb-row .rb-dot{ width:22px; height:22px; flex:none; }
@@ -410,8 +465,8 @@
   .rb-delta.plus{ color:var(--turf-dark); }
   .rb-delta.minus{ color:var(--red); opacity:.85; }
   .rb-delta.zero{ opacity:.4; }
-  .res-sub{ width:100%; margin-top:4px; padding-top:10px; border-top:1.5px dashed rgba(34,36,31,.18); display:flex; flex-direction:column; gap:6px; }
-  .res-race{ width:100%; display:flex; flex-direction:column; gap:4px; max-height:26vh; overflow-y:auto; }
+  .res-sub{ width:100%; margin-top:4px; padding-top:12px; border-top:1.5px dashed rgba(34,36,31,.18); display:flex; flex-direction:column; gap:10px; }
+  .res-race{ width:100%; display:flex; flex-direction:column; gap:4px; max-height:26vh; overflow-y:auto; scrollbar-width:none; }
   .rr2-row{ display:flex; align-items:center; gap:8px; font-size:13.5px; padding:4px 8px; border-radius:8px; text-align:left; }
   .rr2-row.win{ background:rgba(242,176,53,.16); }
   .rr2-row .rr2-rk{ width:20px; font-weight:900; color:var(--gold-dark); text-align:center; flex:none; }
@@ -443,8 +498,8 @@
   .help-btn span{ display:inline-flex; align-items:center; justify-content:center; width:17px; height:17px; border-radius:50%; background:var(--turf); color:#fff; font-size:11.5px; font-weight:900; }
   .help-btn:active{ transform:translateY(1px); }
   .back-fixed{ position:fixed; left:10px; top:48px; z-index:80; cursor:pointer;
-    font-family:inherit; font-size:12.5px; font-weight:700; letter-spacing:.08em; color:var(--turf-dark);
-    background:rgba(255,255,255,.85); border:1.5px solid var(--turf); border-radius:999px; padding:6px 15px 7px; }
+    font-family:inherit; font-size:12px; font-weight:700; letter-spacing:.08em; color:rgba(34,36,31,.55);
+    background:rgba(255,255,255,.72); border:1.5px solid rgba(34,36,31,.28); border-radius:999px; padding:6px 14px 7px; }
   .back-fixed:active{ transform:translateY(1px); }
   .snd-btns{ position:fixed; right:10px; top:10px; z-index:80; }
   .snd-btn{
@@ -454,6 +509,42 @@
   }
   .snd-btn svg{ width:14px; height:13px; }
   .snd-btn.off{ opacity:.42; text-decoration:line-through; }
+  /* みんなのチップ ボタン(右上・効果音の下。対局中つねに表示) */
+  .chips-btn{ position:fixed; right:10px; top:48px; z-index:81; display:none; align-items:center; gap:5px; cursor:pointer;
+    font-family:inherit; font-size:12px; font-weight:700; letter-spacing:.06em; color:var(--gold-dark);
+    background:rgba(255,255,255,.85); border:1.5px solid var(--gold); border-radius:999px; padding:6px 13px 7px; }
+  .chips-btn svg{ width:15px; height:15px; }
+  .chips-btn:active{ transform:translateY(1px); }
+  #gameScene.on ~ .chips-btn{ display:inline-flex; }
+  /* ===== スタンプ(気持ちを送る。オンライン=登録名+アイコン色 / 1台=絵文字のみ) ===== */
+  #stampBar{ position:fixed; left:50%; transform:translateX(-50%); bottom:10px; z-index:85; display:none; gap:9px; }
+  #gameScene.on ~ #stampBar{ display:flex; }
+  .stamp-btn{ width:48px; height:48px; padding:0; border:none; border-radius:50%; cursor:pointer;
+    background:rgba(255,255,255,.9); box-shadow:0 2px 7px rgba(30,40,70,.32);
+    display:flex; align-items:center; justify-content:center; font-size:27px; line-height:1; }
+  .stamp-btn:active{ transform:translateY(1px) scale(.93); }
+  .stamp-fly{ position:fixed; bottom:-30px; width:120px; z-index:63; pointer-events:none;
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+    filter:drop-shadow(0 5px 9px rgba(0,0,0,.28)); animation:stampFloat 2.2s cubic-bezier(.2,.75,.35,1) forwards; }
+  .stamp-fly .s-emoji{ font-size:80px; line-height:1; }
+  .stamp-fly .s-name{ margin-top:2px; font-size:15px; font-weight:900; color:#fff; white-space:nowrap;
+    letter-spacing:.04em; text-shadow:0 1px 3px rgba(0,0,0,.55),0 0 2px rgba(0,0,0,.5); max-width:120px; overflow:hidden; text-overflow:ellipsis; }
+  .stamp-fly.over-dialog{ z-index:84; }   /* 結果ダイアログ(z82)表示中も前面に */
+  @keyframes stampFloat{
+    0%{ transform:translate(0,96px) scale(.5); opacity:0; }      /* 画面の外(下)から登場 */
+    17%{ transform:translate(0,0) scale(1.06); opacity:1; }
+    70%{ opacity:1; }
+    100%{ transform:translate(var(--dx,0),var(--rise,-40vh)) scale(1.02); opacity:0; }   /* 到達点は横位置で変える(中央は低め) */
+  }
+  .chips-list{ width:100%; display:flex; flex-direction:column; gap:6px; max-height:56vh; overflow-y:auto; scrollbar-width:none; }
+  .chips-list::-webkit-scrollbar{ display:none; }
+  .chips-row{ display:flex; align-items:center; gap:9px; background:#fff; border-radius:10px; padding:8px 12px; font-size:15px; }
+  .chips-row.me{ background:linear-gradient(150deg,#eaf6ff,#d4ecfb); }
+  .chips-row .cr-rk{ width:22px; font-weight:900; color:var(--gold-dark); text-align:center; flex:none; }
+  .chips-row .p-dot{ width:20px; height:20px; flex:none; }
+  .chips-row .cr-nm{ flex:1 1 0; font-weight:900; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .chips-row .cr-c{ font-family:var(--fnum); font-weight:900; color:var(--ink); white-space:nowrap; }
+  .chips-row .cr-c small{ font-size:11px; opacity:.6; margin-left:1px; }
 
   .toast{
     position:fixed; left:50%; top:60px; transform:translate(-50%,-8px); z-index:90;
@@ -503,7 +594,16 @@
             <button class="stp-btn" data-rd="1">＋</button>
           </div>
         </div>
+        <div class="rule-col">
+          <div class="rl">初期チップ</div>
+          <div class="rounds-row">
+            <button class="stp-btn" data-ic="-10">−</button>
+            <div class="rv"><b class="icVal">100</b></div>
+            <button class="stp-btn" data-ic="10">＋</button>
+          </div>
+        </div>
       </div>
+      <button class="rec-btn" id="localRec">初期設定に戻す</button>
       <button class="btn-main" id="startBtn">出走</button>
     </div>
 
@@ -562,7 +662,7 @@
     <!-- 秘密の数字入力 -->
     <div class="panel" id="enterPanel">
       <div class="big-q" id="enterQ"></div>
-      <input class="num-input" id="numInput" type="number" inputmode="numeric" min="0" placeholder="0" autocomplete="off">
+      <input class="num-input" id="numInput" type="text" inputmode="numeric" maxlength="9" placeholder="0" autocomplete="off">
       <button class="btn-main" id="numGo">決定</button>
       <div class="secret-note">※ まわりの人に見られないように！</div>
       <div class="enter-done" id="enterDone"></div>
@@ -571,7 +671,7 @@
     <!-- 賭ける -->
     <div class="panel" id="betPanel">
       <div class="big-q" id="betQ"></div>
-      <div class="my-chips">持ちチップ <b id="betChips">0</b></div>
+      <div class="my-chips-row"><div class="my-chips">持ちチップ <b id="betChips">0</b></div><div class="my-chip-stack" id="myChipStack"></div></div>
       <div class="cand-list" id="candList"></div>
       <div class="bet-amount">
         <button class="ba-btn ba-wide" data-d="-10">-10</button>
@@ -587,9 +687,10 @@
 
     <!-- 全員のかけ状況確認(1台) -->
     <div class="panel" id="checkPanel">
-      <div class="big-q">みんなのかけ、これでOK？<br><span class="hint">タップでやり直し</span></div>
+      <div class="big-q">賭け状況</div>
+      <div class="chk-hint hint">タップで編集</div>
       <div class="chk-list" id="checkList"></div>
-      <button class="btn-gold" id="checkGo">全員OK！レースへ</button>
+      <button class="btn-gold" id="checkGo">レーススタート</button>
     </div>
 
     <!-- レース -->
@@ -618,6 +719,24 @@
   <!-- 右上効果音 -->
   <div class="snd-btns">
     <button class="snd-btn" id="seBtn"><svg viewBox="0 0 25 24"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor"/><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M15 9.4c1.3 1.3 1.3 3.9 0 5.2"/><path d="M17.6 7.6c2.2 2.2 2.2 6.6 0 8.8"/></g></svg>効果音</button>
+  </div>
+  <!-- 右上・みんなのチップ(対局中つねに表示) -->
+  <button class="chips-btn" id="chipsBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6" stroke-linecap="round"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>チップ</button>
+
+  <!-- スタンプ(気持ちを送る。対局中つねに表示) -->
+  <div id="stampBar">
+    <button class="stamp-btn" data-i="0" aria-label="泣き"></button>
+    <button class="stamp-btn" data-i="1" aria-label="うっとり"></button>
+    <button class="stamp-btn" data-i="2" aria-label="爆笑"></button>
+  </div>
+
+  <!-- みんなのチップ一覧 -->
+  <div id="chipsOverlay">
+    <div class="r-card">
+      <div class="r-title" style="font-size:clamp(20px,5.6vw,28px);">みんなのチップ</div>
+      <div class="chips-list" id="chipsList"></div>
+      <button class="txt-btn" id="chipsClose">とじる</button>
+    </div>
   </div>
 
   <!-- 交代(次の人に渡す) -->
@@ -711,11 +830,13 @@
   let lastTheme="";
   function randTheme(){ let t; do{ t=THEMES[Math.floor(Math.random()*THEMES.length)]; }while(THEMES.length>1 && t===lastTheme); lastTheme=t; return t; }
   const INIT_CHIPS=100, MIN_BET=10, RESCUE=20;
-  const MAXP=20, MINP=2;
+  const MAXP=99, MINP=2;
   const MIN_ROUNDS=1, MAX_ROUNDS=30;
   let totalRounds=5;   // 何レースで総合結果か(部屋主/1台の設定)
   const TIME_OPTS=[15,30,45,60,90,0];   // 0=無制限
   let timeLimit=30;    // 各操作の制限時間(秒)。0で無制限
+  const MIN_CHIPS=10, MAX_CHIPS=10000;
+  let initChips=INIT_CHIPS;   // 初期チップ枚数(設定可能・10刻み)
 
   let players=[];        // {name,color,chips}
   let round=0, repIdx=0, carry=0;
@@ -768,7 +889,9 @@
       if(del) del.addEventListener("click",()=>{ ensureAudio(); playSelect(); playersSetup.splice(i,1); renderPlayersSetup(); });
       playersList.appendChild(row);
     });
-    document.getElementById("addPlayer").disabled = playersSetup.length>=MAXP;
+    const add=document.getElementById("addPlayer"), full=playersSetup.length>=MAXP;
+    add.disabled=full;
+    add.textContent = full ? "あ、本当に99人でやる人いるんだ" : "＋ メンバーを追加";
   }
   let playersSetup=DEFAULT_NAMES.slice();
   function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
@@ -814,20 +937,34 @@
     const ni=Math.max(0,Math.min(TIME_OPTS.length-1, idx+d));
     if(ni!==idx){ timeLimit=TIME_OPTS[ni]; playTick(); renderTime(); if(mode==="online"&&isHost&&oPhase==="lobby") broadcastSnap(); }
   }
+  function renderInit(){
+    document.querySelectorAll(".icVal").forEach(el=>el.textContent=initChips);
+    document.querySelectorAll(".stp-btn[data-ic]").forEach(b=>{ const d=+b.dataset.ic;
+      b.classList.toggle("dim", (d<0&&initChips<=MIN_CHIPS)||(d>0&&initChips>=MAX_CHIPS)); });
+  }
+  function changeInit(d){
+    const nv=Math.max(MIN_CHIPS,Math.min(MAX_CHIPS, initChips+d));
+    if(nv!==initChips){ initChips=nv; playTick(); renderInit(); if(mode==="online"&&isHost&&oPhase==="lobby") broadcastSnap(); }
+  }
   function wireRoundStepper(scope){
     (scope||document).querySelectorAll(".stp-btn[data-rd]").forEach(b=>{
       if(b._wired) return; b._wired=true; attachHold(b, ()=>{ ensureAudio(); changeRounds(+b.dataset.rd); }); });
     (scope||document).querySelectorAll(".stp-btn[data-tm]").forEach(b=>{
       if(b._wired) return; b._wired=true; attachHold(b, ()=>{ ensureAudio(); changeTime(+b.dataset.tm); }); });
+    (scope||document).querySelectorAll(".stp-btn[data-ic]").forEach(b=>{
+      if(b._wired) return; b._wired=true; attachHold(b, ()=>{ ensureAudio(); changeInit(+b.dataset.ic); }); });
   }
   wireRoundStepper(document.getElementById("localSetup"));
-  renderRounds(); renderTime();
+  // ルールを初期設定に戻す(レース数5・制限時間30秒・初期チップ100)
+  function resetRules(){ totalRounds=5; timeLimit=30; initChips=INIT_CHIPS; renderRounds(); renderTime(); renderInit(); }
+  document.getElementById("localRec").addEventListener("click",()=>{ ensureAudio(); playSelect(); resetRules(); });
+  renderRounds(); renderTime(); renderInit();
 
   document.getElementById("startBtn").addEventListener("click",()=>{
     ensureAudio(); playConfirm();
     const names=playersSetup.map((s,i)=>(s||"").trim()||String(i+1));
     if(names.length<MINP){ showToast("2人以上でね"); return; }
-    players=names.map((nm,i)=>({name:nm, color:COLORS[i%COLORS.length], chips:INIT_CHIPS}));
+    players=names.map((nm,i)=>({name:nm, color:COLORS[i%COLORS.length], chips:initChips}));
     mode="local"; round=0; carry=0;
     titleScene.classList.remove("on"); gameScene.classList.add("on");
     startRound();
@@ -964,18 +1101,23 @@
     const idx=seatIdx;
     handoff(idx, "お題を見て数字を入力", ()=>{
       document.getElementById("enterQ").innerHTML='お題「<span class="em">'+esc(theme)+'</span>」<br>'+esc(players[idx].name)+'さんは数字を入力';
-      const inp=document.getElementById("numInput"); inp.value="";
+      const inp=document.getElementById("numInput"); inp.value=(numbers[idx]!=null)?String(numbers[idx]):"";   // 戻ってきた時は前の数字を維持
       document.getElementById("enterDone").innerHTML=""; document.getElementById("enterDone")._sig="";
       startTimer();
-      showPanel("enter"); setTimeout(()=>inp.focus(),80);
+      showPanel("enter"); setTimeout(()=>{ inp.focus(); try{ inp.select(); }catch(e){} },80);
     });
   }
-  function doEnterBack(){   // 数字入力: 1人前へ(1人目は戻る不可=ボタン非表示)
-    if(seatIdx>0){ ensureAudio(); playSelect(); seatIdx--; numbers[seatIdx]=null; nextEnter(); }
+  function doEnterBack(){   // 数字入力: 1人前へ(1人目は戻る不可=ボタン非表示)。前の数字は保持
+    if(seatIdx>0){ ensureAudio(); playSelect(); seatIdx--; nextEnter(); }
   }
+  function zen2han(s){ return (s||"").replace(/[０-９]/g, c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/[－ー−―]/g,"-"); }   // 全角数字/マイナス→半角
+  document.getElementById("numInput").addEventListener("input",function(){
+    let h=zen2han(this.value); const neg=h[0]==="-"; h=(neg?"-":"")+h.replace(/[^0-9]/g,"");   // 先頭のマイナスだけ許可
+    if(h!==this.value) this.value=h;
+  });
   document.getElementById("numGo").addEventListener("click",()=>{
     ensureAudio();
-    const raw=document.getElementById("numInput").value.trim();
+    const raw=zen2han(document.getElementById("numInput").value).trim();
     if(raw===""||isNaN(Number(raw))){ showToast("数字を入れてね"); return; }
     playConfirm();
     if(mode==="online"){ myNum=Number(raw); sendAct("num",{n:myNum}); showWait("みんなの入力を待っています",false); return; }
@@ -984,15 +1126,20 @@
   });
 
   // 賭けループ(1台。全員で見ながら順番に。最後に全員確認画面へ)
-  let editSeat=null, editOrig=null;
+  let editSeat=null, editOrig=null, editReturn=null;   // 編集中の座席 / 元の賭け / 戻り先
   function nextBet(){
     if(seatIdx>=players.length){ showBetCheck(); return; }
-    editSeat=null; editOrig=null; curCand=-1; curBet=MIN_BET; openBetPanel(seatIdx);
+    editSeat=null; editOrig=null; editReturn=null; curCand=-1; curBet=MIN_BET; openBetPanel(seatIdx);
   }
   function openBetPanel(idx){
     betIdx=idx;
-    document.getElementById("betQ").innerHTML='<span class="em">'+esc(players[idx].name)+'</span>さんの予想<br><span class="hint">お題「'+esc(theme)+'」で1位は？</span>';
+    const editing=(editSeat!=null);
+    document.getElementById("betGo").textContent = editing ? "編集完了" : "この予想で賭ける";
+    // お題は常に表示(編集中も). 編集中は名前の横にピルを出すだけ=レイアウト不変
+    const editPill = editing ? ' <span class="edit-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4l5 5L9 20H4v-5z"/></svg>編集中</span>' : '';
+    document.getElementById("betQ").innerHTML='<span class="em">'+esc(players[idx].name)+'</span>さんの予想'+editPill+'<br><span class="hint">お題「'+esc(theme)+'」で1位は？</span>';
     document.getElementById("betChips").textContent=players[idx].chips;
+    renderMyChips(idx);
     renderCandidates(idx);
     if(curCand>=0){ const els=document.querySelectorAll("#candList .cand"); if(els[curCand]) els[curCand].classList.add("sel"); }
     updateBetVal();
@@ -1000,8 +1147,20 @@
     startTimer();
     showPanel("bet");
   }
+  // 「持ちチップ」の横にチップ可視化(黄色統一・いっぱい集めてる感)
+  function renderMyChips(idx){
+    const el=document.getElementById("myChipStack"); if(!el) return;
+    const chips=Math.max(0, players[idx].chips);
+    // 100枚ごとに山を分ける(例: 230→100の山×2 + 30の山)。1山=最大10枚(1枚=10)
+    const piles=[]; let left=chips;
+    while(left>0){ const p=Math.min(100,left); piles.push(p); left-=p; }
+    if(!piles.length) piles.push(0);
+    const chipDiv='<div class="pool-chip" style="background:radial-gradient(circle at 40% 30%,#ffe08a,var(--gold))"></div>';
+    el.innerHTML=piles.map(p=>{ const cnt=Math.max(1,Math.round(p/10)); let s=""; for(let k=0;k<cnt;k++) s+=chipDiv; return '<div class="chip-pile">'+s+'</div>'; }).join("");
+  }
   function showBetCheck(){
-    editSeat=null; editOrig=null; stopTimer();
+    editSeat=null; editOrig=null; editReturn=null; stopTimer();
+    gameScene.classList.remove("editing");
     showPanel("check");
     const list=document.getElementById("checkList"); list.innerHTML="";
     players.forEach((p,i)=>{
@@ -1010,30 +1169,52 @@
                       : '<span class="chk-none">未</span>';
       const row=document.createElement("div"); row.className="chk-row";
       row.innerHTML='<span class="p-dot" style="'+dotStyle(p.color)+'"></span><span class="chk-nm">'+esc(p.name)+'</span><span class="chk-arrow">→</span>'+right;
-      row.addEventListener("click",()=>editBet(i));
+      row.addEventListener("click",()=>editBet(i, true));
       list.appendChild(row);
     });
   }
-  function editBet(seat){
+  // 1つの座席だけ編集(他の人の賭けは保持)。fromCheck=確認画面から / それ以外=賭け進行中の割り込み編集
+  function editBet(seat, fromCheck){
+    if(editSeat!=null) return;   // 編集中はさらに編集させない
     ensureAudio(); playSelect();
-    editSeat=seat; const b=bets[seat];
-    if(b){ players[seat].chips+=b.amt; editOrig={on:b.on,amt:b.amt}; curCand=b.on; curBet=b.amt; bets[seat]=null; }
+    editReturn = fromCheck ? {mode:"check"} : {mode:"bet", seat:seatIdx, cand:curCand, bet:curBet};
+    editSeat=seat;
+    const b=bets[seat];
+    if(b){ players[seat].chips+=b.amt; editOrig={on:b.on,amt:b.amt}; curCand=b.on; curBet=b.amt; bets[seat]=null; }   // 数字と選択を維持
     else{ editOrig=null; curCand=-1; curBet=MIN_BET; }
     openBetPanel(seat);
+  }
+  function finishEdit(amt){   // 編集完了(betGoから): 保存して戻り先へ
+    bets[editSeat]={on:curCand, amt}; players[editSeat].chips-=amt;
+    const ret=editReturn; editSeat=null; editOrig=null; editReturn=null;
+    if(ret && ret.mode==="bet"){ seatIdx=ret.seat; curCand=ret.cand; curBet=ret.bet; openBetPanel(seatIdx); }
+    else showBetCheck();
   }
   document.getElementById("checkGo").addEventListener("click",()=>{ ensureAudio(); playConfirm(); startRace(); });
   function doBetBack(){
     ensureAudio(); playSelect();
-    if(editSeat!=null){ if(editOrig){ bets[editSeat]={on:editOrig.on,amt:editOrig.amt}; players[editSeat].chips-=editOrig.amt; } editSeat=null; editOrig=null; showBetCheck(); return; }
-    if(seatIdx>0){ seatIdx--; if(bets[seatIdx]){ players[seatIdx].chips+=bets[seatIdx].amt; bets[seatIdx]=null; } curCand=-1; curBet=MIN_BET; openBetPanel(seatIdx); return; }
-    seatIdx=players.length-1; nextEnter();   // 先頭でのもどる→数字入力に戻る
+    if(editSeat!=null){   // 編集を取りやめて戻る(元の賭けを復元)
+      if(editOrig){ bets[editSeat]={on:editOrig.on,amt:editOrig.amt}; players[editSeat].chips-=editOrig.amt; }
+      const ret=editReturn; editSeat=null; editOrig=null; editReturn=null;
+      if(ret && ret.mode==="bet"){ seatIdx=ret.seat; curCand=ret.cand; curBet=ret.bet; openBetPanel(seatIdx); }
+      else showBetCheck();
+      return;
+    }
+    // 進行中のもどる = 単純に1人前へ戻る(編集モードではない)。前の人の数字と選択は維持
+    if(seatIdx>0){
+      seatIdx--;
+      const b=bets[seatIdx];
+      if(b){ players[seatIdx].chips+=b.amt; curCand=b.on; curBet=b.amt; bets[seatIdx]=null; }
+      else{ curCand=-1; curBet=MIN_BET; }
+      openBetPanel(seatIdx);
+    }
   }
   // 左上の固定「もどる」(1台のみ・数字入力1人目とお題は不可)
   function updateBackBtn(){
     const b=document.getElementById("backFixed");
     let show=false;
     if(mode==="local"){
-      if(panels.bet.classList.contains("on")) show=true;
+      if(panels.bet.classList.contains("on") && (editSeat!=null || seatIdx>0)) show=true;   // 賭けの最初の人は戻れない(役割が変わる境目)
       else if(panels.enter.classList.contains("on") && (seatIdx>0 || editSeat!=null)) show=true;
     }
     b.style.display = show ? "" : "none";
@@ -1042,8 +1223,7 @@
     if(panels.bet.classList.contains("on")) doBetBack();
     else if(panels.enter.classList.contains("on")) doEnterBack();
   });
-  // 「誰が誰に賭けているか」ライブ表示(確定=✓、オンラインは仮選択も表示。1台では行タップで賭け直し可)
-  const CHECK_SVG='<svg class="bl-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>';
+  // 「誰が誰に賭けているか」ライブ表示(オンラインは仮選択も表示。1台では行タップで編集。編集中はタップ不可)
   function renderBetLive(el){
     if(!el) return;
     const rows=[];
@@ -1052,26 +1232,21 @@
       if(b){ rows.push({seat:i, from:p, to:(players[b.on]||{name:"?",color:"#999"}), amt:b.amt, ok:true}); }
       else if(mode==="online"){ const pk=picks[p.id]; if(pk!=null && players[pk]){ rows.push({seat:i, from:p, to:players[pk], amt:null, ok:false}); } }
     });
-    const canUndo=(mode==="local");
-    const sig=(canUndo?"u":"")+rows.map(r=>r.seat+">"+(r.to?r.to.name:"")+":"+(r.ok?r.amt:"?")).join("|");
+    const canEdit=(mode==="local" && editSeat==null);
+    const sig=(canEdit?"e":"x")+rows.map(r=>r.seat+">"+(r.to?r.to.name:"")+":"+(r.ok?r.amt:"?")).join("|");
     if(el._sig===sig) return;   // 変化がなければ作り直さない(点滅防止)
     el._sig=sig;
     if(!rows.length){ el.innerHTML=""; el.classList.remove("undoable"); return; }
-    let html='<div class="bl-head">賭け状況'+(canUndo?'（タップでやり直し）':'')+'</div>';
+    let html='<div class="bl-head">賭け状況'+(canEdit?'（タップで編集）':'')+'</div>';
     rows.forEach(r=>{ html+='<div class="bl-row'+(r.ok?'':' pick')+'" data-seat="'+r.seat+'"><span class="p-dot" style="'+dotStyle(r.from.color)+'"></span>'
       +'<span>'+esc(r.from.name)+'</span><span class="bl-arrow">→</span>'
       +'<span class="p-dot" style="'+dotStyle(r.to.color)+'"></span><span>'+esc(r.to.name)+'</span>'
-      + (r.ok ? '<span class="bl-amt"><span class="chip-ico"></span>'+r.amt+'</span>'+CHECK_SVG
+      + (r.ok ? '<span class="bl-amt"><span class="chip-ico"></span>'+r.amt+'</span>'
               : '<span class="bl-sel">選択中…</span>')
       +'</div>'; });
     el.innerHTML=html;
-    el.classList.toggle("undoable", canUndo);
-    if(canUndo){ el.querySelectorAll(".bl-row").forEach(row=>row.addEventListener("click",()=>undoBetLocal(+row.dataset.seat))); }
-  }
-  function undoBetLocal(seat){
-    ensureAudio(); playSelect();
-    for(let i=seatIdx-1;i>=seat;i--){ if(bets[i]){ players[i].chips+=bets[i].amt; bets[i]=null; } }
-    seatIdx=seat; nextBet();
+    el.classList.toggle("undoable", canEdit);
+    if(canEdit){ el.querySelectorAll(".bl-row").forEach(row=>row.addEventListener("click",()=>editBet(+row.dataset.seat, false))); }
   }
   function renderCandidates(betterIdx){
     const list=document.getElementById("candList"); list.innerHTML="";
@@ -1105,9 +1280,7 @@
     if(amt<Math.min(MIN_BET, betterChips())){ showToast("賭けチップが足りない"); return; }
     playChip();
     if(mode==="online"){ sendAct("bet",{on:curCand, amt}); showWait("みんなの予想を待っています",false); return; }
-    if(editSeat!=null){   // 確認画面からの修正 → 保存して確認画面へ戻る
-      bets[editSeat]={on:curCand, amt}; players[editSeat].chips-=amt; editSeat=null; editOrig=null; showBetCheck(); return;
-    }
+    if(editSeat!=null){ finishEdit(amt); return; }   // 編集完了 → 元の場所へ(他の賭けは保持)
     bets[seatIdx]={on:curCand, amt};
     players[seatIdx].chips-=amt;
     seatIdx++; nextBet();
@@ -1125,8 +1298,7 @@
     const el=document.getElementById("poolView"); if(!el) return;
     const byCand={};
     bets.forEach((b,i)=>{ if(!b) return; (byCand[b.on]=byCand[b.on]||[]).push({color:players[i].color, amt:b.amt}); });
-    const cands=Object.keys(byCand).map(Number).sort((a,b)=>{
-      const ta=byCand[a].reduce((s,x)=>s+x.amt,0), tb=byCand[b].reduce((s,x)=>s+x.amt,0); return tb-ta; });
+    const cands=Object.keys(byCand).map(Number).sort((a,b)=>a-b);   // 名前の登録順(左から1,2,3…)
     let html="";
     cands.forEach(ci=>{
       const list=byCand[ci], total=list.reduce((s,x)=>s+x.amt,0);
@@ -1148,17 +1320,20 @@
     document.getElementById("raceResultBtn").style.display="none";
     renderPoolView();
     const {set}=winnersOf();
-    // ランク付け(勝者=先頭)。同値は同着扱い
+    // ランク付け(勝者=先頭)。同値は同着=同じ順位(同点1位は両方ゴールする)
     const order=players.map((p,i)=>i).sort((a,b)=> dir==="hi" ? (numbers[b]-numbers[a]) : (numbers[a]-numbers[b]));
-    const rankOf={}; order.forEach((idx,r)=>rankOf[idx]=r);
-    // トラック描画(人数が多い時はレーンを細くして収める)
+    const rankOf={}; let rk=0;
+    order.forEach((idx,i)=>{ if(i>0 && numbers[idx]!==numbers[order[i-1]]) rk=i; rankOf[idx]=rk; });
+    // トラック描画(人数が多い時はレーンを細くして収める。最大99人まで)
     const N=players.length;
-    const laneH = N>14 ? 24 : (N>8 ? 32 : 46);
+    const laneH = N>40 ? 14 : N>24 ? 18 : N>14 ? 24 : N>8 ? 32 : 46;
+    const dirLeft = (dir==="lo");   // 小さいほど勝ち=左向きに走る
     const track=document.getElementById("track"); track.innerHTML="";
     track.classList.toggle("compact", N>8);
-    track.style.height=(N*laneH)+"px";
+    track.classList.toggle("tiny", N>24);
+    track.classList.toggle("rtl", dirLeft);
+    track.style.height=(N*laneH+10)+"px";   // 上下ボーダー5px分を足す=最下段が細くならない
     const goal=document.createElement("div"); goal.className="goal"; track.appendChild(goal);
-    const tape=document.createElement("div"); tape.className="goal-tape"; track.appendChild(tape);
     const runners=[];
     players.forEach((p,i)=>{
       const lane=document.createElement("div"); lane.className="lane"; lane.style.height=laneH+"px";
@@ -1172,59 +1347,67 @@
       const rc=runners[bets[mi].on]; rc.classList.add("cheer");
       const tag=document.createElement("span"); tag.className="cheer-tag"; tag.textContent="応援"; rc.appendChild(tag);
     } }
-    // レースアニメ(rAF)。ゴール手前で止める(ゴール帯=右24px + 余白)
-    const W=track.clientWidth, finish=W-46;
-    runRace(runners, rankOf, set, finish, tape);
+    const W=track.clientWidth;
+    runRace(runners, rankOf, set, W, dirLeft);
   }
   let raceDone=false;
-  function runRace(runners, rankOf, winSet, finish, tape){
+  function runRace(runners, rankOf, winSet, W, dirLeft){
     playGo();
     raceDone=false;
     const N=runners.length, DUR=10000;
-    const gap=0.5/Math.max(1,N-1);   // 最下位が中央あたりに来る程度の順位差
-    // 各馬のドラマ: 序盤の位置(順位と無関係=弱い奴が前もあり)・揺らぎ・急減速(こけ)・突然の加速(まくり)
-    const dram=runners.map(()=>({
-      early:(Math.random()*2-1),
-      amp:0.03+Math.random()*0.055, f1:0.8+Math.random()*1.3, p1:Math.random()*6.283,
-      f2:1.8+Math.random()*1.6, p2:Math.random()*6.283,
-      stumble: Math.random()<0.45 ? {at:0.15+Math.random()*0.4, dur:0.05+Math.random()*0.06, depth:0.1+Math.random()*0.13} : null,
-      surge:   Math.random()<0.5  ? {at:0.3+Math.random()*0.4, dur:0.07+Math.random()*0.07, amp:0.08+Math.random()*0.1} : null
-    }));
-    const back=runners.map((_,i)=>rankOf[i]*gap);
+    const gap=0.5/Math.max(1,N-1);
+    const startX = dirLeft ? (W-46) : 4;      // 左向きなら右端スタート
+    const endX   = dirLeft ? 4 : (W-46);      // ゴール側
+    const setLeft=(run,prog)=>{ run.style.left=(startX + prog*(endX-startX))+"px"; };
+    // レースごとの「波乱度」。毎回は荒れない=堅い決着〜大波乱までランダムに(0.3堅い〜1.0波乱)
+    const drama = 0.3 + Math.random()*0.7;
+    // 各馬の「見かけの走り」(順位と無関係=下位が前に出たりの波乱)。振幅は波乱度に比例。終盤に本来の順位へ収束
+    const jn=runners.map(()=>({ amp:(0.16+Math.random()*0.34)*drama, f:0.5+Math.random()*1.3, p:Math.random()*6.283 }));
+    const jRaw=(o,t)=> t + (o.amp/(6.283*o.f))*(Math.sin(6.283*o.f*t+o.p)-Math.sin(o.p));   // 単調増加の道のり
+    const jEnd=jn.map(o=>jRaw(o,1)||1);
+    const finalP=runners.map((_,i)=>1 - rankOf[i]*gap);   // 同順位(同点)は同じ到達点=一緒にゴール
     const smooth=x=>{ x=Math.max(0,Math.min(1,x)); return x*x*(3-2*x); };
-    const endRace=()=>{ if(raceDone) return; raceDone=true; finishRace(runners, winSet, tape); };
-    let start=null, lastGallop=0, crowdDone=false;
+    const endRace=()=>{ if(raceDone) return; raceDone=true; runners.forEach(r=>r.classList.remove("surge")); finishRace(runners, winSet); };
+    let start=null, lastGallop=0, crowdDone=false, prevTs=0;
+    // 汗は「本当にだれかが失速した瞬間」だけ・全体で数回まで(ゴール前に全員汗の再発防止)
+    let sweatBudget = Math.min(5, 1+Math.round(N*0.12)), lastSweatTs=-9999;
+    const prevP=runners.map(()=>0), fxLast=runners.map(()=>0);
     function frame(ts){
       if(raceDone) return;
-      if(start==null) start=ts;
+      if(start==null){ start=ts; prevTs=ts; }
       const el=ts-start, t=Math.min(1, el/DUR);
-      const F=Math.min(1, t*1.02);                 // 隊列の先頭(ほぼ等速)
-      const W=smooth((t-0.66)/0.34);               // 終盤に本来の順位へ一気に収束(強い奴が急浮上)
-      const E=Math.max(0,1-t/0.78);                // 序盤の順位無関係なばらけ(中盤で消える)
-      const sec=el/1000;
+      const dt=Math.max(1, ts-prevTs); prevTs=ts;
+      const conv=smooth((t-0.72)/0.28);   // 収束は遅めに始めてラストの追い込みを際立たせる(波乱→真の順位)
       runners.forEach((run,i)=>{
-        const d=dram[i];
-        const jostle=(Math.sin(sec*d.f1*6.283+d.p1)*0.6 + Math.sin(sec*d.f2*6.283+d.p2)*0.4)*d.amp*(1-W*0.8);
-        const earlySpread=d.early*0.15*E;
-        let dip=0; if(d.stumble && t>d.stumble.at){ const x=(t-d.stumble.at)/d.stumble.dur; dip=d.stumble.depth*Math.exp(-x*x); }
-        let sg=0; if(d.surge && t>d.surge.at){ const x=(t-d.surge.at)/d.surge.dur; sg=d.surge.amp*Math.exp(-x*x)*(1-W*0.6); }
-        let prog=F + earlySpread - back[i]*W + jostle - dip + sg;
-        prog=Math.max(0, Math.min(t<0.955?0.98:1, prog));
-        run.style.left=(4 + prog*(finish-4))+"px";
+        const j=Math.max(0,Math.min(1, jRaw(jn[i],t)/jEnd[i]));
+        let prog=j*(1-conv) + finalP[i]*conv;               // 波乱→真の順位(1位が急浮上・見せかけ先頭が急失速)
+        if(t>0.88 && rankOf[i]<=1){ const u=(t-0.88)/0.12; prog=prog+(finalP[i]-prog)*(u*u); }   // 1位2位はラスト全力
+        prog=Math.max(0,Math.min(1,prog));
+        setLeft(run, prog);
+        // 実際の速度で演出: 速い=みなぎる/後方流線、遅い(失速・後退)=汗
+        const vrat=(prog-prevP[i])/(dt/DUR); prevP[i]=prog;
+        run.classList.toggle("surge", vrat>1.9 && t<0.985);
+        // 汗はレース中盤の本気の失速だけ。勝者は汗をかかない・全体回数と間隔を絞る
+        if(sweatBudget>0 && !winSet.includes(i) && vrat<0.05 && t>0.32 && t<0.76 && el-fxLast[i]>1200 && ts-lastSweatTs>240){
+          fxLast[i]=el; lastSweatTs=ts; sweatBudget--; spawnSweat(run, dirLeft);
+        }
       });
-      if(!crowdDone && t>=0.7){ crowdDone=true; if(seOn) playStretch(); }   // 最終直線の歓声スウェル
-      const gi=Math.max(80, 235-160*t);            // 終盤ほど蹄の音が速くなる
+      if(!crowdDone && t>=0.7){ crowdDone=true; if(seOn) playStretch(); }
+      const gi=Math.max(80, 235-160*t);
       if(ts-lastGallop>gi){ lastGallop=ts; playGallop(Math.floor(el/100)); }
       if(t<1){ requestAnimationFrame(frame); }
       else endRace();
     }
     requestAnimationFrame(frame);
     // 保険: タブが裏でrAFが止まっても必ず完走させる
-    setTimeout(()=>{ runners.forEach((run,i)=>{ run.style.left=(4+(1-rankOf[i]*gap)*(finish-4))+"px"; }); endRace(); }, DUR+500);
+    setTimeout(()=>{ runners.forEach((run,i)=>setLeft(run, finalP[i])); endRace(); }, DUR+500);
   }
-  function finishRace(runners, winSet, tape){
-    tape.classList.add("broken");
+  function finishRace(runners, winSet){
     playFinish();
+    // ゴールの瞬間をはっきり: レーンのウィンドウごとガッと傾いて着地
+    const trackEl=document.getElementById("track");
+    trackEl.classList.remove("goalhit"); void trackEl.offsetWidth; trackEl.classList.add("goalhit");
+    setTimeout(()=>trackEl.classList.remove("goalhit"),640);
     // 数字を頭上に出す
     runners.forEach((run,i)=>{
       const num=run.querySelector(".r-num"); num.textContent=numbers[i];
@@ -1240,6 +1423,36 @@
     // 1台回しは「結果を見る」ボタンで進む。オンラインはホストが自動集計する
     if(mode==="local") setTimeout(()=>{ document.getElementById("raceResultBtn").style.display=""; }, 900);
     else if(isHost) setTimeout(()=>{ oSettle(); }, 1000);
+  }
+  // 減速中の汗: 頭の上から進行方向の後ろへ飛び散るしずく
+  function spawnSweat(run, dirLeft){
+    const dot=run.querySelector(".r-dot"); if(!dot) return;
+    const r=dot.getBoundingClientRect();
+    const back = dirLeft ? 1 : -1;   // 後ろ方向(右向き走行なら左へ、左向きなら右へ)
+    for(let k=0;k<3;k++){
+      const el=document.createElement("div"); el.className="sweat";
+      el.style.left=(r.left+r.width*0.2+Math.random()*10)+"px";
+      el.style.top=(r.top-4+Math.random()*6)+"px";
+      el.style.setProperty("--sx",(back*(16+Math.random()*22)).toFixed(0)+"px");
+      el.style.setProperty("--sy",(-(14+Math.random()*16)).toFixed(0)+"px");
+      el.style.setProperty("--sr",((Math.random()*60-70)).toFixed(0)+"deg");
+      document.body.appendChild(el); setTimeout(()=>el.remove(),620);
+    }
+  }
+  // 大当たりの祝福: 大量の金チップが下から噴き上がって飛び交う
+  function spawnChipRain(){
+    const W=window.innerWidth;
+    for(let i=0;i<44;i++){
+      const el=document.createElement("div"); el.className="chiprain";
+      const s=16+Math.random()*12; el.style.width=el.style.height=s+"px";
+      const leftSide = i%2===0;   // 左端と右端から交互に
+      el.style.left = leftSide ? (Math.random()*W*0.22)+"px" : (W*0.78 + Math.random()*W*0.22)+"px";
+      el.style.setProperty("--cx",((leftSide?1:-1)*(20+Math.random()*70)).toFixed(0)+"px");   // 少し内側へ流れながら落ちる
+      el.style.setProperty("--cr",(Math.random()*900-450).toFixed(0)+"deg");
+      el.style.animationDuration=(1.5+Math.random()*1.1)+"s";
+      el.style.animationDelay=(Math.random()*0.7)+"s";
+      document.body.appendChild(el); setTimeout(()=>el.remove(),3400);
+    }
   }
   function burstAt(run){
     const r=run.querySelector(".r-dot").getBoundingClientRect();
@@ -1271,6 +1484,70 @@
     }
   }
   document.getElementById("raceResultBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); settlePayout(); });
+
+  /* ---------- スタンプ(気持ちを送る) ---------- */
+  const STAMP_SVGS=['😭','😍','🤣'];
+  function playStamp(i){   // スタンプ別の音(0泣く=しょんぼり下降 / 1うっとり=きらめき上昇 / 2爆笑=ぴょこぴょこ煽り)
+    if(!actx) return; const t=actx.currentTime;
+    if(i===0){ note(523,t,0.2,0.3,"sine"); note(392,t+0.15,0.22,0.3,"sine"); note(300,t+0.32,0.36,0.26,"sine"); }
+    else if(i===1){ note(523,t,0.34,0.22,"sine"); note(784,t+0.11,0.38,0.24,"sine"); note(1047,t+0.24,0.62,0.2,"sine"); note(1568,t+0.34,0.55,0.1,"triangle"); note(2349,t+0.46,0.5,0.06,"sine"); }
+    else{ const seq=[900,680,850,640,800,600,760,560]; seq.forEach((f,k)=>note(f, t+k*0.072, 0.07, 0.26, "triangle")); note(400, t+seq.length*0.072, 0.16, 0.24, "triangle"); }
+  }
+  function spawnStamp(i, name, color){
+    i=Math.max(0, Math.min(2, i|0));
+    const el=document.createElement("div"); el.className="stamp-fly";
+    const hx=0.06+Math.random()*0.88;                        // 横位置: 画面全幅(両端も含む)
+    el.style.left="calc("+(hx*100).toFixed(1)+"% - 60px)";   // 要素の中心をhxに合わせる(幅120px)
+    const central=1-Math.abs(hx-0.5)*2;                      // 0(両端)〜1(中央)
+    el.style.setProperty("--rise", "-"+(24+(1-central)*16).toFixed(0)+"vh");   // 中央は低め(盤の下側に少しかぶる程度)・両端は高め
+    el.style.setProperty("--dx", (Math.random()*24-12).toFixed(0)+"px");
+    const nameHtml = name ? ('<span class="s-name" style="color:'+(color||"#fff")+'">'+esc(name)+'</span>') : '';
+    el.innerHTML='<span class="s-emoji">'+STAMP_SVGS[i]+'</span>'+nameHtml;   // 名前はアイコンと同じ色
+    if(seOn) playStamp(i);   // スタンプ別の効果音
+    // 結果ダイアログ等の表示中は前面に出して見えるようにする
+    const overlayOpen=document.querySelector("#resultOverlay.on,#chipsOverlay.on,#confirmOverlay.on,#champOverlay.on,#helpOverlay.on,#handoffOverlay.on");
+    if(overlayOpen) el.classList.add("over-dialog");
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(), 2350);
+  }
+  function sendStamp(i){
+    if(mode==="online"){
+      const mi=myIndex(), me=mi>=0?players[mi]:null;
+      spawnStamp(i, me?me.name:"", me?me.color:"#fff");
+      if(ch){ try{ ch.send({ type:"broadcast", event:"stamp", payload:{ i, name:me?me.name:"", color:me?me.color:"" } }); }catch(e){} }
+    }else{
+      spawnStamp(i);   // 1台回しは押した人が特定できないので名前は出さない
+    }
+  }
+  document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{
+    const i=+b.dataset.i; b.textContent=STAMP_SVGS[i];
+    b.addEventListener("click",()=>{ ensureAudio(); sendStamp(i); });
+  });
+
+  /* ---------- デバッグ: レース演出を見る(タイトル or レース画面で「d」キー) ---------- */
+  function debugRace(forceDir, count){
+    ensureAudio(); mode="local";
+    const n=count || (3+Math.floor(Math.random()*4));   // 既定3〜6頭
+    players=[]; for(let i=0;i<n;i++) players.push({name:String(i+1), color:COLORS[i%COLORS.length], chips:100});
+    theme="デバッグ"; dir=forceDir||(Math.random()<0.5?"hi":"lo");
+    numbers=players.map(()=>Math.floor(Math.random()*100));
+    bets=players.map(()=>({on:Math.floor(Math.random()*n), amt:10+Math.floor(Math.random()*6)*10}));
+    bets.forEach((b,i)=>{ players[i].chips-=b.amt; });
+    carry=0; round=1; totalRounds=5; lastRacedRound=-1;
+    titleScene.classList.remove("on"); gameScene.classList.add("on");
+    setDirBadge(true);
+    document.getElementById("roundPill").textContent="デバッグレース";
+    startRace();
+  }
+  document.addEventListener("keydown",e=>{
+    const k=e.key.toLowerCase();
+    if(k!=="d"&&k!=="s"&&k!=="f") return;
+    if(titleScene.classList.contains("on") || panels.race.classList.contains("on")){
+      e.preventDefault();
+      if(k==="f") debugRace(Math.random()<0.5?"hi":"lo", 99);
+      else debugRace(k==="s"?"lo":"hi");
+    }
+  });
 
   /* ---------- 配当 ---------- */
   // 集計だけ行い、結果を返す(chips/carryも更新)。表示はしない
@@ -1307,11 +1584,11 @@
         else{ winEl.textContent="ざんぱい…"; winEl.classList.add("res-miss"); }
       }else{ winEl.textContent="レース結果"; winEl.classList.add("res-miss"); }
     }else{
-      const names=players.map((p,i)=>({p,ok:isCorrect(i)})).filter(x=>x.ok).map(x=>x.p.name);
-      if(names.length){ winEl.textContent=names.join("・")+" 大当たり！"; winEl.classList.add("res-hit"); }
+      const names=players.map((p,i)=>({p,ok:isCorrect(i)})).filter(x=>x.ok).map(x=>esc(x.p.name));
+      if(names.length){ winEl.innerHTML=names.join("・")+'<br>大当たり'; winEl.classList.add("res-hit"); }   // 名前(複数可)→改行→大当たり
       else{ winEl.textContent="大当たりなし"; winEl.classList.add("res-miss"); }
     }
-    document.getElementById("resRaceLabel").textContent="お題「"+theme+"」レース結果";
+    document.getElementById("resRaceLabel").textContent="お題「"+theme+"」のレース結果";
     // 【メイン】賭けの結果(損益の大きい順)
     const betEl=document.getElementById("resBet"); betEl.innerHTML="";
     const byDelta=players.map((p,i)=>i).sort((a,b)=>(deltas[b]||0)-(deltas[a]||0));
@@ -1343,10 +1620,17 @@
       ? (carry>0?"端数 "+carry+"枚 は次のレースへ持ち越し":"")
       : "だれも当てられず！ プール "+carry+"枚 がキャリーオーバー";
     document.getElementById("nextBtn").textContent = round>=totalRounds ? "総合結果へ" : "次のレース";
+    ov.classList.remove("peek");
     ov.classList.add("on");
+    // 大当たりの祝福チップ: 1台=当てた人がいれば / オンライン=自分が当てた時だけ
+    const celebrate = (mode==="online") ? (myIndex()>=0 && isCorrect(myIndex())) : players.some((p,i)=>isCorrect(i));
+    if(celebrate){ spawnChipRain(); setTimeout(spawnChipRain, 550); }
   }
+  // 枠外タップでダイアログをいったん消す(peek)。もう一度タップで戻す
+  { const ov=document.getElementById("resultOverlay");
+    ov.addEventListener("click",e=>{ if(e.target===ov){ ensureAudio(); playSelect(); ov.classList.toggle("peek"); } }); }
   document.getElementById("nextBtn").addEventListener("click",()=>{ ensureAudio(); playSelect();
-    document.getElementById("resultOverlay").classList.remove("on");
+    document.getElementById("resultOverlay").classList.remove("on","peek");
     const finalRound = round>=totalRounds;
     if(mode==="online"){ if(isHost){ finalRound?oEnd():oNextRound(); } return; }
     if(finalRound){ showChampion(); return; }
@@ -1377,7 +1661,7 @@
   document.getElementById("champAgain").addEventListener("click",()=>{ ensureAudio(); playConfirm();
     document.getElementById("champOverlay").classList.remove("on");
     if(mode==="online"){ oRestart(); return; }
-    players.forEach(p=>p.chips=INIT_CHIPS); round=0; carry=0; startRound(); });
+    players.forEach(p=>p.chips=initChips); round=0; carry=0; startRound(); });
   document.getElementById("champHome").addEventListener("click",()=>{ ensureAudio(); playSelect();
     if(mode==="online"){ if(isHost) oToLobby(); return; }   // オンラインは待機画面(ロビー)へ戻す
     goTitle(); });
@@ -1402,6 +1686,24 @@
     renderSnd(); if(seBus) seBus.gain.setTargetAtTime(seOn?1:0, actx.currentTime, 0.02); if(seOn) playSelect(); });
   renderSnd();
 
+  /* ---------- みんなのチップ一覧 ---------- */
+  function showChipsList(){
+    const list=document.getElementById("chipsList"); list.innerHTML="";
+    const mi=(mode==="online")?myIndex():-1;
+    const order=players.map((p,i)=>i).sort((a,b)=>players[b].chips-players[a].chips);
+    if(!order.length){ list.innerHTML='<div class="chips-row"><span class="cr-nm" style="opacity:.6;font-weight:700;">まだ始まっていません</span></div>'; }
+    order.forEach((i,rank)=>{ const p=players[i]; if(!p) return;
+      const row=document.createElement("div"); row.className="chips-row"+(i===mi?" me":"");
+      row.innerHTML='<span class="cr-rk">'+(rank+1)+'</span><span class="p-dot" style="'+dotStyle(p.color)+'"></span>'
+        +'<span class="cr-nm">'+esc(p.name)+(i===mi?'（あなた）':'')+'</span><span class="cr-c">'+p.chips+'<small>枚</small></span>';
+      list.appendChild(row);
+    });
+    document.getElementById("chipsOverlay").classList.add("on");
+  }
+  document.getElementById("chipsBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); showChipsList(); });
+  document.getElementById("chipsClose").addEventListener("click",()=>{ ensureAudio(); playSelect(); document.getElementById("chipsOverlay").classList.remove("on"); });
+  document.getElementById("chipsOverlay").addEventListener("click",e=>{ if(e.target.id==="chipsOverlay"){ playSelect(); e.currentTarget.classList.remove("on"); } });
+
   /* ---------- 共通 ---------- */
   let toastTimer=0;
   function showToast(msg,ms){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("on");
@@ -1411,11 +1713,11 @@
     stopTimer(); stopHostTimer();
     document.getElementById("backFixed").style.display="none";
     mode="local"; setDirBadge(false);
-    ["handoffOverlay","resultOverlay","confirmOverlay","champOverlay","helpOverlay"].forEach(id=>document.getElementById(id).classList.remove("on"));
+    ["handoffOverlay","resultOverlay","confirmOverlay","champOverlay","helpOverlay","chipsOverlay"].forEach(id=>document.getElementById(id).classList.remove("on"));
     gameScene.classList.remove("on"); titleScene.classList.add("on");
-    // タイトルはモード選択に戻す
-    document.querySelectorAll("#modeSelect .mode-btn").forEach(b=>b.classList.remove("sel"));
-    document.getElementById("localSetup").classList.remove("on");
+    // タイトルは「1台で遊ぶ」を自動選択して開いておく
+    document.querySelectorAll("#modeSelect .mode-btn").forEach(b=>b.classList.toggle("sel", b.dataset.mode==="local"));
+    document.getElementById("localSetup").classList.add("on");
     document.getElementById("onlineSetup").classList.remove("on");
     document.getElementById("roomArea").innerHTML="";
     { const lc=document.getElementById("lobbyCode"); lc.innerHTML=""; lc.dataset.code=""; }
@@ -1508,6 +1810,7 @@
     ch.on("broadcast",{event:"snap"},({payload})=>{ if(!isHost) applySnap(payload); });
     ch.on("broadcast",{event:"act"},({payload})=>{ if(isHost) onAct(payload); });
     ch.on("broadcast",{event:"actack"},({payload})=>{ const p=pendingActs[payload.aid]; if(p){ clearInterval(p.timer); delete pendingActs[payload.aid]; } });
+    ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) spawnStamp(payload.i|0, payload.name||"", payload.color||"#fff"); });   // 送信者の名前+色で表示(ロストしても実害なし)
     ch.on("presence",{event:"sync"},()=>{
       const st=ch.presenceState(); members={};
       Object.keys(st).forEach(k=>{ const m=st[k][0]; if(m) members[m.id]={name:m.name, t:m.t}; });
@@ -1542,7 +1845,7 @@
   function oStartGame(){   // ホストがロビーで「出走」
     const ids=orderedMembers();
     if(ids.length<MINP){ showToast("2人以上でね"); return; }
-    players=ids.map((id,i)=>({id, name:members[id].name||("P"+(i+1)), color:COLORS[i%COLORS.length], chips:INIT_CHIPS}));
+    players=ids.map((id,i)=>({id, name:members[id].name||("P"+(i+1)), color:COLORS[i%COLORS.length], chips:initChips}));
     round=0; carry=0;
     oNextRound();
   }
@@ -1596,13 +1899,13 @@
     broadcastSnap();
   }
   function oEnd(){ oPhase="champ"; broadcastSnap(); }
-  function oRestart(){ players.forEach(p=>p.chips=INIT_CHIPS); round=0; carry=0; oNextRound(); }
+  function oRestart(){ players.forEach(p=>p.chips=initChips); round=0; carry=0; oNextRound(); }
   function oToLobby(){ stopHostTimer(); oPhase="lobby"; round=0; carry=0; picks={}; broadcastSnap(); }   // 完全終了→出走メンバー待機画面へ
 
   function broadcastSnap(){
     if(!isHost || !ch) return;
     ver++;
-    const snap={ ver, phase:oPhase, round, totalRounds, timeLimit, repId:players[repIdx]?players[repIdx].id:null,
+    const snap={ ver, phase:oPhase, round, totalRounds, timeLimit, initChips, repId:players[repIdx]?players[repIdx].id:null,
       theme, dir, carry,
       players:players.map(p=>({id:p.id,name:p.name,color:p.color,chips:p.chips})),
       entered: players.filter((_,i)=>numbers[i]!=null).map(p=>p.id),
@@ -1632,6 +1935,7 @@
     theme=s.theme||""; dir=s.dir||"hi"; carry=s.carry||0; round=s.round||0;
     totalRounds=s.totalRounds||totalRounds;
     if(s.timeLimit!=null) timeLimit=s.timeLimit;
+    if(s.initChips!=null) initChips=s.initChips;
     repIdx=Math.max(0, players.findIndex(p=>p.id===s.repId));
     // ホストは自分が権威なので上書きしない。ゲストは届いた分だけ反映(数字はレース時のみ届く)
     if(s.numbers) numbers=s.numbers.slice();
@@ -1681,8 +1985,10 @@
       if(mi>=0 && !myBetDoneFor(round)){
         if(!on("bet")){
           betIdx=mi; curCand=-1; curBet=MIN_BET;
+          gameScene.classList.remove("editing");
+          document.getElementById("betGo").textContent="この予想で賭ける";
           document.querySelector("#betPanel .big-q").innerHTML='あなたの予想<br><span class="hint">お題「'+esc(theme)+'」で1位は？</span>';
-          document.getElementById("betChips").textContent=players[mi].chips;
+          document.getElementById("betChips").textContent=players[mi].chips; renderMyChips(mi);
           renderCandidates(mi); updateBetVal(); showPanel("bet"); startTimer();
         }
         renderBetLive(document.getElementById("betLive"));
@@ -1733,17 +2039,17 @@
         box.innerHTML='<div class="rule-frame">'
           +'<div class="rule-col"><div class="rl">レース数</div><div class="rounds-row"><button class="stp-btn" data-rd="-1">−</button><div class="rv"><b class="rVal">'+totalRounds+'</b></div><button class="stp-btn" data-rd="1">＋</button></div></div>'
           +'<div class="rule-col"><div class="rl">制限時間</div><div class="rounds-row"><button class="stp-btn" data-tm="-1">−</button><div class="rv"><b class="tVal">'+fmtTime(timeLimit)+'</b></div><button class="stp-btn" data-tm="1">＋</button></div></div>'
+          +'<div class="rule-col"><div class="rl">初期チップ</div><div class="rounds-row"><button class="stp-btn" data-ic="-10">−</button><div class="rv"><b class="icVal">'+initChips+'</b></div><button class="stp-btn" data-ic="10">＋</button></div></div>'
           +'</div>'
-          +'<button class="rec-btn" id="lobbyRec">おすすめ：参加人数と同じレース数</button>';
+          +'<button class="rec-btn" id="lobbyRec">初期設定に戻す</button>';
         wireRoundStepper(box);
         document.getElementById("lobbyRec").addEventListener("click",()=>{ ensureAudio(); playSelect();
-          const n=Math.max(MIN_ROUNDS,Math.min(MAX_ROUNDS, orderedMembers().length||MINP));
-          if(n!==totalRounds){ totalRounds=n; renderRounds(); if(oPhase==="lobby") broadcastSnap(); } });
+          resetRules(); if(oPhase==="lobby") broadcastSnap(); });
       }
-      renderRounds(); renderTime();
+      renderRounds(); renderTime(); renderInit();
     }else{
       box.dataset.built="guest";
-      box.innerHTML='<div class="lr-ro">レース数：'+totalRounds+' ／ 制限：'+fmtTime(timeLimit)+'</div>';
+      box.innerHTML='<div class="lr-ro">レース数：'+totalRounds+' ／ 制限：'+fmtTime(timeLimit)+' ／ 初期'+initChips+'枚</div>';
     }
   }
   function renderLobby(s){
