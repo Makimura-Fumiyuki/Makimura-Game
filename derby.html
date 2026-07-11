@@ -269,6 +269,7 @@
   .cand .p-dot{ width:24px; height:24px; }
   .cand .c-nm{ flex:1 1 0; font-weight:900; font-size:17px; }
   .cand .c-me{ flex:none; font-size:11px; font-weight:700; color:var(--turf-dark); background:rgba(31,155,220,.14); border-radius:999px; padding:2px 9px 3px; }
+  .cand .cand-chips{ flex:none; font-family:var(--fnum); font-weight:900; font-size:13px; color:var(--gold-dark); }
   .bet-amount{ display:flex; align-items:center; gap:5px; justify-content:center; flex-wrap:nowrap; max-width:100%; }
   .bet-amount .ba-btn{ min-width:38px; height:46px; padding:0 4px; border:none; border-radius:11px; cursor:pointer; font-size:17px; font-weight:900; color:#fff;
     background:linear-gradient(150deg,#ffd166,var(--gold) 60%,#dc9c14); box-shadow:0 3px 0 var(--gold-dark); line-height:1;
@@ -276,16 +277,25 @@
   .bet-amount .ba-btn.ba-wide{ min-width:44px; }
   /* MIN/MAX は ±10 より横幅を大きく、色も変えて目立たせる。MAX=赤 / MIN=青 */
   .bet-amount .ba-btn.ba-mm{ min-width:54px; font-size:15px; letter-spacing:.06em; }
-  #baMax{ background:linear-gradient(150deg,#ff8b60,var(--red) 62%,#c5361f); box-shadow:0 3px 0 #a82c17; }
-  #baMin{ background:linear-gradient(150deg,#5cc0f0,var(--turf) 62%,var(--turf-dark)); box-shadow:0 3px 0 #0f6396; }
+  .bet-amount .ba-max{ background:linear-gradient(150deg,#ff8b60,var(--red) 62%,#c5361f); box-shadow:0 3px 0 #a82c17; }
+  .bet-amount .ba-min{ background:linear-gradient(150deg,#5cc0f0,var(--turf) 62%,var(--turf-dark)); box-shadow:0 3px 0 #0f6396; }
   .bet-amount .ba-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--gold-dark); }
-  #baMax:active{ box-shadow:0 1px 0 #a82c17; }
-  #baMin:active{ box-shadow:0 1px 0 #0f6396; }
+  .bet-amount .ba-max:active{ box-shadow:0 1px 0 #a82c17; }
+  .bet-amount .ba-min:active{ box-shadow:0 1px 0 #0f6396; }
   .bet-amount .ba-btn.dim{ opacity:.3; pointer-events:none; box-shadow:0 3px 0 #9a9a90 !important; }
   .bet-amount .ba-val{ min-width:50px; margin:0 9px; text-align:center; font-family:var(--fnum); font-weight:900; font-size:28px; color:var(--gold-dark); }
+  /* 持ちチップ／賭けチップの2枚並び(メンバーリストの下)。上に小さめラベル、下に100枚ごとに積んだチップの絵。枠なし */
+  .chips-two{ display:flex; align-items:flex-start; justify-content:center; gap:26px; }   /* ラベルは上でそろえて固定 */
+  .chip-box{ display:inline-flex; flex-direction:column; align-items:center; gap:24px; }   /* ラベル〜10段時の一番上のチップが見た目約16px(margin-top:-8pxぶんでgapは+8の24) */
+  .chip-box .cb-txt{ font-family:var(--fnum); font-size:11.5px; font-weight:800; color:var(--ink); white-space:nowrap; }
+  .chip-box .cb-txt b{ font-weight:900; font-size:13px; color:var(--gold-dark); }
+  /* 山は下揃え=箱は10段ぶんの固定高(flexの主軸サイズは重なりで40px)。段が少なくてもラベルは動かず固定(10段時の高さがベスト) */
+  .chip-box .cb-stack{ display:flex; flex-direction:row; align-items:flex-end; gap:7px; height:40px; }
+  .chip-box .cb-stack .chip-pile{ display:flex; flex-direction:column-reverse; align-items:center; justify-content:flex-end; }
+  .chip-box .cb-stack .pool-chip{ width:40px; height:12px; margin-top:-8px; }   /* 下から積み上げ=後の(上の)チップが前面に来る本物の積み重ね */
+  .chip-ico.big{ width:24px; height:24px; }
   .my-chips{ font-family:var(--fnum); font-size:16px; font-weight:800; color:var(--ink); }
-  .my-chips b{ font-weight:900; }
-  .my-chips b{ color:var(--gold-dark); font-size:20px; }
+  .my-chips b{ font-weight:900; color:var(--gold-dark); font-size:20px; }
   .my-chips-row{ display:flex; align-items:flex-end; justify-content:center; gap:14px; min-height:30px; }
   .my-chip-stack{ display:flex; flex-direction:row; align-items:flex-end; gap:8px; }
   .my-chip-stack .chip-pile{ display:flex; flex-direction:column-reverse; align-items:center; }
@@ -388,21 +398,22 @@
     box-shadow:0 1px 3px rgba(0,0,0,.35), inset 0 0 0 3px rgba(255,255,255,.55);
     animation:chipFall linear forwards; }
   @keyframes chipFall{ 0%{ transform:translate(0,0) rotate(0); opacity:0; } 8%{ opacity:1; } 100%{ transform:translate(var(--cx,0),115vh) rotate(var(--cr,540deg)); opacity:.9; } }
-  /* 交渉成立の演出: B(もらう側/左)とA(あげる側/右)を並べ、コインがA→Bへ流れる */
+  /* 交渉成立の演出: A(あげる側/左)とB(もらう側/右)を並べ、コインが左→右へ流れる。コインはアイコン/名前より後ろ */
   .deal-badge{ position:fixed; left:50%; top:36vh; transform:translate(-50%,-50%); z-index:95; pointer-events:none; text-align:center;
     background:linear-gradient(150deg,#ffffff,#f4f1e9); border:2px solid var(--gold); padding:15px 24px 17px; border-radius:18px; min-width:270px;
     box-shadow:0 10px 28px rgba(210,144,20,.45); animation:dealPop 2s cubic-bezier(.2,1.4,.4,1) forwards; }
   .deal-badge .dd-title{ font-size:22px; font-weight:900; letter-spacing:.06em; color:var(--gold-dark); }
-  .deal-badge .dd-flow{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px; position:relative; }
-  .deal-badge .dd-av{ display:flex; flex-direction:column; align-items:center; gap:4px; width:66px; flex:none; }
+  .deal-badge .dd-amtline{ margin-top:6px; font-size:19px; font-weight:900; color:var(--red); }
+  .deal-badge .dd-amtline.minus{ color:var(--turf-dark); }
+  .deal-badge .dd-flow{ display:flex; align-items:center; justify-content:space-around; gap:36px; margin-top:12px; position:relative; }
+  .deal-badge .dd-av{ position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:4px; width:66px; flex:none; }
   .deal-badge .dd-dot{ width:36px; height:36px; border-radius:50%; box-shadow:inset 0 2px 4px rgba(255,255,255,.45), 0 2px 4px rgba(0,0,0,.25); }
   .deal-badge .dd-nm{ font-size:12px; font-weight:900; color:var(--ink); max-width:66px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .deal-badge .dd-mid{ flex:1 1 0; font-size:15px; font-weight:900; color:var(--red); }
-  .deal-badge .dd-coin{ position:absolute; top:6px; width:16px; height:16px; border-radius:50%; opacity:0;
+  .deal-badge .dd-coin{ position:absolute; top:6px; z-index:0; width:16px; height:16px; border-radius:50%; opacity:0;
     background:radial-gradient(circle at 38% 32%,#ffe9a8,var(--gold) 66%,#dc9c14);
     box-shadow:inset 0 0 0 3px rgba(255,255,255,.5), 0 1px 2px rgba(0,0,0,.3); animation:ddFly 1s ease-in-out infinite; }
   @keyframes dealPop{ 0%{ transform:translate(-50%,-50%) scale(.5); opacity:0; } 12%{ transform:translate(-50%,-50%) scale(1.06); opacity:1; } 84%{ opacity:1; } 100%{ transform:translate(-50%,-50%) scale(1); opacity:0; } }
-  @keyframes ddFly{ 0%{ left:78%; opacity:0; transform:translateY(0); } 15%{ opacity:1; } 85%{ opacity:1; } 100%{ left:10%; opacity:0; transform:translateY(-3px); } }
+  @keyframes ddFly{ 0%{ left:12%; opacity:0; transform:translateY(0); } 15%{ opacity:1; } 85%{ opacity:1; } 100%{ left:82%; opacity:0; transform:translateY(-3px); } }
 
   /* ===== オーバーレイ(交代/結果/確認/あそびかた) ===== */
   #handoffOverlay, #resultOverlay, #confirmOverlay, #helpOverlay, #champOverlay, #chipsOverlay, #begOverlay{
@@ -415,7 +426,7 @@
   .nego-retire{ color:var(--red); }
   #chipsOverlay.on .r-card{ transform:scale(1); opacity:1; }
   /* 結果ダイアログは上に見切れないよう、下寄せ＋スクロール */
-  #resultOverlay{ align-items:flex-start; overflow-y:auto; padding:9vh 0 5vh; scrollbar-width:none; }
+  #resultOverlay{ align-items:flex-start; overflow-y:auto; padding:6vh 0 32px; scrollbar-width:none; }
   #resultOverlay::-webkit-scrollbar{ display:none; }
   /* 枠外タップでダイアログと暗幕をいったん消す(後ろのレースを見られる)。もう一度タップで復帰 */
   #resultOverlay.on.peek{ background:rgba(24,26,22,0); }
@@ -586,6 +597,8 @@
   /* ===== スタンプ(気持ちを送る。オンライン=登録名+アイコン色 / 1台=絵文字のみ) ===== */
   #stampBar{ position:fixed; left:50%; transform:translateX(-50%); bottom:10px; z-index:85; display:none; gap:9px; }
   #gameScene.on ~ #stampBar{ display:flex; }
+  /* 結果/総合ダイアログ表示中はスタンプバーを隠す(下端の「中断する」ボタンと重なって押せなくなるのを防ぐ) */
+  #resultOverlay.on ~ #stampBar, #champOverlay.on ~ #stampBar{ display:none; }
   .stamp-btn{ width:48px; height:48px; padding:0; border:none; border-radius:50%; cursor:pointer;
     background:rgba(255,255,255,.9); box-shadow:0 2px 7px rgba(30,40,70,.32);
     display:flex; align-items:center; justify-content:center; font-size:27px; line-height:1; }
@@ -743,16 +756,19 @@
     <!-- 賭ける -->
     <div class="panel" id="betPanel">
       <div class="big-q" id="betQ"></div>
-      <div class="my-chips-row"><div class="my-chips">持ちチップ <b id="betChips">0</b></div><div class="my-chip-stack" id="myChipStack"></div></div>
       <div class="cand-list" id="candList"></div>
+      <div class="chips-two">
+        <div class="chip-box"><span class="cb-txt">持ちチップ <b id="betChips">0</b>枚</span><div class="cb-stack" id="mochiStack"></div></div>
+        <div class="chip-box bet"><span class="cb-txt">賭けチップ <b id="betNow">0</b>枚</span><div class="cb-stack" id="kakeStack"></div></div>
+      </div>
       <div class="bet-amount">
-        <button class="ba-btn ba-mm" id="baMin">MIN</button>
+        <button class="ba-btn ba-mm ba-min" id="baMin">MIN</button>
         <button class="ba-btn ba-wide" data-d="-10">-10</button>
         <button class="ba-btn" data-d="-1">-1</button>
         <div class="ba-val" id="baVal">10</div>
         <button class="ba-btn" data-d="1">+1</button>
         <button class="ba-btn ba-wide" data-d="10">+10</button>
-        <button class="ba-btn ba-mm" id="baMax">MAX</button>
+        <button class="ba-btn ba-mm ba-max" id="baMax">MAX</button>
       </div>
       <button class="btn-gold" id="betGo">この予想で賭ける</button>
       <div class="bet-live" id="betLive"></div>
@@ -772,11 +788,13 @@
       <div class="chk-hint hint" id="negoHint">チップをくれそうな人をタップしてねだろう</div>
       <div class="cand-list" id="negoList"></div>
       <div class="bet-amount" id="negoAmtRow">
+        <button class="ba-btn ba-mm ba-min" id="negoMin">MIN</button>
         <button class="ba-btn ba-wide" data-nd="-10">-10</button>
         <button class="ba-btn" data-nd="-1">-1</button>
         <div class="ba-val" id="negoAmtVal">20</div>
         <button class="ba-btn" data-nd="1">+1</button>
         <button class="ba-btn ba-wide" data-nd="10">+10</button>
+        <button class="ba-btn ba-mm ba-max" id="negoMax">MAX</button>
       </div>
       <button class="txt-btn nego-retire" id="negoRetire">リタイア</button>
     </div>
@@ -817,13 +835,6 @@
   <!-- 右上・みんなのチップ(対局中つねに表示) -->
   <button class="chips-btn" id="chipsBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6" stroke-linecap="round"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>チップ状況</button>
 
-
-  <!-- スタンプ(気持ちを送る。対局中つねに表示) -->
-  <div id="stampBar">
-    <button class="stamp-btn" data-i="0" aria-label="泣き"></button>
-    <button class="stamp-btn" data-i="1" aria-label="うっとり"></button>
-    <button class="stamp-btn" data-i="2" aria-label="爆笑"></button>
-  </div>
 
   <!-- みんなのチップ一覧 -->
   <div id="chipsOverlay">
@@ -895,6 +906,13 @@
     </div>
   </div>
 
+  <!-- スタンプ(気持ちを送る。対局中つねに表示。結果/総合ダイアログ表示中は隠す=中断ボタンと重ならないように) -->
+  <div id="stampBar">
+    <button class="stamp-btn" data-i="0" aria-label="泣き"></button>
+    <button class="stamp-btn" data-i="1" aria-label="うっとり"></button>
+    <button class="stamp-btn" data-i="2" aria-label="爆笑"></button>
+  </div>
+
   <!-- あそびかた -->
   <div id="helpOverlay">
     <div class="r-card">
@@ -957,6 +975,9 @@
   function playSelect(){ if(actx) click(actx.currentTime,1100,0.5); }
   function playTick(){ if(actx) click(actx.currentTime,1500,0.35); }
   function playChip(){ if(!actx) return; const t=actx.currentTime; click(t,1300,0.4); note(2000,t,0.05,0.2,"square"); }
+  function playDeal(){ if(!actx) return; const t=actx.currentTime;   // 交渉成立=コインがチャリンチャリンと相手へ移る
+    for(let k=0;k<5;k++){ click(t+k*0.08, 1500-k*90, 0.34); note(1800-k*60, t+k*0.08, 0.05, 0.16, "square"); }
+    note(784,t+0.44,0.18,0.2,"triangle"); note(1175,t+0.52,0.22,0.14,"triangle"); note(1568,t+0.6,0.3,0.1,"sine"); }   // 着地のきらめき
   function playConfirm(){ if(!actx) return; const t=actx.currentTime; click(t,700,0.6); note(523,t+.05,0.18,0.28,"triangle"); }
   function playGo(){ if(!actx) return; const t=actx.currentTime;   // ファンファーレ(スタート)
     [392,523,659,784].forEach((f,i)=>note(f,t+i*0.1,0.22,0.32,"triangle")); }
@@ -1211,19 +1232,31 @@
 
   /* ---------- チップ切れ交渉(ねだる/リタイア) ---------- */
   const NEG_GIFT=RESCUE;   // ねだる初期額(=20)
-  const NEG_MIN=MIN_BET, NEG_MAX=500;
-  let negoAmt=NEG_GIFT, negoRerender=null;
+  const NEG_MIN=MIN_BET, NEG_MAX=10000;
+  let negoAmt=NEG_GIFT, negoRerender=null, negoMaxCur=NEG_MAX;
+  // MAXは「実際にもらえる上限」=誰かがMIN_BETを残して出せる最大額
+  function negoMaxAvail(brokeIdx, refusedSet){
+    let m=NEG_MIN; players.forEach((p,i)=>{ if(i===brokeIdx||refusedSet.has(i)) return; m=Math.max(m, p.chips-MIN_BET); });
+    return Math.max(NEG_MIN, Math.min(NEG_MAX, m));
+  }
   function negoDonorEligible(donorIdx, brokeIdx, refusedSet){
     return donorIdx!==brokeIdx && players[donorIdx] && !refusedSet.has(donorIdx) && (players[donorIdx].chips-negoAmt>=MIN_BET);
   }
-  function negoStep(d){ const nv=Math.max(NEG_MIN, Math.min(NEG_MAX, negoAmt+d)); if(nv!==negoAmt){ negoAmt=nv; playTick(); if(negoRerender) negoRerender(); } }
-  document.querySelectorAll("#negoAmtRow .ba-btn").forEach(b=>attachHold(b, ()=>{ ensureAudio(); negoStep(+b.dataset.nd); }));
+  function negoStep(d){ const nv=Math.max(NEG_MIN, Math.min(negoMaxCur, negoAmt+d)); if(nv!==negoAmt){ negoAmt=nv; playTick(); if(negoRerender) negoRerender(); } }
+  function negoSet(v){ const nv=Math.max(NEG_MIN, Math.min(negoMaxCur, v)); if(nv!==negoAmt){ negoAmt=nv; playChip(); if(negoRerender) negoRerender(); } }
+  document.querySelectorAll("#negoAmtRow .ba-btn[data-nd]").forEach(b=>attachHold(b, ()=>{ ensureAudio(); negoStep(+b.dataset.nd); }));   // ±のみ(MIN/MAXは別)
+  document.getElementById("negoMin").addEventListener("click",()=>{ ensureAudio(); negoSet(NEG_MIN); });
+  document.getElementById("negoMax").addEventListener("click",()=>{ ensureAudio(); negoSet(negoMaxCur); });
   // 交渉パネル描画(1台・オンライン共通)。onPick(donorIdx)/onRetire()
   function renderNegoPanel(brokeIdx, refusedSet, onPick, onRetire){
     negoRerender=()=>renderNegoPanel(brokeIdx, refusedSet, onPick, onRetire);
+    negoMaxCur=negoMaxAvail(brokeIdx, refusedSet);   // もらえる上限
+    if(negoAmt>negoMaxCur) negoAmt=negoMaxCur;
     document.getElementById("negoAmtVal").textContent=negoAmt;
-    document.querySelectorAll("#negoAmtRow .ba-btn").forEach(b=>{ const d=+b.dataset.nd; b.classList.toggle("dim",(d<0&&negoAmt<=NEG_MIN)||(d>0&&negoAmt>=NEG_MAX)); });
-    document.getElementById("negoQ").innerHTML='<span class="em">'+esc(players[brokeIdx].name)+'</span>さん、チップなし<br>誰かにねだろう';
+    document.querySelectorAll("#negoAmtRow .ba-btn[data-nd]").forEach(b=>{ const d=+b.dataset.nd; b.classList.toggle("dim",(d<0&&negoAmt<=NEG_MIN)||(d>0&&negoAmt>=negoMaxCur)); });
+    document.getElementById("negoMin").classList.toggle("dim", negoAmt<=NEG_MIN);
+    document.getElementById("negoMax").classList.toggle("dim", negoAmt>=negoMaxCur);
+    document.getElementById("negoQ").innerHTML='<span class="em">'+esc(players[brokeIdx].name)+'</span><br>チップがなくなった！誰かにねだろう';
     const list=document.getElementById("negoList"); list.innerHTML=""; let any=false;
     players.forEach((p,i)=>{
       if(i===brokeIdx) return;
@@ -1231,7 +1264,8 @@
       const ok=negoDonorEligible(i, brokeIdx, refusedSet), refused=refusedSet.has(i);
       if(!ok) el.classList.add("dim");
       el.innerHTML='<span class="p-dot" style="'+dotStyle(p.color)+'"></span><span class="c-nm">'+esc(p.name)+'</span>'
-        +(refused?'<span class="c-me">ことわられた</span>':(!ok?'<span class="c-me">よゆうなし</span>':''));
+        +(refused?'<span class="c-me">ことわられた</span>':(!ok?'<span class="c-me">よゆうなし</span>':''))   // 状態はチップ枚数の左
+        +'<span class="cand-chips">'+p.chips+'枚</span>';   // 全員の現在の枚数(右端)
       if(ok){ any=true; el.addEventListener("click",()=>{ ensureAudio(); playSelect(); onPick(i); }); }
       list.appendChild(el);
     });
@@ -1247,17 +1281,18 @@
     document.getElementById("begYes").onclick=()=>{ ensureAudio(); playSelect(); ov.classList.remove("on"); cb(true); };
     document.getElementById("begNo").onclick=()=>{ ensureAudio(); playSelect(); ov.classList.remove("on"); cb(false); };
   }
-  // 「交渉成立！」演出: B(もらう側/左)とA(あげる側/右)を出し、コインがA→Bへ流れる
-  function celebrateDeal(amt, from, to){
+  // 「交渉成立！」演出: A(あげる側/左)→B(もらう側/右)、コインが左→右へ。増減は視点で符号を変える(あげた人=−/もらった人=＋)
+  function celebrateDeal(amt, from, to, iGave){
     const av=p=> '<div class="dd-av"><span class="dd-dot" style="'+(p?dotStyle(p.color):'background:#ccc')+'"></span><span class="dd-nm">'+(p?esc(p.name):'')+'</span></div>';
     const el=document.createElement("div"); el.className="deal-badge";
     el.innerHTML='<div class="dd-title">交渉成立！</div>'
-      +'<div class="dd-flow">'+av(to)+'<div class="dd-mid">＋'+amt+'枚</div>'+av(from)+'</div>';
+      +'<div class="dd-amtline'+(iGave?' minus':'')+'">'+(iGave?'−':'＋')+amt+'枚</div>'
+      +'<div class="dd-flow">'+av(from)+av(to)+'</div>';   // 金額は別行にしてコインと重ならない
     document.body.appendChild(el);
     const flow=el.querySelector(".dd-flow");
     for(let k=0;k<8;k++){ const c=document.createElement("div"); c.className="dd-coin"; c.style.animationDelay=(k*0.12)+"s"; flow.appendChild(c); }
     setTimeout(()=>el.remove(),2000);
-    if(seOn) playChip();
+    if(seOn) playDeal();
   }
   // 1台: チップ切れの人を順に交渉させる。全員終わったら done()
   function localNego(done){
@@ -1272,7 +1307,11 @@
           const amt=negoAmt;
           handoff(donorIdx, "チップをねだられています", ()=>{
             showBegOverlay(players[donorIdx], bp, amt, (ok)=>{
-              if(ok){ const donor=players[donorIdx]; players[donorIdx].chips-=amt; bp.chips+=amt; celebrateDeal(amt, {name:donor.name,color:donor.color}, {name:bp.name,color:bp.color}); localNego(done); }
+              if(ok){ const donor=players[donorIdx]; players[donorIdx].chips-=amt; bp.chips+=amt;
+                celebrateDeal(amt, {name:donor.name,color:donor.color}, {name:bp.name,color:bp.color}, false);   // 1台はもらう側視点(＋)
+                showPanel("wait"); document.getElementById("waitMsg").innerHTML="交渉成立！"; document.getElementById("waitProg").textContent=""; document.getElementById("waitWho").innerHTML=""; document.getElementById("betLiveWait").innerHTML="";
+                setTimeout(()=>localNego(done), 2100);   // 演出が終わってから次の人/次レースへ
+              }
               else{ refused.add(donorIdx); attempt(); }
             });
           });
@@ -1389,7 +1428,7 @@
     while(left>0){ const p=Math.min(100,left); piles.push(p); left-=p; }
     if(!piles.length) piles.push(0);
     const chipDiv='<div class="pool-chip" style="background:radial-gradient(circle at 40% 30%,#ffe08a,var(--gold))"></div>';
-    el.innerHTML=piles.map(p=>{ const cnt=Math.max(1,Math.round(p/10)); let s=""; for(let k=0;k<cnt;k++) s+=chipDiv; return '<div class="chip-pile">'+s+'</div>'; }).join("");
+    el.innerHTML=piles.map(p=>{ const cnt=Math.max(1,Math.floor(p/10)); let s=""; for(let k=0;k<cnt;k++) s+=chipDiv; return '<div class="chip-pile">'+s+'</div>'; }).join("");   // 持ちチップ=floor(そろった山の数。例34→3段)
   }
   function showBetCheck(){
     editSeat=null; editOrig=null; editReturn=null; stopTimer();
@@ -1498,11 +1537,24 @@
   let betIdx=0;   // いま賭けている人のindex(1台=seatIdx / オンライン=自分)
   let reBet=false;   // 賭け直し中(待機画面の「変更する」から)。元の賭けを一時的に持ち金へ戻して計算
   function betterChips(){ return players[betIdx].chips + (reBet && bets[betIdx] ? bets[betIdx].amt : 0); }
+  function chipStackHTML(n, roundFn){   // 100枚ごとに山を分ける(例:280→100×2+80)。1山=最大10段。roundFn=段の数え方(持ち=Math.floor「そろった山の数」例34→3段/賭け=Math.ceil「少しでも入れば1段」例34→4段)
+    n=Math.max(0,n); if(n<=0) return "";
+    const rf = roundFn || Math.ceil;
+    const piles=[]; let left=n; while(left>0){ const p=Math.min(100,left); piles.push(p); left-=p; }
+    const chipDiv='<div class="pool-chip" style="background:radial-gradient(circle at 40% 30%,#ffe08a,var(--gold))"></div>';
+    return piles.map(p=>{ const cnt=Math.max(1,rf(p/10)); let s=""; for(let k=0;k<cnt;k++) s+=chipDiv; return '<div class="chip-pile">'+s+'</div>'; }).join("");
+  }
   function updateBetVal(){
     const max=betterChips();
     if(curBet>max) curBet=max;
     if(curBet<MIN_BET) curBet=Math.min(MIN_BET,max);
     document.getElementById("baVal").textContent=curBet;
+    // 持ち/賭けの表示をリアルタイム更新(持ち=賭けた後の残り / 賭け=いまの額)。チップは積み絵で表現
+    { const mochi=Math.max(0, max-curBet), kake=curBet;
+      const bc=document.getElementById("betChips"), bn=document.getElementById("betNow");
+      if(bc) bc.textContent=mochi; if(bn) bn.textContent=kake;
+      const ms=document.getElementById("mochiStack"), ks=document.getElementById("kakeStack");
+      if(ms) ms.innerHTML=chipStackHTML(mochi, Math.floor); if(ks) ks.innerHTML=chipStackHTML(kake, Math.ceil); }   // 持ち=floor(34→3段)/賭け=ceil(34→4段)
     document.querySelectorAll("#betPanel .ba-btn[data-d]").forEach(b=>{ const d=+b.dataset.d;
       b.classList.toggle("dim", (d<0 && curBet<=MIN_BET) || (d>0 && curBet>=max)); });
     // MIN/MAX も変化しない時はグレーアウト
@@ -1543,7 +1595,7 @@
     cands.forEach(ci=>{
       const list=byCand[ci], total=list.reduce((s,x)=>s+x.amt,0);
       let chips=[]; list.forEach(x=>{ const n=Math.max(1,Math.round(x.amt/10)); for(let k=0;k<n;k++) chips.push(x.color); });
-      chips=chips.slice(0,14);
+      chips=chips.slice(0,10);   // レース中の山は10段で頭打ち
       let stack=""; chips.forEach(c=>{ stack+='<div class="pool-chip" style="background:radial-gradient(circle at 40% 30%,'+tint(c)+','+c+')"></div>'; });
       const p=players[ci]; if(!p) return;
       html+='<div class="pool-col"><div class="pool-stack">'+stack+'</div>'
@@ -1570,11 +1622,10 @@
     // トラック描画(人数が多い時はレーンを細くして収める。最大99人まで)
     const N=parts.length;
     const laneH = N>40 ? 14 : N>24 ? 18 : N>14 ? 24 : N>8 ? 32 : 46;
-    const dirLeft = (dir==="lo");   // 小さいほど勝ち=左向きに走る
     const track=document.getElementById("track"); track.innerHTML="";
     track.classList.toggle("compact", N>8);
     track.classList.toggle("tiny", N>24);
-    track.classList.toggle("rtl", dirLeft);
+    track.classList.remove("rtl");   // 大小どちらでも右向きに走る(勝利条件は上部バッジで示す)
     track.style.height=(N*laneH+10)+"px";   // 上下ボーダー5px分を足す=最下段が細くならない
     const goal=document.createElement("div"); goal.className="goal"; track.appendChild(goal);
     const runners=new Array(players.length).fill(null);   // プレイヤーindexで引ける(不参加はnull)
@@ -1591,26 +1642,32 @@
     if(mode==="online"){ const mi=myIndex(); if(mi>=0 && bets[mi] && runners[bets[mi].on]){
       runners[bets[mi].on].classList.add("cheer");
     } }
-    const W=track.clientWidth;
-    runRace(runners, rankOf, set, W, dirLeft);
+    const W=track.clientWidth || Math.min(window.innerWidth*0.96, 480);   // 表示直後で幅0の時の保険
+    runRace(runners, rankOf, set, W);
   }
   let raceDone=false, raceRunners=[];
-  function runRace(runners, rankOf, winSet, W, dirLeft){
+  function runRace(runners, rankOf, winSet, W){
     playGo();
     raceDone=false;
     const N=runners.filter(Boolean).length, DUR=10000;   // 参加者のみ(不参加スロットはnull)
-    const gap=0.5/Math.max(1,N-1);
-    const startX = dirLeft ? (W-46) : 4;      // 左向きなら右端スタート
-    const endX   = dirLeft ? 4 : (W-46);      // ゴール側
+    // 着差=上位ほど詰める(先頭付近は団子=写真判定でどっちが勝つか最後まで不明・後方は今まで通り自然に伸びる)。全体幅は昔と同じ0.5
+    const maxRank=Math.max(1,N-1), spread=0.5;
+    const dotW = N>24 ? 15 : N>8 ? 22 : 32;    // アイコン径(CSS .track.tiny/.compact/既定と一致)
+    const goalCX = W - 25;                      // ゴールテープ中心(.goal は right:22px・width:6px → 中心=右から25px)
+    const startX = 4, endX = goalCX - dotW/2;   // つねに右向き(左→右)。アイコン中央がゴールテープ中心に触れた瞬間=ゴール(人数で縮小してもずれない)
     const setLeft=(run,prog)=>{ run.style.left=(startX + prog*(endX-startX))+"px"; };
-    // レースごとの「波乱度」。毎回は荒れない=堅い決着〜大波乱までランダムに
-    const drama = 0.5 + Math.random()*0.5;
-    // 各馬の「見かけの走り」(順位と無関係=下位が前に出たりの波乱)。振幅は波乱度に比例。終盤に本来の順位へ収束。加減速がしっかり出るよう振幅を確保
-    const jn=runners.map(()=>({ amp:(0.3+Math.random()*0.45)*drama, f:0.5+Math.random()*1.3, p:Math.random()*6.283 }));
-    const jRaw=(o,t)=> t + (o.amp/(6.283*o.f))*(Math.sin(6.283*o.f*t+o.p)-Math.sin(o.p));   // 単調増加の道のり
+    const drama = 0.4 + Math.random()*0.6;
+    // ペースは各馬ランダム(順位と無関係)。脚質を3タイプから抽選し、逃げ切り/中団まくり/大逆転が毎回バラバラに出るように
+    const jn=runners.map((r,i)=>{
+      const roll=Math.random();
+      const k = roll<0.28 ? (0.5 + Math.random()*0.45)     // 逃げ(序盤から前に出る)
+             : roll>0.72 ? (2.7 + Math.random()*1.5)       // 追い込み(後方待機→終盤に爆発)
+             :             (1.0 + Math.random()*1.5);       // 標準(中団から)
+      return { k, amp:(0.14+Math.random()*0.28)*drama, f:0.6+Math.random()*1.3, p:Math.random()*6.283 };
+    });
+    const jRaw=(o,t)=> t + (o.amp/(6.283*o.f))*(Math.sin(6.283*o.f*t+o.p)-Math.sin(o.p));   // 単調増加の道のり(ゆらぎ)
     const jEnd=jn.map(o=>jRaw(o,1)||1);
-    const finalP=runners.map((run,i)=> run ? (1 - (rankOf[i]||0)*gap) : 0);   // 同順位(同点)は同じ到達点=一緒にゴール
-    const smooth=x=>{ x=Math.max(0,Math.min(1,x)); return x*x*(3-2*x); };
+    const finalP=runners.map((run,i)=> run ? (1 - spread*Math.pow((rankOf[i]||0)/maxRank, 2)) : 0);   // 上位ほど着差を詰める(2乗=1・2着はほぼ横並び/後方ほど自然に離れる)。同順位(同点)は同じ到達点=一緒にゴール
     const endRace=()=>{ if(raceDone) return; raceDone=true; runners.forEach(r=>{ if(r) r.classList.remove("surge"); }); finishRace(runners, winSet); };
     let start=null, lastGallop=0, crowdDone=false, prevTs=0;
     // 汗は失速した人だけ・全体で数回まで(ゴール前に全員汗は防ぐが、ちゃんと出す)
@@ -1621,20 +1678,19 @@
       if(start==null){ start=ts; prevTs=ts; }
       const el=ts-start, t=Math.min(1, el/DUR);
       const dt=Math.max(1, ts-prevTs); prevTs=ts;
-      const conv=smooth((t-0.72)/0.28);   // 収束は遅めに始めてラストの追い込みを際立たせる(波乱→真の順位)
       runners.forEach((run,i)=>{
         if(!run) return;   // 不参加スロットは飛ばす
-        const j=Math.max(0,Math.min(1, jRaw(jn[i],t)/jEnd[i]));
-        let prog=j*(1-conv) + finalP[i]*conv;               // 波乱→真の順位(1位が急浮上・見せかけ先頭が急失速)
-        if(t>0.88 && rankOf[i]<=1){ const u=(t-0.88)/0.12; prog=prog+(finalP[i]-prog)*(u*u); }   // 1位2位はラスト全力
-        prog=Math.max(0,Math.min(1,prog));
+        // 進行=最終到達点(順位)×ペース。ペース=線形22%+(道のり^k)78%で「最初からしっかり少しずつ動く」(完全静止させない=出だしの棒立ちを防ぐ)。前進のみ(逆走なし)
+        const base=Math.max(0,Math.min(1, jRaw(jn[i],t)/jEnd[i]));
+        const pace=0.22*base + 0.78*Math.pow(base, jn[i].k);
+        let prog=finalP[i]*pace;
+        prog=Math.max(prevP[i], Math.min(1,prog));   // 単調(絶対に後退させない)
         setLeft(run, prog);
-        // 実際の速度で演出: 速い=みなぎる/後方流線、遅い(失速・後退)=汗
+        // 実際の速度で演出: 速い=みなぎる/後方流線(終盤の抜き去り)、遅い(失速)=汗(先行して失速する下位)
         const vrat=(prog-prevP[i])/(dt/DUR); prevP[i]=prog;
-        run.classList.toggle("surge", vrat>1.3 && t<0.985);   // 加速=金オーラ+後方流線
-        // 汗=失速した人。勝者は汗をかかない・全体回数と間隔を絞ってゴール前の全員汗は防ぐ
-        if(sweatBudget>0 && !winSet.includes(i) && vrat<0.6 && t>0.3 && t<0.86 && el-fxLast[i]>900 && ts-lastSweatTs>200){
-          fxLast[i]=el; lastSweatTs=ts; sweatBudget--; spawnSweat(run, dirLeft);
+        run.classList.toggle("surge", vrat>1.35 && t<0.99);   // 加速=金オーラ+後方流線
+        if(sweatBudget>0 && !winSet.includes(i) && vrat<0.5 && t>0.35 && t<0.9 && el-fxLast[i]>900 && ts-lastSweatTs>200){
+          fxLast[i]=el; lastSweatTs=ts; sweatBudget--; spawnSweat(run);   // 失速=汗
         }
       });
       if(!crowdDone && t>=0.7){ crowdDone=true; if(seOn) playStretch(); }
@@ -1654,10 +1710,10 @@
     const trackEl=document.getElementById("track");
     trackEl.classList.remove("goalhit"); void trackEl.offsetWidth; trackEl.classList.add("goalhit");
     setTimeout(()=>trackEl.classList.remove("goalhit"),640);
-    // 数字はゴール側から順に出す(大きいほど勝ち=右から / 小さいほど勝ち=左から)。不参加スロットは除外
+    // 数字は「負けてる人(後ろ)から」順に出す=1位の数字が最後に出る。不参加スロットは除外
     const revealOrder=runners.map((_,i)=>i).filter(i=>runners[i]).sort((a,b)=>{
       const la=parseFloat(runners[a].style.left)||0, lb=parseFloat(runners[b].style.left)||0;
-      return dir==="lo" ? (la-lb) : (lb-la);
+      return la-lb;   // 左(後ろ=負け)ほど先に、右(前=勝ち)ほど後に
     });
     revealOrder.forEach((idx,k)=>{
       const num=runners[idx].querySelector(".r-num"); num.textContent=numbers[idx];
@@ -1676,16 +1732,18 @@
     else if(isHost) setTimeout(()=>{ oSettle(); }, 1000);
   }
   // 減速中の汗: 頭の上から進行方向の後ろへ飛び散るしずく
-  function spawnSweat(run, dirLeft){
+  function spawnSweat(run){
     const dot=run.querySelector(".r-dot"); if(!dot) return;
-    const r=dot.getBoundingClientRect();
-    const back = dirLeft ? 1 : -1;   // 後ろ方向(右向き走行なら左へ、左向きなら右へ)
+    const r=dot.getBoundingClientRect(); if(!r.width) return;
+    const s=Math.max(0.4, r.width/32);   // アイコンのサイズに合わせて汗粒も拡縮(99人レースで大きすぎ防止)
+    const back = -1;   // つねに右向き走行=汗は後ろ(左)へ飛ぶ
     for(let k=0;k<3;k++){
       const el=document.createElement("div"); el.className="sweat";
-      el.style.left=(r.left+r.width*0.2+Math.random()*10)+"px";
-      el.style.top=(r.top-4+Math.random()*6)+"px";
-      el.style.setProperty("--sx",(back*(16+Math.random()*22)).toFixed(0)+"px");
-      el.style.setProperty("--sy",(-(14+Math.random()*16)).toFixed(0)+"px");
+      el.style.width=(14*s).toFixed(1)+"px"; el.style.height=(19*s).toFixed(1)+"px";
+      el.style.left=(r.left+r.width*0.2+Math.random()*r.width*0.3)+"px";
+      el.style.top=(r.top-4*s+Math.random()*6*s)+"px";
+      el.style.setProperty("--sx",(back*(16+Math.random()*22)*s).toFixed(0)+"px");
+      el.style.setProperty("--sy",(-(14+Math.random()*16)*s).toFixed(0)+"px");
       el.style.setProperty("--sr",((Math.random()*60-70)).toFixed(0)+"deg");
       document.body.appendChild(el); setTimeout(()=>el.remove(),620);
     }
@@ -2191,7 +2249,9 @@
     }else if(a.kind==="begReply"){   // ねだられた側の返事
       if(oPhase!=="nego" || !nego || nego.pending!==a.id) return;
       const beg=idxOfId(nego.begId), amt=nego.amt||NEG_GIFT;
-      if(a.ok){ if(players[i].chips-amt>=MIN_BET && beg>=0){ players[i].chips-=amt; players[beg].chips+=amt; pendingDeal={amt, id:++dealId, from:{name:players[i].name,color:players[i].color}, to:{name:players[beg].name,color:players[beg].color}}; } nego.pending=null; startOnlineNego(); }
+      if(a.ok){ if(players[i].chips-amt>=MIN_BET && beg>=0){ players[i].chips-=amt; players[beg].chips+=amt; pendingDeal={amt, id:++dealId, fromId:players[i].id, toId:players[beg].id, from:{name:players[i].name,color:players[i].color}, to:{name:players[beg].name,color:players[beg].color}}; }
+        stopHostTimer(); nego.pending=null; nego.dealing=true; broadcastSnap();   // 交渉成立の演出中は全員待機
+        setTimeout(()=>{ if(nego) nego.dealing=false; startOnlineNego(); }, 2200); }   // 演出が終わってから次へ
       else{ nego.refused.push(players[i].id); nego.pending=null; if(!onlineDonors().length){ retireBeggarOnline(); } else broadcastSnap(); }
     }else if(a.kind==="retire"){   // 貧乏人が自らリタイア
       if(oPhase!=="nego" || !nego || nego.begId!==a.id) return;
@@ -2241,7 +2301,7 @@
       snap.numbers=numbers.slice();
     }
     if(oPhase==="result" && window.__lastResult){ snap.result=window.__lastResult; }
-    if(oPhase==="nego"){ snap.nego = nego ? {begId:nego.begId, refused:nego.refused.slice(), pending:nego.pending, amt:nego.amt||NEG_GIFT} : null; }
+    if(oPhase==="nego"){ snap.nego = nego ? {begId:nego.begId, refused:nego.refused.slice(), pending:nego.pending, amt:nego.amt||NEG_GIFT, dealing:!!nego.dealing} : null; }
     if(pendingDeal){ snap.deal=pendingDeal; pendingDeal=null; }
     try{ ch.send({ type:"broadcast", event:"snap", payload:snap }); }catch(e){}
     if(isHost) applySnap(snap);   // ホスト自身も同じ描画経路
@@ -2266,7 +2326,7 @@
     if(s.lobby) lastLobby=s.lobby;   // スタンプ色の割り出し用
     if(s.phase!=="race") lastRacedRound=-1;   // レース以外に来たらリセット=次のレースは必ず走る(ロビー/もう一回で前回レースが残るバグ対策)
     if(s.noticeId && s.noticeId>lastNoticeShown){ lastNoticeShown=s.noticeId; if(s.notice) showToast(s.notice, 2600); }   // 無効レース等のお知らせ
-    if(s.deal && s.deal.id>lastDealShown){ lastDealShown=s.deal.id; celebrateDeal(s.deal.amt, s.deal.from, s.deal.to); }   // 交渉成立の演出(全員に)
+    if(s.deal && s.deal.id>lastDealShown){ lastDealShown=s.deal.id; celebrateDeal(s.deal.amt, s.deal.from, s.deal.to, s.deal.fromId===myId); }   // 交渉成立の演出(あげた人は−表示)
     document.getElementById("roundPill").textContent = s.phase==="lobby" ? "ロビー" : ("第"+round+" / "+totalRounds+" レース");
     setDirBadge(s.phase==="enter"||s.phase==="bet"||s.phase==="race"||s.phase==="result");
     renderByPhase(s);
@@ -2283,6 +2343,8 @@
     if(s.phase==="nego"){
       const neg=s.nego, mi=myIndex();
       if(!neg){ showWait("チップの交渉中…", true); return; }
+      // 交渉成立の演出中は全員、他ダイアログを閉じて待機(次のねだるダイアログは演出後に出す)
+      if(neg.dealing){ document.getElementById("begOverlay").classList.remove("on"); stopDisplayTimer(); showWait("交渉成立！", false); return; }
       const begName=(players.find(p=>p.id===neg.begId)||{}).name||"だれか";
       const iAmBeggar = (mi>=0 && players[mi].id===neg.begId);
       startDisplayTimer(timeLimit, "nego"+neg.begId);   // 交渉も制限時間に含む(全員に残り時間)
