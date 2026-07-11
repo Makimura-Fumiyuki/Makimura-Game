@@ -6,10 +6,10 @@
 <title>俺たちダービー</title>
 <meta name="apple-mobile-web-app-title" content="俺たちダービー">
 <meta name="application-name" content="俺たちダービー">
-<meta name="description" content="「コースを走るのは馬じゃない。俺たちだ」お題に数字で答え、誰が１位になるかチップで予想しよう">
+<meta name="description" content="「コースを走るのは馬じゃない。俺たちだ」お題に数字で答え、誰が一番大きい数字を回答したか予想して、チップを賭けよう">
 <meta property="og:type" content="website">
 <meta property="og:title" content="俺たちダービー">
-<meta property="og:description" content="「コースを走るのは馬じゃない。俺たちだ」お題に数字で答え、誰が１位になるかチップで予想しよう">
+<meta property="og:description" content="「コースを走るのは馬じゃない。俺たちだ」お題に数字で答え、誰が一番大きい数字を回答したか予想して、チップを賭けよう">
 <meta property="og:url" content="https://makimura-gamehub.com/derby.html">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary">
@@ -137,6 +137,7 @@
   .lobby-row .p-dot{ width:24px; height:24px; }
   .lobby-row .lr-nm{ flex:1 1 0; font-weight:900; text-align:left; }
   .lobby-row .lr-host{ font-size:11px; font-weight:700; color:var(--gold-dark); background:rgba(242,176,53,.16); border-radius:999px; padding:2px 9px 3px; }
+  .lr-you{ flex:none; font-size:11px; font-weight:900; color:#fff; background:#8a6a3f; border-radius:999px; padding:2px 10px 3px; margin-left:6px; }
   .wait-prog{ font-family:"Noto Sans JP","Hiragino Sans",sans-serif; font-weight:900; font-size:20px; color:var(--turf-dark); }
   .wait-who{ display:flex; flex-wrap:wrap; gap:7px; justify-content:center; }
   .wait-chip{ display:inline-flex; align-items:center; gap:5px; font-size:12.5px; font-weight:700; background:#fff; border-radius:999px; padding:4px 11px 5px; opacity:.5; }
@@ -694,7 +695,7 @@
     <div class="setup-block" id="onlineSetup">
       <div class="name-block">
         <div class="sec-label">あなたの名前</div>
-        <input class="p-input online-name" id="onlineName" maxlength="8" placeholder="なまえ" autocomplete="off">
+        <input class="p-input online-name" id="onlineName" maxlength="8" placeholder="なまえ" value="なまえ" autocomplete="off">
       </div>
       <div class="room-btns">
         <button class="mode-btn sm" id="makeRoom">部屋を作る<small>合言葉を発行</small></button>
@@ -1269,7 +1270,7 @@
       if(ok){ any=true; el.addEventListener("click",()=>{ ensureAudio(); playSelect(); onPick(i); }); }
       list.appendChild(el);
     });
-    document.getElementById("negoHint").textContent = any ? "金額を決めて、くれそうな人をタップ" : "この額をくれる人がいない…減らすかリタイア";
+    document.getElementById("negoHint").textContent = any ? "金額を決めて、くれそうな人を"+(window.__TAPW||"タップ") : "この額をくれる人がいない…減らすかリタイア";
     document.getElementById("negoRetire").onclick=()=>{ ensureAudio(); playSelect(); onRetire(); };
     showPanel("nego");
   }
@@ -1509,7 +1510,7 @@
     if(el._sig===sig) return;   // 変化がなければ作り直さない(点滅防止)
     el._sig=sig;
     if(!rows.length){ el.innerHTML=""; el.classList.remove("undoable"); return; }
-    let html='<div class="bl-head">賭け状況'+(canEdit?'（タップで編集）':'')+'</div>';
+    let html='<div class="bl-head">賭け状況'+(canEdit?'（'+(window.__TAPW||"タップ")+'で編集）':'')+'</div>';
     rows.forEach(r=>{ html+='<div class="bl-row'+(r.ok?'':' pick')+'" data-seat="'+r.seat+'"><span class="p-dot" style="'+dotStyle(r.from.color)+'"></span>'
       +'<span>'+esc(r.from.name)+'</span><span class="bl-arrow">→</span>'
       +'<span class="p-dot" style="'+dotStyle(r.to.color)+'"></span><span>'+esc(r.to.name)+'</span>'
@@ -2450,7 +2451,7 @@
     const box=document.getElementById("lobbyCode");
     if(box.dataset.code===code) return;
     box.dataset.code=code;
-    box.innerHTML='<div class="room-note">合言葉（タップでコピー）</div>'
+    box.innerHTML='<div class="room-note">合言葉（'+(window.__TAPW||"タップ")+'でコピー）</div>'
       +'<div class="code-show" id="lobbyCodeShow"><svg class="cs-copy" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg><span class="cs-code">'+code+'</span></div>';
     document.getElementById("lobbyCodeShow").addEventListener("click", async ()=>{
       try{ await navigator.clipboard.writeText(code); showToast("合言葉をコピーした"); }catch(e){}
@@ -2485,13 +2486,13 @@
     roster.forEach((m,i)=>{
       const row=document.createElement("div"); row.className="lobby-row";
       const col=COLORS[i%COLORS.length];
-      row.innerHTML='<span class="p-dot" style="'+dotStyle(col)+'"></span><span class="lr-nm">'+esc(m.name)+'</span>'+(m.host?'<span class="lr-host">ホスト</span>':'');
+      row.innerHTML='<span class="p-dot" style="'+dotStyle(col)+'"></span><span class="lr-nm">'+esc(m.name)+'</span>'+(m.host?'<span class="lr-host">部屋主</span>':'')+(m.id===myId?'<span class="lr-you">じぶん</span>':'');
       list.appendChild(row);
     });
     const cnt=roster.length;
     renderLobbyRounds(cnt);
     if(isHost){
-      document.getElementById("lobbyHint").textContent=cnt<MINP?("2人以上集まったら出走できます（現在"+cnt+"人）"):"みんな集まった？ 出走できます";
+      document.getElementById("lobbyHint").textContent=cnt<MINP?"2人以上集まったら出走できます":"みんな集まった？ 出走できます";
       document.getElementById("lobbyStart").style.display= cnt>=MINP ? "" : "none";
     }else{
       document.getElementById("lobbyHint").textContent="ホストの開始を待っています…";
@@ -2567,5 +2568,6 @@
   }
 })();
 </script>
+<script>document.addEventListener("focusin",function(e){var t=e.target;if(t&&t.tagName==="INPUT"&&t.value){setTimeout(function(){try{t.select();}catch(_){}},0);}});(function(){var tap=(window.matchMedia&&matchMedia("(pointer:coarse)").matches)?"タップ":"クリック";window.__TAPW=tap;function run(){var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);var n;while(n=w.nextNode()){var v=n.nodeValue;if(v&&(v.indexOf("タップ")>=0||v.indexOf("タッチ")>=0))n.nodeValue=v.split("タッチ").join(tap).split("タップ").join(tap);}}if(document.readyState!=="loading")run();else document.addEventListener("DOMContentLoaded",run);})();</script>
 </body>
 </html>

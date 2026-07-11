@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>待て！アート</title>
+<meta name="apple-mobile-web-app-title" content="待て！アート">
+<meta name="description" content="何を描いている分かったら「待て！」誰よりも早く答えよう。——そして、次のお題の絵は“続き”から描きます。つまり「上書きお絵描きゲーム」です">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="牧村が作ったゲーム集">
+<meta property="og:title" content="待て！アート">
+<meta property="og:description" content="何を描いている分かったら「待て！」誰よりも早く答えよう。——そして、次のお題の絵は“続き”から描きます。つまり「上書きお絵描きゲーム」です">
+<meta name="twitter:card" content="summary">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+  :root{
+    --bg:#f6eede;
+    --ink:#3a2a1c;
+    --red:#e2472e;
+    --brown:#8a5a2e;
+    --brown-dark:#6b431f;
+    --gold:#f2b64c;
+    --milk:#fff7ea;
+    --card:#fdf8ef;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; font-family:"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif; }
+  html,body{ height:100%; }
+  body{ background:var(--bg); color:var(--ink); overflow:hidden; -webkit-tap-highlight-color:transparent; }
+  button{ color:inherit; }
+
+  /* ===== シーン ===== */
+  .scene{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
+    opacity:0; pointer-events:none; transform:translateY(16px);
+    transition:opacity .32s linear, transform .32s cubic-bezier(.2,.8,.3,1);
+    overflow-y:auto; scrollbar-width:none;
+  }
+  .scene::-webkit-scrollbar{ display:none; }
+  .scene.on{ opacity:1; pointer-events:auto; transform:translateY(0); }
+  #titleScene{ padding:11vh 20px 150px; gap:26px; }
+  #lobbyScene{ padding:60px 20px 60px; gap:16px; }
+  #gameScene{ padding:60px 10px 130px; gap:10px; justify-content:flex-start; }
+
+  /* ===== タイトルロゴ: コーヒーカップに「アート」、その上に待て！バースト ===== */
+  .logo{ text-align:center; user-select:none; }
+  .logo-stack{ position:relative; display:inline-block; padding-top:44px; }
+  .tm-art{
+    font-size:clamp(28px,7.5vw,40px); font-weight:900; letter-spacing:.12em; text-indent:.12em;
+    color:var(--milk); white-space:nowrap;
+    text-shadow:0 2px 4px rgba(110,60,15,.42);   /* 発光ではなく落ち影(背景に溶けない用) */
+  }
+  .tm-wrap{ position:absolute; top:-44%; left:-44%; transform:rotate(-7deg); padding:22px 40px 17px; z-index:2; width:max-content; animation:burstSnap .52s steps(2,end) infinite; }
+  @keyframes burstSnap{ 0%{ transform:rotate(-8.2deg) scale(1); } 50%{ transform:rotate(-4.8deg) scale(1.045); } 100%{ transform:rotate(-8.2deg) scale(1); } }
+  .tm-burst{ position:absolute; inset:0; width:100%; height:100%; z-index:0; filter:drop-shadow(0 4px 8px rgba(140,40,15,.3)); }
+  .tm-main{
+    position:relative; z-index:1; white-space:nowrap;
+    font-size:clamp(38px,10vw,54px); font-weight:900; font-style:italic; color:#fff;
+    letter-spacing:.02em; text-shadow:0 2px 0 rgba(140,30,10,.5);
+    animation:mateSnap .52s steps(2,end) infinite;
+  }
+  @keyframes mateSnap{
+    0%{ transform:rotate(-1.6deg) scale(1); }
+    50%{ transform:rotate(1.4deg) scale(1.045); }
+    100%{ transform:rotate(-1.6deg) scale(1); }
+  }
+  .tagline{ font-size:clamp(13px,3.6vw,16px); font-weight:700; letter-spacing:.14em; opacity:.75; text-align:center; }
+  .sec-label{ font-size:14px; font-weight:800; letter-spacing:.4em; text-indent:.4em; opacity:.55; text-align:center; }
+
+  /* ===== モード選択(derby準拠) ===== */
+  .mode-row{ display:flex; gap:14px; justify-content:center; flex-wrap:wrap; width:min(94vw,440px); }
+  .mode-btn{
+    flex:1 1 0; min-width:150px; padding:18px 10px 15px; cursor:pointer; white-space:nowrap;
+    font-weight:900; font-size:17px; letter-spacing:.06em; color:#fff; text-align:center;
+    background:linear-gradient(160deg,#b07a42,var(--brown) 55%,var(--brown-dark)); border:none; border-radius:14px;
+    box-shadow:0 4px 0 #4c2f14, 0 7px 14px rgba(90,55,20,.34);
+    transition:transform .14s cubic-bezier(.3,1.4,.5,1);
+  }
+  .mode-btn small{ display:block; margin-top:5px; font-size:11.5px; font-weight:700; opacity:.85; }
+  .mode-btn:active{ transform:translateY(2px); box-shadow:0 2px 0 #4c2f14; }
+  .mode-btn.sel{ outline:4px solid var(--gold); outline-offset:2px; }
+  .mode-btn.sm{ font-size:16px; padding:14px 8px 12px; }
+  .setup-block{ display:none; flex-direction:column; align-items:center; gap:22px; }
+  .setup-block.on{ display:flex; animation:panelIn .3s cubic-bezier(.2,.9,.3,1); }
+  @keyframes panelIn{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:translateY(0); } }
+
+  /* ===== メンバー(枠で囲む) ===== */
+  .card-box{
+    width:min(92vw,380px);
+    background:rgba(255,255,255,.5); border:1px solid rgba(58,42,28,.22); border-radius:14px;
+    padding:16px 18px 16px; box-shadow:0 2px 8px rgba(90,55,20,.08);
+  }
+  .players-list{ display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
+  .p-row{ display:flex; align-items:center; gap:10px; }
+  .p-dot{ width:26px; height:26px; border-radius:50%; flex:none; box-shadow:inset 0 2px 3px rgba(255,255,255,.4), 0 1px 3px rgba(0,0,0,.25); }
+  .p-input{
+    flex:1 1 0; min-width:0; font-size:17px; font-weight:700; color:var(--ink);
+    padding:10px 12px; border:1.8px solid rgba(58,42,28,.25); border-radius:10px; background:#fff; outline:none;
+  }
+  .p-input:focus{ border-color:var(--brown); }
+  .p-del{ flex:none; width:34px; height:34px; border:none; border-radius:9px; cursor:pointer;
+    background:rgba(58,42,28,.08); color:rgba(58,42,28,.5); font-size:20px; font-weight:900; line-height:1; }
+  .p-del:active{ transform:translateY(1px); }
+  .p-add{
+    width:100%; padding:11px; border:1.8px dashed rgba(138,90,46,.55); border-radius:10px; cursor:pointer;
+    background:rgba(138,90,46,.06); color:var(--brown-dark); font-size:15px; font-weight:700;
+  }
+  .p-add:disabled{ opacity:.4; cursor:default; }
+
+  .txt-btn{
+    padding:9px 22px; cursor:pointer; font-size:14.5px; font-weight:800; letter-spacing:.08em; white-space:nowrap;
+    color:var(--ink); background:rgba(255,255,255,.75); border:1.6px solid rgba(58,42,28,.35); border-radius:9px;
+  }
+  .txt-btn:active{ transform:translateY(1px); }
+  .txt-btn:disabled{ opacity:.35; pointer-events:none; }
+  .txt-btn.emph{
+    color:#fff; background:linear-gradient(160deg,#f0603f,var(--red) 55%,#b93117);
+    border:none; box-shadow:0 3px 0 #8f2510; font-size:15.5px;
+  }
+  .txt-btn.emph:active{ transform:translateY(2px); box-shadow:0 1px 0 #8f2510; }
+
+  /* ===== ルール ===== */
+  .rule-frame{
+    display:flex; gap:26px; justify-content:center; align-items:flex-start; flex-wrap:wrap;
+    background:rgba(255,255,255,.5); border:1px solid rgba(58,42,28,.22); border-radius:14px;
+    padding:14px 26px 13px; box-shadow:0 2px 8px rgba(90,55,20,.08);
+  }
+  .rule-col{ display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .rc-name{ font-size:13px; font-weight:800; letter-spacing:.12em; opacity:.6; text-align:center; }
+  .rc-row{ display:flex; align-items:center; gap:10px; }
+  .rc-btn{
+    width:40px; height:40px; border-radius:10px; border:none; cursor:pointer; font-size:22px; font-weight:900; line-height:1;
+    color:#fff; background:linear-gradient(160deg,#b07a42,var(--brown) 60%,var(--brown-dark));
+    box-shadow:0 3px 0 #4c2f14;
+  }
+  .rc-btn:active{ transform:translateY(2px); box-shadow:none; }
+  .rc-val{ min-width:78px; text-align:center; font-size:24px; font-weight:900; color:var(--red); white-space:nowrap; }
+  .dbn-toggle{ display:flex; gap:8px; }
+  .dbn-btn{
+    min-width:64px; padding:9px 12px 10px; cursor:pointer; font-size:14px; font-weight:800; letter-spacing:.04em; white-space:nowrap;
+    color:var(--ink); background:rgba(255,255,255,.6); border:1.8px solid rgba(58,42,28,.3); border-radius:9px;
+  }
+  .dbn-btn.sel{ color:#fff; background:linear-gradient(160deg,#f0603f,var(--red) 55%,#b93117); border-color:#8f2510; }
+  .dbn-btn:active{ transform:translateY(1px); }
+  .dbn-btn.locked{ opacity:.4; }
+  .rc-reset{
+    font-size:12.5px; font-weight:700; letter-spacing:.1em; opacity:.55; cursor:pointer;
+    background:none; border:none; text-decoration:underline; color:var(--ink);
+    margin-top:-12px;
+  }
+  .start-btn{
+    min-width:min(86vw,340px); padding:17px 30px; cursor:pointer;
+    font-size:22px; font-weight:900; letter-spacing:.3em; text-indent:.3em; white-space:nowrap; color:#fff;
+    background:linear-gradient(160deg,#f0603f,var(--red) 55%,#b93117);
+    border:none; border-radius:16px; box-shadow:0 6px 0 #8f2510, 0 10px 22px rgba(190,60,30,.35);
+  }
+  .start-btn:active{ transform:translateY(4px); box-shadow:0 2px 0 #8f2510; }
+  .start-btn:disabled{ opacity:.4; pointer-events:none; }
+
+  /* ===== オンライン入室 ===== */
+  .name-block{ display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .online-name{ width:min(80vw,260px); text-align:center; font-size:18px; }
+  .room-btns{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  .room-area{ display:flex; flex-direction:column; align-items:center; gap:14px; min-height:36px; text-align:center; width:100%; }
+  .room-note{ font-size:13.5px; font-weight:700; opacity:.75; letter-spacing:.06em; }
+  .room-note.err{ color:var(--red); opacity:1; }
+  @keyframes waitDots{ 0%,100%{ opacity:.35; } 50%{ opacity:1; } }
+  .room-wait{ animation:waitDots 1.6s ease-in-out infinite; }
+  .code-show{
+    display:inline-flex; align-items:center; gap:12px; background:#fff; cursor:pointer;
+    border:2.5px solid var(--brown); border-radius:12px; padding:8px 20px 10px 16px;
+  }
+  .code-show .cs-copy{ width:24px; height:24px; flex:none; fill:none; stroke:var(--brown); stroke-width:2; }
+  .code-show .cs-code{ font-weight:900; font-size:38px; letter-spacing:.26em; text-indent:.26em; color:var(--brown-dark); }
+  .code-row{ display:flex; align-items:center; gap:10px; justify-content:center; }
+  .paste-btn{ flex:none; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:4px; background:none; border:none; color:var(--brown); }
+  .paste-btn svg{ width:26px; height:26px; }
+  .paste-btn:active{ transform:translateY(1px); }
+  .code-input{
+    width:210px; padding:10px 6px; text-align:center; font-weight:900;
+    font-size:24px; letter-spacing:.24em; text-indent:.24em; text-transform:uppercase;
+    color:var(--ink); background:#fff; border:2px solid rgba(58,42,28,.45); border-radius:8px; outline:none;
+    line-height:1.2; caret-color:var(--ink);
+  }
+  /* ロビー(専用画面) */
+  .lobby-list{ display:flex; flex-direction:column; gap:7px; width:min(88vw,340px); }
+  .lobby-row{
+    display:flex; align-items:center; gap:10px; padding:8px 13px;
+    background:#fff; border:1.6px solid rgba(58,42,28,.18); border-radius:10px;
+    font-size:15px; font-weight:800; text-align:left;
+  }
+  .lobby-row .p-dot{ width:20px; height:20px; }
+  .lobby-row .nm{ flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .lobby-row .you{ flex:none; font-size:11px; font-weight:900; color:#fff; background:var(--brown); border-radius:999px; padding:2px 10px 3px; }
+  .lobby-row .hostmark{ flex:none; font-size:11px; font-weight:900; color:#fff; background:var(--red); border-radius:999px; padding:2px 10px 3px; }
+  #lobbyBox{ display:flex; flex-direction:column; align-items:center; gap:16px; width:100%; }
+  .lobby-frame{
+    display:flex; flex-direction:column; align-items:center; gap:14px; width:min(94vw,420px);
+    background:rgba(255,255,255,.5); border:1px solid rgba(58,42,28,.22); border-radius:16px;
+    padding:18px 16px 18px; box-shadow:0 2px 10px rgba(90,55,20,.1);
+  }
+
+  /* ===== ゲーム画面 ===== */
+  .info-col{ display:flex; flex-direction:column; align-items:center; gap:7px; }
+  .info-pill{
+    background:#fff; border:2px solid rgba(138,90,46,.55); border-radius:999px;
+    padding:6px 16px 7px; font-size:14px; font-weight:800; letter-spacing:.06em; white-space:nowrap;
+  }
+  /* 描き手表示(枠なし: ペン+アイコン+名前) */
+  .drawer-line{ display:flex; align-items:center; gap:7px; font-size:14px; font-weight:800; letter-spacing:.04em; }
+  .drawer-line svg{ width:16px; height:16px; flex:none; color:var(--brown-dark); }
+  .drawer-line .p-dot{ width:18px; height:18px; }
+
+  /* カップ: 縁そのものがタイマー */
+  .cup-wrap{
+    position:relative; width:min(92vw,54svh); aspect-ratio:1/1; border-radius:50%;
+    background:#fdfcf8; padding:2.8%;
+    box-shadow:0 14px 32px rgba(80,50,20,.28), inset 0 -4px 10px rgba(0,0,0,.06);
+  }
+  .handle-arm{ position:absolute; inset:0; z-index:-1; pointer-events:none; }
+  .cup-handle{
+    position:absolute; top:50%; right:-11%; width:15%; height:9%;
+    transform:translateY(-50%); border-radius:999px; background:#fdfcf8;
+    box-shadow:0 6px 12px rgba(80,50,20,.2), inset 0 -2px 4px rgba(0,0,0,.08), inset 0 2px 3px rgba(255,255,255,.9);
+    pointer-events:auto; cursor:grab; touch-action:none;
+  }
+  .cup-handle:active{ cursor:grabbing; }
+  .cup-wrap.erasing{ background:#ec9377; }
+  .cup-wrap.erasing .cup-handle{ background:#ec9377; }
+  .cup-in{ position:relative; width:100%; height:100%; border-radius:50%; overflow:hidden;
+    box-shadow:inset 0 4px 12px rgba(60,30,5,.4); }
+  #cup,#swirlCv,#art{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  #swirlCv{ animation:swirlSpin 26s linear infinite; }
+  @keyframes swirlSpin{ to{ transform:rotate(360deg); } }
+  /* ペン/消しゴムのカーソル */
+  #art{
+    touch-action:none;
+    cursor:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24'%3E%3Cpath d='M3 21l1.2-4.2L16.6 4.4a2 2 0 0 1 2.8 0l.2.2a2 2 0 0 1 0 2.8L7.2 19.8z' fill='%23fff7ea' stroke='%236b431f' stroke-width='1.6'/%3E%3C/svg%3E") 3 23, crosshair;
+  }
+  .cup-wrap.erasing #art{
+    cursor:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24'%3E%3Cg transform='rotate(-35 12 12)' fill='none' stroke='%236b431f' stroke-width='1.7'%3E%3Crect x='4' y='8.5' width='16' height='8' rx='2' fill='%23fdfdf8'/%3E%3Cline x1='11.5' y1='8.5' x2='11.5' y2='16.5'/%3E%3C/g%3E%3C/svg%3E") 4 19, cell;
+  }
+  #gameScene.online .cup-wrap{ width:min(80vw,40svh); }
+
+  /* 円形タイマー(カップの縁上・半透明) */
+  .tring{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:3; }
+  /* お題入力中: 1台=タイマー全部非表示 / オンライン=リングはお題タイマー・ラベルだけ非表示 */
+  .cup-wrap.hide-ring .tring{ display:none; }
+  .cup-wrap.hide-ring .tier-label, .cup-wrap.hide-labels .tier-label{ display:none; }
+  .tier-label{
+    position:absolute; z-index:4; pointer-events:none;
+    font-size:12px; font-weight:900; color:#fff; letter-spacing:.02em;
+    background:var(--brown); border-radius:999px; padding:1px 8px 2px;
+    box-shadow:0 1px 4px rgba(60,30,5,.3);
+    transition:opacity .25s linear, background .25s linear;
+  }
+  .tier-label.t5{ background:#2f9e55; }
+  .tier-label.t4{ background:#7ab53a; }
+  .tier-label.t3{ background:#f39a1f; }
+  .tier-label.t2{ background:#e07028; }
+  .tier-label.t1{ background:#e3452f; }
+  .tier-label.off{ background:#b7aa99; opacity:.5; }
+
+  .ctrl-row{ display:flex; flex-direction:column; align-items:center; gap:12px; width:100%; margin-top:14px; }
+  .sub-ctrl{ display:flex; flex-direction:column; align-items:center; gap:10px; justify-content:center; }
+  #mateBtn{ margin-top:10px; }
+  #mateBtn{
+    min-width:min(70vw,280px); padding:10px 26px; cursor:pointer; border:none; border-radius:16px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    color:#fff; background:linear-gradient(160deg,#f0603f,var(--red) 55%,#b93117);
+    box-shadow:0 5px 0 #8f2510, 0 9px 18px rgba(190,60,30,.3);
+    animation:matePulse 1.6s ease-in-out infinite;
+  }
+  #mateBtn b{ font-size:26px; font-weight:900; font-style:italic; letter-spacing:.05em; white-space:nowrap; }
+  #mateBtn small{ font-size:11px; font-weight:700; opacity:.9; white-space:nowrap; }
+  #mateBtn:active{ transform:translateY(3px); box-shadow:0 2px 0 #8f2510; animation:none; }
+  @keyframes matePulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.035); } }
+  #spoonBtn{
+    position:relative; width:216px; box-sizing:border-box; padding:11px 10px; cursor:pointer; overflow:hidden;
+    border:2px solid rgba(138,90,46,.55); border-radius:16px; background:#fff;
+    display:flex; align-items:center; justify-content:center;
+  }
+  #spoonBtn .gfill{
+    position:absolute; left:0; top:0; bottom:0; width:0%;
+    background:linear-gradient(90deg,#ffe3b8,#f6bf78); transition:width .12s ease; z-index:0;
+  }
+  #spoonBtn.on .gfill{ background:linear-gradient(90deg,#ffb49e,#f2794f); }
+  #spoonBtn>*{ position:relative; z-index:1; }
+  #spoonBtn span{ font-size:13px; font-weight:800; letter-spacing:.04em; white-space:nowrap; }
+  #spoonBtn .sp-ico{ width:19px; height:19px; flex:none; margin-right:6px; }
+  #spoonBtn:active{ transform:translateY(2px); }
+  /* ペンの太さ(5段階) */
+  #penSizes{ display:flex; align-items:center; justify-content:space-between; width:216px; box-sizing:border-box; padding:0 2px; }
+  .pen-b{
+    width:34px; height:44px; border:2px solid rgba(138,90,46,.4); border-radius:10px; cursor:pointer;
+    background:#fff; display:flex; align-items:center; justify-content:center; padding:0;
+  }
+  .pen-b i{ display:block; border-radius:50%; background:var(--brown-dark); }
+  .pen-b.sel{ border-color:var(--red); background:#fff0e8; }
+  .pen-b:active{ transform:translateY(1px); }
+
+  /* お題を考える(インライン: ボタン群の場所に出す) */
+  #topicPanel{
+    display:none; flex-direction:column; align-items:center; gap:10px; width:min(94vw,430px);
+    background:var(--card); border:1.8px solid rgba(138,90,46,.4); border-radius:16px;
+    padding:14px 16px 14px; box-shadow:0 4px 14px rgba(90,55,20,.15);
+  }
+  #topicPanel.on{ display:flex; }
+  .tp-title{ font-size:17px; font-weight:900; letter-spacing:.1em; }
+  .tp-note{ font-size:12.5px; font-weight:700; opacity:.7; letter-spacing:.03em; text-align:center; }
+  .theme-row{ display:flex; gap:10px; width:100%; }
+  .omakase-btn{
+    flex:none; padding:10px 14px; cursor:pointer; font-size:14px; font-weight:800; letter-spacing:.03em; white-space:nowrap;
+    color:#fff; background:linear-gradient(160deg,#b07a42,var(--brown) 55%,var(--brown-dark));
+    border:none; border-radius:12px; box-shadow:0 3px 0 #4c2f14;
+  }
+  .omakase-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 #4c2f14; }
+  #topicInput{
+    flex:1; min-width:0; padding:11px 12px; font-size:18px; font-weight:800; text-align:center; letter-spacing:.04em;
+    color:var(--ink); background:#fff; border:2px solid rgba(58,42,28,.4); border-radius:12px; outline:none;
+  }
+  #topicInput:focus{ border-color:var(--brown); }
+  .tp-peek{ font-size:12px; font-weight:800; color:var(--red); letter-spacing:.04em; }
+  .main-btn{
+    min-width:200px; padding:13px 26px; cursor:pointer; border:none; border-radius:12px;
+    font-size:17px; font-weight:900; letter-spacing:.14em; white-space:nowrap; color:#fff;
+    background:linear-gradient(160deg,#b07a42,var(--brown) 55%,var(--brown-dark));
+    box-shadow:0 4px 0 #4c2f14;
+  }
+  .main-btn:active{ transform:translateY(3px); box-shadow:0 1px 0 #4c2f14; }
+  .main-btn.red{ background:linear-gradient(160deg,#f0603f,var(--red) 55%,#b93117); box-shadow:0 4px 0 #8f2510; }
+  .main-btn.red:active{ box-shadow:0 1px 0 #8f2510; }
+
+  /* チャット(オンライン) */
+  #chatBox{ display:none; flex-direction:column; gap:8px; width:min(94vw,480px); }
+  #gameScene.online #chatBox{ display:flex; }
+  .chat-log{
+    height:118px; overflow-y:auto; background:rgba(255,255,255,.72);
+    border:1.6px solid rgba(58,42,28,.22); border-radius:12px; padding:8px 10px;
+    display:flex; flex-direction:column; gap:4px; scrollbar-width:thin;
+  }
+  .ch-row{ display:flex; align-items:baseline; gap:6px; font-size:13.5px; font-weight:700; line-height:1.55; text-align:left; border-radius:8px; padding:2px 6px; }
+  .ch-row .c-dot{ width:11px; height:11px; border-radius:50%; flex:none; align-self:center; }
+  .ch-row b{ color:var(--brown-dark); font-weight:900; flex:none; }
+  .ch-row .tx{ overflow-wrap:anywhere; }
+  .ch-row.sys{ opacity:.55; font-size:12px; }
+  .ch-row.can-pick{ cursor:pointer; background:rgba(255,235,205,.6); border:1px dashed rgba(138,90,46,.4); }
+  .ch-row.can-pick:active{ transform:scale(.99); }
+  .ch-row.armed{ background:#ffd9c9; border:1.6px solid var(--red); }
+  .ch-row .pickmark{ font-size:11px; font-weight:900; color:var(--red); margin-left:auto; white-space:nowrap; flex:none; }
+  .chat-form{ display:flex; gap:8px; }
+  #chatInput{
+    flex:1; min-width:0; padding:11px 14px; font-size:16px; font-weight:700;
+    color:var(--ink); background:#fff; border:2px solid rgba(58,42,28,.35); border-radius:12px; outline:none;
+  }
+  #chatInput:focus{ border-color:var(--brown); }
+  #chatSend{
+    flex:none; min-width:96px; padding:8px 18px; cursor:pointer; border:none; border-radius:12px;
+    font-size:17px; font-weight:900; font-style:italic; letter-spacing:.04em; white-space:nowrap; color:#fff;
+    background:linear-gradient(160deg,#f0603f,var(--red) 55%,#b93117); box-shadow:0 4px 0 #8f2510;
+  }
+  #chatSend:active{ transform:translateY(2px); box-shadow:0 1px 0 #8f2510; }
+  #chatSend.plain{ background:linear-gradient(160deg,#b07a42,var(--brown) 55%,var(--brown-dark)); box-shadow:0 4px 0 #4c2f14; font-style:normal; font-size:15px; }
+  #chatSend.plain:active{ box-shadow:0 1px 0 #4c2f14; }
+
+  /* ===== 固定ボタン(derby寸法・オーバーレイの後ろ) ===== */
+  .help-btn{
+    position:fixed; left:10px; top:10px; z-index:80;
+    display:inline-flex; align-items:center; gap:6px; cursor:pointer;
+    font-size:12.5px; font-weight:700; letter-spacing:.08em; color:rgba(58,42,28,.75);
+    background:rgba(255,255,255,.72); border:1.5px solid rgba(58,42,28,.3); border-radius:999px; padding:6px 14px 7px;
+  }
+  .help-btn span{ display:inline-flex; align-items:center; justify-content:center; width:17px; height:17px; border-radius:50%; background:var(--red); color:#fff; font-size:11.5px; font-weight:900; }
+  .help-btn:active{ transform:translateY(1px); }
+  .snd-btns{ position:fixed; right:10px; top:10px; z-index:80; }
+  .snd-btn{
+    display:inline-flex; align-items:center; gap:6px; cursor:pointer;
+    font-size:12.5px; font-weight:700; letter-spacing:.08em; color:rgba(58,42,28,.75);
+    background:rgba(255,255,255,.72); border:1.5px solid rgba(58,42,28,.3); border-radius:999px; padding:6px 14px 7px;
+  }
+  .snd-btn svg{ width:14px; height:13px; }
+  .snd-btn.off{ opacity:.42; text-decoration:line-through; }
+  .score-btn{ position:fixed; right:10px; top:48px; z-index:80; display:none; align-items:center; gap:5px; cursor:pointer;
+    font-size:12px; font-weight:700; letter-spacing:.06em; color:var(--brown-dark);
+    background:rgba(255,255,255,.85); border:1.5px solid var(--brown); border-radius:999px; padding:6px 13px 7px; }
+  .score-btn svg{ width:14px; height:14px; }
+  .score-btn:active{ transform:translateY(1px); }
+  #gameScene.on ~ .score-btn{ display:inline-flex; }
+  /* ===== スタンプ(気持ちを送る。オンライン=登録名+アイコン色 / 1台=絵文字のみ。derby移植) ===== */
+  #stampBar{ position:fixed; right:8px; bottom:12px; z-index:85; display:none; flex-direction:column; gap:8px; }
+  #gameScene.on ~ #stampBar{ display:flex; }
+  .stamp-btn{ width:48px; height:48px; padding:0; border:none; border-radius:50%; cursor:pointer;
+    background:rgba(255,255,255,.9); box-shadow:0 2px 7px rgba(90,60,25,.3);
+    display:flex; align-items:center; justify-content:center; font-size:27px; line-height:1; }
+  .stamp-btn:active{ transform:translateY(1px) scale(.93); }
+  .stamp-fly{ position:fixed; bottom:-30px; width:120px; z-index:63; pointer-events:none;
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+    filter:drop-shadow(0 5px 9px rgba(0,0,0,.28)); animation:stampFloat 2.2s cubic-bezier(.2,.75,.35,1) forwards; }
+  .stamp-fly .s-emoji{ font-size:80px; line-height:1; }
+  .stamp-fly .s-name{ margin-top:2px; font-size:15px; font-weight:900; color:#fff; white-space:nowrap;
+    letter-spacing:.04em; max-width:120px; overflow:hidden; text-overflow:ellipsis; }
+  .stamp-fly.over-dialog{ z-index:84; }   /* ダイアログ(z82)表示中も前面に */
+  @keyframes stampFloat{
+    0%{ transform:translate(0,96px) scale(.5); opacity:0; }      /* 画面の外(下)から登場 */
+    17%{ transform:translate(0,0) scale(1.06); opacity:1; }
+    70%{ opacity:1; }
+    100%{ transform:translate(var(--dx,0),var(--rise,-40vh)) scale(1.02); opacity:0; }   /* 到達点は横位置で変える(中央は低め) */
+  }
+
+  /* ===== オーバーレイ(z82 > corner z80) ===== */
+  .overlay{
+    position:fixed; inset:0; z-index:82; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+    background:rgba(40,26,12,.55); opacity:0; pointer-events:none; transition:opacity .28s linear;
+  }
+  .overlay.on{ opacity:1; pointer-events:auto; }
+  .r-card{
+    display:flex; flex-direction:column; align-items:center; gap:18px;
+    background:var(--card); border-radius:18px; border-top:9px solid var(--brown);
+    box-shadow:0 18px 44px rgba(40,25,8,.4);
+    padding:28px 24px 24px; width:min(90vw,430px); max-height:82svh; overflow-y:auto; text-align:center;
+    transform:scale(.6); opacity:0; transition:transform .3s cubic-bezier(.3,1.4,.5,1), opacity .25s linear;
+  }
+  .overlay.on .r-card{ transform:scale(1); opacity:1; }
+  .r-title{ font-size:clamp(24px,6.4vw,34px); font-weight:900; letter-spacing:.1em; }
+  .r-title.win{ color:var(--red); }
+  .r-sub{ font-size:14px; font-weight:700; opacity:.72; letter-spacing:.06em; line-height:1.9; }
+  .sub-btns{ display:flex; gap:14px; width:100%; }
+  .sub-btns .txt-btn{ flex:1 1 0; min-width:110px; }
+
+  .judge-list{ display:flex; flex-direction:column; gap:9px; width:100%; }
+  .judge-list button{
+    display:flex; align-items:center; gap:10px;
+    padding:12px 14px; cursor:pointer; font-size:17px; font-weight:800; letter-spacing:.05em;
+    color:var(--ink); background:#fff; border:2px solid rgba(138,90,46,.5); border-radius:12px;
+    white-space:nowrap; overflow:hidden;
+  }
+  .judge-list button .nm{ flex:1; text-align:left; overflow:hidden; text-overflow:ellipsis; }
+  .judge-list button:active{ transform:translateY(1px); background:#fff3e2; }
+
+  .rank-list{ display:flex; flex-direction:column; gap:8px; width:100%; }
+  .rank-row{
+    display:flex; align-items:center; gap:10px; padding:10px 14px;
+    background:#fff; border:1.6px solid rgba(58,42,28,.18); border-radius:12px;
+    font-size:16px; font-weight:800;
+  }
+  .rank-row .rk{ flex:none; width:2.4em; text-align:left; opacity:.6; font-size:14px; }
+  .rank-row .p-dot{ width:20px; height:20px; }
+  .rank-row .nm{ flex:1; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rank-row .pt{ flex:none; color:var(--brown-dark); }
+  .rank-row.gold{
+    background:linear-gradient(160deg,#fff3d6,#ffe1a1); border-color:#d9a53c;
+  }
+  .rank-row.gold .pt{ color:#8a5f10; }
+  .rank-row.dobon{ border-color:var(--red); background:#fff0ec; }
+  .rank-row .dobon-tag{ flex:none; font-size:11px; font-weight:900; color:#fff; background:var(--red); border-radius:999px; padding:2px 10px 3px; }
+
+  .gain-rows{ display:flex; flex-direction:column; gap:8px; width:100%; }
+  .gain-row{ display:flex; align-items:center; gap:10px; padding:10px 14px;
+    background:#fff; border-radius:12px; border:1.8px solid rgba(138,90,46,.4);
+    font-size:15.5px; font-weight:800; }
+  .gain-row .p-dot{ width:22px; height:22px; }
+  .gain-row .gr-t{ flex:1; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .gain-row b{ flex:none; color:var(--red); font-size:18px; }
+  .role-tag{ flex:none; font-size:11px; font-weight:900; color:var(--brown-dark);
+    border:1.6px solid rgba(138,90,46,.5); border-radius:999px; padding:2px 9px 3px; white-space:nowrap; }
+  .topic-show{
+    font-size:clamp(22px,6vw,30px); font-weight:900; letter-spacing:.08em; color:var(--brown-dark);
+    background:#fff; border:2px dashed rgba(138,90,46,.5); border-radius:12px; padding:10px 22px;
+    max-width:100%; overflow-wrap:anywhere;
+  }
+
+  .help-card{ text-align:left; gap:12px; }
+  .help-body{ display:flex; flex-direction:column; gap:8px; width:100%; }
+  .help-body .h-sec{ display:flex; align-items:center; gap:8px; font-weight:900; letter-spacing:.08em; font-size:15px; }
+  .help-body .h-sec::before{ content:""; width:5px; height:17px; border-radius:2px; background:var(--brown); flex:none; }
+  .help-body .h-sec.hl{ color:#8a5f10; }
+  .help-body .h-sec.hl::before{ background:var(--gold); }
+  .help-body p{ font-size:13.5px; font-weight:600; line-height:2; opacity:.85; }
+  .help-body p + .h-sec{ margin-top:12px; }
+
+  .foam{ position:fixed; z-index:90; border-radius:50%; pointer-events:none;
+    background:radial-gradient(circle at 38% 32%, #ffffff, #ffedd2 70%);
+    box-shadow:0 2px 6px rgba(120,80,30,.25);
+    animation:foamUp 1.15s ease-out forwards; }
+  @keyframes foamUp{
+    0%{ transform:translate(0,0) scale(.4); opacity:0; }
+    15%{ opacity:1; }
+    100%{ transform:translate(var(--fx,0), var(--fy,-140px)) scale(1); opacity:0; }
+  }
+
+  .toast{
+    position:fixed; left:50%; top:64px; transform:translate(-50%,-8px); z-index:85;
+    background:rgba(58,42,28,.92); color:#fff7ea; font-size:14px; font-weight:800; letter-spacing:.05em;
+    padding:10px 20px 11px; border-radius:999px; opacity:0; pointer-events:none; transition:all .25s ease;
+    white-space:nowrap; max-width:92vw; overflow:hidden; text-overflow:ellipsis;
+  }
+  .toast.on{ opacity:1; transform:translate(-50%,0); }
+
+  .home-foot{
+    position:fixed; left:0; right:0; bottom:0; z-index:40; display:block; text-align:center;
+    padding:34px 0 16px; font-size:13px; font-weight:800; letter-spacing:.2em;
+    color:rgba(255,250,240,.95); text-shadow:0 1px 2px rgba(70,40,10,.4);
+    background:linear-gradient(to top, rgba(74,48,22,.6), rgba(74,48,22,.32) 50%, rgba(74,48,22,0));
+    text-decoration:none; opacity:0; pointer-events:none; transition:opacity .32s linear;
+  }
+  #titleScene.on ~ .home-foot{ opacity:1; pointer-events:auto; }
+</style>
+<!-- Google AdSense -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8539036056022595" crossorigin="anonymous"></script>
+</head>
+<body>
+
+  <!-- ===== タイトル ===== -->
+  <div class="scene on" id="titleScene">
+    <div class="logo">
+      <div class="logo-stack">
+        <div class="tm-art">アート</div>
+        <div class="tm-wrap">
+            <svg class="tm-burst" viewBox="0 0 200 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M100 2 L112 14 L130 5 L136 18 L156 12 L157 26 L178 24 L173 37 L194 40 L184 50 L194 60 L173 63 L178 76 L157 74 L156 88 L136 82 L130 95 L112 86 L100 98 L88 86 L70 95 L64 82 L44 88 L43 74 L22 76 L27 63 L6 60 L16 50 L6 40 L27 37 L22 24 L43 26 L44 12 L64 18 L70 5 L88 14 Z" fill="#e2472e"/>
+            </svg>
+          <div class="tm-main">待て！</div>
+        </div>
+      </div>
+    </div>
+    <div class="tagline">ー止めたなら 責任もって 描くんだよー</div>
+
+    <div class="mode-row" id="modeRow">
+      <button class="mode-btn" data-mode="local">1台で遊ぶ<small>近くの友達とラテアート</small></button>
+      <button class="mode-btn" data-mode="online">オンラインで遊ぶ<small>遠くの友達とラテアート</small></button>
+    </div>
+
+    <!-- 1台で遊ぶ -->
+    <div class="setup-block" id="localSetup">
+      <div class="card-box">
+        <div class="sec-label" style="margin-bottom:12px;">メンバー</div>
+        <div class="players-list" id="playersList"></div>
+        <button class="p-add" id="addPlayer">＋ メンバーを追加</button>
+      </div>
+      <div class="rule-frame">
+        <div class="rule-col">
+          <div class="rc-name">制限時間</div>
+          <div class="rc-row"><button class="rc-btn" data-tl="-15">−</button><span class="rc-val" id="tlVal">45秒</span><button class="rc-btn" data-tl="15">＋</button></div>
+        </div>
+        <div class="rule-col">
+          <div class="rc-name">時間切れで負け</div>
+          <div class="dbn-toggle" id="dbnToggle">
+            <button class="dbn-btn sel" data-dbn="1">あり</button>
+            <button class="dbn-btn" data-dbn="0">なし</button>
+          </div>
+        </div>
+        <div class="rule-col">
+          <div class="rc-name">消しゴム</div>
+          <div class="dbn-toggle" id="eraToggle">
+            <button class="dbn-btn sel" data-era="1">あり</button>
+            <button class="dbn-btn" data-era="0">なし</button>
+          </div>
+        </div>
+      </div>
+      <button class="rc-reset" id="ruleReset">初期設定に戻す</button>
+      <button class="start-btn" id="startBtn">スタート</button>
+    </div>
+
+    <!-- オンラインで遊ぶ(ルールはロビーで) -->
+    <div class="setup-block" id="onlineSetup">
+      <div class="name-block">
+        <div class="sec-label">あなたの名前</div>
+        <input class="p-input online-name" id="onlineName" maxlength="8" placeholder="なまえ" value="なまえ" autocomplete="off">
+      </div>
+      <div class="room-btns">
+        <button class="mode-btn sm" id="makeRoomBtn">部屋を作る<small>合言葉を発行</small></button>
+        <button class="mode-btn sm" id="joinRoomBtn">部屋に入る<small>合言葉で入室</small></button>
+      </div>
+      <div class="room-area" id="roomArea"></div>
+    </div>
+  </div>
+
+  <!-- ===== ロビー(オンライン専用画面) ===== -->
+  <div class="scene" id="lobbyScene">
+    <div class="lobby-frame">
+      <div class="sec-label">ロビー</div>
+      <div id="lobbyBox"></div>
+    </div>
+    <button class="txt-btn" id="lobbyBack">← タイトルにもどる</button>
+  </div>
+
+  <!-- ===== ゲーム ===== -->
+  <div class="scene" id="gameScene">
+    <div class="info-col">
+      <div class="info-pill" id="infoRound">お題 1</div>
+      <div class="drawer-line" id="infoDrawer">
+        <span>描き手：</span><span class="p-dot" id="drawerDot"></span><span id="drawerName">ー</span>
+      </div>
+    </div>
+    <div class="cup-wrap" id="cupWrap">
+      <div class="handle-arm" id="handleArm"><div class="cup-handle" id="cupHandle"></div></div>
+      <div class="cup-in" id="cupIn"><canvas id="cup"></canvas><canvas id="swirlCv"></canvas><canvas id="art"></canvas></div>
+      <svg class="tring" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <g fill="none" stroke-width="5.8" stroke-linecap="butt" stroke="#2f9e55" stroke-opacity=".55">
+          <path class="tr-seg" d="M 94.76 35.17 A 47.15 47.15 0 0 0 50.28 2.85"/>
+          <path class="tr-seg" d="M 77.94 87.98 A 47.15 47.15 0 0 0 94.93 35.69"/>
+          <path class="tr-seg" d="M 22.51 88.31 A 47.15 47.15 0 0 0 77.49 88.31"/>
+          <path class="tr-seg" d="M 5.07 35.69 A 47.15 47.15 0 0 0 22.06 87.98"/>
+          <path class="tr-seg" d="M 49.72 2.85 A 47.15 47.15 0 0 0 5.24 35.17"/>
+        </g>
+      </svg>
+      <div class="tier-label t5" id="tl5" style="left:78.6%; top:10.7%; transform:translate(-50%,-50%) rotate(36deg);">+5</div>
+      <div class="tier-label t4" id="tl4" style="left:96.2%; top:65%; transform:translate(-50%,-50%) rotate(108deg);">+4</div>
+      <div class="tier-label t3" id="tl3" style="left:50%; top:98.6%; transform:translate(-50%,-50%) rotate(180deg);">+3</div>
+      <div class="tier-label t2" id="tl2" style="left:3.8%; top:65%; transform:translate(-50%,-50%) rotate(-108deg);">+2</div>
+      <div class="tier-label t1" id="tl1" style="left:21.4%; top:10.7%; transform:translate(-50%,-50%) rotate(-36deg);">+1</div>
+    </div>
+    <div class="ctrl-row" id="ctrlRow">
+      <!-- お題を考える(描き手のみ・ボタン群の場所に出る) -->
+      <div id="topicPanel">
+        <div class="tp-title">お題を考える</div>
+        <div class="tp-note" id="topicNote">いまの絵の“続き”から描きやすいお題がおすすめ</div>
+        <div class="tp-note" id="topicLeft" style="display:none; color:var(--red); font-weight:900;"></div>
+        <div class="theme-row">
+          <button class="omakase-btn" id="topicRandom">おまかせ</button>
+          <input id="topicInput" maxlength="12" autocomplete="off" spellcheck="false" placeholder="お題">
+        </div>
+        <button class="main-btn red" id="topicGo">決定</button>
+      </div>
+      <div class="tp-peek" id="topicPeek" style="display:none;">※まわりの人に見られないように！</div>
+      <div class="sub-ctrl" id="drawCtrl">
+        <div id="penSizes"></div>
+        <button id="spoonBtn">
+          <span class="gfill" id="gfill"></span>
+          <svg class="sp-ico" viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(-35 12 12)" fill="none" stroke="#6b431f" stroke-width="1.7"><rect x="4" y="8.5" width="16" height="8" rx="2" fill="#fdfdf8"/><line x1="11.5" y1="8.5" x2="11.5" y2="16.5"/></g></svg>
+          <span id="spoonTxt">連打で消しゴム用意</span>
+        </button>
+      </div>
+      <button id="mateBtn"><b>待て！</b><small id="mateSmall">当てた人が出てきたらタップ</small></button>
+    </div>
+    <div id="chatBox">
+      <div class="chat-log" id="chatLog"></div>
+      <div class="chat-form">
+        <input id="chatInput" maxlength="20" placeholder="答え・おしゃべり" autocomplete="off">
+        <button id="chatSend">待て！</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- スタンプ(気持ちを送る。対局中つねに表示) -->
+  <div id="stampBar">
+    <button class="stamp-btn" data-i="0" aria-label="泣き"></button>
+    <button class="stamp-btn" data-i="1" aria-label="うっとり"></button>
+    <button class="stamp-btn" data-i="2" aria-label="爆笑"></button>
+  </div>
+
+  <button class="help-btn" id="helpBtn"><span>?</span>あそびかた</button>
+  <div class="snd-btns">
+    <button class="snd-btn" id="seBtn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wave" d="M16 9c1.2.9 1.2 5.1 0 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="wave" d="M18.5 7c2.2 1.7 2.2 8.3 0 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>効果音</button>
+  </div>
+  <button class="score-btn" id="scoreBtn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 20V10h3.4v10zM10.3 20V4h3.4v16zM15.6 20v-7h3.4v7z"/></svg>得点確認</button>
+
+  <!-- ===== 待機(オンライン) ===== -->
+  <div class="overlay" id="waitOverlay">
+    <div class="r-card">
+      <div class="r-title" id="waitName" style="font-size:24px; display:flex; align-items:center; gap:10px; justify-content:center;"><span class="p-dot" id="waitDot" style="width:24px;height:24px;"></span><span id="waitNm">◯◯の番！</span></div>
+      <div class="r-sub">お題を考え中…<br>チャットでおしゃべりしながら待とう</div>
+    </div>
+  </div>
+
+  <!-- ===== 当てた人を選択(1台) ===== -->
+  <div class="overlay" id="judgeOverlay">
+    <div class="r-card">
+      <div class="r-title" style="font-size:24px;">当てた人を選択</div>
+      <div class="judge-list" id="judgeList"></div>
+      <button class="txt-btn" id="judgeCancel">やっぱり正解者なし</button>
+    </div>
+  </div>
+
+  <!-- ===== 大正解 ===== -->
+  <div class="overlay" id="celebOverlay">
+    <div class="r-card">
+      <div class="r-title win" id="celebTitle">大正解</div>
+      <div class="topic-show" id="celebTopic">くるま</div>
+      <div class="gain-rows">
+        <div class="gain-row"><span class="p-dot" id="celebD1"></span><span class="gr-t" id="celebG1n">◯◯</span><span class="role-tag">回答者</span><b id="celebG1p">+3</b></div>
+        <div class="gain-row"><span class="p-dot" id="celebD2"></span><span class="gr-t" id="celebG2n">◯◯</span><span class="role-tag">描き手</span><b id="celebG2p">+3</b></div>
+      </div>
+      <button class="main-btn red" id="celebOk">バトンタッチ</button>
+    </div>
+  </div>
+
+  <!-- ===== 時間切れ ===== -->
+  <div class="overlay" id="timeupOverlay">
+    <div class="r-card">
+      <div class="r-title" id="tuTitle">時間切れ</div>
+      <div class="r-sub" id="tuSub" style="display:none;">時間切れ…</div>
+      <div class="topic-show" id="tuTopic">くるま</div>
+      <button class="main-btn" id="tuOk">ゲーム終了</button>
+    </div>
+  </div>
+
+  <!-- ===== 得点確認 ===== -->
+  <div class="overlay" id="scoreOverlay">
+    <div class="r-card">
+      <div class="r-title" style="font-size:22px;">得点確認</div>
+      <div class="rank-list" id="scoreList"></div>
+      <button class="txt-btn" id="scoreClose">とじる</button>
+    </div>
+  </div>
+
+  <!-- ===== 結果 ===== -->
+  <div class="overlay" id="resultOverlay">
+    <div class="r-card">
+      <div class="r-title win" id="rTitle">結果発表</div>
+      <div class="rank-list" id="rankList"></div>
+      <div class="r-sub" id="rCount" style="display:none;"></div>
+      <div class="r-sub" id="rWaitNote" style="display:none;">部屋主の「もう一回」を待っています…</div>
+      <div class="sub-btns">
+        <button class="txt-btn" id="rHomeBtn">タイトルに戻る</button>
+        <button class="txt-btn emph" id="againBtn">もう一回</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== あそびかた ===== -->
+  <div class="overlay" id="helpOverlay">
+    <div class="r-card help-card">
+      <div class="r-title" style="font-size:22px;text-align:center;width:100%;">あそびかた</div>
+      <div class="help-body" id="helpBody"></div>
+      <div class="sub-btns"><button class="txt-btn" id="helpClose" style="flex:1;">とじる</button></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <a class="home-foot" href="./index.html">牧村が作ったゲーム集へ</a>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const TAPW=(window.matchMedia&&matchMedia("(pointer:coarse)").matches)?"タップ":"クリック";
+window.__TAPW=TAPW;
+
+/* ================= 効果音(全合成) ================= */
+let actx=null, seBus=null, noiseBuf=null;
+let seOn=true; try{ seOn=localStorage.getItem("mate.se")!=="0"; }catch(e){}
+function ensureAudio(){
+  if(!actx){
+    try{
+      actx=new (window.AudioContext||window.webkitAudioContext)();
+      seBus=actx.createGain(); seBus.gain.value=seOn?1:0; seBus.connect(actx.destination);
+      const len=actx.sampleRate; noiseBuf=actx.createBuffer(1,len,actx.sampleRate);
+      const d=noiseBuf.getChannelData(0); for(let i=0;i<len;i++) d[i]=Math.random()*2-1;
+    }catch(e){}
+  }
+  if(actx && actx.state==="suspended") actx.resume();
+}
+function note(f,t,dur,vol,type){
+  if(!actx) return;
+  const o=actx.createOscillator(), g=actx.createGain();
+  o.type=type||"sine"; o.frequency.setValueAtTime(f,t);
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g); g.connect(seBus); o.start(t); o.stop(t+dur+0.06);
+}
+function noiseHit(t,dur,vol,freq,q,sweepTo){
+  if(!actx) return;
+  const s=actx.createBufferSource(); s.buffer=noiseBuf; s.loop=true;
+  const f=actx.createBiquadFilter(); f.type="bandpass"; f.frequency.setValueAtTime(freq,t); f.Q.value=q||1;
+  if(sweepTo) f.frequency.linearRampToValueAtTime(sweepTo,t+dur);
+  const g=actx.createGain(); g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(vol,t+0.03); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  s.connect(f); f.connect(g); g.connect(seBus); s.start(t); s.stop(t+dur+0.05);
+}
+let pourSrc=null, pourGain=null;
+function pourStart(){
+  if(!actx||!seOn||pourSrc) return;
+  try{
+    pourSrc=actx.createBufferSource(); pourSrc.buffer=noiseBuf; pourSrc.loop=true;
+    const f=actx.createBiquadFilter(); f.type="bandpass"; f.frequency.value=820; f.Q.value=0.9;
+    pourGain=actx.createGain(); pourGain.gain.value=0;
+    pourSrc.connect(f); f.connect(pourGain); pourGain.connect(seBus);
+    pourSrc.start(); pourGain.gain.linearRampToValueAtTime(0.045, actx.currentTime+0.09);
+  }catch(e){ pourSrc=null; pourGain=null; }
+}
+function pourStop(){
+  if(!pourGain){ pourSrc=null; return; }
+  try{
+    pourGain.gain.linearRampToValueAtTime(0, actx.currentTime+0.13);
+    const s=pourSrc; setTimeout(()=>{ try{ s.stop(); }catch(e){} }, 220);
+  }catch(e){}
+  pourSrc=null; pourGain=null;
+}
+function playSelect(){ if(!actx) return; note(880,actx.currentTime,0.09,0.14,"triangle"); }
+function playTick(){ if(!actx) return; note(1180,actx.currentTime,0.06,0.1,"triangle"); }
+function playStart(){ if(!actx) return; const t=actx.currentTime; note(523,t,0.14,0.2,"triangle"); note(784,t+0.1,0.2,0.2,"triangle"); }
+function playClink(p){ if(!actx) return; const t=actx.currentTime;
+  note(1750+p*7, t, 0.09, 0.16, "sine"); noiseHit(t,0.05,0.06,5200,2); }
+function playSwirl(){ if(!actx) return; const t=actx.currentTime; noiseHit(t,0.55,0.16,420,1.2,1750); }
+function playCorrect(){ if(!actx) return; const t=actx.currentTime;
+  [523,659,784,1047].forEach((f,i)=>note(f,t+i*0.09,0.32,0.22,"triangle"));
+  note(1568,t+0.4,0.4,0.12,"sine"); note(2093,t+0.48,0.5,0.1,"sine"); }
+function playChat(){ if(!actx) return; note(1319,actx.currentTime,0.07,0.09,"sine"); }
+function playDecide(){ if(!actx) return; const t=actx.currentTime;
+  note(740,t,0.12,0.18,"triangle"); note(1109,t+0.09,0.24,0.16,"triangle"); }
+function playTierDown(){ if(!actx) return; const t=actx.currentTime;   // 加点ダウン=軽いコトッ(終了音と差別化)
+  note(520,t,0.07,0.11,"triangle"); note(392,t+0.07,0.1,0.09,"triangle"); }
+function playDobon(){ if(!actx) return; const t=actx.currentTime;   // 終了音: 悲しすぎない、やさしい残念
+  [523,466,415].forEach((f,i)=>note(f,t+i*0.18,0.42,0.15,"triangle"));
+  note(196,t+0.52,0.8,0.1,"sine"); note(1047,t+0.62,0.5,0.05,"sine"); }
+function playWin(){ if(!actx) return; const t=actx.currentTime;
+  [523,659,784,1047].forEach((f,i)=>note(f,t+i*0.095,0.34,0.26,"triangle"));
+  [1047,1319,1568].forEach((f,i)=>note(f,t+0.36+i*0.085,0.42,0.16,"triangle"));
+  noiseHit(t+0.62,0.4,0.1,6200,1.4); note(2093,t+0.62,0.5,0.1,"sine"); }
+
+/* ================= 状態 ================= */
+const COLORS=["#e3452f","#2f7de3","#2f9e55","#f39a1f","#8a5cd6","#17a2a2","#e35a9c","#8a6a3f","#5a7d2f","#c9482f","#2f5ac9","#7d7d29"];
+const MINP=2, MAXP=12;
+const DEFAULT_NAMES=["1","2"];
+let playersSetup=DEFAULT_NAMES.slice();
+let players=[];                              // [{id,n,s,c}]
+let timeLimit=45, dobonOn=true, eraserOn=true, topicTmr=0;
+let roundNo=1, drawerId=null, nextDrawerId=null;
+let topic="", phase="title";
+let tStart=0, timerIv=0, curTier=5, pausedAt=0;
+let gauge=0, erasing=false, eraseTicking=false, eraseUntil=0, eraseIv=0, lastMash=0;
+let penIdx=2;
+const PEN_W=[0.006,0.010,0.015,0.022,0.032];   // SIZE比(3番目=標準)
+let online=false, isHost=false, sb=null, ch=null, myId=Math.random().toString(36).slice(2,10);
+let myName="", code="", hostId=null, joinWatch=0, hbIv=0, snapAt=0, snapEl=0, lastPh="";
+let drawBuf=[], drawFlushIv=0, armedRow=null, armedTmr=0, celebTmr=0, lastCele=null, dobonId=null;
+
+const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co";
+const SB_KEY="sb_publishable_cak3-W9Mmgahnwawreoa1Q_CVuhmkKL";
+const CODE_CHARS="ABCDEFGHJKMNPRSTUVWXYZ23456789";
+function genCode(){ let s=""; for(let i=0;i<5;i++) s+=CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)]; return s; }
+
+const ODAI=["りんご","猫","車","ロケット","メガネ","傘","魚","山","家","花","時計","バナナ","ヘビ","カニ","蝶々","雪だるま","カメラ","キノコ","飛行機","船","カエル","ドーナツ","月","星","虹","木","自転車","パンダ","サボテン","ソフトクリーム","おにぎり","カギ","ハサミ","ゾウ","キリン","ウサギ","ロボット","お化け","ケーキ","ピザ","ギター","ヨット","トンボ","カタツムリ","テント","ハート"];
+function randOdai(){ return ODAI[Math.floor(Math.random()*ODAI.length)]; }
+
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function byId(id){ return players.find(p=>p.id===id); }
+function isDrawer(){ return online ? drawerId===myId : true; }
+function tint(hex){
+  const n=parseInt(hex.slice(1),16), r=(n>>16)+70, g=((n>>8)&255)+70, b=(n&255)+70;
+  return "rgb("+Math.min(255,r)+","+Math.min(255,g)+","+Math.min(255,b)+")";
+}
+function dotStyle(c){ return "background:radial-gradient(circle at 35% 30%, "+tint(c)+", "+c+")"; }
+
+/* ================= シーン ================= */
+const titleScene=$("titleScene"), lobbyScene=$("lobbyScene"), gameScene=$("gameScene");
+function showScene(s){ [titleScene,lobbyScene,gameScene].forEach(x=>x.classList.toggle("on",x===s)); }
+function goTitle(){
+  stopTimer(); stopErase(true); pourStop(); stopDrawFlush(); clearTimeout(celebTmr); clearTimeout(topicTmr);
+  leaveChannel();
+  phase="title"; gameScene.classList.remove("online");
+  document.querySelectorAll(".overlay").forEach(o=>o.classList.remove("on","peek"));
+  $("chatLog").innerHTML="";
+  showScene(titleScene);
+}
+
+/* ================= モード選択 ================= */
+document.querySelectorAll("#modeRow .mode-btn").forEach(b=>{
+  b.addEventListener("click",()=>{
+    ensureAudio(); playSelect();
+    document.querySelectorAll("#modeRow .mode-btn").forEach(x=>x.classList.remove("sel"));
+    b.classList.add("sel");
+    const mode=b.dataset.mode;
+    $("localSetup").classList.toggle("on", mode==="local");
+    $("onlineSetup").classList.toggle("on", mode==="online");
+    if(mode==="local") leaveChannel();
+  });
+});
+
+/* ================= 1台: メンバー ================= */
+const playersList=$("playersList");
+function renderPlayersSetup(){
+  playersList.innerHTML="";
+  playersSetup.forEach((nm,i)=>{
+    const c=COLORS[i%COLORS.length];
+    const row=document.createElement("div"); row.className="p-row";
+    row.innerHTML='<span class="p-dot" style="'+dotStyle(c)+'"></span>'
+      +'<input class="p-input" maxlength="8" placeholder="なまえ" value="'+esc(nm)+'">'
+      +(playersSetup.length>MINP?'<button class="p-del" aria-label="削除">×</button>':'');
+    const inp=row.querySelector(".p-input");
+    inp.addEventListener("input",()=>{ playersSetup[i]=inp.value; });
+    const del=row.querySelector(".p-del");
+    if(del) del.addEventListener("click",()=>{ ensureAudio(); playSelect(); playersSetup.splice(i,1); renderPlayersSetup(); });
+    playersList.appendChild(row);
+  });
+  const add=$("addPlayer"), full=playersSetup.length>=MAXP;
+  add.disabled=full;
+  add.textContent= full ? "メンバーは12人まで" : "＋ メンバーを追加";
+  renderRules();   // 2人=協力モード表示を人数に追従
+}
+$("addPlayer").addEventListener("click",()=>{
+  ensureAudio(); playSelect();
+  if(playersSetup.length<MAXP){ playersSetup.push(String(playersSetup.length+1)); renderPlayersSetup(); }
+});
+
+/* ================= ルール ================= */
+function isCoopSetup(){ return playersSetup.length===2; }
+function isCoop(){ return players.length===2; }
+function renderRules(){
+  $("tlVal").textContent=timeLimit+"秒";
+  const co=isCoopSetup();
+  document.querySelectorAll("#dbnToggle .dbn-btn").forEach(b=>{
+    b.classList.toggle("sel", co ? b.dataset.dbn==="0" : (b.dataset.dbn==="1")===dobonOn);   // 2人=強制なし表示
+    b.classList.toggle("locked", co);
+  });
+  document.querySelectorAll("#eraToggle .dbn-btn").forEach(b=>{ b.classList.toggle("sel",(b.dataset.era==="1")===eraserOn); });
+}
+document.querySelectorAll('.rc-btn[data-tl]').forEach(b=>{
+  let holdTmr=0, holdIv=0;
+  const step=()=>{ const d=+b.dataset.tl; const nv=Math.max(15,Math.min(180,timeLimit+d)); if(nv!==timeLimit){ timeLimit=nv; playTick(); renderRules(); } };
+  const stop=()=>{ clearTimeout(holdTmr); clearInterval(holdIv); holdTmr=0; holdIv=0; };
+  b.addEventListener("pointerdown",e=>{ e.preventDefault(); ensureAudio(); step();
+    holdTmr=setTimeout(()=>{ holdIv=setInterval(step,140); },420); });
+  ["pointerup","pointerleave","pointercancel"].forEach(ev=>b.addEventListener(ev,stop));
+});
+document.querySelectorAll("#dbnToggle .dbn-btn").forEach(b=>{
+  b.addEventListener("click",()=>{
+    ensureAudio();
+    if(isCoopSetup()){ showToast("2人で遊ぶときは協力モードになります"); return; }
+    playSelect(); dobonOn=(b.dataset.dbn==="1"); renderRules();
+  });
+});
+document.querySelectorAll("#eraToggle .dbn-btn").forEach(b=>{
+  b.addEventListener("click",()=>{ ensureAudio(); playSelect(); eraserOn=(b.dataset.era==="1"); renderRules(); });
+});
+$("ruleReset").addEventListener("click",()=>{ ensureAudio(); playSelect(); timeLimit=45; dobonOn=true; eraserOn=true; renderRules(); });
+
+/* ================= カップ ================= */
+const SIZE=720;
+const cupCv=$("cup"), artCv=$("art"), swCv=$("swirlCv");
+const C=cupCv.getContext("2d"), A=artCv.getContext("2d"), SW=swCv.getContext("2d");
+cupCv.width=cupCv.height=SIZE; artCv.width=artCv.height=SIZE; swCv.width=swCv.height=SIZE;
+function clipCup(ctx){ ctx.beginPath(); ctx.arc(SIZE/2,SIZE/2,SIZE/2,0,7); ctx.clip(); }
+function drawCrema(){
+  C.save(); clipCup(C);
+  const g=C.createRadialGradient(SIZE*0.44,SIZE*0.4,SIZE*0.06, SIZE/2,SIZE/2,SIZE*0.56);
+  g.addColorStop(0,"#e0b077"); g.addColorStop(0.55,"#c8945a"); g.addColorStop(1,"#a9713a");
+  C.fillStyle=g; C.fillRect(0,0,SIZE,SIZE);
+  C.fillStyle="rgba(255,246,226,.14)";
+  for(let i=0;i<14;i++){ const a=Math.random()*6.28, r=SIZE*(0.42+Math.random()*0.05);
+    C.beginPath(); C.arc(SIZE/2+Math.cos(a)*r, SIZE/2+Math.sin(a)*r, 2+Math.random()*3.5, 0, 7); C.fill(); }
+  C.restore();
+}
+function clearArt(){ A.clearRect(0,0,SIZE,SIZE); }
+function drawSwirl(){   // 渦(回転するレイヤーに描く=カフェオレが動いて見える)
+  SW.clearRect(0,0,SIZE,SIZE);
+  SW.save(); clipCup(SW);
+  SW.lineCap="round";
+  for(let i=0;i<5;i++){
+    SW.strokeStyle="rgba(255,240,215,"+(0.05+i*0.012)+")";
+    SW.lineWidth=SIZE*(0.016+i*0.004);
+    SW.beginPath(); SW.arc(SIZE/2,SIZE/2,SIZE*(0.1+i*0.082), i*1.35, i*1.35+3.6+i*0.25); SW.stroke();
+  }
+  SW.strokeStyle="rgba(140,90,40,.06)"; SW.lineWidth=SIZE*0.03;
+  SW.beginPath(); SW.arc(SIZE/2,SIZE/2,SIZE*0.3, 2.2, 5.1); SW.stroke();
+  SW.restore();
+}
+
+let drawing=false, last=null, cupRot=0;
+function evPt(e){
+  // 回転中のgetBoundingClientRectは外接箱が膨らむので、中心(回転で不変)+実レイアウト幅で換算する
+  const el=$("cupIn"), r=el.getBoundingClientRect();
+  const cx=r.left+r.width/2, cy=r.top+r.height/2;
+  const w=el.offsetWidth||r.width;
+  let dx=e.clientX-cx, dy=e.clientY-cy;
+  if(cupRot){   // カップ回転中は座標を逆回転(描き味を一致させる)
+    const ca=Math.cos(-cupRot), sa=Math.sin(-cupRot), nx=dx*ca-dy*sa, ny=dx*sa+dy*ca;
+    dx=nx; dy=ny;
+  }
+  return { x:(dx/w+0.5)*SIZE, y:(dy/w+0.5)*SIZE };
+}
+/* 取っ手をつかんでカップを回せる(お遊び。チュートリアルなし) */
+function applyCupRot(){
+  $("cupIn").style.transform="rotate("+cupRot+"rad)";
+  $("handleArm").style.transform="rotate("+cupRot+"rad)";
+}
+(function(){
+  function angTo(e){ const r=$("cupWrap").getBoundingClientRect(); return Math.atan2(e.clientY-(r.top+r.height/2), e.clientX-(r.left+r.width/2)); }
+  let grab=null;
+  $("cupHandle").addEventListener("pointerdown",e=>{
+    e.preventDefault(); e.stopPropagation(); ensureAudio();
+    grab=angTo(e)-cupRot;
+    const mv=ev=>{ cupRot=angTo(ev)-grab; applyCupRot(); };
+    const up=()=>{ window.removeEventListener("pointermove",mv); window.removeEventListener("pointerup",up); grab=null; };
+    window.addEventListener("pointermove",mv); window.addEventListener("pointerup",up);
+  });
+})();
+function seg(a,b,er,w){
+  A.save(); clipCup(A);
+  A.lineCap="round"; A.lineJoin="round";
+  if(er){
+    A.globalCompositeOperation="destination-out";
+    A.strokeStyle="rgba(0,0,0,1)"; A.lineWidth=(w||SIZE*PEN_W[penIdx])*2.2;   // 消しゴムはペンの太さと連動
+    A.beginPath(); A.moveTo(a.x,a.y); A.lineTo(b.x,b.y); A.stroke();
+  } else {
+    const core=w||SIZE*PEN_W[penIdx];
+    A.globalCompositeOperation="source-over";
+    A.strokeStyle="rgba(255,248,235,.26)"; A.lineWidth=core*1.85;
+    A.beginPath(); A.moveTo(a.x,a.y); A.lineTo(b.x,b.y); A.stroke();
+    A.strokeStyle="#fff7ea"; A.lineWidth=core;
+    A.beginPath(); A.moveTo(a.x,a.y); A.lineTo(b.x,b.y); A.stroke();
+  }
+  A.restore();
+}
+function localSeg(a,b){
+  seg(a,b,erasing);
+  if(online) drawBuf.push([Math.round(a.x),Math.round(a.y),Math.round(b.x),Math.round(b.y), erasing?1:0, Math.round(SIZE*PEN_W[penIdx])]);
+}
+artCv.addEventListener("pointerdown",e=>{
+  if(phase!=="draw"||!e.isPrimary||!isDrawer()) return;
+  ensureAudio();
+  if(erasing && !eraseTicking) startEraseClock();   // 消しゴムはカップをこすった瞬間から3秒
+  drawing=true; last=evPt(e);
+  try{ artCv.setPointerCapture(e.pointerId); }catch(err){}
+  localSeg(last,{x:last.x+0.01,y:last.y+0.01});
+  pourStart();
+  e.preventDefault();
+});
+artCv.addEventListener("pointermove",e=>{
+  if(!drawing||!e.isPrimary) return;
+  const p=evPt(e); localSeg(last,p); last=p;
+});
+["pointerup","pointercancel","pointerleave"].forEach(ev=>artCv.addEventListener(ev,e=>{
+  if(!drawing) return; drawing=false; last=null; pourStop();
+}));
+function startDrawFlush(){
+  stopDrawFlush();
+  drawFlushIv=setInterval(()=>{
+    if(drawBuf.length && ch){ try{ ch.send({type:"broadcast",event:"draw",payload:{s:drawBuf.splice(0)}}); }catch(e){} }
+  },90);
+}
+function stopDrawFlush(){ clearInterval(drawFlushIv); drawFlushIv=0; drawBuf.length=0; }
+
+/* ペンの太さ(5段階・標準=3) */
+function renderPens(){
+  const box=$("penSizes"); box.innerHTML="";
+  PEN_W.forEach((w,i)=>{
+    const b=document.createElement("button"); b.className="pen-b"+(i===penIdx?" sel":"");
+    const dot=document.createElement("i");
+    const px=Math.max(3, Math.round(w*720*0.55));
+    dot.style.width=dot.style.height=px+"px";
+    b.appendChild(dot);
+    b.addEventListener("click",()=>{ ensureAudio(); playTick(); penIdx=i; renderPens(); });
+    box.appendChild(b);
+  });
+}
+
+/* ================= スプーン(連打→用意→こすった瞬間から3秒) ================= */
+const spoonBtn=$("spoonBtn"), gfill=$("gfill"), spoonTxt=$("spoonTxt");
+function renderGauge(){
+  gfill.style.width=Math.min(100,gauge)+"%";
+  if(erasing && eraseTicking){ const rem=Math.max(0,(eraseUntil-Date.now())/1000); spoonTxt.textContent=rem.toFixed(1)+"秒"; }
+  else if(erasing){ spoonTxt.textContent="チャージ完了"; }
+  else if(gauge<=0) spoonTxt.textContent="連打で消しゴム用意";
+  else if(gauge>=30&&gauge<=70) spoonTxt.textContent="ペンの太さは確認した？";
+  else spoonTxt.textContent="連打… "+Math.min(100,Math.round(gauge))+"%";
+}
+function readyErase(){
+  erasing=true; eraseTicking=false; gauge=100;
+  spoonBtn.classList.add("on"); $("cupWrap").classList.add("erasing");
+  playSwirl(); showToast("カップをこすった瞬間から3秒だけ消せる！");
+  renderGauge();
+}
+function startEraseClock(){
+  eraseTicking=true; eraseUntil=Date.now()+3000;
+  eraseIv=setInterval(()=>{
+    gauge=Math.max(0,(eraseUntil-Date.now())/3000*100); renderGauge();
+    if(Date.now()>=eraseUntil) stopErase();
+  },90);
+}
+function stopErase(silent){
+  clearInterval(eraseIv); eraseIv=0;
+  erasing=false; eraseTicking=false; gauge=0;
+  drawing=false; last=null; pourStop();   // ペンに戻った瞬間の誤描画防止(押し直しが必要)
+  spoonBtn.classList.remove("on"); $("cupWrap").classList.remove("erasing");
+  renderGauge();
+  if(!silent) playTick();
+}
+spoonBtn.addEventListener("pointerdown",e=>{
+  e.preventDefault();
+  if(phase!=="draw"||erasing||!isDrawer()) return;
+  ensureAudio();
+  gauge=Math.min(100,gauge+5); lastMash=Date.now();   // 約20連打で満タン
+  playClink(gauge); renderGauge();
+  if(gauge>=100) readyErase();
+});
+setInterval(()=>{
+  if(erasing||gauge<=0||phase!=="draw") return;
+  if(Date.now()-lastMash>600){ gauge=Math.max(0,gauge-2.7); renderGauge(); }
+},120);
+
+/* ================= 円形タイマー(カップの縁・時計回りに消える) ================= */
+const SEG_ELS=[...document.querySelectorAll(".tr-seg")];
+const SEG_LEN=58.7;
+const TIER_COLORS={5:"#2f9e55",4:"#7ab53a",3:"#f39a1f",2:"#e07028",1:"#e3452f"};
+function setRingColor(t){ SEG_ELS.forEach(e=>e.setAttribute("stroke",TIER_COLORS[t])); }
+function setRing(remain){   // 5つのパーツが時計回り順に食われていく
+  SEG_ELS.forEach((el,i)=>{
+    const fi=1-Math.min(1,Math.max(0,((1-remain)-0.2*i)*5));
+    el.setAttribute("stroke-dasharray",(SEG_LEN*fi)+" 400");
+  });
+}
+let topicStart=0, topicRingOn=false;
+function elapsedMs(){
+  if(online && !isHost) return snapEl+(Date.now()-snapAt);
+  return Date.now()-tStart;
+}
+function tierOf(el){
+  const L=timeLimit*1000;
+  return Math.max(1, 5-Math.floor(el/(L/5)));
+}
+function renderRing(){
+  const L=timeLimit*1000;
+  const el=Math.min(L, elapsedMs());
+  setRing(1-el/L);
+  const t=tierOf(el);
+  setRingColor(t);   // 5パーツ全てを現在ティア色に連動
+  [5,4,3,2,1].forEach(k=>$("tl"+k).classList.toggle("off",k!==t));   // 現在のティアだけ点灯
+  if(t<curTier){ curTier=t; playTierDown(); }
+}
+function resetRing(){
+  topicRingOn=false;
+  $("cupWrap").classList.remove("hide-ring","hide-labels");
+  curTier=5;
+  [5,4,3,2,1].forEach(k=>$("tl"+k).classList.toggle("off",k!==5));
+  setRingColor(5);
+  setRing(1);
+}
+/* お題を決める間のタイマー表示(オンラインのみ・90秒) */
+function startTopicRing(){
+  if(topicRingOn) return;   // ゲスト側はsnapのたびに呼ばれるので二重起動(カウントダウン巻き戻し)を防ぐ
+  stopTimer();
+  topicRingOn=true;
+  topicStart=Date.now();
+  [5,4,3,2,1].forEach(k=>$("tl"+k).classList.add("off"));
+  setRingColor(5);
+  const upd=()=>{
+    const rem=Math.max(0, 1-(Date.now()-topicStart)/90000);
+    setRing(rem);
+    const tl=$("topicLeft");
+    if(tl) tl.textContent="残り "+Math.max(0,Math.ceil(90-(Date.now()-topicStart)/1000))+"秒";
+  };
+  upd(); timerIv=setInterval(upd,150);
+}
+function startTimer(){
+  stopTimer(); resetRing();
+  const upd=()=>{
+    renderRing();
+    if(elapsedMs()>=timeLimit*1000){
+      stopTimer();
+      if(!online) localTimeUp();
+      else if(isHost) hostTimeUp();
+    }
+  };
+  upd(); timerIv=setInterval(upd,100);
+}
+function stopTimer(){ clearInterval(timerIv); timerIv=0; }
+function pauseTimer(){ if(!pausedAt) pausedAt=Date.now(); stopTimer(); }
+function resumeTimer(){ if(pausedAt){ tStart+=Date.now()-pausedAt; pausedAt=0; } startTimer(); }
+
+function updateInfo(){
+  $("infoRound").textContent="お題"+roundNo+"個目";
+  const d=byId(drawerId);
+  $("drawerDot").setAttribute("style", dotStyle(d?d.c:"#999"));
+  $("drawerName").textContent=(d?d.n:"ー")+(online&&drawerId===myId?"（あなた）":"");
+}
+
+/* ================= 進行(お題はインラインパネル) ================= */
+function openTopic(){
+  phase="topic";
+  stopTimer(); resetRing();
+  $("cupWrap").classList.add(online?"hide-labels":"hide-ring");   // お題中: 1台=タイマー全非表示/オンライン=ラベルのみ非表示
+  clearTimeout(topicTmr);
+  if(online){   // お題を考える時間はオンラインのみ90秒固定(1台は無制限)
+    topicTmr=setTimeout(()=>{
+      if(phase!=="topic") return;
+      const t=$("topicInput").value.trim()||randOdai();
+      $("topicPanel").classList.remove("on"); $("topicPeek").style.display="none";
+      showToast("時間切れ！お題を自動で決定");
+      sendAct({t:"topic", topic:t});
+    },90000);
+    startTopicRing();
+    $("topicLeft").style.display="";
+  } else {
+    $("topicLeft").style.display="none";
+  }
+  $("topicInput").value=randOdai();
+  $("topicNote").textContent = (roundNo===1)
+    ? "描くものを考えよう（伝わりやすいものがおすすめ）"
+    : "いまの絵の“続き”から描きやすいお題がおすすめ";
+  $("topicPeek").style.display = online ? "none" : "";
+  $("drawCtrl").style.display="none"; $("mateBtn").style.display="none";
+  $("topicPanel").classList.add("on");
+  updateInfo();
+}
+$("topicRandom").addEventListener("click",()=>{
+  ensureAudio(); playSelect();
+  $("topicInput").value=randOdai();
+});
+$("topicGo").addEventListener("click",()=>{
+  ensureAudio();
+  const t=$("topicInput").value.trim(); if(!t){ showToast("お題を入れてね"); return; }
+  playDecide();
+  clearTimeout(topicTmr);
+  $("topicPanel").classList.remove("on"); $("topicPeek").style.display="none";
+  if(online){ sendAct({t:"topic", topic:t}); return; }
+  topic=t; startDrawPhase(false);
+});
+function startDrawPhase(guest){
+  phase="draw"; pausedAt=0; clearTimeout(topicTmr);
+  if(!guest){ tStart=Date.now(); }
+  gauge=0; penIdx=2; stopErase(true); renderGauge(); renderPens();
+  $("topicPanel").classList.remove("on"); $("topicPeek").style.display="none";
+  const meDraw = !(online && drawerId!==myId);
+  $("drawCtrl").style.display = meDraw ? "" : "none";
+  $("spoonBtn").style.display = (meDraw && eraserOn) ? "" : "none";
+  $("mateBtn").style.display = online ? "none" : "";
+  startTimer(); updateInfo();
+}
+
+/* 待て！(1台) */
+$("mateBtn").addEventListener("click",()=>{
+  if(phase!=="draw"||online) return;
+  ensureAudio(); playSelect(); pourStop(); drawing=false;
+  pauseTimer();
+  const list=$("judgeList"); list.innerHTML="";
+  players.forEach(p=>{
+    if(p.id===drawerId) return;
+    const b=document.createElement("button");
+    b.innerHTML='<span class="p-dot" style="'+dotStyle(p.c)+'"></span><span class="nm"></span>';
+    b.querySelector(".nm").textContent=p.n;
+    b.addEventListener("click",()=>{ localCorrect(p.id); });
+    list.appendChild(b);
+  });
+  $("judgeOverlay").classList.add("on");
+});
+$("judgeCancel").addEventListener("click",()=>{
+  ensureAudio(); playSelect(); $("judgeOverlay").classList.remove("on");
+  phase="draw"; resumeTimer();
+});
+
+function showCelebrate(winId, tier, tpc){
+  const w=byId(winId), d=byId(drawerId), co=isCoop();
+  $("celebTitle").textContent = co ? ("お題"+roundNo+"個目 大成功") : "大正解";
+  $("celebTopic").textContent=tpc;
+  if(w) $("celebD1").setAttribute("style", dotStyle(w.c));
+  if(d) $("celebD2").setAttribute("style", dotStyle(d.c));
+  $("celebG1n").textContent=(w?w.n:"？");  $("celebG1p").textContent="+"+tier; $("celebG1p").style.display=co?"none":"";
+  $("celebG2n").textContent=(d?d.n:"？");  $("celebG2p").textContent="+"+tier; $("celebG2p").style.display=co?"none":"";
+  $("celebOk").style.display = online ? "none" : "";
+  $("celebOverlay").classList.add("on");
+  playCorrect(); foamBurst(innerWidth/2, innerHeight/2, 18);
+}
+function localCorrect(winId){
+  $("judgeOverlay").classList.remove("on");
+  phase="judged"; stopTimer(); pausedAt=0; stopErase(true);
+  const tier=tierOf(elapsedMs());
+  if(!isCoop()){ byId(winId).s+=tier; byId(drawerId).s+=tier; }
+  nextDrawerId=winId;
+  showCelebrate(winId, tier, topic);
+}
+$("celebOk").addEventListener("click",()=>{   // バトンタッチ(1台)
+  ensureAudio(); playSelect(); $("celebOverlay").classList.remove("on");
+  roundNo++; drawerId=nextDrawerId;
+  openTopic();
+});
+
+/* 時間切れ(ドボンON/OFF問わずゲーム終了) */
+function localTimeUp(){
+  phase="judged"; stopErase(true); pourStop(); drawing=false;
+  $("tuTopic").textContent=topic;
+  $("tuOk").style.display="";
+  if(dobonOn && !isCoop()){ $("tuTitle").textContent="ドボン"; $("tuSub").style.display=""; dobonId=drawerId; playDobon(); }
+  else{ $("tuTitle").textContent="時間切れ"; $("tuSub").style.display="none"; playDobon(); }
+  $("timeupOverlay").classList.add("on");
+}
+$("tuOk").addEventListener("click",()=>{
+  ensureAudio(); playSelect(); $("timeupOverlay").classList.remove("on");
+  if(online) return;
+  showResult(dobonId?standingsWithDobon():standings(), true);
+});
+
+/* ================= 結果 ================= */
+function standings(){ return players.map(p=>({id:p.id,n:p.n,p:p.s,c:p.c})).sort((a,b)=>b.p-a.p); }
+function standingsWithDobon(){
+  const st=standings();
+  if(!dobonId) return st;
+  const i=st.findIndex(s=>s.id===dobonId);
+  if(i>=0){ const [d]=st.splice(i,1); d.dobon=true; st.push(d); }
+  return st;
+}
+function showResult(st, showAgain){
+  phase="result"; stopTimer(); stopErase(true); pourStop();
+  /* タイトル: 1台=結果発表 / オンライン=自分の順位(ドボンなら「ドボン」) */
+  const co=isCoop();
+  let title="結果発表";
+  if(co){ title="成功回数"+Math.max(0,roundNo-1)+"回"; }
+  else if(online){
+    const mineIdx=st.findIndex(s=>s.id===myId);
+    if(mineIdx>=0){
+      title = st[mineIdx].dobon ? "ドボン" : "あなたは"+(rankOf(st,mineIdx))+"位";
+    }
+  }
+  $("rTitle").textContent=title;
+  const list=$("rankList"); list.innerHTML="";
+  st.forEach((s,idx)=>{
+    const row=document.createElement("div");
+    if(co){
+      row.className="rank-row";
+      row.innerHTML='<span class="p-dot" style="'+dotStyle(s.c)+'"></span><span class="nm"></span>';
+    }else{
+      const rank=rankOf(st,idx);
+      row.className="rank-row"+(s.dobon?" dobon":(rank===1?" gold":""));
+      row.innerHTML='<span class="rk">'+rank+'位</span><span class="p-dot" style="'+dotStyle(s.c)+'"></span><span class="nm"></span>'
+        +(s.dobon?'<span class="dobon-tag">ドボン</span>':"")
+        +'<span class="pt">'+s.p+'点</span>';
+    }
+    row.querySelector(".nm").textContent=s.n;
+    list.appendChild(row);
+  });
+  if(co){ $("rCount").style.display="none"; }
+  else{ $("rCount").textContent="達成お題"+Math.max(0,roundNo-1)+"個"; $("rCount").style.display=""; }
+  $("againBtn").style.display=showAgain?"":"none";
+  $("rWaitNote").style.display=showAgain?"none":"";
+  $("resultOverlay").classList.add("on");
+  if(st.some(s=>s.dobon)) playDobon(); else playWin();
+  foamBurst(innerWidth/2, innerHeight*0.3, 22);
+}
+function rankOf(st, idx){
+  /* 非ドボンは点数順(同点同順位)。ドボンは最下位(人数位) */
+  if(st[idx].dobon) return st.length;
+  let rank=1;
+  for(let i=0;i<idx;i++){ if(!st[i].dobon && st[i].p>st[idx].p) rank=i+2; }
+  /* 同点処理: 直前までの非ドボンで自分より高得点の人数+1 */
+  let higher=0;
+  st.forEach(s=>{ if(!s.dobon && s.p>st[idx].p) higher++; });
+  return higher+1;
+}
+$("resultOverlay").addEventListener("click",e=>{
+  if(e.target!==$("resultOverlay")) return;
+  $("resultOverlay").classList.toggle("peek");
+});
+document.querySelector("#resultOverlay .r-card").addEventListener("click",e=>e.stopPropagation());
+$("againBtn").addEventListener("click",()=>{
+  ensureAudio(); playSelect();
+  $("resultOverlay").classList.remove("on","peek");
+  if(online){ if(isHost) hostRestart(); return; }
+  newLocalGame();
+});
+$("rHomeBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); goTitle(); });
+const peekStyle=document.createElement("style");
+peekStyle.textContent="#resultOverlay.peek{background:rgba(40,26,12,0);} #resultOverlay.peek .r-card{opacity:0;transform:scale(.92);pointer-events:none;}";
+document.head.appendChild(peekStyle);
+
+/* ================= 得点確認 ================= */
+$("scoreBtn").addEventListener("click",()=>{
+  ensureAudio(); playSelect();
+  const list=$("scoreList"); list.innerHTML="";
+  standings().forEach(s=>{
+    const row=document.createElement("div"); row.className="rank-row";
+    row.innerHTML='<span class="p-dot" style="'+dotStyle(s.c)+'"></span><span class="nm"></span><span class="pt">'+s.p+'点</span>';
+    row.querySelector(".nm").textContent=s.n;
+    list.appendChild(row);
+  });
+  $("scoreOverlay").classList.add("on");
+});
+$("scoreClose").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("scoreOverlay").classList.remove("on"); });
+$("scoreOverlay").addEventListener("click",e=>{ if(e.target===$("scoreOverlay")){ playSelect(); $("scoreOverlay").classList.remove("on"); } });
+
+/* ================= 泡・トースト ================= */
+function foamBurst(x,y,n){
+  for(let i=0;i<n;i++){
+    const el=document.createElement("div"); el.className="foam";
+    const sz=8+Math.random()*18;
+    el.style.width=el.style.height=sz+"px";
+    el.style.left=(x-sz/2+(Math.random()*140-70))+"px";
+    el.style.top=(y-sz/2+(Math.random()*60-30))+"px";
+    el.style.setProperty("--fx",(Math.random()*160-80).toFixed(0)+"px");
+    el.style.setProperty("--fy",(-90-Math.random()*130).toFixed(0)+"px");
+    el.style.animationDelay=(Math.random()*0.25)+"s";
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),1600);
+  }
+}
+let toastTmr=0;
+function showToast(msg,ms){
+  const t=$("toast"); t.textContent=msg; t.classList.add("on");
+  clearTimeout(toastTmr); toastTmr=setTimeout(()=>t.classList.remove("on"), ms||2200);
+}
+
+/* ================= 1台: 開始 ================= */
+function newLocalGame(){
+  players=playersSetup.map((nm,i)=>({ id:"L"+i, n:(nm.trim()||String(i+1)), s:0, c:COLORS[i%COLORS.length] }));
+  roundNo=1; dobonId=null; penIdx=2;
+  drawerId=players[Math.floor(Math.random()*players.length)].id;
+  drawCrema(); drawSwirl(); clearArt(); gauge=0; stopErase(true); renderGauge(); renderPens(); resetRing();
+  cupRot=0; applyCupRot();
+  $("scoreBtn").style.display = isCoop() ? "none" : "";
+  gameScene.classList.remove("online");
+  showScene(gameScene);
+  openTopic();
+}
+$("startBtn").addEventListener("click",()=>{ ensureAudio(); playStart(); online=false; isHost=false; leaveChannel(); newLocalGame(); });
+
+/* ================= オンライン ================= */
+const roomArea=$("roomArea");
+function roomStatus(html){ roomArea.innerHTML=html; }
+function sbClient(){ if(!sb) sb=window.supabase.createClient(SB_URL, SB_KEY); return sb; }
+function leaveChannel(){
+  clearTimeout(joinWatch); clearInterval(hbIv); hbIv=0; stopDrawFlush(); clearTimeout(celebTmr);
+  if(ch){ try{ ch.send({type:"broadcast",event:"bye",payload:{id:myId}}); }catch(e){} try{ sbClient().removeChannel(ch); }catch(e){} ch=null; }
+  online=false; isHost=false; hostId=null; roomStatus("");
+}
+function getMyName(){
+  myName=$("onlineName").value.trim();
+  if(!myName){ showToast("名前を入れてね"); return false; }
+  return true;
+}
+$("makeRoomBtn").addEventListener("click",()=>{
+  ensureAudio(); playSelect();
+  if(!getMyName()) return;
+  leaveChannel();
+  code=genCode(); isHost=true; hostId=myId; online=true;
+  players=[{id:myId,n:myName,s:0,c:COLORS[0]}];
+  roundNo=1; dobonId=null;
+  openChannel(code, ()=>{ phase="lobby"; showScene(lobbyScene); renderLobby(); sendSnap(); startHb(); });
+});
+$("joinRoomBtn").addEventListener("click",()=>{
+  ensureAudio(); playSelect();
+  if(!getMyName()) return;
+  leaveChannel();
+  roomStatus('<div class="code-row">'
+    +'<button class="paste-btn" id="pasteBtn" aria-label="合言葉を貼り付け"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3.4c0-.8.6-1.4 1.4-1.4h3.2c.8 0 1.4.6 1.4 1.4v1.1"/><path d="M9 10.5h6M9 14.5h6"/></svg></button>'
+    +'<input class="code-input" id="codeInput" maxlength="5" autocomplete="off" spellcheck="false" placeholder="合言葉">'
+    +'</div>'
+    +'<button class="txt-btn" id="codeGo">いざ、入室</button>'
+    +'<div class="room-note" id="joinNote"></div>');
+  const inp=$("codeInput"), note=$("joinNote");
+  $("pasteBtn").addEventListener("click", async ()=>{
+    ensureAudio();
+    try{
+      const t=await navigator.clipboard.readText();
+      const c=(t||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,5);
+      if(c){ inp.value=c; note.textContent="貼り付けた"; note.className="room-note"; }
+      else { note.textContent="コピーした合言葉が見つからない"; note.className="room-note err"; }
+    }catch(e){ note.textContent="貼り付けできない。手入力で頼む"; note.className="room-note err"; }
+  });
+  $("codeGo").addEventListener("click",()=>{
+    ensureAudio(); playSelect();
+    const c=(inp.value||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+    if(c.length!==5){ note.textContent="合言葉は5文字"; note.className="room-note err"; return; }
+    note.textContent="部屋を探しています…"; note.className="room-note room-wait";
+    code=c; isHost=false; online=true; players=[];
+    openChannel(code, ()=>{
+      try{ ch.send({type:"broadcast",event:"hello",payload:{id:myId,n:myName}}); }catch(e){}
+      joinWatch=setTimeout(()=>{
+        if(!hostId){ note.textContent="部屋がみつからない。合言葉を確認しよう"; note.className="room-note err"; leaveChannel(); }
+      },4000);
+    });
+  });
+});
+$("lobbyBack").addEventListener("click",()=>{ ensureAudio(); playSelect(); goTitle(); });
+
+function openChannel(c, onReady){
+  ch=sbClient().channel("mate-"+c, { config:{ presence:{ key:myId } } });
+  ch.on("broadcast",{event:"hello"},({payload})=>{
+    if(!isHost||!payload) return;
+    if(phase!=="lobby"||players.length>=MAXP){ try{ ch.send({type:"broadcast",event:"locked",payload:{to:payload.id}}); }catch(e){} return; }
+    if(!byId(payload.id)) players.push({id:payload.id, n:String(payload.n||"？").slice(0,8), s:0, c:COLORS[players.length%COLORS.length]});
+    renderLobby(); sendSnap();
+  });
+  ch.on("broadcast",{event:"locked"},({payload})=>{
+    if(payload && payload.to===myId){ showToast("その部屋には入れなかった…"); leaveChannel(); roomStatus('<div class="room-note err">対局中か満員みたい。合言葉を確認しよう</div>'); }
+  });
+  ch.on("broadcast",{event:"snap"},({payload})=>{ if(!isHost && payload) applySnap(payload); });
+  ch.on("broadcast",{event:"act"},({payload})=>{ if(isHost && payload) hostAct(payload); });
+  ch.on("broadcast",{event:"chat"},({payload})=>{ if(payload) addChat(payload.id, payload.n, payload.tx); });
+  ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) spawnStamp(payload.i|0, payload.name||"", payload.color||"#fff"); });   // ロストしても実害なし=seq/ack不要
+  ch.on("broadcast",{event:"draw"},({payload})=>{
+    if(!payload||!payload.s||drawerId===myId) return;
+    payload.s.forEach(q=>{ seg({x:q[0],y:q[1]},{x:q[2],y:q[3]}, q[4]===1, q[5]); });
+  });
+  ch.on("broadcast",{event:"reset"},()=>{ if(!isHost){ clearArt(); drawCrema(); drawSwirl(); } });
+  ch.on("broadcast",{event:"bye"},({payload})=>{ if(payload) onLeave(payload.id); });
+  ch.on("presence",{event:"leave"},({leftPresences})=>{
+    (leftPresences||[]).forEach(p=>{ if(p && p.id) onLeave(p.id); });
+  });
+  ch.subscribe(async status=>{
+    if(status==="SUBSCRIBED"){ try{ await ch.track({id:myId}); }catch(e){} if(onReady) onReady(); }
+    else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){
+      roomStatus('<div class="room-note err">通信失敗。通信環境を見直そう</div>');
+    }
+  });
+}
+function onLeave(id){
+  if(id===myId) return;
+  if(id===hostId && !isHost){ showToast("部屋主が退出しました"); goTitle(); return; }
+  if(!isHost) return;
+  const gone=byId(id); if(!gone) return;
+  players=players.filter(p=>p.id!==id);
+  addSys(gone.n+" が退出しました");
+  if(phase==="lobby"){ renderLobby(); sendSnap(); return; }
+  if(players.length<2){ showToast("メンバーが足りなくなりました"); hostEndToLobby(); return; }
+  if(id===drawerId && (phase==="topic"||phase==="draw")){
+    drawerId=players[0].id; hostOpenTopic(); return;
+  }
+  sendSnap();
+}
+function hostEndToLobby(){
+  phase="lobby"; clearTimeout(celebTmr); stopTimer();
+  document.querySelectorAll(".overlay").forEach(o=>o.classList.remove("on","peek"));
+  showScene(lobbyScene); renderLobby(); sendSnap();
+}
+
+/* --- ロビー(専用画面。ルールもここ) --- */
+function renderLobby(){
+  if(!online) return;
+  const co=players.length===2;
+  const effEra=eraserOn;
+  let html='<div class="lobby-list">';
+  players.forEach(p=>{
+    html+='<div class="lobby-row"><span class="p-dot" style="'+dotStyle(p.c)+'"></span><span class="nm">'+esc(p.n)+'</span>'
+      +(p.id===hostId?'<span class="hostmark">部屋主</span>':"")
+      +(p.id===myId?'<span class="you">じぶん</span>':"")+'</div>';
+  });
+  html+='</div>';
+  html+='<div class="room-note">合言葉（'+TAPW+'でコピー）</div>'
+    +'<div class="code-show" id="codeShow"><svg class="cs-copy" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg><span class="cs-code">'+esc(code)+'</span></div>';
+  if(isHost){
+    html+='<div class="rule-frame">'
+      +'<div class="rule-col"><div class="rc-name">制限時間</div>'
+      +'<div class="rc-row"><button class="rc-btn" id="lbTlM">−</button><span class="rc-val">'+timeLimit+'秒</span><button class="rc-btn" id="lbTlP">＋</button></div></div>'
+      +'<div class="rule-col"><div class="rc-name">時間切れで負け</div>'
+      +'<div class="dbn-toggle"><button class="dbn-btn'+(co?"":(dobonOn?" sel":""))+(co?" locked":"")+'" id="lbDbOn">あり</button><button class="dbn-btn'+(co?" sel locked":(!dobonOn?" sel":""))+'" id="lbDbOff">なし</button></div>' 
+      +'</div>'
+      +'<div class="rule-col"><div class="rc-name">消しゴム</div>'
+      +'<div class="dbn-toggle"><button class="dbn-btn'+(effEra?" sel":"")+'" id="lbErOn">あり</button><button class="dbn-btn'+(!effEra?" sel":"")+'" id="lbErOff">なし</button></div>'
+      +'</div>'
+      +'</div>';
+  }else{
+    html+='<div class="room-note">制限時間 '+timeLimit+'秒 ／ '+(co?"協力モード":("時間切れで負け"+(dobonOn?"あり":"なし")))+' ／ 消しゴム'+(eraserOn?"あり":"なし")+'</div>';
+  }
+  html+='<div class="room-note room-wait">'+(players.length<2?"2人以上集まれば開始できます":"そろったらスタート！")+'</div>';
+  if(isHost) html+='<button class="start-btn" id="lobbyStart"'+(players.length<2?" disabled":"")+'>スタート</button>';
+  $("lobbyBox").innerHTML=html;
+  $("codeShow").addEventListener("click", async ()=>{
+    ensureAudio(); playSelect();
+    try{ await navigator.clipboard.writeText(code); showToast("合言葉をコピーした"); }
+    catch(e){ try{ const ta=document.createElement("textarea"); ta.value=code; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); showToast("合言葉をコピーした"); }catch(_){ showToast("コピーできなかった…"); } }
+  });
+  if(isHost){
+    $("lbTlM").addEventListener("click",()=>{ ensureAudio(); playTick(); timeLimit=Math.max(15,timeLimit-15); renderLobby(); sendSnap(); });
+    $("lbTlP").addEventListener("click",()=>{ ensureAudio(); playTick(); timeLimit=Math.min(180,timeLimit+15); renderLobby(); sendSnap(); });
+    const dOn=$("lbDbOn"), dOff=$("lbDbOff"), eOn=$("lbErOn"), eOff=$("lbErOff");
+    if(dOn) dOn.addEventListener("click",()=>{ ensureAudio(); if(co){ showToast("2人で遊ぶときは協力モードになります"); return; } playSelect(); dobonOn=true; renderLobby(); sendSnap(); });
+    if(dOff) dOff.addEventListener("click",()=>{ ensureAudio(); if(co){ showToast("2人で遊ぶときは協力モードになります"); return; } playSelect(); dobonOn=false; renderLobby(); sendSnap(); });
+    if(eOn) eOn.addEventListener("click",()=>{ ensureAudio(); playSelect(); eraserOn=true; renderLobby(); sendSnap(); });
+    if(eOff) eOff.addEventListener("click",()=>{ ensureAudio(); playSelect(); eraserOn=false; renderLobby(); sendSnap(); });
+    const ls=$("lobbyStart");
+    if(ls) ls.addEventListener("click",()=>{
+      ensureAudio(); playStart();
+      roundNo=1; dobonId=null; players.forEach(p=>p.s=0);
+      drawerId=players[Math.floor(Math.random()*players.length)].id;
+      clearArt(); drawCrema(); drawSwirl();
+      try{ ch.send({type:"broadcast",event:"reset",payload:{}}); }catch(e){}
+      hostOpenTopic();
+    });
+  }
+}
+
+/* --- ホスト権威 --- */
+function sendSnap(){
+  if(!isHost||!ch) return;
+  const p={ hostId:hostId, ph:phase, players:players.map(x=>({id:x.id,n:x.n,s:x.s,c:x.c})),
+    round:roundNo, drawerId:drawerId, tl:timeLimit, db:dobonOn?1:0, er:(eraserOn?1:0) };
+  if(phase==="draw") p.el=Date.now()-tStart;
+  if(phase==="celebrate") p.cele=lastCele;
+  if(phase==="timeup") p.tu={topic:topic};
+  if(phase==="result"){ p.stand=(dobonId?standingsWithDobon():standings()); }
+  try{ ch.send({type:"broadcast",event:"snap",payload:p}); }catch(e){}
+}
+function startHb(){ clearInterval(hbIv); hbIv=setInterval(sendSnap, 2500); }
+function hostAct(a){
+  if(a.t==="topic" && phase==="topic" && a.from===drawerId){
+    topic=String(a.topic||"").slice(0,12); if(!topic) return;
+    phase="draw"; tStart=Date.now();
+    enterDrawAll(); sendSnap();
+  }
+  if(a.t==="correct" && phase==="draw" && a.from===drawerId){
+    const w=byId(a.winId); if(!w||a.winId===drawerId) return;
+    const tier=tierOf(Date.now()-tStart);
+    if(players.length!==2){ w.s+=tier; byId(drawerId).s+=tier; }
+    lastCele={winId:a.winId, tier:tier, topic:topic, nextId:a.winId};
+    phase="celebrate"; stopTimer(); enterCelebrateAll(); sendSnap();
+    clearTimeout(celebTmr);
+    celebTmr=setTimeout(()=>{
+      roundNo++;
+      drawerId=lastCele.nextId;
+      if(!byId(drawerId)) drawerId=players[0].id;
+      hostOpenTopic();
+    },3600);
+  }
+}
+function sendAct(a){
+  a.from=myId;
+  if(isHost){ hostAct(a); return; }
+  if(ch){ try{ ch.send({type:"broadcast",event:"act",payload:a}); }catch(e){} }
+}
+function hostOpenTopic(){
+  phase="topic"; tStart=0;
+  enterTopicAll(); sendSnap();
+}
+function hostTimeUp(){
+  stopTimer();
+  if(dobonOn && players.length!==2) dobonId=drawerId;
+  phase="timeup"; enterTimeupAll(); sendSnap();
+  clearTimeout(celebTmr);
+  celebTmr=setTimeout(()=>{ phase="result"; enterResultAll(); sendSnap(); },3000);
+}
+function hostRestart(){
+  roundNo=1; dobonId=null; players.forEach(p=>p.s=0);
+  drawerId=players[Math.floor(Math.random()*players.length)].id;
+  clearArt(); drawCrema(); drawSwirl();
+  try{ ch.send({type:"broadcast",event:"reset",payload:{}}); }catch(e){}
+  hostOpenTopic();
+}
+
+/* --- 各フェーズの画面 --- */
+function closeGameOverlays(){
+  ["waitOverlay","judgeOverlay","celebOverlay","timeupOverlay","resultOverlay"].forEach(id=>$(id).classList.remove("on","peek"));
+  $("topicPanel").classList.remove("on"); $("topicPeek").style.display="none";
+  clearTimeout(topicTmr);
+}
+function enterTopicAll(){
+  closeGameOverlays();
+  stopTimer(); stopErase(true); pourStop(); stopDrawFlush(); drawing=false;
+  $("scoreBtn").style.display = isCoop() ? "none" : "";
+  gameScene.classList.add("online");
+  showScene(gameScene);
+  updateInfo(); resetRing();
+  if(drawerId===myId){ openTopic(); $("drawCtrl").style.display="none"; $("mateBtn").style.display="none"; }
+  else{
+    $("drawCtrl").style.display="none"; $("mateBtn").style.display="none";
+    const d=byId(drawerId);
+    $("waitDot").setAttribute("style", dotStyle(d?d.c:"#999"));
+    $("waitNm").textContent=(d?d.n:"？")+"の番！";
+    $("waitOverlay").classList.add("on");
+    $("cupWrap").classList.add("hide-labels");
+    startTopicRing();
+  }
+  renderChatSend();
+}
+function enterDrawAll(){
+  closeGameOverlays();
+  if(!isHost){ snapAt=Date.now(); snapEl=0; }
+  startDrawPhase(!isHost);
+  if(drawerId===myId){ startDrawFlush(); playStart(); showToast("はやく当てられるほど高得点！"); }
+  else showToast("わかったらチャットで「待て！」");
+  renderChatSend();
+}
+function enterCelebrateAll(){
+  stopTimer(); stopDrawFlush(); pourStop(); drawing=false; stopErase(true);
+  if(lastCele) showCelebrate(lastCele.winId, lastCele.tier, lastCele.topic);
+}
+function enterTimeupAll(){
+  closeGameOverlays();
+  stopTimer(); stopDrawFlush(); pourStop(); drawing=false; stopErase(true);
+  $("tuTopic").textContent=topic||"？";
+  const dob = dobonOn && !isCoop();
+  $("tuTitle").textContent = dob ? "ドボン" : "時間切れ";
+  $("tuSub").style.display = dob ? "" : "none";
+  playDobon();
+  $("tuOk").style.display="none";
+  $("timeupOverlay").classList.add("on");
+}
+function enterResultAll(){
+  closeGameOverlays();
+  showResult(dobonId?standingsWithDobon():standings(), isHost);
+}
+
+/* --- スナップ適用(ゲスト) --- */
+function applySnap(p){
+  clearTimeout(joinWatch);
+  hostId=p.hostId;
+  players=p.players||[];
+  roundNo=p.round||1; drawerId=p.drawerId||null;
+  timeLimit=p.tl||45; dobonOn=p.db===1; eraserOn=p.er===1;
+  snapAt=Date.now(); snapEl=p.el||0;
+  const ph=p.ph;
+  if(ph==="celebrate") lastCele=p.cele||lastCele;
+  if(ph==="timeup" && p.tu){ topic=p.tu.topic; }
+  if(ph==="result" && p.stand){ const dj=p.stand.find(s=>s.dobon); dobonId=dj?dj.id:null; }
+  if(ph===lastPh){
+    if(phase==="lobby") renderLobby();
+    else if(gameScene.classList.contains("on")) updateInfo();
+    return;
+  }
+  lastPh=ph; phase=ph;
+  if(ph==="lobby"){
+    document.querySelectorAll(".overlay").forEach(o=>o.classList.remove("on","peek"));
+    showScene(lobbyScene); renderLobby();
+  }
+  else if(ph==="topic") enterTopicAll();
+  else if(ph==="draw") enterDrawAll();
+  else if(ph==="celebrate"){ enterCelebrateAll(); }
+  else if(ph==="timeup") enterTimeupAll();
+  else if(ph==="result"){ if(p.stand){ closeGameOverlays(); showResult(p.stand, false); } }
+}
+
+/* --- チャット --- */
+const chatLog=$("chatLog");
+function renderChatSend(){
+  const meDrawer = drawerId===myId;
+  $("chatSend").textContent = meDrawer ? "送る" : "待て！";
+  $("chatSend").classList.toggle("plain", meDrawer);
+  $("chatInput").placeholder = meDrawer ? "ヒント・おしゃべり" : "答え・おしゃべり";
+}
+function addSys(tx){
+  const row=document.createElement("div"); row.className="ch-row sys"; row.textContent=tx;
+  chatLog.appendChild(row); trimChat();
+}
+function addChat(id, n, tx){
+  tx=String(tx||"").slice(0,20); if(!tx) return;
+  const p=byId(id);
+  const row=document.createElement("div"); row.className="ch-row";
+  row.innerHTML='<span class="c-dot" style="'+dotStyle(p?p.c:"#999")+'"></span><b></b> <span class="tx"></span>';
+  row.querySelector("b").textContent=(n||"？")+":";
+  row.querySelector(".tx").textContent=tx;
+  if(phase==="draw" && drawerId===myId && id!==myId){
+    row.classList.add("can-pick");
+    const mark=document.createElement("span"); mark.className="pickmark"; mark.textContent=TAPW+"で正解";
+    row.appendChild(mark);
+    row.addEventListener("click",()=>{ armPick(row, id); });
+  }
+  playChat();
+  chatLog.appendChild(row); trimChat();
+}
+function trimChat(){
+  while(chatLog.children.length>60) chatLog.removeChild(chatLog.firstChild);
+  chatLog.scrollTop=chatLog.scrollHeight;
+}
+function armPick(row, id){
+  ensureAudio(); playSelect();
+  if(armedRow===row){
+    clearTimeout(armedTmr); armedRow=null;
+    row.classList.remove("armed");
+    sendAct({t:"correct", winId:id});
+    return;
+  }
+  if(armedRow){ armedRow.classList.remove("armed"); const m=armedRow.querySelector(".pickmark"); if(m) m.textContent=TAPW+"で正解"; }
+  armedRow=row; row.classList.add("armed");
+  row.querySelector(".pickmark").textContent="もう一度"+TAPW+"で正解！";
+  clearTimeout(armedTmr);
+  armedTmr=setTimeout(()=>{ if(armedRow===row){ row.classList.remove("armed"); row.querySelector(".pickmark").textContent=TAPW+"で正解"; armedRow=null; } },3000);
+}
+function sendChat(){
+  const tx=$("chatInput").value.trim(); if(!tx||!online) return;
+  $("chatInput").value="";
+  addChat(myId, myName+"（じぶん）", tx);
+  if(ch){ try{ ch.send({type:"broadcast",event:"chat",payload:{id:myId,n:myName,tx:tx}}); }catch(e){} }
+}
+$("chatSend").addEventListener("click",()=>{ ensureAudio(); sendChat(); });
+$("chatInput").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); sendChat(); } });
+
+/* ================= あそびかた / 効果音 ================= */
+/* ---------- スタンプ(derby移植) ---------- */
+const STAMP_SVGS=['😭','😍','🤣'];
+function playStamp(i){   // スタンプ別の音(0泣く=しょんぼり下降 / 1うっとり=きらめき上昇 / 2爆笑=ぴょこぴょこ煽り)
+  if(!actx) return; const t=actx.currentTime;
+  if(i===0){ note(523,t,0.2,0.3,"sine"); note(392,t+0.15,0.22,0.3,"sine"); note(300,t+0.32,0.36,0.26,"sine"); }
+  else if(i===1){ note(523,t,0.34,0.22,"sine"); note(784,t+0.11,0.38,0.24,"sine"); note(1047,t+0.24,0.62,0.2,"sine"); note(1568,t+0.34,0.55,0.1,"triangle"); note(2349,t+0.46,0.5,0.06,"sine"); }
+  else{ const seq=[900,680,850,640,800,600,760,560]; seq.forEach((f,k)=>note(f, t+k*0.072, 0.07, 0.26, "triangle")); note(400, t+seq.length*0.072, 0.16, 0.24, "triangle"); }
+}
+function spawnStamp(i, name, color){
+  i=Math.max(0, Math.min(2, i|0));
+  const el=document.createElement("div"); el.className="stamp-fly";
+  const hx=0.06+Math.random()*0.88;                        // 横位置: 画面全幅
+  el.style.left="calc("+(hx*100).toFixed(1)+"% - 60px)";
+  const central=1-Math.abs(hx-0.5)*2;                      // 0(両端)〜1(中央)
+  el.style.setProperty("--rise", "-"+(24+(1-central)*16).toFixed(0)+"vh");   // 中央は低め・両端は高め
+  el.style.setProperty("--dx", (Math.random()*24-12).toFixed(0)+"px");
+  const em=document.createElement("span"); em.className="s-emoji"; em.textContent=STAMP_SVGS[i]; el.appendChild(em);
+  if(name){ const nm=document.createElement("span"); nm.className="s-name"; nm.style.color=color||"#fff"; nm.textContent=name; el.appendChild(nm); }
+  if(seOn) playStamp(i);
+  if(document.querySelector(".overlay.on")) el.classList.add("over-dialog");   // ダイアログ表示中も前面に
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 2350);
+}
+function sendStamp(i){
+  if(online){
+    const me=byId(myId);
+    const nm=me?me.n:(myName||"");
+    const col=me?me.c:"#fff";
+    spawnStamp(i, nm, col);
+    if(ch){ try{ ch.send({type:"broadcast",event:"stamp",payload:{i,name:nm,color:col}}); }catch(e){} }
+  }else{
+    spawnStamp(i);   // 1台は押した人を特定できないので名前なし
+  }
+}
+document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{
+  const i=+b.dataset.i; b.textContent=STAMP_SVGS[i];
+  b.addEventListener("click",()=>{ ensureAudio(); sendStamp(i); });
+});
+
+function buildHelp(){
+  $("helpBody").innerHTML='<div class="h-sec">基本ルール</div>'
+   +'<p>遊べば絶対に分かる！とりあえず遊んでみよう</p>'
+   +'<div class="h-sec">ながれ</div>'
+   +'<p>① 描き手がお題をこっそり決める<br>② 決めたお題のラテアートを描く<br>③ わかった人は「待て！」といって回答<br>④ 当てた人が次のお題を決める<br>以降②に戻り、時間切れになるまで繰り返し</p>'
+   +'<div class="h-sec hl">とくてん</div>'
+   +'<p>はやく当てたり、当ててもらうほど高得点</p>'
+   +'<div class="h-sec">小ばなし</div>'
+   +'<p>取っ手を持ったらカップを回転させるかも...</p>';
+}
+$("helpBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); buildHelp(); $("helpOverlay").classList.add("on"); });
+$("helpClose").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("helpOverlay").classList.remove("on"); });
+$("helpOverlay").addEventListener("click",e=>{ if(e.target===$("helpOverlay")){ playSelect(); $("helpOverlay").classList.remove("on"); } });
+const seBtn=$("seBtn");
+function renderSnd(){ seBtn.classList.toggle("off",!seOn); }
+seBtn.addEventListener("click",()=>{
+  ensureAudio();
+  seOn=!seOn; try{ localStorage.setItem("mate.se",seOn?"1":"0"); }catch(e){}
+  renderSnd();
+  if(seBus) seBus.gain.setTargetAtTime(seOn?1:0, actx.currentTime, 0.02);
+  if(seOn) playSelect();
+});
+window.addEventListener("pointerdown",ensureAudio,{passive:true});
+window.addEventListener("beforeunload",()=>{ if(ch){ try{ ch.send({type:"broadcast",event:"bye",payload:{id:myId}}); }catch(e){} } });
+
+/* 入力欄は、内容があればタッチで全選択(全入力欄共通) */
+document.addEventListener("focusin",e=>{
+  const t=e.target;
+  if(t && t.tagName==="INPUT" && t.value){ setTimeout(()=>{ try{ t.select(); }catch(_){}} ,0); }
+});
+
+/* 初期化 */
+$("mateSmall").textContent="当てた人が出てきたら"+TAPW;
+renderPlayersSetup(); renderRules(); renderSnd(); renderGauge(); renderPens(); resetRing();
+drawCrema(); drawSwirl();
+})();
+</script>
+</body>
+</html>

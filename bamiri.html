@@ -833,7 +833,7 @@
     const mine=tapes[tapeTurn];
     if(mine.has(i)){ mine.delete(i); playTapeOff(); }
     else{
-      if(mine.size>=tapeN){ playNo(); showToast("もう貼れる枚数がない(タップではがせる)"); return; }
+      if(mine.size>=tapeN){ playNo(); showToast("もう貼れる枚数がない("+(window.__TAPW||"タップ")+"ではがせる)"); return; }
       mine.add(i); playTape();
       cells[i].classList.remove("no-tape-anim");   // 新規貼りはペタッと跳ねる
     }
@@ -1438,7 +1438,7 @@
   document.getElementById("makeRoomBtn").addEventListener("click",()=>{
     ensureAudio(); playSelect();
     const code=genCode();
-    roomStatus('<div class="room-note">合言葉（タップでコピー）</div>'
+    roomStatus('<div class="room-note">合言葉（'+(window.__TAPW||"タップ")+'でコピー）</div>'
       +'<div class="code-show" id="codeShow"><svg class="cs-copy" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg><span class="cs-code">'+code+'</span></div>'
       +'<div class="room-note room-wait" id="hostNote">友だちに伝えて待とう</div>');
     document.getElementById("codeShow").addEventListener("click", async ()=>{
@@ -1797,5 +1797,6 @@
   }
 })();
 </script>
+<script>document.addEventListener("focusin",function(e){var t=e.target;if(t&&t.tagName==="INPUT"&&t.value){setTimeout(function(){try{t.select();}catch(_){}},0);}});(function(){var tap=(window.matchMedia&&matchMedia("(pointer:coarse)").matches)?"タップ":"クリック";window.__TAPW=tap;function run(){var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);var n;while(n=w.nextNode()){var v=n.nodeValue;if(v&&(v.indexOf("タップ")>=0||v.indexOf("タッチ")>=0))n.nodeValue=v.split("タッチ").join(tap).split("タップ").join(tap);}}if(document.readyState!=="loading")run();else document.addEventListener("DOMContentLoaded",run);})();</script>
 </body>
 </html>

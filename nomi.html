@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>ノミのみ</title>
+<meta name="apple-mobile-web-app-title" content="ノミのみ">
+<meta name="description" content="画面に映るのはノミのみ。ただ、ひたすらつぶすだけ。目的なし、終わりなし。あなたと世界のつぶし数が、ただ積み上がっていく">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="牧村が作ったゲーム集">
+<meta property="og:title" content="ノミのみ">
+<meta property="og:description" content="画面に映るのはノミのみ。ただ、ひたすらつぶすだけ。目的なし、終わりなし。あなたと世界のつぶし数が、ただ積み上がっていく">
+<meta name="twitter:card" content="summary">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&display=swap');
+  :root{
+    --ink:#1b1b1b;
+    --red:#e8402a;
+    --gold:#f2b035;
+    --fnum:"Cormorant Garamond","Zen Old Mincho",serif;   /* 数字=欧文セリフでオシャレに(牧村さん明示指示で他作品と雰囲気を変える) */
+  }
+  *{ font-family:"Zen Old Mincho","Hiragino Mincho ProN",serif; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; padding:0; width:100%; height:100%; overflow:hidden; position:fixed; background:#fff; color:var(--ink);
+    user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; touch-action:manipulation; }
+  button{ border:none; background:none; padding:0; cursor:pointer; color:inherit; white-space:nowrap; }
+
+  /* ===== ノミの野原(全画面キャンバス) ===== */
+  #cv{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:pointer; }
+
+  /* ===== HUD(枠なし・半透明・そっと置く) ===== */
+  .hud-top{ position:fixed; top:calc(10px + env(safe-area-inset-top)); left:0; right:0; pointer-events:none; z-index:10; }
+  /* 自分の名前(左上)=ペンアイコン+名前だけ(ペンが左) */
+  #namePill{ position:absolute; left:14px; top:8px; display:none; align-items:center; gap:7px; pointer-events:auto; opacity:.48; cursor:pointer; }
+  #namePill.show{ display:inline-flex; }
+  #namePill:active{ opacity:.85; }
+  #myName{ font-size:14px; font-weight:700; letter-spacing:.05em; max-width:34vw; overflow:hidden; text-overflow:ellipsis; }
+  #editBtn{ width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; }
+  #editBtn svg{ width:14px; height:14px; display:block; }
+  /* つぶした数(上中央・少し下げて・セリフ体でオシャレに) */
+  #count{ position:absolute; left:50%; top:44px; transform:translateX(-50%); font-family:var(--fnum); font-weight:500; letter-spacing:.06em;
+    font-size:clamp(38px,9vw,58px); line-height:1; color:rgba(27,27,27,.92); }
+  #count.pop{ animation:cpop .22s cubic-bezier(.2,1.6,.4,1); }
+  @keyframes cpop{ 0%{ transform:translateX(-50%) scale(1.18); } 100%{ transform:translateX(-50%) scale(1); } }
+  #count.gold{ color:var(--gold); text-shadow:0 0 14px rgba(242,176,53,.45); transition:color .15s, text-shadow .15s; }
+  /* 世界ボタン(右上・地球アイコンのみ・細く淡く=フォントの雰囲気に合わせる) */
+  #worldBtn{ position:absolute; right:14px; top:6px; width:40px; height:40px; pointer-events:auto; opacity:.32;
+    display:flex; align-items:center; justify-content:center; }
+  #worldBtn:active{ opacity:.7; transform:scale(.94); }
+  #worldBtn svg{ width:26px; height:26px; display:block; }
+
+  /* ハブへ(下端・ひかえめ) */
+  .home-foot{ position:fixed; left:50%; bottom:calc(8px + env(safe-area-inset-bottom)); transform:translateX(-50%);
+    font-size:11px; font-weight:700; color:rgba(27,27,27,.34); text-decoration:none; z-index:9; padding:6px 10px; }
+  .home-foot:active{ color:rgba(27,27,27,.6); }
+  /* オーバーレイ(世界/名前)表示中は、半透明ごしにHUDが透けて重ならないよう隠す */
+  body.veil .hud-top, body.veil .home-foot{ opacity:0; pointer-events:none; transition:opacity .15s linear; }
+
+  /* ===== 世界オーバーレイ(黒・半透明=うしろでノミが彷徨う) ===== */
+  #worldOverlay{ position:fixed; inset:0; z-index:40; background:rgba(0,0,0,.6); color:#fff;
+    display:flex; flex-direction:column; align-items:center; padding:calc(7vh + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom));
+    opacity:0; pointer-events:none; transition:opacity .22s linear; }
+  #worldOverlay.on{ opacity:1; pointer-events:auto; }
+  .w-label{ font-size:13px; font-weight:700; letter-spacing:.22em; color:rgba(255,255,255,.72); }
+  .w-total{ font-family:var(--fnum); font-weight:500; font-size:clamp(48px,13vw,84px); line-height:1.12; letter-spacing:.04em; margin-top:2px; }
+  .w-list{ margin-top:26px; width:min(420px,100%); flex:1 1 auto; min-height:0; overflow-y:auto; scrollbar-width:none; }
+  .w-list::-webkit-scrollbar{ display:none; }
+  .w-row{ display:flex; align-items:baseline; gap:12px; padding:7px 10px; border-radius:9px; font-size:15px; }
+  .w-row .rk{ width:2.2em; text-align:right; font-family:var(--fnum); font-weight:500; font-size:17px; color:rgba(255,255,255,.55); flex:none; }
+  .w-row .nm{ flex:1 1 auto; min-width:0; font-weight:700; letter-spacing:.04em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .w-row .sc{ font-family:var(--fnum); font-weight:600; font-size:18px; flex:none; }
+  .w-row.me{ box-shadow:inset 0 0 0 1px rgba(255,255,255,.85); }   /* 自分の行は白い枠で囲む(赤ハイライトは廃止) */
+  .w-sep{ text-align:center; color:rgba(255,255,255,.35); font-weight:700; padding:2px 0; letter-spacing:.3em; }
+  .w-state{ margin-top:34px; font-size:14px; font-weight:700; letter-spacing:.06em; color:rgba(255,255,255,.75); text-align:center; }
+  .w-retry{ margin-top:14px; font-size:14px; font-weight:700; letter-spacing:.1em; color:#fff; border:1px solid rgba(255,255,255,.55); border-radius:999px; padding:9px 26px; }
+  #worldClose{ margin-top:14px; flex:none; font-size:14.5px; font-weight:700; letter-spacing:.22em; text-indent:.22em; color:rgba(255,255,255,.85); padding:10px 36px; }
+  #worldClose:active{ opacity:.6; }
+
+  /* ===== 名前(黒オーバーレイに入力欄と決定だけ) ===== */
+  #nameOverlay{ position:fixed; inset:0; z-index:50; background:rgba(0,0,0,.6); color:#fff; display:none;
+    flex-direction:column; align-items:center; justify-content:center; padding:24px; }
+  #nameOverlay.on{ display:flex; }
+  .n-input{ width:min(300px,80vw); font-size:19px; font-weight:700; letter-spacing:.08em; text-align:center; color:#fff;
+    background:none; border:none; border-bottom:1px solid rgba(255,255,255,.6); border-radius:0; padding:10px 6px; outline:none; caret-color:#fff; }
+  .n-input::placeholder{ color:rgba(255,255,255,.4); }
+  .n-input:focus{ border-bottom-color:#fff; }
+  .n-note{ margin-top:14px; font-size:11px; font-weight:400; letter-spacing:.06em; color:rgba(255,255,255,.5); line-height:1.7; text-align:center; }
+  .n-err{ margin-top:10px; font-size:12.5px; font-weight:700; letter-spacing:.06em; color:#ffb1a5; visibility:hidden; }
+  .n-err.show{ visibility:visible; }
+  .n-btns{ margin-top:20px; display:flex; align-items:center; justify-content:center; gap:44px; }   /* 左=とじる・右=決定 */
+  .n-ok{ font-size:16px; font-weight:700; letter-spacing:.3em; text-indent:.3em; color:#fff; padding:10px 8px; }
+  .n-ok:active{ opacity:.6; }
+  .n-ok:disabled{ opacity:.45; }
+  .n-close{ font-size:13.5px; font-weight:700; letter-spacing:.12em; color:rgba(255,255,255,.55); padding:10px 8px; }
+  .n-close:active{ opacity:.8; }
+</style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8539036056022595" crossorigin="anonymous"></script>
+</head>
+<body>
+  <canvas id="cv"></canvas>
+
+  <div class="hud-top">
+    <div id="namePill">
+      <button id="editBtn" aria-label="名前を変更">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#1b1b1b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4L8 20l-5 1 1-5L17 3z"/></svg>
+      </button>
+      <span id="myName"></span>
+    </div>
+    <div id="count">0</div>
+    <button id="worldBtn" aria-label="世界のつぶし数">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#1b1b1b" stroke-width="1" stroke-linecap="round">
+        <circle cx="12" cy="12" r="9"/>
+        <ellipse cx="12" cy="12" rx="4.2" ry="9"/>
+        <path d="M3.6 9h16.8M3.6 15h16.8"/>
+      </svg>
+    </button>
+  </div>
+
+  <a class="home-foot" href="./index.html">牧村が作ったゲーム集へ</a>
+
+  <!-- 世界累計(黒オーバーレイ) -->
+  <div id="worldOverlay">
+    <div class="w-label">世界のみんなでつぶした数</div>
+    <div class="w-total" id="wTotal">-</div>
+    <div class="w-list" id="wList"></div>
+    <button id="worldClose">とじる</button>
+  </div>
+
+  <!-- 名前(黒オーバーレイに入力欄と決定だけ) -->
+  <div id="nameOverlay">
+    <input class="n-input" id="nameInput" maxlength="10" autocomplete="off" spellcheck="false" placeholder="あなたの名前">
+    <div class="n-note">登録した名前はオンラインランキングで他のプレイヤーに公開されます</div>
+    <div class="n-err" id="nameErr">この名前は使われています</div>
+    <div class="n-btns">
+      <button class="n-close" id="nameClose">とじる</button>
+      <button class="n-ok" id="nameOk">決定</button>
+    </div>
+  </div>
+
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const TAPW=(window.matchMedia&&matchMedia("(pointer:coarse)").matches)?"タップ":"クリック";
+window.__TAPW=TAPW;
+
+/* ================= 効果音(全合成) ================= */
+let actx=null, noiseBuf=null;
+function ensureAudio(){
+  if(!actx){
+    try{
+      actx=new (window.AudioContext||window.webkitAudioContext)();
+      const len=actx.sampleRate*1;
+      noiseBuf=actx.createBuffer(1,len,actx.sampleRate);
+      const d=noiseBuf.getChannelData(0);
+      for(let i=0;i<len;i++) d[i]=Math.random()*2-1;
+    }catch(e){}
+  }
+  if(actx && actx.state==="suspended"){ try{ actx.resume(); }catch(e){} }
+}
+function note(f,t,dur,vol,type){
+  if(!actx) return null;
+  const o=actx.createOscillator(), g=actx.createGain();
+  o.type=type||"sine"; o.frequency.setValueAtTime(f,t);
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+0.005); g.gain.exponentialRampToValueAtTime(0.0008,t+dur);
+  o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+dur+0.02);
+  return o;
+}
+/* つぶす音: 低い「ぼふっ」+出だしの「プチッ」。ピッチを毎回ゆらして連打が気持ちいいように */
+function playSquish(){
+  if(!actx) return;
+  const t=actx.currentTime, p=0.85+Math.random()*0.35;
+  // プチッ(出だしの一瞬だけの弾け。短く鋭く)
+  const pn=actx.createBufferSource(); pn.buffer=noiseBuf;
+  const bp=actx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.setValueAtTime(1900*p,t); bp.Q.value=2.2;
+  const gp=actx.createGain(); gp.gain.setValueAtTime(0,t); gp.gain.linearRampToValueAtTime(0.34,t+0.002); gp.gain.exponentialRampToValueAtTime(0.0008,t+0.022);
+  pn.connect(bp); bp.connect(gp); gp.connect(actx.destination); pn.start(t); pn.stop(t+0.03);
+  // ぼっ(ボディ。ここが主役。低すぎたので少し上げた=160→50Hz)
+  const o1=actx.createOscillator(), g1=actx.createGain();
+  o1.type="sine"; o1.frequency.setValueAtTime(160*p,t); o1.frequency.exponentialRampToValueAtTime(50*p,t+0.12);
+  g1.gain.setValueAtTime(0,t); g1.gain.linearRampToValueAtTime(0.68,t+0.006); g1.gain.exponentialRampToValueAtTime(0.0008,t+0.16);
+  o1.connect(g1); g1.connect(actx.destination); o1.start(t); o1.stop(t+0.19);
+  // ふっ(こもった空気。ローパスで丸く)
+  const ns=actx.createBufferSource(); ns.buffer=noiseBuf;
+  const lp=actx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.setValueAtTime(1050*p,t); lp.frequency.exponentialRampToValueAtTime(300*p,t+0.08); lp.Q.value=0.8;
+  const g2=actx.createGain(); g2.gain.setValueAtTime(0,t); g2.gain.linearRampToValueAtTime(0.34,t+0.004); g2.gain.exponentialRampToValueAtTime(0.0008,t+0.09);
+  ns.connect(lp); lp.connect(g2); g2.connect(actx.destination); ns.start(t); ns.stop(t+0.11);
+  // ぷに(鳴きがすっと落ちる。かわいげ)
+  const o3=actx.createOscillator(), g3=actx.createGain();
+  o3.type="sine"; o3.frequency.setValueAtTime(390*p,t+0.006); o3.frequency.exponentialRampToValueAtTime(175*p,t+0.07);
+  g3.gain.setValueAtTime(0,t+0.006); g3.gain.linearRampToValueAtTime(0.16,t+0.012); g3.gain.exponentialRampToValueAtTime(0.0008,t+0.09);
+  o3.connect(g3); g3.connect(actx.destination); o3.start(t+0.006); o3.stop(t+0.11);
+}
+function playSelect(){ if(!actx) return; const t=actx.currentTime; note(440,t,0.06,0.1,"triangle"); }
+
+/* ================= オンラインランキング(Supabase) =================
+   注意: 公開キーはINSERT/SELECTのみ(DELETE/PATCHは401)。行は消せない前提で、
+   mode列に「nomi:個人ID」を入れて行を積み、読む側で個人ごとの最大値に集約する。
+   (累計は増える一方なので最大値=最新。改名も最新行の名前が自動で勝つ) */
+const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co";
+const SB_KEY="sb_publishable_cak3-W9Mmgahnwawreoa1Q_CVuhmkKL";
+const SB_HEAD={ "apikey":SB_KEY, "Authorization":"Bearer "+SB_KEY };
+function getUid(){
+  try{
+    let u=localStorage.getItem("nomi.uid");
+    if(!u){ const a=new Uint8Array(8); crypto.getRandomValues(a); u=[...a].map(b=>b.toString(16).padStart(2,"0")).join(""); localStorage.setItem("nomi.uid",u); }
+    return u;
+  }catch(e){ return "anon"; }
+}
+const MYMODE="nomi:"+getUid();
+function playerName(){ try{ return (localStorage.getItem("nomi.name")||"").trim(); }catch(e){ return ""; } }
+function setPlayerName(n){ const v=[...(n||"")].slice(0,10).join("").trim(); try{ localStorage.setItem("nomi.name",v); }catch(e){} addNameHistory(v); }
+function nameHistory(){ try{ return JSON.parse(localStorage.getItem("nomi.names")||"[]"); }catch(e){ return []; } }
+function addNameHistory(n){ n=(n||"").trim(); if(!n) return; try{ const h=nameHistory(); if(!h.includes(n)){ h.push(n); localStorage.setItem("nomi.names",JSON.stringify(h)); } }catch(e){} }
+function myNames(){   // 自分が過去に使った名前(dox側もあわせて)=同じ端末なら取り戻せる
+  const s=new Set(nameHistory()); const cur=playerName(); if(cur) s.add(cur);
+  try{ JSON.parse(localStorage.getItem("dox.names")||"[]").forEach(n=>s.add(n)); }catch(e){}
+  try{ const dn=(localStorage.getItem("dox.name")||"").trim(); if(dn) s.add(dn); }catch(e){}
+  return s;
+}
+async function sbNameTaken(name){   // 他の誰かが使っている名前か(自分のIDの行は除く。通信エラー時は塞がない=doxと同じ)
+  try{
+    const r=await fetch(SB_URL+"/rest/v1/scores?name=eq."+encodeURIComponent(name)+"&select=mode&limit=10",{headers:SB_HEAD});
+    if(!r.ok) return false;
+    const a=await r.json();
+    return Array.isArray(a)&&a.some(x=>x.mode!==MYMODE);
+  }catch(e){ return false; }
+}
+let lastSync=0, lastSentScore=0, flushTimer=null;
+async function sbSubmit(opts){   // 自分の累計を1行追加で送る(読む側が最大値だけ拾う)
+  const name=playerName(); if(!name||!(count>0)||count<=lastSentScore) return;
+  const o=opts||{}, prev=lastSentScore;
+  lastSync=Date.now(); lastSentScore=count;
+  try{
+    const r=await fetch(SB_URL+"/rest/v1/scores",{ method:"POST", headers:{...SB_HEAD,"Content-Type":"application/json","Prefer":"return=minimal"}, body:JSON.stringify({ name:name.slice(0,10), score:count|0, mode:MYMODE }), keepalive:!!o.keepalive });
+    if(!r.ok) lastSentScore=prev;   // 失敗したら次の機会に送り直す
+  }catch(e){ lastSentScore=prev; }
+}
+function scheduleSync(){   // つぶすたびに呼ぶ。行を増やしすぎない送り方(初回すぐ→以降は+10匹かつ15秒あけて)
+  if(!playerName()) return;
+  const now=Date.now();
+  if(lastSentScore===0 || (count-lastSentScore>=10 && now-lastSync>15000)){ sbSubmit(); }
+  if(flushTimer) clearTimeout(flushTimer);
+  flushTimer=setTimeout(()=>{ flushTimer=null; sbSubmit(); }, 20000);   // 手が止まったら残りを送る
+}
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="hidden"){ sbSubmit({keepalive:true}); } });
+window.addEventListener("pagehide",()=>{ sbSubmit({keepalive:true}); });
+
+/* ================= つぶした数 ================= */
+let count=0; try{ count=parseInt(localStorage.getItem("nomi.count")||"0",10)||0; }catch(e){}
+const countEl=$("count");
+function renderCount(){ countEl.textContent=(count|0).toLocaleString("ja-JP"); }
+function bumpCount(){
+  count++;
+  try{ localStorage.setItem("nomi.count",String(count)); }catch(e){}
+  renderCount();
+  countEl.classList.remove("pop"); void countEl.offsetWidth; countEl.classList.add("pop");
+  if(count%100===0){ countEl.classList.add("gold"); setTimeout(()=>countEl.classList.remove("gold"),600); }   // 100匹ごとは金フラッシュのみ(音は鳴らさない)
+  scheduleSync();
+}
+renderCount();
+
+/* ================= ノミの野原 ================= */
+const cv=$("cv"), ctx=cv.getContext("2d");
+let vw=0, vh=0, dpr=1;
+function resize(){
+  dpr=Math.min(2, window.devicePixelRatio||1);
+  vw=window.innerWidth; vh=window.innerHeight;
+  cv.width=Math.round(vw*dpr); cv.height=Math.round(vh*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener("resize",resize); resize();
+
+/* ノミのスプライト=本当にただの点(まるい黒点のみ。トゲ・脚・影・ぼかしは一切なし) */
+const SPRITES=[];
+(function makeSprites(){
+  for(let v=0;v<6;v++){
+    const coreR=2.0+Math.random()*1.1;         // 点の大きさ(すこしだけ個体差)
+    const S=Math.ceil(coreR*2)+4;
+    const oc=document.createElement("canvas"); oc.width=S; oc.height=S;
+    const c=oc.getContext("2d");
+    c.fillStyle="#161616";
+    c.beginPath(); c.arc(S/2,S/2,coreR,0,6.284); c.fill();
+    SPRITES.push({cv:oc, size:S, coreR:coreR});
+  }
+})();
+
+const FLEA_CAP=20000;     // 実質無限にたまる(描画=点1個をスタンプするだけなので大量でも軽い。1.5秒に1匹なので到達には8時間超)
+const SPAWN_MS=1500;      // 1.5秒に1匹
+const fleas=[], parts=[], splats=[], ripples=[];
+function spawnFlea(inside){
+  if(fleas.length>=FLEA_CAP) return;
+  if(vw<50||vh<50) return;   // 画面サイズが取れていない間(裏タブでの起動直後など)は湧かせない
+  const side=Math.floor(Math.random()*4), m=26;   // 画面外から
+  let x,y;
+  if(inside){ x=20+Math.random()*(vw-40); y=20+Math.random()*(vh-40); }   // 留守の間に入りこんでいた分は画面内に
+  else if(side===0){ x=-m; y=Math.random()*vh; }
+  else if(side===1){ x=vw+m; y=Math.random()*vh; }
+  else if(side===2){ x=Math.random()*vw; y=-m; }
+  else{ x=Math.random()*vw; y=vh+m; }
+  const toward=Math.atan2(vh*(0.25+Math.random()*0.5)-y, vw*(0.25+Math.random()*0.5)-x);
+  fleas.push({
+    x:x, y:y, h:inside?Math.random()*6.283:toward, sp:7+Math.random()*9,   // ゆっくり(px/秒)
+    spr:SPRITES[Math.floor(Math.random()*SPRITES.length)],
+    ph:Math.random()*6.283, turnSeed:Math.random()*6.283,
+    inField:!!inside
+  });
+}
+/* ページを閉じている間・裏にしている間もたまる:
+   最後に生きていた時刻を覚えておき、開いた時に経過ぶんをまとめて湧かせる */
+let pendingCatchup=0;
+try{
+  const la=parseInt(localStorage.getItem("nomi.lastAlive")||"0",10);
+  if(la>0){ pendingCatchup=Math.min(FLEA_CAP, Math.floor((Date.now()-la)/SPAWN_MS)); }
+}catch(e){}
+let lastSpawn=Date.now();
+setInterval(()=>{
+  const now=Date.now();
+  let n=Math.floor((now-lastSpawn)/SPAWN_MS);   // 時間ベース=裏タブでタイマーが間引かれてもまとめて追いつく
+  if(n>0){ lastSpawn+=n*SPAWN_MS; while(n-->0) spawnFlea(); }
+  if(pendingCatchup>0 && vw>=50){ const k=Math.min(150,pendingCatchup); pendingCatchup-=k; for(let i=0;i<k;i++) spawnFlea(true); }
+  try{ localStorage.setItem("nomi.lastAlive",String(now)); }catch(e){}
+},1000);
+for(let i=0;i<5;i++) spawnFlea();   // 起動した瞬間から出はじめる
+window.addEventListener("pagehide",()=>{ try{ localStorage.setItem("nomi.lastAlive",String(Date.now())); }catch(e){} });
+
+function updateFlea(f,dt,t){
+  // 特殊な動きは無し=本当にじーっとゆっくり動き続けるだけ(ふらふら彷徨う)
+  f.h += Math.sin(t*0.7+f.turnSeed)*0.9*dt + (Math.random()-0.5)*0.5*dt;
+  const sp=f.sp*(0.75+0.25*Math.sin(t*0.9+f.ph));
+  f.x+=Math.cos(f.h)*sp*dt; f.y+=Math.sin(f.h)*sp*dt;
+  // 画面に入ったら、なるべく中にとどまる(ふちで内側へゆるく向き直す)
+  const m=12;
+  if(!f.inField && f.x>m && f.x<vw-m && f.y>m && f.y<vh-m) f.inField=true;
+  if(f.inField && (f.x<m||f.x>vw-m||f.y<m||f.y>vh-m)){
+    const ta=Math.atan2(vh/2-f.y, vw/2-f.x);
+    let d=ta-f.h; while(d>3.1416)d-=6.283; while(d<-3.1416)d+=6.283;
+    f.h+=d*Math.min(1, 3*dt);
+  }
+}
+function drawFlea(f){
+  // ただの点をそのまま置くだけ(回転・ゆらぎ・脚・影なし)
+  ctx.drawImage(f.spr.cv, f.x-f.spr.size/2, f.y-f.spr.size/2);
+}
+/* つぶした跡(すぐ薄れて消える。生々しくしない) */
+function addSplat(x,y,r){
+  const blobs=[];
+  for(let i=0;i<4;i++){ const a=Math.random()*6.283, d=r*(0.4+Math.random()*1.1);
+    blobs.push({dx:Math.cos(a)*d, dy:Math.sin(a)*d, rx:r*(0.8+Math.random()*0.8), ry:r*(0.5+Math.random()*0.6), rot:Math.random()*3.14}); }
+  splats.push({x:x,y:y,blobs:blobs,t:0});
+  for(let i=0;i<8;i++){ const a=Math.random()*6.283, v=60+Math.random()*160;
+    parts.push({x:x,y:y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:0,life:0.24+Math.random()*0.18,r:1+Math.random()*1.6}); }
+}
+function drawFx(dt){
+  for(let i=splats.length-1;i>=0;i--){ const s=splats[i]; s.t+=dt; const k=s.t/0.6;
+    if(k>=1){ splats.splice(i,1); continue; }
+    ctx.save(); ctx.translate(s.x,s.y); ctx.globalAlpha=0.3*(1-k); ctx.fillStyle="#222";
+    const g=1+k*0.3;
+    s.blobs.forEach(b=>{ ctx.beginPath(); ctx.ellipse(b.dx*g,b.dy*g,b.rx,b.ry,b.rot,0,6.284); ctx.fill(); });
+    ctx.restore(); }
+  for(let i=parts.length-1;i>=0;i--){ const p=parts[i]; p.t+=dt;
+    if(p.t>=p.life){ parts.splice(i,1); continue; }
+    p.x+=p.vx*dt; p.y+=p.vy*dt; p.vx*=0.9; p.vy*=0.9;
+    ctx.globalAlpha=0.7*(1-p.t/p.life); ctx.fillStyle="#1c1c1c";
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.284); ctx.fill(); ctx.globalAlpha=1; }
+  for(let i=ripples.length-1;i>=0;i--){ const r=ripples[i]; r.t+=dt; const k=r.t/0.32;
+    if(k>=1){ ripples.splice(i,1); continue; }
+    ctx.globalAlpha=0.24*(1-k); ctx.strokeStyle="#777"; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(r.x,r.y,6+k*22,0,6.284); ctx.stroke(); ctx.globalAlpha=1; }
+}
+
+let lastTs=0, lastFrameAt=Date.now();
+function frame(ts){
+  const dt=Math.min(0.05,(ts-lastTs)/1000)||0.016; lastTs=ts; lastFrameAt=Date.now();
+  const t=ts/1000;
+  ctx.clearRect(0,0,vw,vh);
+  fleas.forEach(f=>{ updateFlea(f,dt,t); drawFlea(f); });
+  drawFx(dt);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+/* rAFが止まる環境(裏タブ等)でも最低限動かす保険 */
+setInterval(()=>{ if(Date.now()-lastFrameAt>900){ lastFrameAt=Date.now(); const t=Date.now()/1000;
+  ctx.clearRect(0,0,vw,vh); fleas.forEach(f=>{ updateFlea(f,0.9,t); drawFlea(f); }); drawFx(0.9); } },1000);
+
+/* ================= つぶす ================= */
+cv.addEventListener("pointerdown",e=>{
+  ensureAudio();
+  const x=e.clientX, y=e.clientY;
+  const hitR=(matchMedia("(pointer:coarse)").matches?30:24);
+  let best=-1, bestD=1e9;
+  for(let i=0;i<fleas.length;i++){ const f=fleas[i];
+    const d=Math.hypot(f.x-x,f.y-y);
+    if(d<hitR+f.spr.coreR*1.5 && d<bestD){ bestD=d; best=i; } }
+  if(best>=0){
+    const f=fleas[best]; fleas.splice(best,1);
+    addSplat(f.x,f.y,f.spr.coreR);
+    playSquish();
+    if(navigator.vibrate){ try{ navigator.vibrate(12); }catch(_){}}
+    bumpCount();
+  }else{
+    ripples.push({x:x,y:y,t:0});
+  }
+});
+cv.addEventListener("contextmenu",e=>e.preventDefault());
+
+/* ================= 名前 ================= */
+const nameOverlay=$("nameOverlay"), nameInput=$("nameInput"), nameErr=$("nameErr"), nameOk=$("nameOk"), nameClose=$("nameClose");
+let nameRequired=false;
+function renderName(){
+  const n=playerName();
+  $("myName").textContent=n;
+  $("namePill").classList.toggle("show",!!n);
+}
+function openNameModal(req){
+  nameRequired=!!req;
+  nameClose.style.display=nameRequired?"none":"";
+  nameErr.classList.remove("show");
+  nameInput.value=playerName();
+  nameOk.disabled=false; nameOk.textContent="決定";
+  nameOverlay.classList.add("on"); document.body.classList.add("veil");
+  setTimeout(()=>{ try{ nameInput.focus(); nameInput.select(); }catch(e){} },60);
+}
+function closeNameModal(){ nameOverlay.classList.remove("on"); document.body.classList.remove("veil"); }
+function showNameErr(msg){ nameErr.textContent=msg; nameErr.classList.add("show"); }
+async function confirmName(){
+  const v=[...(nameInput.value||"")].slice(0,10).join("").trim();
+  if(!v){ showNameErr("名前を入力してください"); return; }
+  const cur=playerName();
+  if(v===cur){ closeNameModal(); return; }
+  nameOk.disabled=true; nameOk.textContent="確認中…";
+  let ok=true;
+  if(!myNames().has(v)){ ok=!(await sbNameTaken(v)); }   // 自分が過去に使った名前なら取り戻せる
+  nameOk.disabled=false; nameOk.textContent="決定";
+  if(!ok){ showNameErr("この名前は使われています"); return; }
+  setPlayerName(v);
+  renderName();
+  closeNameModal();
+  lastSentScore=0; sbSubmit();   // 名前を確定したらすぐ1回送る(改名なら新しい名前の行が最新=ランキングも変わる)
+}
+nameOk.addEventListener("click",()=>{ ensureAudio(); confirmName(); });
+nameClose.addEventListener("click",()=>{ ensureAudio(); playSelect(); closeNameModal(); });
+nameInput.addEventListener("keydown",e=>{ if(e.key==="Enter" && !e.isComposing){ e.preventDefault(); confirmName(); } });
+nameInput.addEventListener("input",()=>nameErr.classList.remove("show"));
+$("namePill").addEventListener("click",()=>{ ensureAudio(); playSelect(); openNameModal(false); });   // ペン+名前のどこを押しても変更できる
+renderName();
+if(!playerName()) openNameModal(true);   // 初回起動時のみ名前入力を依頼
+
+/* ================= 世界オーバーレイ ================= */
+const worldOverlay=$("worldOverlay"), wTotal=$("wTotal"), wList=$("wList");
+async function loadWorld(){
+  wTotal.textContent="-";
+  wList.innerHTML='<div class="w-state">読み込み中…</div>';
+  let raw=null;
+  try{
+    const r=await fetch(SB_URL+"/rest/v1/scores?mode=like.nomi:*&order=score.desc,created_at.asc&limit=1000&select=name,score,mode",{headers:SB_HEAD});
+    if(!r.ok) throw new Error("load "+r.status);
+    raw=await r.json();
+  }catch(e){
+    wList.innerHTML='<div class="w-state">読み込みに失敗しました（通信環境を確認）</div><div style="text-align:center"><button class="w-retry" id="wRetry">再読み込み</button></div>';
+    const rb=$("wRetry"); if(rb) rb.addEventListener("click",()=>{ playSelect(); loadWorld(); });
+    return;
+  }
+  // 個人(mode=nomi:ID)ごとに最大値の行だけ残す(累計は増える一方なので最大=最新。名前も最新のもの)
+  const seen=new Map();
+  raw.forEach(r=>{ if(!seen.has(r.mode)) seen.set(r.mode,{name:r.name, score:r.score|0, mode:r.mode}); });
+  // 自分のまだ送っていない分もその場で反映(見た目上ずれないように)
+  const me=playerName();
+  if(me && count>0){
+    const mine=seen.get(MYMODE);
+    if(mine){ mine.score=Math.max(mine.score, count|0); mine.name=me; }
+    else seen.set(MYMODE,{name:me, score:count|0, mode:MYMODE});
+  }
+  const rows=[...seen.values()].sort((a,b)=>b.score-a.score);
+  const total=rows.reduce((s,r)=>s+r.score,0);
+  wTotal.textContent=total.toLocaleString("ja-JP");
+  if(!rows.length){ wList.innerHTML='<div class="w-state">まだ誰も遊んでないよ...</div>'; return; }
+  const myIdx=rows.findIndex(r=>r.mode===MYMODE);
+  let html="";
+  rows.slice(0,30).forEach((r,i)=>{
+    html+='<div class="w-row'+(i===myIdx?" me":"")+'"><span class="rk">'+(i+1)+'</span><span class="nm">'+escHtml(r.name)+'</span><span class="sc">'+r.score.toLocaleString("ja-JP")+'</span></div>';
+  });
+  if(myIdx>=30){
+    html+='<div class="w-sep">…</div>';
+    html+='<div class="w-row me"><span class="rk">'+(myIdx+1)+'</span><span class="nm">'+escHtml(me)+'</span><span class="sc">'+rows[myIdx].score.toLocaleString("ja-JP")+'</span></div>';
+  }
+  wList.innerHTML=html;
+}
+function escHtml(s){ return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
+function closeWorld(){ worldOverlay.classList.remove("on"); document.body.classList.remove("veil"); }
+$("worldBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); worldOverlay.classList.add("on"); document.body.classList.add("veil"); loadWorld(); });
+$("worldClose").addEventListener("click",()=>{ playSelect(); closeWorld(); });
+worldOverlay.addEventListener("click",e=>{ if(e.target===worldOverlay){ closeWorld(); } });
+
+window.addEventListener("pointerdown",ensureAudio,{passive:true});
+
+/* 入力欄は、内容があればタッチで全選択(全入力欄共通) */
+document.addEventListener("focusin",e=>{
+  const t=e.target;
+  if(t && t.tagName==="INPUT" && t.value){ setTimeout(()=>{ try{ t.select(); }catch(_){}} ,0); }
+});
+})();
+</script>
+</body>
+</html>

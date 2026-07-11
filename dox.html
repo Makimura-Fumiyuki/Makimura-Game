@@ -1210,35 +1210,43 @@
   async function sbNameExists(name){   // is this name already used by someone in the scores table?
     try{ const r=await fetch(SB_URL+"/rest/v1/scores?name=eq."+encodeURIComponent(name)+"&select=name&limit=1", { headers: SB_HEAD }); if(!r.ok) return false; const a=await r.json(); return Array.isArray(a)&&a.length>0; }catch(e){ return false; }   // on any error (e.g. offline) don't block registration
   }
-  async function sbRename(oldName, newName){   // propagate a name change to the online ranking (renames all of this player's rows)
-    if(!oldName || !newName || oldName===newName) return;
-    try{ await fetch(SB_URL+"/rest/v1/scores?name=eq."+encodeURIComponent(oldName), { method:"PATCH", headers:{ ...SB_HEAD, "Content-Type":"application/json", "Prefer":"return=minimal" }, body: JSON.stringify({ name:newName }) }); }catch(e){}
+  // NOTE: the public key allows INSERT/SELECT only — DELETE/PATCH return 401 (42501, verified 2026-07-12).
+  // Rows can never be removed, so writes are INSERT-only and the reader collapses history per player:
+  // a score-0 row is a "tombstone" that hides all OLDER rows of that name (used for rename & delete-my-records).
+  const SB_MODES=["score","speed","endless"];
+  function sbPost(name, sc, mode){   // one INSERT (the only write the public key permits)
+    return fetch(SB_URL+"/rest/v1/scores", { method:"POST",
+      headers:{ ...SB_HEAD, "Content-Type":"application/json", "Prefer":"return=minimal" },
+      body: JSON.stringify({ name:(name||"").slice(0,10), score:sc|0, mode:mode }) });
   }
-  async function sbDeleteMine(){   // delete this player's records from the online ranking (all modes)
+  async function sbRename(oldName, newName){   // rename = repost my local bests under the new name + tombstone the old name (PATCH is not permitted)
+    if(!oldName || !newName || oldName===newName) return;
+    try{
+      for(const m of SB_MODES){
+        const b=(loadBest(m)[0]|0);
+        if(b>0) await sbPost(newName, b, m);   // carry my best over to the new name
+        await sbPost(oldName, 0, m);           // hide every older row of the old name
+      }
+    }catch(e){}
+  }
+  async function sbDeleteMine(){   // "delete my records" = tombstone my name in every mode (DELETE is not permitted)
     const name=playerName(); if(!name) return;
-    try{ await fetch(SB_URL+"/rest/v1/scores?name=eq."+encodeURIComponent(name), { method:"DELETE", headers:{ ...SB_HEAD, "Prefer":"return=minimal" } }); }catch(e){}
+    try{ for(const m of SB_MODES) await sbPost(name, 0, m); }catch(e){}
   }
   try{ addNameHistory(playerName()); }catch(e){}   // seed the current name so the player can always reclaim it
   async function sbSubmit(mode, sc){            // send a score (skips 0s and runs only if a name is set)
     const name = playerName(); if(!name || !(sc>0)) return;
-    try{
-      // keep only this player's best per mode: remove their old row(s) for this mode, then insert the new best
-      await fetch(SB_URL+"/rest/v1/scores?name=eq."+encodeURIComponent(name)+"&mode=eq."+encodeURIComponent(mode), { method:"DELETE", headers:{ ...SB_HEAD, "Prefer":"return=minimal" } });
-      await fetch(SB_URL+"/rest/v1/scores", { method:"POST",
-        headers:{ ...SB_HEAD, "Content-Type":"application/json", "Prefer":"return=minimal" },
-        body: JSON.stringify({ name:name.slice(0,10), score:sc|0, mode:mode }) });
-    }catch(e){}
+    try{ await sbPost(name, sc, mode); }catch(e){}   // rows pile up per personal best; collapseRows() folds them to one per player on read
   }
-  async function sbTop(mode, limit){            // top-N for a mode (highest first; ties: earliest wins)
-    const r = await fetch(SB_URL+"/rest/v1/scores?mode=eq."+mode+"&order=score.desc,created_at.asc&limit="+limit+"&select=name,score", { headers: SB_HEAD });
-    if(!r.ok) throw new Error("top "+r.status);
-    return await r.json();
-  }
-  async function sbRank(mode, sc){              // my rank = (number of scores strictly higher) + 1
-    const r = await fetch(SB_URL+"/rest/v1/scores?mode=eq."+mode+"&score=gt."+(sc|0)+"&select=id", { method:"HEAD", headers:{ ...SB_HEAD, "Prefer":"count=exact" } });
-    const cr = r.headers.get("content-range")||"";   // e.g. "*/123"
-    const total = parseInt((cr.split("/")[1]||"0"), 10) || 0;
-    return total+1;
+  async function sbTop(mode){                   // full history for a mode, newest first (paged 1000/req, capped at 5000 rows)
+    const out=[];
+    for(let off=0; off<5000; off+=1000){
+      const r = await fetch(SB_URL+"/rest/v1/scores?mode=eq."+mode+"&order=created_at.desc&limit=1000&offset="+off+"&select=name,score,created_at", { headers: SB_HEAD });
+      if(!r.ok) throw new Error("top "+r.status);
+      const a = await r.json(); out.push(...a);
+      if(!Array.isArray(a) || a.length<1000) break;
+    }
+    return out;
   }
   // ----- name-entry modal (Esc/Enter = decide) -----
   const nameModal=document.getElementById("nameModal"), nameInput=document.getElementById("nameInput");
@@ -1307,7 +1315,16 @@
       html += '<div class="rank-row'+(mine?" mine":"")+'"><span class="rk">'+rank+'</span><span class="nm">'+escRank(r.name)+'</span><span class="sc">'+rankScoreHTML(r.score|0)+'</span></div>'; });
     return html;
   }
-  function dedupByName(rows){ const seen=new Set(), out=[]; for(const r of (rows||[])){ if(seen.has(r.name)) continue; seen.add(r.name); out.push(r); } return out; }   // keep each player once (their best, since rows are score-desc)
+  function collapseRows(rows){   // rows are newest-first; keep each player's best since their last tombstone (score-0 row = "hide everything older")
+    const best=new Map(), dead=new Set();
+    for(const r of (rows||[])){
+      if(dead.has(r.name)) continue;
+      if(!(r.score>0)){ dead.add(r.name); continue; }   // tombstone: rows newer than it were already taken above, older ones are dropped
+      const b=best.get(r.name);
+      if(!b || r.score>b.score) best.set(r.name, r);
+    }
+    return [...best.values()].sort((a,b)=> (b.score-a.score) || (a.created_at<b.created_at?-1:a.created_at>b.created_at?1:0));   // highest first; ties: earliest wins
+  }
   function posLabel(r){ const T=I18N[uiLang]; return (T.rankPre||"")+r+(T.rankSuf||""); }   // localized rank label, e.g. "5位" / "#5" / "第5名" / "5위"
   function setRankMe(rank, score, animDir){   // bottom-left corner: line1 = name, line2 = rank + score
     const name=playerName();
@@ -1376,7 +1393,7 @@
     const myName=playerName(), myBest=loadBest(mode)[0];
     rankLoadFailed=false;
     try{
-      const all = dedupByName(await sbTop(mode, 1000));   // one row per player (their best), highest first
+      const all = collapseRows(await sbTop(mode));   // one row per player (their best), highest first; tombstoned (deleted/renamed) players hidden
       if(myReq!==rankReqId) return;   // superseded by a newer request
       rankLoadFailed=false; const rows = all.slice(0, 300); setRankRows(rows, myName, animDir);
       const myIdx = myName ? all.findIndex(r=>r.name===myName) : -1;
@@ -3288,5 +3305,6 @@
   showTitle();   // start on the title screen
 })();
 </script>
+<script>document.addEventListener("focusin",function(e){var t=e.target;if(t&&t.tagName==="INPUT"&&t.value){setTimeout(function(){try{t.select();}catch(_){}},0);}});(function(){var tap=(window.matchMedia&&matchMedia("(pointer:coarse)").matches)?"タップ":"クリック";window.__TAPW=tap;function run(){var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);var n;while(n=w.nextNode()){var v=n.nodeValue;if(v&&(v.indexOf("タップ")>=0||v.indexOf("タッチ")>=0))n.nodeValue=v.split("タッチ").join(tap).split("タップ").join(tap);}}if(document.readyState!=="loading")run();else document.addEventListener("DOMContentLoaded",run);})();</script>
 </body>
 </html>

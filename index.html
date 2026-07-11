@@ -99,6 +99,7 @@
   .c-thumb.t-maigomoku{ background:#f3ead7; }
   .c-thumb.t-bamiri{ background:#eef1ea; }
   .c-thumb.t-derby{ background:#f4f1e9; }
+  .c-thumb.t-mate{ background:#f6efe1; }
   .c-body{ padding:22px 22px 20px; display:flex; flex-direction:column; flex:1; }
   .c-name{ font-size:22px; font-weight:800; letter-spacing:.02em; color:var(--red);
     display:flex; align-items:center; gap:9px; }
@@ -656,10 +657,71 @@
             <span class="c-players"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6.5" cy="9" r="2.6"/><path d="M6.5 12.6c-2.6 0-4.5 1.5-4.5 3.6V18h9v-1.8c0-2.1-1.9-3.6-4.5-3.6z"/><circle cx="17.5" cy="9" r="2.6"/><path d="M17.5 12.6c-2.6 0-4.5 1.5-4.5 3.6V18h9v-1.8c0-2.1-1.9-3.6-4.5-3.6z"/><circle cx="12" cy="6.5" r="3"/><path d="M12 10.6c-3 0-5.2 1.8-5.2 4.2V17.4h10.4v-2.6c0-2.4-2.2-4.2-5.2-4.2z"/></svg>2〜99人</span>
           </div>
           <div class="c-desc">
-            「コースを走るのは馬じゃない。俺たちだ」お題に数字で答え、誰が１位になるかチップで予想しよう
+            「コースを走るのは馬じゃない。俺たちだ」お題に数字で答え、誰が一番大きい数字を回答したか予想して、チップを賭けよう
           </div>
           <div class="c-tags">
             <!-- wrap-reverse: DOM順の逆から積む(下段=先頭の2つ / 上段=大人数) -->
+            <span class="tag">ローカル対戦</span><span class="tag">オンライン対戦</span>
+            <span class="t-brk"></span>
+            <span class="tag">大人数</span>
+          </div>
+          <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
+        </div>
+      </a>
+    </template>
+
+    <template id="tpl-mate">
+      <a class="card" href="./mate.html">
+        <div class="c-bar"></div>
+        <div class="c-thumb t-mate">
+          <!-- 待て！アート: 上から見たラテカップ。クレマにミルクのハートを描きかけ + 赤い「待て！」バースト -->
+          <svg viewBox="0 0 260 132" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="mtCrema" cx=".42" cy=".38" r=".78">
+                <stop offset="0" stop-color="#e0b077"/><stop offset=".6" stop-color="#c8945a"/><stop offset="1" stop-color="#a9713a"/>
+              </radialGradient>
+            </defs>
+            <rect width="260" height="132" fill="#f6efe1"/>
+            <rect x="163" y="60" width="24" height="12" rx="6" fill="#fdfcf8" stroke="#d8c9ae" stroke-width="1.4"/>
+            <circle cx="116" cy="66" r="52" fill="#fdfcf8"/>
+            <circle cx="116" cy="66" r="52" fill="none" stroke="#d8c9ae" stroke-width="1.6"/>
+            <circle cx="116" cy="66" r="42" fill="url(#mtCrema)"/>
+            <!-- ミルクで手書きした猫(線画・ゆるい非対称) -->
+            <g transform="rotate(-2.5 116 68)">
+              <g fill="none" stroke="#fff7ea" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M95 68 C94 58.5 102 53 115.5 53.5 C130 53 138 59 137 69 C137.5 78.5 129 84.5 115 84.5 C101 85 95.5 77 95 68 Z"/>
+                <path d="M101.5 57 Q100 48.5 106.5 50.6 Q110.5 52 110 55.6"/>
+                <path d="M129.5 56.5 Q131.5 48 125 50.4 Q121 51.8 121.4 55.4"/>
+              </g>
+              <g stroke="#fff7ea" stroke-width="2.3" stroke-linecap="round" fill="none">
+                <path d="M100 66.5 L93.5 65.4"/><path d="M100.5 70.8 L94.4 71.9"/>
+                <path d="M131.6 65.8 L138.1 64.7"/><path d="M131.2 70.2 L137.3 71.3"/>
+                <path d="M116 69.5 v2"/><path d="M116 71.5 q-3 2.9 -5.9 1.1"/><path d="M116 71.5 q3 2.9 5.9 1.1"/>
+              </g>
+              <circle cx="110" cy="66.6" r="2.1" fill="#fff7ea"/>
+              <circle cx="122.6" cy="66" r="2.1" fill="#fff7ea"/>
+            </g>
+            <!-- 湯気 -->
+            <g transform="rotate(-38 66 16) translate(-27,1)">
+              <path d="M68 34 c-4 -3.2 -4 -5.8 0 -8.6 c4 -2.8 4 -5.4 0 -8.2" fill="none" stroke="#cdb798" stroke-width="4" stroke-linecap="round" opacity=".55"/>
+              <path d="M79 28 c-4 -3.2 -4 -5.8 0 -8.6 c4 -2.8 4 -5.4 0 -8.2" fill="none" stroke="#cdb798" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+              <path d="M90 33 c-4 -3.2 -4 -5.8 0 -8.6 c4 -2.8 4 -5.4 0 -8.2" fill="none" stroke="#cdb798" stroke-width="4" stroke-linecap="round" opacity=".4"/>
+            </g>
+            <!-- 待て！バースト -->
+            <g transform="translate(192,34) rotate(6)">
+              <path transform="scale(0.47,0.48) translate(-100,-50)" d="M100 2 L112 14 L130 5 L136 18 L156 12 L157 26 L178 24 L173 37 L194 40 L184 50 L194 60 L173 63 L178 76 L157 74 L156 88 L136 82 L130 95 L112 86 L100 98 L88 86 L70 95 L64 82 L44 88 L43 74 L22 76 L27 63 L6 60 L16 50 L6 40 L27 37 L22 24 L43 26 L44 12 L64 18 L70 5 L88 14 Z" fill="#e2472e"/>
+              <text x="-5" y="10" text-anchor="middle" font-size="22" font-weight="900" font-style="italic" fill="#ffffff">待て！</text>
+            </g>
+          </svg>
+        </div>
+        <div class="c-body">
+          <div class="c-name">待て！アート
+            <span class="c-players"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6.5" cy="9" r="2.6"/><path d="M6.5 12.6c-2.6 0-4.5 1.5-4.5 3.6V18h9v-1.8c0-2.1-1.9-3.6-4.5-3.6z"/><circle cx="17.5" cy="9" r="2.6"/><path d="M17.5 12.6c-2.6 0-4.5 1.5-4.5 3.6V18h9v-1.8c0-2.1-1.9-3.6-4.5-3.6z"/><circle cx="12" cy="6.5" r="3"/><path d="M12 10.6c-3 0-5.2 1.8-5.2 4.2V17.4h10.4v-2.6c0-2.4-2.2-4.2-5.2-4.2z"/></svg>2〜12人</span>
+          </div>
+          <div class="c-desc">
+            何を描いている分かったら「待て！」誰よりも早く答えよう。——そして、次のお題の絵は“続き”から描きます。つまり「上書きお絵描きゲーム」です
+          </div>
+          <div class="c-tags">
             <span class="tag">ローカル対戦</span><span class="tag">オンライン対戦</span>
             <span class="t-brk"></span>
             <span class="tag">大人数</span>
@@ -713,6 +775,7 @@
 (function(){
   /* ゲームのデータ: release=リリース日 / cats=カテゴリ / clicks=あそばれた回数(サーバー集計) */
   const GAMES=[
+    { id:"mate", tpl:"tpl-mate", release:"2026-07-11", cats:["パーティ"], clicks:null, likes:null },
     { id:"derby", tpl:"tpl-derby", release:"2026-07-10", cats:["パーティ"], clicks:null, likes:null },
     { id:"dox",  tpl:"tpl-dox",  release:"2026-07-06", cats:["スコアアタック"], clicks:null, likes:null },   // clicks/likes: null=集計未着(表示しない)
     { id:"bamiri", tpl:"tpl-bamiri", release:"2026-07-08", cats:["対戦"], clicks:null, likes:null },
@@ -779,7 +842,7 @@
   const byPop=(a,b)=>((b.likes||0)-(a.likes||0))||byRelease(a,b);          // 人気順=いいねが多い順
   const byPlay=(a,b)=>((b.clicks||0)-(a.clicks||0))||byRelease(a,b);       // あそばれた回数が多い順
   const byFav=(a,b)=>((hasLiked(b.id)?1:0)-(hasLiked(a.id)?1:0))||byRelease(a,b);   // お気に入り=自分がいいねした作品を上に
-  const REC_ORDER=["derby","moku","maigo","maigomoku","bamiri","dox"];   // 牧村おすすめ順(手動)
+  const REC_ORDER=["derby","mate","moku","maigo","maigomoku","bamiri","dox"];   // 牧村おすすめ順(手動)
   const recIdx=id=>{ const i=REC_ORDER.indexOf(id); return i<0?999:i; };
   const byRec=(a,b)=>(recIdx(a.id)-recIdx(b.id))||byRelease(a,b);
   /* あそばれた回数の表記: 9,999までは実数 / 1万以上は「万」(1.2万→12万→123万) / 1億以上は「億」 */
