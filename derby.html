@@ -136,6 +136,7 @@
   .lobby-row{ display:flex; align-items:center; gap:10px; background:#fff; border-radius:10px; padding:9px 14px; }
   .lobby-row .p-dot{ width:24px; height:24px; }
   .lobby-row .lr-nm{ flex:1 1 0; font-weight:900; text-align:left; }
+  #lobbyStart:disabled{ opacity:.4; cursor:default; }
   .lobby-row .lr-host{ font-size:11px; font-weight:700; color:var(--gold-dark); background:rgba(242,176,53,.16); border-radius:999px; padding:2px 9px 3px; }
   .lr-you{ flex:none; font-size:11px; font-weight:900; color:#fff; background:#8a6a3f; border-radius:999px; padding:2px 10px 3px; margin-left:6px; }
   .wait-prog{ font-family:"Noto Sans JP","Hiragino Sans",sans-serif; font-weight:900; font-size:20px; color:var(--turf-dark); }
@@ -190,7 +191,7 @@
   @keyframes panelIn{ from{ opacity:0; transform:translateY(16px); } to{ opacity:1; transform:translateY(0); } }
 
   .top-bar{
-    position:fixed; top:clamp(12px,4.5vh,40px); left:50%; transform:translateX(-50%); z-index:20;
+    position:fixed; top:clamp(88px,12vh,110px); left:50%; transform:translateX(-50%); z-index:20;   /* 効果音/チップ状況ボタン(右上)と重ならない高さ */
     display:none; flex-direction:column; align-items:center; gap:6px; max-width:96vw;
   }
   #gameScene.on ~ .top-bar{ display:flex; }
@@ -269,6 +270,9 @@
     border-radius:999px; padding:2px 9px 3px; white-space:nowrap; }
   .cand .p-dot{ width:24px; height:24px; }
   .cand .c-nm{ flex:1 1 0; font-weight:900; font-size:17px; }
+  .cand.out{ opacity:.45; }
+  .cand.out .c-nm{ color:#8a8a8a; }
+  .out-tag{ font-size:11px; font-weight:800; color:#777; background:rgba(0,0,0,.08); border-radius:999px; padding:2px 9px 3px; flex:none; }
   .cand .c-me{ flex:none; font-size:11px; font-weight:700; color:var(--turf-dark); background:rgba(31,155,220,.14); border-radius:999px; padding:2px 9px 3px; }
   .cand .cand-chips{ flex:none; font-family:var(--fnum); font-weight:900; font-size:13px; color:var(--gold-dark); }
   .bet-amount{ display:flex; align-items:center; gap:5px; justify-content:center; flex-wrap:nowrap; max-width:100%; }
@@ -1523,13 +1527,19 @@
   }
   function renderCandidates(betterIdx){
     const list=document.getElementById("candList"); list.innerHTML="";
+    // 時間切れで数字を入れられなかった人(未出場)は賭け対象から外す
+    const isIn=(i)=>{ if(mode!=="online") return true;
+      if(isHost) return numbers[i]!=null;
+      return lastEntered.includes(players[i].id); };
     players.forEach((p,i)=>{
-      const el=document.createElement("div"); el.className="cand";
-      // 右側に「出題者」(四角)→「じぶん」の順で表示
+      const inRace=isIn(i);
+      const el=document.createElement("div"); el.className="cand"+(inRace?"":" out");
+      // 右側に「出題者」(四角)→「じぶん」→「未出場」の順で表示
       el.innerHTML='<span class="p-dot" style="'+dotStyle(p.color)+'"></span><span class="c-nm">'+esc(p.name)+'</span>'
         +(i===repIdx?'<span class="setter-tag">出題者</span>':'')
-        +(i===betterIdx?'<span class="c-me">じぶん</span>':'');
-      el.addEventListener("click",()=>{ ensureAudio(); playSelect();
+        +(i===betterIdx?'<span class="c-me">じぶん</span>':'')
+        +(inRace?'':'<span class="out-tag">未出場</span>');
+      if(inRace) el.addEventListener("click",()=>{ ensureAudio(); playSelect();
         curCand=i; list.querySelectorAll(".cand").forEach(c=>c.classList.remove("sel")); el.classList.add("sel");
         if(mode==="online") sendPick(i); });
       list.appendChild(el);
@@ -1812,7 +1822,16 @@
     h.innerHTML='<svg viewBox="0 0 24 24" fill="#ff4d6d"><path d="M12 21C6.5 16.7 3 13.4 3 9.3 3 6.6 5.1 4.6 7.7 4.6c1.6 0 3.2.8 4.3 2.2 1.1-1.4 2.7-2.2 4.3-2.2C18.9 4.6 21 6.6 21 9.3c0 4.1-3.5 7.4-9 11.7z"/></svg>';
     run.appendChild(h); setTimeout(()=>h.remove(), 800);
   }
-  document.getElementById("cheerBtn").addEventListener("click",()=>{ ensureAudio(); cheerShake(); });
+  document.getElementById("cheerBtn").addEventListener("click",()=>{ ensureAudio(); cheerShake();
+    if(mode==="online" && ch){ try{ ch.send({type:"broadcast",event:"cheer",payload:{by:myId}}); }catch(e){} } });   // 応援も全員に見せる(ロスト実害なし)
+  function remoteCheer(by){   // 他プレイヤーの応援: その人が賭けた馬を震わせてハート(音は鳴らさない)
+    if(!raceRunners.length) return;
+    const i=idxOfId(by);
+    let targets=[];
+    if(i>=0 && bets[i] && raceRunners[bets[i].on]) targets=[raceRunners[bets[i].on]];
+    if(!targets.length) return;
+    targets.forEach(r=>{ if(!r) return; r.classList.remove("cheershake"); void r.offsetWidth; r.classList.add("cheershake"); spawnHeart(r); });
+  }
   // 待機中に「変更する」: 数字/賭けを入れ直す(まだそのフェーズが続いている間だけ有効)
   document.getElementById("waitBack").addEventListener("click",()=>{
     ensureAudio(); playSelect();
@@ -2043,8 +2062,13 @@
   let toastTimer=0;
   function showToast(msg,ms){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("on");
     clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("on"), ms||1800); }
+  document.addEventListener("visibilitychange",()=>{   // スマホ復帰時: チャネルが死んでいたら再接続
+    if(document.visibilityState==="visible" && mode==="online" && code && gameScene.classList.contains("on")){
+      try{ if(!ch || ch.state!=="joined"){ rejoinTries=0; scheduleRejoin(); } }catch(e){}
+    }
+  });
   function goTitle(){
-    if(mode==="online"){ leaveChannel(); }
+    if(mode==="online"){ leaveChannel(); rejoinTries=99; clearTimeout(rejoinTmr); }
     stopTimer(); stopHostTimer();
     document.getElementById("backFixed").style.display="none";
     mode="local"; setDirBadge(false);
@@ -2137,7 +2161,15 @@
     inp.focus();
   });
 
-  function joinRoom(c, asHost){
+  let rejoinTries=0, rejoinTmr=0;
+  function scheduleRejoin(){   // 通信が切れてもゲームを壊さず静かに再入室を試みる(スマホのスリープ対策)
+    if(mode!=="online" || !code) return;
+    if(rejoinTries>=6){ showToast("通信が切れました…"); return; }
+    rejoinTries++;
+    clearTimeout(rejoinTmr);
+    rejoinTmr=setTimeout(()=>{ if(mode==="online"&&code) joinRoom(code, isHost, true); }, 1200);
+  }
+  function joinRoom(c, asHost, resume){
     leaveChannel();
     mode="online"; isHost=asHost;
     ch=sbClient().channel("derby_"+c, { config:{ presence:{ key:myId }, broadcast:{ self:false } } });
@@ -2146,20 +2178,31 @@
     ch.on("broadcast",{event:"act"},({payload})=>{ if(isHost) onAct(payload); });
     ch.on("broadcast",{event:"actack"},({payload})=>{ const p=pendingActs[payload.aid]; if(p){ clearInterval(p.timer); delete pendingActs[payload.aid]; } });
     ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) spawnStamp(payload.i|0, payload.name||"", payload.color||"#fff"); });   // 送信者の名前+色で表示(ロストしても実害なし)
+    ch.on("broadcast",{event:"cheer"},({payload})=>{ if(payload&&payload.by) remoteCheer(payload.by); });   // 応援の共有
     ch.on("presence",{event:"sync"},()=>{
       const st=ch.presenceState(); members={};
       Object.keys(st).forEach(k=>{ const m=st[k][0]; if(m) members[m.id]={name:m.name, t:m.t}; });
-      if(isHost){ hostPresenceChanged(); }
+      if(isHost){
+        const pres=new Set(presentIds());
+        players.forEach(p=>{ if(pres.has(p.id)) delete goneAt[p.id];
+          else if(!(p.id in goneAt)){ goneAt[p.id]=Date.now(); setTimeout(()=>{ if(isHost&&mode==="online") maybeAdvance(); }, GONE_GRACE+800); } });
+        hostPresenceChanged();
+      }
       else{ if(!Object.values(members).some(m=>m.host)) {/* ホスト在否はsnapで判断 */} }
     });
     ch.on("presence",{event:"leave"},()=>{ /* syncで拾う */ });
     ch.subscribe(async (status)=>{
       if(status==="SUBSCRIBED"){
+        rejoinTries=0;
         try{ await ch.track({ id:myId, name:myName, t:Date.now(), host:asHost }); }catch(e){}
         titleScene.classList.remove("on"); gameScene.classList.add("on");
-        if(isHost){ oPhase="lobby"; hostPresenceChanged(); startHeartbeat(); }
+        if(resume){   // 再接続: ゲーム状態はそのまま(ホストは配信再開、ゲストは次のsnapで復元)
+          if(isHost){ startHeartbeat(); broadcastSnap(); }
+        }
+        else if(isHost){ oPhase="lobby"; hostPresenceChanged(); startHeartbeat(); }
         else{ showLobbyWaiting(); }
-      }else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){
+      }else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"||status==="CLOSED"){
+        if(gameScene.classList.contains("on") && mode==="online"){ scheduleRejoin(); return; }   // ゲーム中の切断は静かに再接続
         const note=document.getElementById("joinNote"); if(note){ note.textContent="通信失敗。もう一度試してね"; note.className="room-note err"; }
         showToast("通信に失敗しました");
       }
@@ -2261,7 +2304,11 @@
   }
   // ホスト自身の操作もこの窓口に流す
   function localAct(kind,data){ onAct(Object.assign({id:myId, aid:"self"+(actSeq++)}, {kind}, data)); }
-  function activeIdxs(){ const pres=new Set(presentIds()); return players.map((p,i)=>i).filter(i=>pres.has(players[i].id)); }
+  // スマホが一瞬バックグラウンドになるとpresenceが落ち、その人抜きで「全員入力済み」と誤判定して
+  // フェーズが勝手に進んでいた(無制限設定でも数秒で締め切られたように見える)。25秒の退室猶予を置く
+  const GONE_GRACE=25000, goneAt={};
+  function activeIdxs(){ const pres=new Set(presentIds()); const now=Date.now();
+    return players.map((p,i)=>i).filter(i=>pres.has(players[i].id) || (goneAt[players[i].id] && now-goneAt[players[i].id]<GONE_GRACE)); }
   function maybeAdvance(){
     if(oPhase==="enter"){
       const act=activeIdxs();
@@ -2322,6 +2369,7 @@
     // ホストは自分が権威なので上書きしない。ゲストは届いた分だけ反映(数字はレース時のみ届く)
     if(s.numbers) numbers=s.numbers.slice();
     if(s.bets) bets=s.bets.map(b=>b?{on:b.on,amt:b.amt}:null);
+    if(s.entered) lastEntered=s.entered;
     if(!isHost) picks = s.picks || {};
     oPhase=s.phase;
     if(s.lobby) lastLobby=s.lobby;   // スタンプ色の割り出し用
@@ -2333,6 +2381,7 @@
     renderByPhase(s);
   }
   const myIndex=()=>players.findIndex(p=>p.id===myId);
+  let lastEntered=[];   // 直近snapの「数字を入れた人」(ゲストの未出場判定用)
   function renderByPhase(s){
     const on=name=>panels[name].classList.contains("on");   // すでに表示中か(再配信での作り直しを防ぐ)
     // フェーズが結果/総合でなければ、開きっぱなしのオーバーレイを閉じる(次ラウンドへの遷移など)
@@ -2493,7 +2542,7 @@
     renderLobbyRounds(cnt);
     if(isHost){
       document.getElementById("lobbyHint").textContent=cnt<MINP?"2人以上集まったら出走できます":"みんな集まった？ 出走できます";
-      document.getElementById("lobbyStart").style.display= cnt>=MINP ? "" : "none";
+      { const ls=document.getElementById("lobbyStart"); ls.style.display=""; ls.disabled=cnt<MINP; }   // 最初から見せて、人数不足はグレーアウト
     }else{
       document.getElementById("lobbyHint").textContent="ホストの開始を待っています…";
       document.getElementById("lobbyStart").style.display="none";

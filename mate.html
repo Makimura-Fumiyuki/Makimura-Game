@@ -46,8 +46,7 @@
   .logo-stack{ position:relative; display:inline-block; padding-top:44px; }
   .tm-art{
     font-size:clamp(28px,7.5vw,40px); font-weight:900; letter-spacing:.12em; text-indent:.12em;
-    color:var(--milk); white-space:nowrap;
-    text-shadow:0 2px 4px rgba(110,60,15,.42);   /* 発光ではなく落ち影(背景に溶けない用) */
+    color:#c79e63; white-space:nowrap; transform:translateX(clamp(40px,11vw,66px));
   }
   .tm-wrap{ position:absolute; top:-44%; left:-44%; transform:rotate(-7deg); padding:22px 40px 17px; z-index:2; width:max-content; animation:burstSnap .52s steps(2,end) infinite; }
   @keyframes burstSnap{ 0%{ transform:rotate(-8.2deg) scale(1); } 50%{ transform:rotate(-4.8deg) scale(1.045); } 100%{ transform:rotate(-8.2deg) scale(1); } }
@@ -193,14 +192,11 @@
   .lobby-row .you{ flex:none; font-size:11px; font-weight:900; color:#fff; background:var(--brown); border-radius:999px; padding:2px 10px 3px; }
   .lobby-row .hostmark{ flex:none; font-size:11px; font-weight:900; color:#fff; background:var(--red); border-radius:999px; padding:2px 10px 3px; }
   #lobbyBox{ display:flex; flex-direction:column; align-items:center; gap:16px; width:100%; }
-  .lobby-frame{
-    display:flex; flex-direction:column; align-items:center; gap:14px; width:min(94vw,420px);
-    background:rgba(255,255,255,.5); border:1px solid rgba(58,42,28,.22); border-radius:16px;
-    padding:18px 16px 18px; box-shadow:0 2px 10px rgba(90,55,20,.1);
-  }
+  .lobby-title{ font-size:19px; font-weight:900; letter-spacing:.06em; color:var(--brown-dark); }
+  #lobbyBox{ display:flex; flex-direction:column; align-items:center; gap:14px; width:min(94vw,420px); }
 
   /* ===== ゲーム画面 ===== */
-  .info-col{ display:flex; flex-direction:column; align-items:center; gap:7px; }
+  .info-col{ flex:none; display:flex; flex-direction:column; align-items:center; gap:7px; }
   .info-pill{
     background:#fff; border:2px solid rgba(138,90,46,.55); border-radius:999px;
     padding:6px 16px 7px; font-size:14px; font-weight:800; letter-spacing:.06em; white-space:nowrap;
@@ -212,7 +208,7 @@
 
   /* カップ: 縁そのものがタイマー */
   .cup-wrap{
-    position:relative; width:min(92vw,54svh); aspect-ratio:1/1; border-radius:50%;
+    position:relative; flex:none; width:min(92vw,54svh); aspect-ratio:1/1; border-radius:50%;   /* flex:none=スマホで縦に潰れて楕円になるのを防ぐ */
     background:#fdfcf8; padding:2.8%;
     box-shadow:0 14px 32px rgba(80,50,20,.28), inset 0 -4px 10px rgba(0,0,0,.06);
   }
@@ -224,6 +220,8 @@
     pointer-events:auto; cursor:grab; touch-action:none;
   }
   .cup-handle:active{ cursor:grabbing; }
+  .rot-hint{ position:absolute; left:50%; top:50%; width:100%; height:auto; overflow:visible;
+    transform:translate(-50%,-50%); pointer-events:none; opacity:.9; }
   .cup-wrap.erasing{ background:#ec9377; }
   .cup-wrap.erasing .cup-handle{ background:#ec9377; }
   .cup-in{ position:relative; width:100%; height:100%; border-radius:50%; overflow:hidden;
@@ -246,6 +244,10 @@
   /* お題入力中: 1台=タイマー全部非表示 / オンライン=リングはお題タイマー・ラベルだけ非表示 */
   .cup-wrap.hide-ring .tring{ display:none; }
   .cup-wrap.hide-ring .tier-label, .cup-wrap.hide-labels .tier-label{ display:none; }
+  /* 区切りなしモード(協力・お題タイマー): 5分割セグの代わりに1本の全周弧 */
+  .tring .tr-full{ display:none; }
+  .cup-wrap.nogap .tr-seg{ display:none; }
+  .cup-wrap.nogap .tr-full{ display:block; }
   .tier-label{
     position:absolute; z-index:4; pointer-events:none;
     font-size:12px; font-weight:900; color:#fff; letter-spacing:.02em;
@@ -386,7 +388,7 @@
   .score-btn:active{ transform:translateY(1px); }
   #gameScene.on ~ .score-btn{ display:inline-flex; }
   /* ===== スタンプ(気持ちを送る。オンライン=登録名+アイコン色 / 1台=絵文字のみ。derby移植) ===== */
-  #stampBar{ position:fixed; right:8px; bottom:12px; z-index:85; display:none; flex-direction:column; gap:8px; }
+  #stampBar{ position:fixed; left:50%; transform:translateX(-50%); bottom:10px; z-index:85; display:none; flex-direction:row; gap:9px; }
   #gameScene.on ~ #stampBar{ display:flex; }
   .stamp-btn{ width:48px; height:48px; padding:0; border:none; border-radius:50%; cursor:pointer;
     background:rgba(255,255,255,.9); box-shadow:0 2px 7px rgba(90,60,25,.3);
@@ -576,10 +578,9 @@
 
   <!-- ===== ロビー(オンライン専用画面) ===== -->
   <div class="scene" id="lobbyScene">
-    <div class="lobby-frame">
-      <div class="sec-label">ロビー</div>
-      <div id="lobbyBox"></div>
-    </div>
+    <div class="sec-label">ロビー</div>
+    <div class="lobby-title">メンバーを待っています</div>
+    <div id="lobbyBox"></div>
     <button class="txt-btn" id="lobbyBack">← タイトルにもどる</button>
   </div>
 
@@ -592,7 +593,7 @@
       </div>
     </div>
     <div class="cup-wrap" id="cupWrap">
-      <div class="handle-arm" id="handleArm"><div class="cup-handle" id="cupHandle"></div></div>
+      <div class="handle-arm" id="handleArm"><div class="cup-handle" id="cupHandle"><svg class="rot-hint" viewBox="0 0 44 64" aria-hidden="true"><path d="M 15 10 A 28 28 0 0 1 15 54" fill="none" stroke="#c9a97e" stroke-width="4" stroke-linecap="round"/><path d="M7 3 L18 5.5 L11.5 13.5 Z" fill="#c9a97e"/><path d="M7 61 L18 58.5 L11.5 50.5 Z" fill="#c9a97e"/><circle cx="25.5" cy="32" r="5" fill="#c9a97e"/></svg></div></div>
       <div class="cup-in" id="cupIn"><canvas id="cup"></canvas><canvas id="swirlCv"></canvas><canvas id="art"></canvas></div>
       <svg class="tring" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <g fill="none" stroke-width="5.8" stroke-linecap="butt" stroke="#2f9e55" stroke-opacity=".55">
@@ -601,6 +602,7 @@
           <path class="tr-seg" d="M 22.51 88.31 A 47.15 47.15 0 0 0 77.49 88.31"/>
           <path class="tr-seg" d="M 5.07 35.69 A 47.15 47.15 0 0 0 22.06 87.98"/>
           <path class="tr-seg" d="M 49.72 2.85 A 47.15 47.15 0 0 0 5.24 35.17"/>
+          <path class="tr-full" d="M 50 2.85 A 47.15 47.15 0 1 0 50.05 2.85"/>
         </g>
       </svg>
       <div class="tier-label t5" id="tl5" style="left:78.6%; top:10.7%; transform:translate(-50%,-50%) rotate(36deg);">+5</div>
@@ -609,7 +611,7 @@
       <div class="tier-label t2" id="tl2" style="left:3.8%; top:65%; transform:translate(-50%,-50%) rotate(-108deg);">+2</div>
       <div class="tier-label t1" id="tl1" style="left:21.4%; top:10.7%; transform:translate(-50%,-50%) rotate(-36deg);">+1</div>
     </div>
-    <div class="ctrl-row" id="ctrlRow">
+    <div class="ctrl-row" id="ctrlRow" style="flex:none;">
       <!-- お題を考える(描き手のみ・ボタン群の場所に出る) -->
       <div id="topicPanel">
         <div class="tp-title">お題を考える</div>
@@ -981,8 +983,14 @@ function applyCupRot(){
   $("cupHandle").addEventListener("pointerdown",e=>{
     e.preventDefault(); e.stopPropagation(); ensureAudio();
     grab=angTo(e)-cupRot;
-    const mv=ev=>{ cupRot=angTo(ev)-grab; applyCupRot(); };
-    const up=()=>{ window.removeEventListener("pointermove",mv); window.removeEventListener("pointerup",up); grab=null; };
+    let lastSend=0;
+    const shareRot=(force)=>{   // 回転を他プレイヤーにも反映(ロストしても次の送信で補正)
+      if(!online||!ch) return;
+      const now=Date.now(); if(!force && now-lastSend<90) return; lastSend=now;
+      try{ ch.send({type:"broadcast",event:"rot",payload:{r:cupRot}}); }catch(e){}
+    };
+    const mv=ev=>{ cupRot=angTo(ev)-grab; applyCupRot(); shareRot(false); };
+    const up=()=>{ window.removeEventListener("pointermove",mv); window.removeEventListener("pointerup",up); grab=null; shareRot(true); };
     window.addEventListener("pointermove",mv); window.addEventListener("pointerup",up);
   });
 })();
@@ -1094,8 +1102,11 @@ setInterval(()=>{
 const SEG_ELS=[...document.querySelectorAll(".tr-seg")];
 const SEG_LEN=58.7;
 const TIER_COLORS={5:"#2f9e55",4:"#7ab53a",3:"#f39a1f",2:"#e07028",1:"#e3452f"};
-function setRingColor(t){ SEG_ELS.forEach(e=>e.setAttribute("stroke",TIER_COLORS[t])); }
-function setRing(remain){   // 5つのパーツが時計回り順に食われていく
+function setRingColor(t){ SEG_ELS.forEach(e=>e.setAttribute("stroke",TIER_COLORS[t])); FULL_EL.setAttribute("stroke",TIER_COLORS[t]); }
+const FULL_EL=document.querySelector(".tr-full");
+const FULL_LEN=296.25;
+function setRing(remain){   // 5つのパーツが時計回り順に食われていく(nogap時は1本の全周弧)
+  FULL_EL.setAttribute("stroke-dasharray",(FULL_LEN*Math.max(0,remain))+" 999");
   SEG_ELS.forEach((el,i)=>{
     const fi=1-Math.min(1,Math.max(0,((1-remain)-0.2*i)*5));
     el.setAttribute("stroke-dasharray",(SEG_LEN*fi)+" 400");
@@ -1121,7 +1132,8 @@ function renderRing(){
 }
 function resetRing(){
   topicRingOn=false;
-  $("cupWrap").classList.remove("hide-ring","hide-labels");
+  $("cupWrap").classList.remove("hide-ring","hide-labels","nogap");
+  if(isCoop()){ $("cupWrap").classList.add("hide-labels","nogap"); }   // 協力=区切りと+5〜+1表示なし
   curTier=5;
   [5,4,3,2,1].forEach(k=>$("tl"+k).classList.toggle("off",k!==5));
   setRingColor(5);
@@ -1171,6 +1183,7 @@ function openTopic(){
   phase="topic";
   stopTimer(); resetRing();
   $("cupWrap").classList.add(online?"hide-labels":"hide-ring");   // お題中: 1台=タイマー全非表示/オンライン=ラベルのみ非表示
+  if(online) $("cupWrap").classList.add("nogap");                  // お題タイマーは区切りなし
   clearTimeout(topicTmr);
   if(online){   // お題を考える時間はオンラインのみ90秒固定(1台は無制限)
     topicTmr=setTimeout(()=>{
@@ -1477,6 +1490,7 @@ function openChannel(c, onReady){
   ch.on("broadcast",{event:"act"},({payload})=>{ if(isHost && payload) hostAct(payload); });
   ch.on("broadcast",{event:"chat"},({payload})=>{ if(payload) addChat(payload.id, payload.n, payload.tx); });
   ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) spawnStamp(payload.i|0, payload.name||"", payload.color||"#fff"); });   // ロストしても実害なし=seq/ack不要
+  ch.on("broadcast",{event:"rot"},({payload})=>{ if(payload&&typeof payload.r==="number"){ cupRot=payload.r; applyCupRot(); } });   // カップ回転の共有
   ch.on("broadcast",{event:"draw"},({payload})=>{
     if(!payload||!payload.s||drawerId===myId) return;
     payload.s.forEach(q=>{ seg({x:q[0],y:q[1]},{x:q[2],y:q[3]}, q[4]===1, q[5]); });
@@ -1646,7 +1660,7 @@ function enterTopicAll(){
     $("waitDot").setAttribute("style", dotStyle(d?d.c:"#999"));
     $("waitNm").textContent=(d?d.n:"？")+"の番！";
     $("waitOverlay").classList.add("on");
-    $("cupWrap").classList.add("hide-labels");
+    $("cupWrap").classList.add("hide-labels","nogap");
     startTopicRing();
   }
   renderChatSend();
