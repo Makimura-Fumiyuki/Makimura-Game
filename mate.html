@@ -279,6 +279,7 @@
   .tier-label.t2{ background:#e07028; }
   .tier-label.t1{ background:#e3452f; }
   .tier-label.off{ background:#b7aa99; opacity:.5; }
+  .tier-label.gone{ display:none; }   /* すぎた加点は消す */
 
   .ctrl-row{ display:flex; flex-direction:column; align-items:center; gap:12px; width:100%; margin-top:14px; }
   .sub-ctrl{ display:flex; flex-direction:column; align-items:center; gap:10px; justify-content:center; }
@@ -879,7 +880,7 @@ let topic="", phase="title";
 let tStart=0, timerIv=0, curTier=5, pausedAt=0;
 let erasing=false;
 let penIdx=1;
-const PEN_W=[0.004,0.006,0.010,0.015,0.022,0.032];   // SIZE比。一番細い(0.004)を追加、左から2つめ(index1)が標準
+const PEN_W=[0.004,0.006,0.010,0.015,0.022];   // SIZE比。5段階(一番太い0.032は廃止)・左から2つめ(index1)が標準
 let online=false, isHost=false, sb=null, ch=null, myId=Math.random().toString(36).slice(2,10);
 let myName="", code="", hostId=null, joinWatch=0, hbIv=0, snapAt=0, snapEl=0, lastPh="";
 let drawBuf=[], drawFlushIv=0, armedRow=null, armedTmr=0, celebTmr=0, lastCele=null, dobonId=null;
@@ -909,7 +910,7 @@ function goTitle(){
   leaveChannel();
   phase="title"; gameScene.classList.remove("online");
   document.querySelectorAll(".overlay").forEach(o=>o.classList.remove("on","peek"));
-  $("chatLog").innerHTML="";
+  resetTable();   // 回転+チャットをまとめてリセット
   showScene(titleScene);
 }
 
@@ -1056,7 +1057,10 @@ function evPt(e){
 function applyCupRot(){
   $("cupIn").style.transform="rotate("+cupRot+"rad)";
   $("handleArm").style.transform="rotate("+cupRot+"rad)";
-  // 取っ手が左半分に回ったら「回転」文字を丸中心で180°回す=上下逆さまを防ぎ、常に読める向きに
+}
+function resetTable(){   // 同じ部屋で遊び直す時に前回の名残(回転・チャット)を消す
+  cupRot=0; applyCupRot();
+  $("chatLog").innerHTML="";
 }
 (function(){
   function angTo(e){ const r=$("cupWrap").getBoundingClientRect(); return Math.atan2(e.clientY-(r.top+r.height/2), e.clientX-(r.left+r.width/2)); }
@@ -1170,7 +1174,8 @@ function toggleErase(){
 }
 function spendErase(dist){
   if(!erasing) return;
-  eraseLeft=Math.max(0, eraseLeft - dist/20);   // 消した距離ぶん減る
+  const wRatio=PEN_W[penIdx]/PEN_W[1];   // 太い消しゴムほど早く減る(標準ペン=1)
+  eraseLeft=Math.max(0, eraseLeft - dist*wRatio/20);   // 消した距離×太さぶん減る
   if(eraseLeft<=0){ eraseLeft=0; erasing=false; $("cupWrap").classList.remove("erasing"); eraseBroadcast(false); }
   renderGauge();
 }
@@ -1217,7 +1222,7 @@ function renderRing(){
   setRing(1-el/L);
   const t=tierOf(el);
   setRingColor(t);   // 5パーツ全てを現在ティア色に連動
-  [5,4,3,2,1].forEach(k=>$("tl"+k).classList.toggle("off",k!==t));   // 現在のティアだけ点灯
+  [5,4,3,2,1].forEach(k=>{ const el=$("tl"+k); el.classList.toggle("off",k!==t); el.classList.toggle("gone",k>t); });   // 現在のティアだけ点灯・すぎた加点は非表示
   if(t<curTier){ curTier=t; playTierDown(); }
 }
 function resetRing(){
@@ -1225,7 +1230,7 @@ function resetRing(){
   $("cupWrap").classList.remove("hide-ring","hide-labels","nogap","topicing");
   if(isCoop()){ $("cupWrap").classList.add("hide-labels","nogap"); }   // 協力=区切りと+5〜+1表示なし
   curTier=5;
-  [5,4,3,2,1].forEach(k=>$("tl"+k).classList.toggle("off",k!==5));
+  [5,4,3,2,1].forEach(k=>{ const el=$("tl"+k); el.classList.toggle("off",k!==5); el.classList.remove("gone"); });
   setRingColor(5);
   setRing(1);
 }
@@ -1588,7 +1593,7 @@ function openChannel(c, onReady){
     if(!payload||!payload.s||drawerId===myId) return;
     payload.s.forEach(q=>{ seg({x:q[0],y:q[1]},{x:q[2],y:q[3]}, q[4]===1, q[5]); });
   });
-  ch.on("broadcast",{event:"reset"},()=>{ if(!isHost){ clearArt(); drawCrema(); drawSwirl(); } });
+  ch.on("broadcast",{event:"reset"},()=>{ if(!isHost){ clearArt(); drawCrema(); drawSwirl(); resetTable(); } });
   ch.on("broadcast",{event:"bye"},({payload})=>{ if(payload) onLeave(payload.id); });
   ch.on("presence",{event:"leave"},({leftPresences})=>{
     (leftPresences||[]).forEach(p=>{ if(p && p.id) onLeave(p.id); });
@@ -1670,6 +1675,7 @@ function renderLobby(){
       roundNo=1; dobonId=null; players.forEach(p=>p.s=0);
       drawerId=players[Math.floor(Math.random()*players.length)].id;
       clearArt(); drawCrema(); drawSwirl();
+      resetTable();
       try{ ch.send({type:"broadcast",event:"reset",payload:{}}); }catch(e){}
       hostOpenTopic();
     });
@@ -1768,7 +1774,7 @@ function hostTimeUp(){
 function hostRestart(){
   roundNo=1; dobonId=null; players.forEach(p=>p.s=0);
   drawerId=players[Math.floor(Math.random()*players.length)].id;
-  clearArt(); drawCrema(); drawSwirl();
+  clearArt(); drawCrema(); drawSwirl(); resetTable();
   try{ ch.send({type:"broadcast",event:"reset",payload:{}}); }catch(e){}
   hostOpenTopic();
 }
@@ -1898,7 +1904,7 @@ function renderAnswerArea(){
   $("answerBox").style.display = on ? "flex" : "none";
   $("chatLog").style.display = on ? "none" : "";
   if(cf) cf.style.display = on ? "none" : "flex";
-  $("mateOnlineBtn").style.display = (online && phase==="draw" && drawerId!==myId && !iHalted()) ? "" : "none";
+  $("mateOnlineBtn").style.display = (online && phase==="draw" && drawerId!==myId && !iHalted()) ? "block" : "none";   /* ""だとCSSのdisplay:noneに戻り表示されないバグ */
   if(!on) return;
   const a=curAns, meAns=a&&a.by===myId, meDrawer=drawerId===myId, judging=a&&a.judging;
   $("ansDots").style.display = judging ? "none" : "flex";
