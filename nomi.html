@@ -219,19 +219,19 @@ function popCrisp(t,hpf,vol,dur){   // ごく短い高域のパリッ
   n.connect(h); h.connect(g); g.connect(actx.destination); n.start(t); n.stop(t+dur+0.01);
 }
 let lastSquishVar=-1;
-function playSquish(){   // とにかくポップに=高く・短く・カリッと(鈍さの原因になる低いボディはごく薄く)
+function playSquish(){   // ポップさは保ちつつ一段低く・聞き心地よく(カリカリした高域を抑え、丸いボディを少し戻した)
   if(!actx) return;
-  const t=actx.currentTime, p=0.92+Math.random()*0.35;
+  const t=actx.currentTime, p=0.9+Math.random()*0.35;
   let v=Math.floor(Math.random()*4); if(v===lastSquishVar) v=(v+1)%4; lastSquishVar=v;
   if(v===0){        // 標準のポンッ
-    popNoise(t,3100*p,1600*p,1.6,0.5,0.024); popCrisp(t,4600*p,0.22,0.01); popBody(t,560*p,240*p,0.24,0.04);
+    popNoise(t,2600*p,1300*p,1.4,0.5,0.028); popCrisp(t,3900*p,0.15,0.01); popBody(t,470*p,190*p,0.3,0.05);
   }else if(v===1){  // 高めのピッ
-    popNoise(t,3700*p,2000*p,1.8,0.44,0.02); popCrisp(t,5200*p,0.2,0.009); popBody(t,660*p,300*p,0.18,0.035);
-  }else if(v===2){  // ちょい丸めのポコッ
-    popNoise(t,2400*p,1250*p,1.4,0.5,0.028); popCrisp(t,3900*p,0.16,0.01); popBody(t,470*p,200*p,0.28,0.05);
+    popNoise(t,3100*p,1650*p,1.6,0.44,0.024); popCrisp(t,4400*p,0.13,0.009); popBody(t,540*p,230*p,0.24,0.042);
+  }else if(v===2){  // 丸めのポコッ
+    popNoise(t,2000*p,1000*p,1.3,0.5,0.032); popCrisp(t,3300*p,0.11,0.01); popBody(t,400*p,155*p,0.34,0.058);
   }else{            // ポポッ(軽い二連)
-    popNoise(t,3200*p,1700*p,1.6,0.44,0.021); popBody(t,560*p,250*p,0.18,0.035);
-    popNoise(t+0.03,3800*p,2100*p,1.8,0.3,0.018); popBody(t+0.03,680*p,320*p,0.12,0.03);
+    popNoise(t,2700*p,1400*p,1.5,0.44,0.024); popBody(t,470*p,200*p,0.24,0.042);
+    popNoise(t+0.032,3200*p,1700*p,1.6,0.3,0.02); popBody(t+0.032,560*p,250*p,0.15,0.035);
   }
 }
 function playSelect(){ if(!actx) return; const t=actx.currentTime; note(440,t,0.06,0.1,"triangle"); }
@@ -366,31 +366,26 @@ setInterval(updateNoGo,2000); window.addEventListener("resize",updateNoGo); setT
 const FLEA_CAP=20000;     // 実質無限にたまる(描画=点1個をスタンプするだけなので大量でも軽い。1.5秒に1匹なので到達には8時間超)
 const SPAWN_MS=5000;      // 5秒に1匹
 const fleas=[], parts=[], splats=[], ripples=[];
-function spawnFlea(inside){
+function spawnFlea(){
   if(fleas.length>=FLEA_CAP) return;
   if(vw<50||vh<50) return;   // 画面サイズが取れていない間(裏タブでの起動直後など)は湧かせない
   const m=26;
   const top=Math.max(20,bandTop), bot=Math.min(vh-20,bandBottom);
-  const bandY=()=> top+Math.random()*Math.max(40,bot-top);
   let x,y;
-  if(inside){ x=20+Math.random()*(vw-40); y=bandY(); }   // 留守の間に入りこんでいた分は画面内(帯の中)に
-  else if(Math.random()<0.5){ x=-m; y=bandY(); }   // 左右の画面外からだけ(上下から入れるとボタンの帯を横切るのでやめた)
-  else{ x=vw+m; y=bandY(); }
+  if(Math.random()<0.5){ x=-m; }else{ x=vw+m; }   // 左右の画面外からだけ(上下から入れるとボタンの帯を横切るのでやめた)
+  y=top+Math.random()*Math.max(40,bot-top);
   const toward=Math.atan2(((top+bot)/2 + (Math.random()-0.5)*(bot-top)*0.5)-y, vw*(0.25+Math.random()*0.5)-x);
   fleas.push({
-    x:x, y:y, h:inside?Math.random()*6.283:toward, sp:7+Math.random()*9,   // ゆっくり(px/秒)
+    x:x, y:y, h:toward, sp:7+Math.random()*9,   // ゆっくり(px/秒)
     spr:SPRITES[Math.floor(Math.random()*SPRITES.length)],
     ph:Math.random()*6.283, turnSeed:Math.random()*6.283,
-    inField:!!inside
+    inField:false
   });
 }
-/* ページを閉じている間・裏にしている間もたまる:
-   最後に生きていた時刻を覚えておき、開いた時に経過ぶんをまとめて湧かせる */
-let pendingCatchup=0;
-try{
-  const la=parseInt(localStorage.getItem("nomi.lastAlive")||"0",10);
-  if(la>0){ pendingCatchup=Math.min(FLEA_CAP, Math.floor((Date.now()-la)/SPAWN_MS)); }
-}catch(e){}
+/* たまり方のルール: タブを閉じている間は増えない(留守分の追いつきは廃止=2026-07-13牧村指示)。
+   ただしタブを裏で開きっぱなしの間は増える=時間ベース加算なので、裏タブでタイマーが間引かれても
+   表に戻った時にまとめて追いつく(PCで開いたまま別作業→戻るとたまっている) */
+try{ localStorage.removeItem("nomi.lastAlive"); }catch(e){}   // 旧仕様の残骸そうじ
 let lastSpawn=Date.now();
 setInterval(()=>{
   const now=Date.now();
@@ -398,11 +393,8 @@ setInterval(()=>{
   const heavy = avgFrameMs>40 && fleas.length>1500;
   let n=Math.floor((now-lastSpawn)/SPAWN_MS);   // 時間ベース=裏タブでタイマーが間引かれてもまとめて追いつく
   if(n>0){ lastSpawn+=n*SPAWN_MS; if(!heavy) while(n-->0) spawnFlea(); }
-  if(!heavy && pendingCatchup>0 && vw>=50){ const k=Math.min(150,pendingCatchup); pendingCatchup-=k; for(let i=0;i<k;i++) spawnFlea(true); }
-  try{ localStorage.setItem("nomi.lastAlive",String(now)); }catch(e){}
 },1000);
 for(let i=0;i<5;i++) spawnFlea();   // 起動した瞬間から出はじめる
-window.addEventListener("pagehide",()=>{ try{ localStorage.setItem("nomi.lastAlive",String(Date.now())); }catch(e){} });
 
 function updateFlea(f,dt,t){
   // 特殊な動きは無し=本当にじーっとゆっくり動き続けるだけ(ふらふら彷徨う)
