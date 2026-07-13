@@ -243,14 +243,6 @@ function playSelect(){ if(!actx) return; const t=actx.currentTime; note(440,t,0.
 const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co";
 const SB_KEY="sb_publishable_cak3-W9Mmgahnwawreoa1Q_CVuhmkKL";
 const SB_HEAD={ "apikey":SB_KEY, "Authorization":"Bearer "+SB_KEY };
-/* 公開前の全記録リセット(2026-07-13): テスト中のローカル記録(累計・ID・名前)を各端末で一度だけ自動消去。
-   ※オンライン側のテスト行は牧村さんがSupabaseの管理画面から削除する(公開キーでは消せないが、持ち主は消せる) */
-try{
-  if(!localStorage.getItem("nomi.reset2")){
-    ["nomi.count","nomi.uid","nomi.name","nomi.names"].forEach(k=>localStorage.removeItem(k));
-    localStorage.setItem("nomi.reset2","1");
-  }
-}catch(e){}
 function getUid(){
   try{
     let u=localStorage.getItem("nomi.uid");
@@ -258,7 +250,7 @@ function getUid(){
     return u;
   }catch(e){ return "anon"; }
 }
-const MYMODE="nomi:"+getUid();
+let MYMODE="nomi:"+getUid();   // 隠しコマンドのリセットでIDごと作り直すためlet
 function playerName(){ try{ return (localStorage.getItem("nomi.name")||"").trim(); }catch(e){ return ""; } }
 function setPlayerName(n){ const v=[...(n||"")].slice(0,10).join("").trim(); try{ localStorage.setItem("nomi.name",v); }catch(e){} addNameHistory(v); }
 function nameHistory(){ try{ return JSON.parse(localStorage.getItem("nomi.names")||"[]"); }catch(e){ return []; } }
@@ -321,6 +313,28 @@ renderCount();
 window.addEventListener("storage",e=>{
   if(e.key==="nomi.count"){ const v=parseInt(e.newValue||"0",10)||0; if(v>count){ count=v; renderCount(); } }
 });
+/* 隠しコマンド(PCのみ): Ctrl+A+P で数字(累計)をリセット。名前は保持・個人IDは作り直し
+   ※過去に送信済みのオンライン記録の行は消せないので、ランキングに古い記録が残っていたら
+     SupabaseのSQLエディタで削除する(DELETE FROM scores WHERE mode LIKE 'nomi%';) */
+const heldKeys=new Set();
+document.addEventListener("keydown",e=>{
+  const tg=e.target; if(tg && tg.tagName==="INPUT") return;
+  heldKeys.add((e.key||"").toLowerCase());
+  if(e.ctrlKey && heldKeys.has("a") && heldKeys.has("p")){
+    heldKeys.clear();
+    e.preventDefault();
+    count=0; lastSentScore=0;
+    try{
+      localStorage.setItem("nomi.count","0");
+      const a=new Uint8Array(8); crypto.getRandomValues(a);
+      const u=[...a].map(b=>b.toString(16).padStart(2,"0")).join("");
+      localStorage.setItem("nomi.uid",u); MYMODE="nomi:"+u;
+    }catch(e2){}
+    renderCount(); countEl.classList.remove("pop"); void countEl.offsetWidth; countEl.classList.add("pop");
+    playSelect();
+  }
+});
+document.addEventListener("keyup",e=>heldKeys.delete((e.key||"").toLowerCase()));
 
 /* ================= ノミの野原 ================= */
 const cv=$("cv"), ctx=cv.getContext("2d");
@@ -366,20 +380,24 @@ setInterval(updateNoGo,2000); window.addEventListener("resize",updateNoGo); setT
 const FLEA_CAP=20000;     // 実質無限にたまる(描画=点1個をスタンプするだけなので大量でも軽い。1.5秒に1匹なので到達には8時間超)
 const SPAWN_MS=5000;      // 5秒に1匹
 const fleas=[], parts=[], splats=[], ripples=[];
-function spawnFlea(){
+function spawnFlea(scatter){
   if(fleas.length>=FLEA_CAP) return;
   if(vw<50||vh<50) return;   // 画面サイズが取れていない間(裏タブでの起動直後など)は湧かせない
   const m=26;
   const top=Math.max(20,bandTop), bot=Math.min(vh-20,bandBottom);
-  let x,y;
-  if(Math.random()<0.5){ x=-m; }else{ x=vw+m; }   // 左右の画面外からだけ(上下から入れるとボタンの帯を横切るのでやめた)
-  y=top+Math.random()*Math.max(40,bot-top);
-  const toward=Math.atan2(((top+bot)/2 + (Math.random()-0.5)*(bot-top)*0.5)-y, vw*(0.25+Math.random()*0.5)-x);
+  let x,y,h;
+  if(scatter){   // 裏タブ放置のまとめ分=もう画面全体に散らばっている(左右端に固まらない)
+    x=20+Math.random()*(vw-40); y=top+Math.random()*Math.max(40,bot-top); h=Math.random()*6.283;
+  }else{         // ふだんの湧き=左右の画面外から歩いて入ってくる(上下から入れるとボタンの帯を横切るのでやめた)
+    if(Math.random()<0.5){ x=-m; }else{ x=vw+m; }
+    y=top+Math.random()*Math.max(40,bot-top);
+    h=Math.atan2(((top+bot)/2 + (Math.random()-0.5)*(bot-top)*0.5)-y, vw*(0.25+Math.random()*0.5)-x);
+  }
   fleas.push({
-    x:x, y:y, h:toward, sp:7+Math.random()*9,   // ゆっくり(px/秒)
+    x:x, y:y, h:h, sp:7+Math.random()*9,   // ゆっくり(px/秒)
     spr:SPRITES[Math.floor(Math.random()*SPRITES.length)],
     ph:Math.random()*6.283, turnSeed:Math.random()*6.283,
-    inField:false
+    inField:!!scatter
   });
 }
 /* たまり方のルール: タブを閉じている間は増えない(留守分の追いつきは廃止=2026-07-13牧村指示)。
@@ -392,7 +410,8 @@ setInterval(()=>{
   // スマホ保護: 描画が重くなってきたら(約25fps未満)それ以上は増やさない(端末が軽くなれば再開)
   const heavy = avgFrameMs>40 && fleas.length>1500;
   let n=Math.floor((now-lastSpawn)/SPAWN_MS);   // 時間ベース=裏タブでタイマーが間引かれてもまとめて追いつく
-  if(n>0){ lastSpawn+=n*SPAWN_MS; if(!heavy) while(n-->0) spawnFlea(); }
+  if(n>0){ lastSpawn+=n*SPAWN_MS;
+    if(!heavy){ const scatter=n>=3; while(n-->0) spawnFlea(scatter); } }   // まとめて追いつく時(裏タブ放置後)は画面全体に散らばせる。ふだん(1匹ずつ)は左右の画面外から
 },1000);
 for(let i=0;i<5;i++) spawnFlea();   // 起動した瞬間から出はじめる
 
@@ -440,7 +459,7 @@ function drawFx(dt){
   for(let i=ripples.length-1;i>=0;i--){ const r=ripples[i]; r.t+=dt; const k=r.t/0.32;
     if(k>=1){ ripples.splice(i,1); continue; }
     ctx.globalAlpha=0.24*(1-k); ctx.strokeStyle="#777"; ctx.lineWidth=1.5;
-    ctx.beginPath(); ctx.arc(r.x,r.y,6+k*22,0,6.284); ctx.stroke(); ctx.globalAlpha=1; }
+    ctx.beginPath(); ctx.arc(r.x,r.y,HIT_R+k*26,0,6.284); ctx.stroke(); ctx.globalAlpha=1; }   // 波紋は当たり判定と同じ大きさから始まり、広がっていく
 }
 
 let lastTs=0, lastFrameAt=Date.now(), avgFrameMs=16;   // avgFrameMs=描画の重さ(スマホ保護の判定に使う)

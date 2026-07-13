@@ -65,7 +65,9 @@
   .sort-row{ display:flex; justify-content:flex-end; align-items:center; gap:8px; margin-bottom:4px; }
   .sort-label{ font-size:12.5px; font-weight:700; color:rgba(32,33,31,.55); }
   #sortSel{ font-family:inherit; font-size:13px; font-weight:700; color:var(--ink);
-    padding:6px 12px; border:1.6px solid rgba(32,33,31,.25); border-radius:8px; background:#fff; cursor:pointer; }
+    padding:6px 28px 6px 12px; border:1.6px solid rgba(32,33,31,.25); border-radius:8px; cursor:pointer;
+    appearance:none; -webkit-appearance:none;   /* ネイティブの▼は右端固定で動かせないため自前で描く */
+    background:#fff url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M1 1.2l4 4.3 4-4.3' fill='none' stroke='%2320211f' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center; }
   /* カテゴリ見出し */
   .sec-h{ font-size:20px; font-weight:900; letter-spacing:.06em; color:var(--ink);
     margin:34px 0 14px; display:flex; align-items:center; gap:10px; }
@@ -809,7 +811,7 @@
         </div>
         <div class="c-body">
           <div class="c-name">待てアート
-            <span class="c-players"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6.5" cy="9" r="2.6"/><path d="M6.5 12.6c-2.6 0-4.5 1.5-4.5 3.6V18h9v-1.8c0-2.1-1.9-3.6-4.5-3.6z"/><circle cx="17.5" cy="9" r="2.6"/><path d="M17.5 12.6c-2.6 0-4.5 1.5-4.5 3.6V18h9v-1.8c0-2.1-1.9-3.6-4.5-3.6z"/><circle cx="12" cy="6.5" r="3"/><path d="M12 10.6c-3 0-5.2 1.8-5.2 4.2V17.4h10.4v-2.6c0-2.4-2.2-4.2-5.2-4.2z"/></svg>2〜12人</span>
+            <span class="c-players"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6.5" cy="9" r="2.6"/><path d="M6.5 12.6c-2.6 0-4.5 1.5-4.5 3.6V18h9v-1.8c0-2.1-1.9-3.6-4.5-3.6z"/><circle cx="17.5" cy="9" r="2.6"/><path d="M17.5 12.6c-2.6 0-4.5 1.5-4.5 3.6V18h9v-1.8c0-2.1-1.9-3.6-4.5-3.6z"/><circle cx="12" cy="6.5" r="3"/><path d="M12 10.6c-3 0-5.2 1.8-5.2 4.2V17.4h10.4v-2.6c0-2.4-2.2-4.2-5.2-4.2z"/></svg>2〜99人</span>
           </div>
           <div class="c-desc">
             何を描いている分かったら「待て！」誰よりも早く答えよう。——そして、次のお題の絵は“続き”から描きます。つまり「上書きお絵描きゲーム」です
@@ -869,7 +871,7 @@
   /* ゲームのデータ: release=リリース日 / cats=カテゴリ / clicks=あそばれた回数(サーバー集計) */
   const GAMES=[
     { id:"nomi", tpl:"tpl-nomi", release:"2026-07-12", cats:["スコアアタック"], clicks:null, likes:null },
-    { id:"mate", tpl:"tpl-mate", release:"2026-07-11", cats:["パーティ"], clicks:null, likes:null },
+    { id:"mate", tpl:"tpl-mate", release:"2026-07-11", cats:["パーティ"], clicks:null, likes:null, soon:true },   // リリース時にsoon:trueを外す(NEWは自動で付く)
     { id:"derby", tpl:"tpl-derby", release:"2026-07-10", cats:["パーティ"], clicks:null, likes:null },
     { id:"dox",  tpl:"tpl-dox",  release:"2026-07-06", cats:["スコアアタック"], clicks:null, likes:null },   // clicks/likes: null=集計未着(表示しない)
     { id:"bamiri", tpl:"tpl-bamiri", release:"2026-07-08", cats:["対戦"], clicks:null, likes:null },

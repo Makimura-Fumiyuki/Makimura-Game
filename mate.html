@@ -232,8 +232,7 @@
   .cup-wrap.rotating .rot-hint .rh-hub{ animation:none; }
   /* 「回転」はアニメなし。矢印と同じく丸から飛び出す/格納される切替 */
   @keyframes hubPulse{ 0%,100%{ transform:scale(1); opacity:.8; } 50%{ transform:scale(1.35); opacity:1; } }
-  .cup-wrap.erasing{ background:#ec9377; }
-  .cup-wrap.erasing .cup-handle{ background:#ec9377; }
+  .cup-wrap.erasing{ outline:5px solid rgba(226,71,46,.65); outline-offset:8px; }
   .cup-in{ position:relative; width:100%; height:100%; border-radius:50%; overflow:hidden;
     box-shadow:inset 0 4px 12px rgba(60,30,5,.4); }
   #cup,#swirlCv,#fleckCv,#art{ position:absolute; inset:0; width:100%; height:100%; display:block; }
@@ -246,7 +245,7 @@
   }
   .cup-wrap.topicing #art{ cursor:default; }   /* お題を考えている間はペンカーソルにしない */
   .cup-wrap.erasing #art{
-    cursor:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24'%3E%3Cg transform='rotate(-35 12 12)' fill='none' stroke='%236b431f' stroke-width='1.7'%3E%3Crect x='4' y='8.5' width='16' height='8' rx='2' fill='%23fdfdf8'/%3E%3Cline x1='13' y1='8.5' x2='13' y2='16.5'/%3E%3C/g%3E%3C/svg%3E") 4 19, cell;
+    cursor:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24'%3E%3Cg transform='rotate(-35 12 12)' fill='none' stroke='%236b431f' stroke-width='1.7'%3E%3Crect x='4' y='8.5' width='16' height='8' rx='2' fill='%23fdfdf8'/%3E%3Cline x1='15' y1='8.5' x2='15' y2='16.5'/%3E%3C/g%3E%3C/svg%3E") 4 19, cell;
   }
   #gameScene.online .cup-wrap{ --cup: min(80vw,40svh); }
   .cup-wrap.no-rotate .rot-hint{ display:none; }
@@ -302,9 +301,10 @@
   }
   #spoonBtn .gfill{
     position:absolute; left:0; top:0; bottom:0; width:0%;
-    background:linear-gradient(90deg,#ffe3b8,#f6bf78); transition:width .12s ease; z-index:0;
+    background:linear-gradient(90deg,#fdf4e4,#f6e7c9); transition:width .12s ease; z-index:0;   /* 未選択時は薄く */
   }
   #spoonBtn.on .gfill{ background:linear-gradient(90deg,#ffb49e,#f2794f); }
+  #spoonBtn.on{ border-color:var(--red); }   /* 選択中はペンの太さと同じ赤枠 */
   #spoonBtn>*{ position:relative; z-index:1; }
   #spoonBtn span{ font-size:13px; font-weight:800; letter-spacing:.04em; white-space:nowrap; }
   #spoonBtn .sp-ico{ width:19px; height:19px; flex:none; margin-right:6px; }
@@ -390,6 +390,7 @@
     font-weight:900; font-style:italic; font-size:20px; letter-spacing:.04em; }
   #mateOnlineBtn small{ display:block; font-size:11px; font-weight:700; font-style:normal; opacity:.9; }
   #mateOnlineBtn:active{ transform:translateY(2px); box-shadow:0 2px 0 #8f2510; }
+  #haltedLine{ display:none; font-size:12px; font-weight:700; letter-spacing:.03em; color:var(--brown-dark); opacity:.6; text-align:center; }
   #answerBox{ display:none; flex-direction:column; gap:11px; align-items:center; width:100%;
     background:rgba(255,255,255,.6); border:1px solid rgba(138,90,46,.3); border-radius:14px; padding:14px; }
   .ans-dots{ display:flex; gap:9px; }
@@ -672,7 +673,7 @@
         <div id="penSizes"></div>
         <button id="spoonBtn">
           <span class="gfill" id="gfill"></span>
-          <svg class="sp-ico" viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(-35 12 12)" fill="none" stroke="#6b431f" stroke-width="1.7"><rect x="4" y="8.5" width="16" height="8" rx="2" fill="#fdfdf8"/><line x1="13" y1="8.5" x2="13" y2="16.5"/></g></svg>
+          <svg class="sp-ico" viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(-35 12 12)" fill="none" stroke="#6b431f" stroke-width="1.7"><rect x="4" y="8.5" width="16" height="8" rx="2" fill="#fdfdf8"/><line x1="15" y1="8.5" x2="15" y2="16.5"/></g></svg>
           <span id="spoonTxt">連打で消しゴム用意</span>
         </button>
       </div>
@@ -685,6 +686,7 @@
         <button id="chatSend">送信</button>
       </div>
       <button id="mateOnlineBtn"><b>待て！</b><small>何かわかったらクリック</small></button>
+      <div id="haltedLine"></div>
       <div id="answerBox">
         <div class="ans-dots" id="ansDots"><i></i><i></i><i></i><i></i><i></i></div>
         <div class="ans-self" id="ansSelf"><input id="ansInput" maxlength="20" placeholder="こたえを入力" autocomplete="off"><button id="ansSend">送信</button></div>
@@ -879,7 +881,7 @@ let myHalted=false, curAns=null, ansEnd=0, ansIv=0, lastLights=5;
 let topic="", phase="title";
 let tStart=0, timerIv=0, curTier=5, pausedAt=0;
 let erasing=false;
-let penIdx=1;
+let penIdx=2;
 const PEN_W=[0.003,0.004,0.006,0.010,0.015];   // SIZE比。5段階・左から2つめ(index1)が標準(最細0.003を追加し旧最太0.022を廃止)
 let online=false, isHost=false, sb=null, ch=null, myId=Math.random().toString(36).slice(2,10);
 let myName="", code="", hostId=null, joinWatch=0, hbIv=0, snapAt=0, snapEl=0, lastPh="";
@@ -1099,8 +1101,8 @@ function seg(a,b,er,w){
   A.restore();
 }
 function localSeg(a,b){
+  if(erasing) spendErase(a,b);   // 消す前にインク量を測る(何もない所を擦っても減らない)
   seg(a,b,erasing);
-  if(erasing) spendErase(Math.hypot(b.x-a.x,b.y-a.y));
   if(online) drawBuf.push([Math.round(a.x),Math.round(a.y),Math.round(b.x),Math.round(b.y), erasing?1:0, Math.round(SIZE*PEN_W[penIdx])]);
 }
 artCv.addEventListener("pointerdown",e=>{
@@ -1161,7 +1163,8 @@ function renderPens(){
 const spoonBtn=$("spoonBtn"), gfill=$("gfill"), spoonTxt=$("spoonTxt");
 function renderGauge(){   // 消しゴムボタン(残りN)
   gfill.style.width = eraseMax>0 ? Math.max(0,Math.min(100,eraseLeft/eraseMax*100))+"%" : "0%";
-  spoonTxt.textContent="消しゴム 残り"+Math.max(0,Math.ceil(eraseLeft));
+  const pct = eraseMax>0 ? Math.max(0,Math.min(100,Math.ceil(eraseLeft/eraseMax*100))) : 0;
+  spoonTxt.textContent="消しゴム のこり"+pct+"%";
   spoonBtn.classList.toggle("dim", eraseLeft<=0);
   spoonBtn.classList.toggle("on", erasing);
 }
@@ -1172,10 +1175,27 @@ function toggleErase(){
   $("cupWrap").classList.toggle("erasing", erasing);
   eraseBroadcast(erasing); renderGauge();
 }
-function spendErase(dist){
+function inkFractionAt(a,b){   // 消しゴムが通る場所に実際どれだけ線があるか(0〜1)
+  try{
+    const w=Math.max(10, SIZE*PEN_W[penIdx]*2.2);
+    const cx=(a.x+b.x)/2, cy=(a.y+b.y)/2;
+    let x=Math.round(cx-w/2), y=Math.round(cy-w/2), sw=Math.round(w), sh=Math.round(w);
+    if(x<0){ sw+=x; x=0; } if(y<0){ sh+=y; y=0; }
+    sw=Math.min(sw, SIZE-x); sh=Math.min(sh, SIZE-y);
+    if(sw<=0||sh<=0) return 0;
+    const d=A.getImageData(x,y,sw,sh).data;
+    let n=0, hit=0;
+    for(let i=3;i<d.length;i+=16){ n++; if(d[i]>12) hit++; }   // 4pxおきにアルファをサンプル
+    return n ? hit/n : 0;
+  }catch(e){ return 1; }
+}
+function spendErase(a,b){
   if(!erasing) return;
-  const wRatio=PEN_W[penIdx]/PEN_W[1];   // 太い消しゴムほど早く減る(標準ペン=1)
-  eraseLeft=Math.max(0, eraseLeft - dist*wRatio/30);   // 消した距離×太さぶん減る(減り具合は控えめ=旧比2/3)
+  const frac=inkFractionAt(a,b);
+  if(frac<=0) return;   // 何も描かれていない所はタダ
+  const dist=Math.hypot(b.x-a.x,b.y-a.y);
+  const wRatio=PEN_W[penIdx]/PEN_W[2];   // 太い消しゴムほど早く減る(標準ペン=1)
+  eraseLeft=Math.max(0, eraseLeft - dist*wRatio*frac/30);   // 消した距離×太さ×実際に消した割合
   if(eraseLeft<=0){ eraseLeft=0; erasing=false; $("cupWrap").classList.remove("erasing"); eraseBroadcast(false); }
   renderGauge();
 }
@@ -1318,7 +1338,7 @@ $("topicGo").addEventListener("click",()=>{
 function startDrawPhase(guest){
   phase="draw"; pausedAt=0; clearTimeout(topicTmr);
   if(!guest){ tStart=Date.now(); }
-  penIdx=1; eraseMax=ERASE_OPTS[eraserAmt].v; eraseLeft=eraseMax; erasing=false;
+  penIdx=2; eraseMax=ERASE_OPTS[eraserAmt].v; eraseLeft=eraseMax; erasing=false;
   stopErase(true); renderGauge(); renderPens();
   $("topicPanel").classList.remove("on"); $("topicPeek").style.display="none";
   const meDraw = !(online && drawerId!==myId);
@@ -1750,6 +1770,8 @@ function hostAct(a){
 }
 function hostResumeDraw(){
   oAns=null; curAns=null;
+  if(haltedIds.size >= Math.max(1, players.length-1)){ haltedIds.clear(); }   // 全員(描き手以外)が1回ずつ回答したら全員復活
+  if(!haltedIds.has(myId)) myHalted=false;
   tStart=Date.now()-drawPausedEl;                 // クロック再開(消費した描画時間を維持)
   phase="draw"; enterDrawAll(true); sendSnap();
 }
@@ -1865,6 +1887,7 @@ function applySnap(p){
   roundNo=p.round||1; drawerId=p.drawerId||null;
   timeLimit=p.tl||45; dobonOn=p.db===1; eraserAmt=(p.er!=null?p.er:2);
   haltedIds=new Set(p.halted||[]);
+  if(p.ph==="draw" && !haltedIds.has(myId)) myHalted=false;   // 全員復活のリセットを自分にも反映
   if(p.ph==="answer" && p.ans){ curAns={by:p.ans.by,byName:p.ans.byName,text:p.ans.text,judging:p.ans.judging===1}; ansEnd=Date.now()+(p.ans.left||0); }
   else if(p.ph!=="answer") curAns=null;
   snapAt=Date.now(); snapEl=p.el||0;
@@ -1875,7 +1898,7 @@ function applySnap(p){
   if(ph===lastPh){
     if(phase==="lobby") renderLobby();
     else if(phase==="answer"){ renderAnswerArea(); if(curAns&&curAns.judging) stopAnsTicker(); }
-    else if(gameScene.classList.contains("on")) updateInfo();
+    else if(gameScene.classList.contains("on")){ updateInfo(); if(phase==="draw") renderAnswerArea(); }
     return;
   }
   const prevPh=lastPh; lastPh=ph; phase=ph;
@@ -1907,6 +1930,10 @@ function renderAnswerArea(){
   $("chatLog").style.display = on ? "none" : "";
   if(cf) cf.style.display = on ? "none" : "flex";
   $("mateOnlineBtn").style.display = (online && phase==="draw" && drawerId!==myId && !iHalted()) ? "block" : "none";   /* ""だとCSSのdisplay:noneに戻り表示されないバグ */
+  { const hl=$("haltedLine");   // 誰が回答済みかをチャット欄の下に
+    const names=[...haltedIds].map(id=>{ const q=byId(id); return q?q.n:null; }).filter(Boolean);
+    if(online && phase==="draw" && names.length){ hl.textContent="待て！回答ずみ："+names.join("・"); hl.style.display="block"; }
+    else hl.style.display="none"; }
   if(!on) return;
   const a=curAns, meAns=a&&a.by===myId, meDrawer=drawerId===myId, judging=a&&a.judging;
   $("ansDots").style.display = judging ? "none" : "flex";
