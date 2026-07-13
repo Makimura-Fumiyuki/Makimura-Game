@@ -1207,8 +1207,8 @@
   function nameHistory(){ try{ return JSON.parse(localStorage.getItem("dox.names")||"[]"); }catch(e){ return []; } }
   function addNameHistory(n){ n=(n||"").trim(); if(!n) return; try{ const h=nameHistory(); if(!h.includes(n)){ h.push(n); localStorage.setItem("dox.names", JSON.stringify(h)); } }catch(e){} }
   function setPlayerName(n){ const v=[...(n||"")].slice(0,10).join("").trim(); try{ localStorage.setItem("dox.name", v); }catch(e){} addNameHistory(v); }
-  async function sbNameExists(name){   // is this name already used by someone in the scores table?
-    try{ const r=await fetch(SB_URL+"/rest/v1/scores?name=eq."+encodeURIComponent(name)+"&select=name&limit=1", { headers: SB_HEAD }); if(!r.ok) return false; const a=await r.json(); return Array.isArray(a)&&a.length>0; }catch(e){ return false; }   // on any error (e.g. offline) don't block registration
+  async function sbNameExists(name){   // is this name already used by someone in DOX's own records? (scoped to dox modes — names used in other games like nomi don't block us. 2026-07-13)
+    try{ const r=await fetch(SB_URL+"/rest/v1/scores?name=eq."+encodeURIComponent(name)+"&mode=in.(score,speed,endless)&select=name&limit=1", { headers: SB_HEAD }); if(!r.ok) return false; const a=await r.json(); return Array.isArray(a)&&a.length>0; }catch(e){ return false; }   // on any error (e.g. offline) don't block registration
   }
   // NOTE: the public key allows INSERT/SELECT only — DELETE/PATCH return 401 (42501, verified 2026-07-12).
   // Rows can never be removed, so writes are INSERT-only and the reader collapses history per player:
