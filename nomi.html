@@ -30,17 +30,18 @@
   /* ===== HUD(枠なし・半透明・そっと置く) ===== */
   .hud-top{ position:fixed; top:calc(10px + env(safe-area-inset-top)); left:0; right:0; pointer-events:none; z-index:10; }
   /* 自分の名前(左上)=ペンアイコン+名前だけ(ペンが左) */
-  #namePill{ position:absolute; left:14px; top:8px; display:none; align-items:center; gap:7px; pointer-events:auto; opacity:.48; cursor:pointer; }
+  #namePill{ position:absolute; left:14px; top:8px; display:none; align-items:center; gap:2px; pointer-events:auto; opacity:.48; cursor:pointer; }
   #namePill.show{ display:inline-flex; }
   #namePill:active{ opacity:.85; }
   #myName{ font-size:14px; font-weight:700; letter-spacing:.05em; max-width:34vw; overflow:hidden; text-overflow:ellipsis; }
   #editBtn{ width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; }
   #editBtn svg{ width:14px; height:14px; display:block; }
-  /* つぶした数(上中央・少し下げて・セリフ体でオシャレに) */
-  #count{ position:absolute; left:50%; top:44px; transform:translateX(-50%); font-family:var(--fnum); font-weight:500; letter-spacing:.06em;
+  /* つぶした数=固定表示ではなく、ノミに押されて動かされる(位置はJSの物理が管理・初期位置は上中央) */
+  #countWrap{ position:absolute; left:0; top:0; pointer-events:none; will-change:transform; }
+  #count{ display:inline-block; font-family:var(--fnum); font-weight:500; letter-spacing:.06em;
     font-size:clamp(38px,9vw,58px); line-height:1; color:rgba(27,27,27,.92); }
   #count.pop{ animation:cpop .22s cubic-bezier(.2,1.6,.4,1); }
-  @keyframes cpop{ 0%{ transform:translateX(-50%) scale(1.18); } 100%{ transform:translateX(-50%) scale(1); } }
+  @keyframes cpop{ 0%{ transform:scale(1.18); } 100%{ transform:scale(1); } }
   #count.gold{ color:var(--gold); text-shadow:0 0 14px rgba(242,176,53,.45); transition:color .15s, text-shadow .15s; }
   /* 世界ボタン(右上・地球アイコンのみ・細く淡く=フォントの雰囲気に合わせる) */
   #worldBtn{ position:absolute; right:14px; top:6px; width:40px; height:40px; pointer-events:auto; opacity:.32;
@@ -52,46 +53,73 @@
   .home-foot{ position:fixed; left:50%; bottom:calc(8px + env(safe-area-inset-bottom)); transform:translateX(-50%);
     font-size:11px; font-weight:700; color:rgba(27,27,27,.34); text-decoration:none; z-index:9; padding:6px 10px; }
   .home-foot:active{ color:rgba(27,27,27,.6); }
-  /* オーバーレイ(世界/名前)表示中は、半透明ごしにHUDが透けて重ならないよう隠す */
-  body.veil .hud-top, body.veil .home-foot{ opacity:0; pointer-events:none; transition:opacity .15s linear; }
+  /* オーバーレイ(世界/名前)表示中は、半透明ごしにHUDが透けて重ならないよう隠す
+     (消える時も戻る時もフェードなし=オーバーレイの出入りと同時にパッと切り替え) */
+  body.veil .hud-top, body.veil .home-foot{ opacity:0; pointer-events:none; }
 
   /* ===== 世界オーバーレイ(黒・半透明=うしろでノミが彷徨う) ===== */
   #worldOverlay{ position:fixed; inset:0; z-index:40; background:rgba(0,0,0,.6); color:#fff;
     display:flex; flex-direction:column; align-items:center; padding:calc(7vh + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom));
     opacity:0; pointer-events:none; transition:opacity .22s linear; }
   #worldOverlay.on{ opacity:1; pointer-events:auto; }
-  .w-label{ font-size:13px; font-weight:700; letter-spacing:.22em; color:rgba(255,255,255,.72); }
+  .w-label{ margin-top:10px; font-size:13px; font-weight:700; letter-spacing:.22em; color:rgba(255,255,255,.72); }   /* ほんの少し下に */
   .w-total{ font-family:var(--fnum); font-weight:500; font-size:clamp(48px,13vw,84px); line-height:1.12; letter-spacing:.04em; margin-top:2px; }
-  .w-list{ margin-top:26px; width:min(420px,100%); flex:1 1 auto; min-height:0; overflow-y:auto; scrollbar-width:none; }
-  .w-list::-webkit-scrollbar{ display:none; }
+  /* リストは低め(max-height 42vh)=下の「自分の順位」行がそこそこ上に来る。
+     スクロールバーは常時表示・つかんで操作できるタイプ(トラックも薄く見せる)・行から少し右に離す(padding-right) */
+  /* 注意: scrollbar-width/scrollbar-color(標準プロパティ)を書くと::-webkit-scrollbarが無効化され
+     オーバーレイ型(自動で隠れる)に戻ってしまう→疑似要素だけで指定=常時表示・つかんで操作できるクラシック型 */
+  .w-list{ margin-top:42px; width:min(452px,100%); padding-right:20px; flex:0 1 auto; max-height:42vh; min-height:0; overflow-y:scroll; position:relative; }
+  .w-list::-webkit-scrollbar{ width:8px; }
+  .w-list::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.55); border-radius:99px; }
+  .w-list::-webkit-scrollbar-track{ background:rgba(255,255,255,.14); border-radius:99px; }
   .w-row{ display:flex; align-items:baseline; gap:12px; padding:7px 10px; border-radius:9px; font-size:15px; }
-  .w-row .rk{ width:2.2em; text-align:right; font-family:var(--fnum); font-weight:500; font-size:17px; color:rgba(255,255,255,.55); flex:none; }
+  /* 数字はフォント(Cormorant)の見た目が少し下にずれるので、ほんのちょっと上へ補正 */
+  .w-row .rk{ width:2.2em; text-align:right; font-family:var(--fnum); font-weight:500; font-size:17px; color:rgba(255,255,255,.55); flex:none; transform:translateY(-1.5px); }
   .w-row .nm{ flex:1 1 auto; min-width:0; font-weight:700; letter-spacing:.04em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .w-row .sc{ font-family:var(--fnum); font-weight:600; font-size:18px; flex:none; }
-  .w-row.me{ box-shadow:inset 0 0 0 1px rgba(255,255,255,.85); }   /* 自分の行は白い枠で囲む(赤ハイライトは廃止) */
+  .w-row .sc{ font-family:var(--fnum); font-weight:600; font-size:18px; flex:none; transform:translateY(-1.5px); }
+  /* 自分の行は白い枠で囲む(赤ハイライトは廃止)。枠は疑似要素。
+     左はinset 18px=3桁の順位でも数字にかぶらない短め(30→16→20→18pxと調整)。上下は均等(0 0) */
+  .w-row.me{ position:relative; }
+  .w-row.me::after{ content:""; position:absolute; inset:0 0 0 18px; border:1px solid rgba(255,255,255,.85); border-radius:9px; pointer-events:none; }
   .w-sep{ text-align:center; color:rgba(255,255,255,.35); font-weight:700; padding:2px 0; letter-spacing:.3em; }
   .w-state{ margin-top:34px; font-size:14px; font-weight:700; letter-spacing:.06em; color:rgba(255,255,255,.75); text-align:center; }
   .w-retry{ margin-top:14px; font-size:14px; font-weight:700; letter-spacing:.1em; color:#fff; border:1px solid rgba(255,255,255,.55); border-radius:999px; padding:9px 26px; }
-  #worldClose{ margin-top:14px; flex:none; font-size:14.5px; font-weight:700; letter-spacing:.22em; text-indent:.22em; color:rgba(255,255,255,.85); padding:10px 36px; }
-  #worldClose:active{ opacity:.6; }
+  /* 自分の順位の常設行(リストの下に固定)。タッチでリスト内の自分の行まで自動スクロール(圏外なら何も起きない)。
+     枠はリスト内の自分枠(.w-row.me::after)と同じ見た目・同じ寸法(inset左18px・スクロールバー分の右20pxは枠の外) */
+  #wMe{ margin-top:12px; flex:none; width:min(452px,100%); display:flex; align-items:baseline; gap:12px; padding:7px 30px 7px 10px;
+    position:relative; border:none; cursor:pointer; font-size:15px; text-align:left; color:#fff; }
+  #wMe::after{ content:""; position:absolute; inset:0 20px 0 18px; border:1px solid rgba(255,255,255,.85); border-radius:9px; pointer-events:none; }
+  #wMe:active{ opacity:.7; }
+  #wMe .rk{ width:2.2em; text-align:right; font-family:var(--fnum); font-weight:500; font-size:17px; color:rgba(255,255,255,.55); flex:none; transform:translateY(-1.5px); }
+  #wMe .nm{ flex:1 1 auto; min-width:0; font-weight:700; letter-spacing:.04em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #wMe .sc{ font-family:var(--fnum); font-weight:600; font-size:18px; flex:none; transform:translateY(-1.5px); }
+  /* 右上の×(地球儀アイコンと同じ場所。アイコンのみ・細く淡く) */
+  #worldX{ position:absolute; top:calc(16px + env(safe-area-inset-top)); right:14px; width:40px; height:40px; opacity:.55;
+    display:flex; align-items:center; justify-content:center; }
+  #worldX:active{ opacity:.9; transform:scale(.94); }
+  #worldX svg{ width:22px; height:22px; display:block; }
 
   /* ===== 名前(黒オーバーレイに入力欄と決定だけ) ===== */
   #nameOverlay{ position:fixed; inset:0; z-index:50; background:rgba(0,0,0,.6); color:#fff; display:none;
     flex-direction:column; align-items:center; justify-content:center; padding:24px; }
   #nameOverlay.on{ display:flex; }
   .n-input{ width:min(300px,80vw); font-size:19px; font-weight:700; letter-spacing:.08em; text-align:center; color:#fff;
-    background:none; border:none; border-bottom:1px solid rgba(255,255,255,.6); border-radius:0; padding:10px 6px; outline:none; caret-color:#fff; }
+    background:none; border:none; border-bottom:1px solid rgba(255,255,255,.6); border-radius:0; padding:10px 6px 3px; outline:none; caret-color:#fff; }   /* 下線は名前のすぐ下(かなり近く) */
   .n-input::placeholder{ color:rgba(255,255,255,.4); }
   .n-input:focus{ border-bottom-color:#fff; }
-  .n-note{ margin-top:14px; font-size:11px; font-weight:400; letter-spacing:.06em; color:rgba(255,255,255,.5); line-height:1.7; text-align:center; }
-  .n-err{ margin-top:10px; font-size:12.5px; font-weight:700; letter-spacing:.06em; color:#ffb1a5; visibility:hidden; }
-  .n-err.show{ visibility:visible; }
-  .n-btns{ margin-top:20px; display:flex; align-items:center; justify-content:center; gap:44px; }   /* 左=とじる・右=決定 */
-  .n-ok{ font-size:16px; font-weight:700; letter-spacing:.3em; text-indent:.3em; color:#fff; padding:10px 8px; }
+  .n-err{ margin-top:8px; font-size:12.5px; font-weight:700; letter-spacing:.06em; color:#ffb1a5; opacity:0; transition:opacity .5s linear; }
+  .n-err.show{ opacity:1; transition:none; }   /* 出る時はパッと・消える時(3秒後)はフェードアウト */
+  /* 左上の×(ランキングの×と同仕様)=名前を更新せずに閉じる(初回の必須登録時は非表示) */
+  #nameX{ position:absolute; top:calc(16px + env(safe-area-inset-top)); left:14px; width:40px; height:40px; opacity:.55;
+    display:flex; align-items:center; justify-content:center; }
+  #nameX:active{ opacity:.9; transform:scale(.94); }
+  #nameX svg{ width:22px; height:22px; display:block; }
+  /* 決定だけ。中央揃え・入力欄のすぐ下(上寄せ)・薄い色 */
+  .n-ok{ margin-top:2px; align-self:center; font-size:15px; font-weight:700; letter-spacing:.3em; text-indent:.3em; color:rgba(255,255,255,.55); padding:10px 14px; }
   .n-ok:active{ opacity:.6; }
-  .n-ok:disabled{ opacity:.45; }
-  .n-close{ font-size:13.5px; font-weight:700; letter-spacing:.12em; color:rgba(255,255,255,.55); padding:10px 8px; }
-  .n-close:active{ opacity:.8; }
+  .n-ok:disabled{ opacity:.4; }
+  /* 注記は画面下部に固定 */
+  .n-note{ position:absolute; left:20px; right:20px; bottom:calc(22px + env(safe-area-inset-bottom)); font-size:11px; font-weight:400; letter-spacing:.06em; color:rgba(255,255,255,.5); line-height:1.7; text-align:center; }
 </style>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8539036056022595" crossorigin="anonymous"></script>
 </head>
@@ -105,7 +133,7 @@
       </button>
       <span id="myName"></span>
     </div>
-    <div id="count">0</div>
+    <div id="countWrap"><div id="count">0</div></div>
     <button id="worldBtn" aria-label="世界のつぶし数">
       <svg viewBox="0 0 24 24" fill="none" stroke="#1b1b1b" stroke-width="1" stroke-linecap="round">
         <circle cx="12" cy="12" r="9"/>
@@ -119,21 +147,24 @@
 
   <!-- 世界累計(黒オーバーレイ) -->
   <div id="worldOverlay">
+    <button id="worldX" aria-label="とじる">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
     <div class="w-label">世界のみんなでつぶした数</div>
     <div class="w-total" id="wTotal">-</div>
     <div class="w-list" id="wList"></div>
-    <button id="worldClose">とじる</button>
+    <button id="wMe" style="display:none"></button>
   </div>
 
-  <!-- 名前(黒オーバーレイに入力欄と決定だけ) -->
+  <!-- 名前(黒オーバーレイに入力欄と決定だけ。注記は画面下部) -->
   <div id="nameOverlay">
+    <button id="nameX" aria-label="とじる">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
     <input class="n-input" id="nameInput" maxlength="10" autocomplete="off" spellcheck="false" placeholder="あなたの名前">
-    <div class="n-note">登録した名前はオンラインランキングで他のプレイヤーに公開されます</div>
     <div class="n-err" id="nameErr">この名前は使われています</div>
-    <div class="n-btns">
-      <button class="n-close" id="nameClose">とじる</button>
-      <button class="n-ok" id="nameOk">決定</button>
-    </div>
+    <button class="n-ok" id="nameOk">決定</button>
+    <div class="n-note">登録した名前はオンラインランキングで他のプレイヤーに公開されます</div>
   </div>
 
 <script>
@@ -165,30 +196,41 @@ function note(f,t,dur,vol,type){
   o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+dur+0.02);
   return o;
 }
-/* つぶす音: 低い「ぼふっ」+出だしの「プチッ」。ピッチを毎回ゆらして連打が気持ちいいように */
-function playSquish(){
+/* つぶす音: プチッが主役(プチプチの気泡系の短い弾け)。今作の肝。
+   4パターンを用意し、クリックするたびに変わる(同じのが2連続しないランダム)+毎回ピッチゆらぎ */
+function popNoise(t,f1,f2,q,vol,dur){   // バンドパスノイズの弾け
+  const n=actx.createBufferSource(); n.buffer=noiseBuf;
+  const b=actx.createBiquadFilter(); b.type="bandpass"; b.frequency.setValueAtTime(f1,t); b.frequency.exponentialRampToValueAtTime(f2,t+dur*0.8); b.Q.value=q;
+  const g=actx.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+0.0015); g.gain.exponentialRampToValueAtTime(0.0008,t+dur);
+  n.connect(b); b.connect(g); g.connect(actx.destination); n.start(t); n.stop(t+dur+0.02);
+}
+function popBody(t,f1,f2,vol,dur){   // 丸みの支え(sineの落ち)
+  const o=actx.createOscillator(), g=actx.createGain();
+  o.type="sine"; o.frequency.setValueAtTime(f1,t); o.frequency.exponentialRampToValueAtTime(f2,t+dur*0.7);
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+0.004); g.gain.exponentialRampToValueAtTime(0.0008,t+dur);
+  o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+dur+0.02);
+}
+function popCrisp(t,hpf,vol,dur){   // ごく短い高域のパリッ
+  const n=actx.createBufferSource(); n.buffer=noiseBuf;
+  const h=actx.createBiquadFilter(); h.type="highpass"; h.frequency.setValueAtTime(hpf,t);
+  const g=actx.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+0.001); g.gain.exponentialRampToValueAtTime(0.0008,t+dur);
+  n.connect(h); h.connect(g); g.connect(actx.destination); n.start(t); n.stop(t+dur+0.01);
+}
+let lastSquishVar=-1;
+function playSquish(){   // ポップに=明るく高く短く(鈍い低音は最小限)
   if(!actx) return;
-  const t=actx.currentTime, p=0.85+Math.random()*0.35;
-  // プチッ(出だしの一瞬だけの弾け。短く鋭く)
-  const pn=actx.createBufferSource(); pn.buffer=noiseBuf;
-  const bp=actx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.setValueAtTime(1900*p,t); bp.Q.value=2.2;
-  const gp=actx.createGain(); gp.gain.setValueAtTime(0,t); gp.gain.linearRampToValueAtTime(0.34,t+0.002); gp.gain.exponentialRampToValueAtTime(0.0008,t+0.022);
-  pn.connect(bp); bp.connect(gp); gp.connect(actx.destination); pn.start(t); pn.stop(t+0.03);
-  // ぼっ(ボディ。ここが主役。低すぎたので少し上げた=160→50Hz)
-  const o1=actx.createOscillator(), g1=actx.createGain();
-  o1.type="sine"; o1.frequency.setValueAtTime(160*p,t); o1.frequency.exponentialRampToValueAtTime(50*p,t+0.12);
-  g1.gain.setValueAtTime(0,t); g1.gain.linearRampToValueAtTime(0.68,t+0.006); g1.gain.exponentialRampToValueAtTime(0.0008,t+0.16);
-  o1.connect(g1); g1.connect(actx.destination); o1.start(t); o1.stop(t+0.19);
-  // ふっ(こもった空気。ローパスで丸く)
-  const ns=actx.createBufferSource(); ns.buffer=noiseBuf;
-  const lp=actx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.setValueAtTime(1050*p,t); lp.frequency.exponentialRampToValueAtTime(300*p,t+0.08); lp.Q.value=0.8;
-  const g2=actx.createGain(); g2.gain.setValueAtTime(0,t); g2.gain.linearRampToValueAtTime(0.34,t+0.004); g2.gain.exponentialRampToValueAtTime(0.0008,t+0.09);
-  ns.connect(lp); lp.connect(g2); g2.connect(actx.destination); ns.start(t); ns.stop(t+0.11);
-  // ぷに(鳴きがすっと落ちる。かわいげ)
-  const o3=actx.createOscillator(), g3=actx.createGain();
-  o3.type="sine"; o3.frequency.setValueAtTime(390*p,t+0.006); o3.frequency.exponentialRampToValueAtTime(175*p,t+0.07);
-  g3.gain.setValueAtTime(0,t+0.006); g3.gain.linearRampToValueAtTime(0.16,t+0.012); g3.gain.exponentialRampToValueAtTime(0.0008,t+0.09);
-  o3.connect(g3); g3.connect(actx.destination); o3.start(t+0.006); o3.stop(t+0.11);
+  const t=actx.currentTime, p=0.9+Math.random()*0.35;
+  let v=Math.floor(Math.random()*4); if(v===lastSquishVar) v=(v+1)%4; lastSquishVar=v;
+  if(v===0){        // 標準のポンッ
+    popNoise(t,2300*p,1150*p,1.5,0.5,0.03); popCrisp(t,3800*p,0.18,0.012); popBody(t,430*p,170*p,0.3,0.055);
+  }else if(v===1){  // 高めのピッ
+    popNoise(t,2900*p,1500*p,1.7,0.45,0.026); popCrisp(t,4400*p,0.16,0.01); popBody(t,520*p,220*p,0.24,0.045);
+  }else if(v===2){  // ちょい丸めのポコッ
+    popNoise(t,1800*p,900*p,1.3,0.5,0.034); popCrisp(t,3200*p,0.14,0.012); popBody(t,360*p,140*p,0.34,0.06);
+  }else{            // ポポッ(小さな二連)
+    popNoise(t,2400*p,1200*p,1.5,0.46,0.026); popBody(t,430*p,180*p,0.24,0.045);
+    popNoise(t+0.035,2900*p,1500*p,1.7,0.3,0.022); popBody(t+0.035,520*p,230*p,0.15,0.04);
+  }
 }
 function playSelect(){ if(!actx) return; const t=actx.currentTime; note(440,t,0.06,0.1,"triangle"); }
 
@@ -247,14 +289,23 @@ window.addEventListener("pagehide",()=>{ sbSubmit({keepalive:true}); });
 
 /* ================= つぶした数 ================= */
 let count=0; try{ count=parseInt(localStorage.getItem("nomi.count")||"0",10)||0; }catch(e){}
-const countEl=$("count");
+const countEl=$("count"), countWrap=$("countWrap");
+/* スコアはノミに押されて動く(物理はframe()内。初期位置=上中央のノミが届く高さ) */
+let cX=0, cY=0, cVX=0, cVY=0, cReady=false;
+function placeCount(){ countWrap.style.transform="translate("+cX+"px,"+cY+"px) translate(-50%,-50%)"; }
 function renderCount(){ countEl.textContent=(count|0).toLocaleString("ja-JP"); }
-function bumpCount(){
-  count++;
+function bumpCount(n){
+  n=n||1;
+  const before=count;
+  count+=n;
   try{ localStorage.setItem("nomi.count",String(count)); }catch(e){}
   renderCount();
   countEl.classList.remove("pop"); void countEl.offsetWidth; countEl.classList.add("pop");
-  if(count%100===0){ countEl.classList.add("gold"); setTimeout(()=>countEl.classList.remove("gold"),600); }   // 100匹ごとは金フラッシュのみ(音は鳴らさない)
+  // 一番上の位が変わったら金フラッシュ(音は無し)。3桁なら100ごと・4桁なら1000ごと・桁が増えた時も
+  const pow=Math.pow(10, String(count).length-1);
+  if(String(before).length!==String(count).length || Math.floor(before/pow)!==Math.floor(count/pow)){
+    countEl.classList.add("gold"); setTimeout(()=>countEl.classList.remove("gold"),600);
+  }
   scheduleSync();
 }
 renderCount();
@@ -270,34 +321,51 @@ function resize(){
 }
 window.addEventListener("resize",resize); resize();
 
-/* ノミのスプライト=本当にただの点(まるい黒点のみ。トゲ・脚・影・ぼかしは一切なし) */
+/* ノミのスプライト=本当にただの点(まるい黒点のみ。トゲ・脚・影なし)
+   注意: スプライトは2倍解像度で描く(1倍で作るとdpr拡大でふちがぼやける=「ぼかしがある」と指摘された) */
 const SPRITES=[];
 (function makeSprites(){
+  const RES=2;
   for(let v=0;v<6;v++){
-    const coreR=2.0+Math.random()*1.1;         // 点の大きさ(すこしだけ個体差)
+    const coreR=1.5+Math.random()*0.6;         // 点の大きさ(すこしだけ個体差。1.5〜2.1=小さめ・上限も控えめ)
     const S=Math.ceil(coreR*2)+4;
-    const oc=document.createElement("canvas"); oc.width=S; oc.height=S;
+    const oc=document.createElement("canvas"); oc.width=S*RES; oc.height=S*RES;
     const c=oc.getContext("2d");
     c.fillStyle="#161616";
-    c.beginPath(); c.arc(S/2,S/2,coreR,0,6.284); c.fill();
+    c.beginPath(); c.arc(S*RES/2,S*RES/2,coreR*RES,0,6.284); c.fill();
     SPRITES.push({cv:oc, size:S, coreR:coreR});
   }
 })();
 
+/* ノミの上下の移動範囲: ボタン(名前・地球儀・ゲーム集リンク)のある「高さの帯」全体に入らない
+   =上は「HUDボタンの下端」より下・下は「ゲーム集リンクの上端」より上だけを動く
+   ※この宣言はspawnFlea/初期湧きより前に置くこと(後ろに置くとTDZで起動時に全体が死ぬ) */
+let bandTop=70, bandBottom=1e9;
+function updateNoGo(){
+  let t=0, b=vh||1e9;
+  ["namePill","worldBtn"].forEach(id=>{ const el=$(id); if(!el) return;
+    const r=el.getBoundingClientRect(); if(r.width>0) t=Math.max(t,r.bottom); });
+  const hf=document.querySelector(".home-foot");
+  if(hf){ const r=hf.getBoundingClientRect(); if(r.width>0 && r.top>0) b=Math.min(b,r.top); }
+  bandTop=t+10; bandBottom=b-10;
+}
+setInterval(updateNoGo,2000); window.addEventListener("resize",updateNoGo); setTimeout(updateNoGo,300);
+
 const FLEA_CAP=20000;     // 実質無限にたまる(描画=点1個をスタンプするだけなので大量でも軽い。1.5秒に1匹なので到達には8時間超)
-const SPAWN_MS=1500;      // 1.5秒に1匹
+const SPAWN_MS=1000;      // 1秒に1匹
 const fleas=[], parts=[], splats=[], ripples=[];
 function spawnFlea(inside){
   if(fleas.length>=FLEA_CAP) return;
   if(vw<50||vh<50) return;   // 画面サイズが取れていない間(裏タブでの起動直後など)は湧かせない
-  const side=Math.floor(Math.random()*4), m=26;   // 画面外から
+  const m=26;
+  // 動ける帯(上下)の中の高さで、左右の画面外から入ってくる(上下から入れると禁止の帯を横切ってしまう)
+  const top=Math.max(20,bandTop), bot=Math.min(vh-20,bandBottom);
+  const bandY=()=> top+Math.random()*Math.max(40,bot-top);
   let x,y;
-  if(inside){ x=20+Math.random()*(vw-40); y=20+Math.random()*(vh-40); }   // 留守の間に入りこんでいた分は画面内に
-  else if(side===0){ x=-m; y=Math.random()*vh; }
-  else if(side===1){ x=vw+m; y=Math.random()*vh; }
-  else if(side===2){ x=Math.random()*vw; y=-m; }
-  else{ x=Math.random()*vw; y=vh+m; }
-  const toward=Math.atan2(vh*(0.25+Math.random()*0.5)-y, vw*(0.25+Math.random()*0.5)-x);
+  if(inside){ x=20+Math.random()*(vw-40); y=bandY(); }   // 留守の間に入りこんでいた分は画面内(帯の中)に
+  else if(Math.random()<0.5){ x=-m; y=bandY(); }
+  else{ x=vw+m; y=bandY(); }
+  const toward=Math.atan2(((top+bot)/2 + (Math.random()-0.5)*(bot-top)*0.5)-y, vw*(0.25+Math.random()*0.5)-x);
   fleas.push({
     x:x, y:y, h:inside?Math.random()*6.283:toward, sp:7+Math.random()*9,   // ゆっくり(px/秒)
     spr:SPRITES[Math.floor(Math.random()*SPRITES.length)],
@@ -315,31 +383,41 @@ try{
 let lastSpawn=Date.now();
 setInterval(()=>{
   const now=Date.now();
+  // スマホ保護: 描画が重くなってきたら(約25fps未満)それ以上は増やさない(端末が軽くなれば再開)
+  const heavy = avgFrameMs>40 && fleas.length>1500;
   let n=Math.floor((now-lastSpawn)/SPAWN_MS);   // 時間ベース=裏タブでタイマーが間引かれてもまとめて追いつく
-  if(n>0){ lastSpawn+=n*SPAWN_MS; while(n-->0) spawnFlea(); }
-  if(pendingCatchup>0 && vw>=50){ const k=Math.min(150,pendingCatchup); pendingCatchup-=k; for(let i=0;i<k;i++) spawnFlea(true); }
+  if(n>0){ lastSpawn+=n*SPAWN_MS; if(!heavy) while(n-->0) spawnFlea(); }
+  if(!heavy && pendingCatchup>0 && vw>=50){ const k=Math.min(150,pendingCatchup); pendingCatchup-=k; for(let i=0;i<k;i++) spawnFlea(true); }
   try{ localStorage.setItem("nomi.lastAlive",String(now)); }catch(e){}
 },1000);
 for(let i=0;i<5;i++) spawnFlea();   // 起動した瞬間から出はじめる
 window.addEventListener("pagehide",()=>{ try{ localStorage.setItem("nomi.lastAlive",String(Date.now())); }catch(e){} });
+// ★デバッグ用: Nキーでノミを上限(FLEA_CAP)まで一気に湧かせる(性能・見た目確認)。本番アップロード前に必ず削除すること！
+document.addEventListener("keydown",e=>{
+  if(e.key!=="n"&&e.key!=="N") return;
+  const tg=e.target; if(tg && tg.tagName==="INPUT") return;   // 名前入力中は無視
+  for(let i=0;i<FLEA_CAP && fleas.length<FLEA_CAP;i++) spawnFlea(true);   // ※whileだと画面サイズ0の時に無限ループでフリーズする
+});
 
 function updateFlea(f,dt,t){
   // 特殊な動きは無し=本当にじーっとゆっくり動き続けるだけ(ふらふら彷徨う)
   f.h += Math.sin(t*0.7+f.turnSeed)*0.9*dt + (Math.random()-0.5)*0.5*dt;
   const sp=f.sp*(0.75+0.25*Math.sin(t*0.9+f.ph));
   f.x+=Math.cos(f.h)*sp*dt; f.y+=Math.sin(f.h)*sp*dt;
-  // 画面に入ったら、なるべく中にとどまる(ふちで内側へゆるく向き直す)
+  // 動ける範囲(左右のふち+上下の帯)の外に出かけたら、範囲の中心へゆるく向き直す
   const m=12;
-  if(!f.inField && f.x>m && f.x<vw-m && f.y>m && f.y<vh-m) f.inField=true;
-  if(f.inField && (f.x<m||f.x>vw-m||f.y<m||f.y>vh-m)){
-    const ta=Math.atan2(vh/2-f.y, vw/2-f.x);
+  const top=Math.max(m,bandTop), bot=Math.min(vh-m,bandBottom);
+  if(!f.inField && f.x>m && f.x<vw-m && f.y>top && f.y<bot) f.inField=true;
+  if(f.inField && (f.x<m||f.x>vw-m||f.y<top||f.y>bot)){
+    const ta=Math.atan2((top+bot)/2-f.y, vw/2-f.x);
     let d=ta-f.h; while(d>3.1416)d-=6.283; while(d<-3.1416)d+=6.283;
-    f.h+=d*Math.min(1, 3*dt);
+    f.h+=d*Math.min(1, 4*dt);
+    f.x+=Math.cos(f.h)*20*dt; f.y+=Math.sin(f.h)*20*dt;   // 少し早足で範囲へ戻る
   }
 }
 function drawFlea(f){
-  // ただの点をそのまま置くだけ(回転・ゆらぎ・脚・影なし)
-  ctx.drawImage(f.spr.cv, f.x-f.spr.size/2, f.y-f.spr.size/2);
+  // ただの点をそのまま置くだけ(回転・ゆらぎ・脚・影なし)。2倍解像度スプライトを実寸で置く=ふちがくっきり
+  ctx.drawImage(f.spr.cv, f.x-f.spr.size/2, f.y-f.spr.size/2, f.spr.size, f.spr.size);
 }
 /* つぶした跡(すぐ薄れて消える。生々しくしない) */
 function addSplat(x,y,r){
@@ -368,43 +446,84 @@ function drawFx(dt){
     ctx.beginPath(); ctx.arc(r.x,r.y,6+k*22,0,6.284); ctx.stroke(); ctx.globalAlpha=1; }
 }
 
-let lastTs=0, lastFrameAt=Date.now();
+let lastTs=0, lastFrameAt=Date.now(), avgFrameMs=16;   // avgFrameMs=描画の重さ(スマホ保護の判定に使う)
 function frame(ts){
-  const dt=Math.min(0.05,(ts-lastTs)/1000)||0.016; lastTs=ts; lastFrameAt=Date.now();
+  const raw=ts-lastTs;
+  if(raw>0 && raw<250) avgFrameMs=avgFrameMs*0.95+raw*0.05;
+  const dt=Math.min(0.05,raw/1000)||0.016; lastTs=ts; lastFrameAt=Date.now();
   const t=ts/1000;
   ctx.clearRect(0,0,vw,vh);
   fleas.forEach(f=>{ updateFlea(f,dt,t); drawFlea(f); });
   drawFx(dt);
+  updateCountPush(dt,t);
   requestAnimationFrame(frame);
+}
+/* ===== スコアはノミに押されて動かされる(rAFと1fps保険の両方から呼ぶ) ===== */
+function updateCountPush(dt,t){
+  if(!cReady){
+    if(vw>50){ cX=vw/2; cY=Math.max(bandTop+46,96); cReady=true; placeCount(); }   // 初期位置=上中央(ノミが届く高さ=帯のすぐ下)
+    return;
+  }
+  const rx=countEl.offsetWidth/2+8, ry=countEl.offsetHeight/2+6;   // 数字の当たり(楕円)
+  let fx=0, fy=0, pc=0;
+  for(let i=0;i<fleas.length;i++){ const f=fleas[i];
+    const dx=cX-f.x, dy=cY-f.y;
+    if(dx>-rx-6 && dx<rx+6 && dy>-ry-6 && dy<ry+6){
+      const nx=dx/rx, ny=dy/ry, d=Math.hypot(nx,ny)||0.001;
+      // 触れているノミが自分と反対側へ押す。個体ごとに力のムラ(0.3〜1.7倍)=大群でも押し合いが完全に釣り合わず漂流する
+      if(d<1.15){ const w=0.3+((f.ph*1.618)%1)*1.4 + 0.35*Math.sin(t*1.3+f.turnSeed); fx+=nx/d*w; fy+=ny/d*w; pc++; }
+    } }
+  if(pc){ const k=64/Math.sqrt(pc); cVX+=fx*k*dt; cVY+=fy*k*dt; }
+  const fr=Math.max(0,1-1.5*dt); cVX*=fr; cVY*=fr;   // 摩擦=押されなくなったらすっと止まる
+  cX+=cVX*dt; cY+=cVY*dt;
+  const mTop=Math.max(60,bandTop+24), mBot=Math.min(vh-40,bandBottom-24);   // ノミの動ける範囲の中にとどめる=押されっぱなしで画面外に行かない
+  if(cX<70){ cX=70; cVX=Math.abs(cVX)*0.3; } if(cX>vw-70){ cX=vw-70; cVX=-Math.abs(cVX)*0.3; }
+  if(cY<mTop){ cY=mTop; cVY=Math.abs(cVY)*0.3; } if(cY>mBot){ cY=mBot; cVY=-Math.abs(cVY)*0.3; }
+  placeCount();
 }
 requestAnimationFrame(frame);
 /* rAFが止まる環境(裏タブ等)でも最低限動かす保険 */
 setInterval(()=>{ if(Date.now()-lastFrameAt>900){ lastFrameAt=Date.now(); const t=Date.now()/1000;
-  ctx.clearRect(0,0,vw,vh); fleas.forEach(f=>{ updateFlea(f,0.9,t); drawFlea(f); }); drawFx(0.9); } },1000);
+  ctx.clearRect(0,0,vw,vh); fleas.forEach(f=>{ updateFlea(f,0.9,t); drawFlea(f); }); drawFx(0.9); updateCountPush(0.9,t); } },1000);
 
 /* ================= つぶす ================= */
+const HIT_R=(matchMedia("(pointer:coarse)").matches?48:40);   // 広め=タップ地点のまわりをまとめてつぶせる
+function squishHits(x,y){   // その地点を中心に、半径内のノミをまとめてつぶす(音は鳴らさない)。つぶした数を返す
+  let n=0;
+  for(let i=fleas.length-1;i>=0;i--){ const f=fleas[i];
+    if(Math.hypot(f.x-x,f.y-y) < HIT_R+f.spr.coreR*1.5){ addSplat(f.x,f.y,f.spr.coreR); fleas.splice(i,1); n++; } }
+  return n;
+}
+function squishFeedback(n){ if(!n) return; playSquish(); if(navigator.vibrate){ try{ navigator.vibrate(12); }catch(_){}} bumpCount(n); }
+/* タップ+長押し+なぞり: 押している間はつぶし続ける */
+const heldPts=new Map();
 cv.addEventListener("pointerdown",e=>{
   ensureAudio();
-  const x=e.clientX, y=e.clientY;
-  const hitR=(matchMedia("(pointer:coarse)").matches?30:24);
-  let best=-1, bestD=1e9;
-  for(let i=0;i<fleas.length;i++){ const f=fleas[i];
-    const d=Math.hypot(f.x-x,f.y-y);
-    if(d<hitR+f.spr.coreR*1.5 && d<bestD){ bestD=d; best=i; } }
-  if(best>=0){
-    const f=fleas[best]; fleas.splice(best,1);
-    addSplat(f.x,f.y,f.spr.coreR);
-    playSquish();
-    if(navigator.vibrate){ try{ navigator.vibrate(12); }catch(_){}}
-    bumpCount();
-  }else{
-    ripples.push({x:x,y:y,t:0});
-  }
+  try{ cv.setPointerCapture(e.pointerId); }catch(_){}   // キャプチャ=ボタンの上や画面外を通っても、押している限りつぶし続けられる
+  heldPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  const n=squishHits(e.clientX,e.clientY);
+  squishFeedback(n);
+  if(n===0) ripples.push({x:e.clientX,y:e.clientY,t:0});
 });
+/* 動かした時は前回位置からの経路を刻んで全部判定=素早く動かしても取りこぼさない。
+   判定した点それぞれに波紋も出す=判定の密度とエフェクトの数が見合う */
+cv.addEventListener("pointermove",e=>{
+  const p=heldPts.get(e.pointerId); if(!p) return;
+  const dx=e.clientX-p.x, dy=e.clientY-p.y, dist=Math.hypot(dx,dy);
+  const steps=Math.max(1, Math.ceil(dist/(HIT_R*0.6)));
+  let n=0;
+  for(let i=1;i<=steps;i++){ const sx=p.x+dx*i/steps, sy=p.y+dy*i/steps;
+    n+=squishHits(sx,sy); ripples.push({x:sx,y:sy,t:0}); }
+  squishFeedback(n);
+  p.x=e.clientX; p.y=e.clientY;
+});
+["pointerup","pointercancel","lostpointercapture"].forEach(ev=>cv.addEventListener(ev,e=>heldPts.delete(e.pointerId)));   // ※pointerleaveで消さない=HUDの上や画面外に出ただけで長押しが切れていたバグの修正
+/* 長押し中: 80msごとに足元をつぶし+波紋を出しつづける(押してる感) */
+setInterval(()=>{ heldPts.forEach(p=>{ squishFeedback(squishHits(p.x,p.y)); ripples.push({x:p.x,y:p.y,t:0}); }); },80);
 cv.addEventListener("contextmenu",e=>e.preventDefault());
 
 /* ================= 名前 ================= */
-const nameOverlay=$("nameOverlay"), nameInput=$("nameInput"), nameErr=$("nameErr"), nameOk=$("nameOk"), nameClose=$("nameClose");
+const nameOverlay=$("nameOverlay"), nameInput=$("nameInput"), nameErr=$("nameErr"), nameOk=$("nameOk");
 let nameRequired=false;
 function renderName(){
   const n=playerName();
@@ -413,7 +532,7 @@ function renderName(){
 }
 function openNameModal(req){
   nameRequired=!!req;
-  nameClose.style.display=nameRequired?"none":"";
+  $("nameX").style.display=nameRequired?"none":"";   // 初回の必須登録では×を出さない
   nameErr.classList.remove("show");
   nameInput.value=playerName();
   nameOk.disabled=false; nameOk.textContent="決定";
@@ -421,7 +540,12 @@ function openNameModal(req){
   setTimeout(()=>{ try{ nameInput.focus(); nameInput.select(); }catch(e){} },60);
 }
 function closeNameModal(){ nameOverlay.classList.remove("on"); document.body.classList.remove("veil"); }
-function showNameErr(msg){ nameErr.textContent=msg; nameErr.classList.add("show"); }
+let nameErrTimer=null;
+function showNameErr(msg){
+  nameErr.textContent=msg; nameErr.classList.add("show");
+  if(nameErrTimer) clearTimeout(nameErrTimer);
+  nameErrTimer=setTimeout(()=>{ nameErr.classList.remove("show"); },3000);   // 3秒表示してフェードアウト
+}
 async function confirmName(){
   const v=[...(nameInput.value||"")].slice(0,10).join("").trim();
   if(!v){ showNameErr("名前を入力してください"); return; }
@@ -437,8 +561,8 @@ async function confirmName(){
   closeNameModal();
   lastSentScore=0; sbSubmit();   // 名前を確定したらすぐ1回送る(改名なら新しい名前の行が最新=ランキングも変わる)
 }
-nameOk.addEventListener("click",()=>{ ensureAudio(); confirmName(); });
-nameClose.addEventListener("click",()=>{ ensureAudio(); playSelect(); closeNameModal(); });
+nameOk.addEventListener("click",()=>{ ensureAudio(); confirmName(); });   // 枠外タップでは閉じない
+$("nameX").addEventListener("click",()=>{ ensureAudio(); playSelect(); closeNameModal(); });   // ×=新しい名前を入力していても更新せずに閉じる
 nameInput.addEventListener("keydown",e=>{ if(e.key==="Enter" && !e.isComposing){ e.preventDefault(); confirmName(); } });
 nameInput.addEventListener("input",()=>nameErr.classList.remove("show"));
 $("namePill").addEventListener("click",()=>{ ensureAudio(); playSelect(); openNameModal(false); });   // ペン+名前のどこを押しても変更できる
@@ -471,25 +595,50 @@ async function loadWorld(){
     else seen.set(MYMODE,{name:me, score:count|0, mode:MYMODE});
   }
   const rows=[...seen.values()].sort((a,b)=>b.score-a.score);
+  // ★デバッグ用: ランキングを999位まで偽データで埋めて表示する(自分の順位が3桁=150位前後になるよう自分のスコア基準で生成)。本番アップロード前に必ず false にすること！
+  const DEBUG_FILL_RANKING=true;
+  if(DEBUG_FILL_RANKING){
+    let seed=7, k=0;
+    const myScore=Math.max(1, count|0);
+    while(rows.length<999){ seed=(seed*1103515245+12345)%2147483648; k++;
+      const sc = k<=149 ? myScore + (150-k)*137 + (seed%97)          // 自分より上に約149人
+                        : Math.max(1, Math.floor(myScore*(999-k)/852) );   // 残りは自分より下
+      rows.push({name:"デバッグノミ"+k, score:sc, mode:"debug:"+k}); }
+    rows.sort((a,b)=>b.score-a.score);
+  }
+  const SHOW_N=999;   // ランキングは999位まで表示
   const total=rows.reduce((s,r)=>s+r.score,0);
   wTotal.textContent=total.toLocaleString("ja-JP");
   if(!rows.length){ wList.innerHTML='<div class="w-state">まだ誰も遊んでないよ...</div>'; return; }
   const myIdx=rows.findIndex(r=>r.mode===MYMODE);
   let html="";
-  rows.slice(0,30).forEach((r,i)=>{
-    html+='<div class="w-row'+(i===myIdx?" me":"")+'"><span class="rk">'+(i+1)+'</span><span class="nm">'+escHtml(r.name)+'</span><span class="sc">'+r.score.toLocaleString("ja-JP")+'</span></div>';
+  rows.slice(0,SHOW_N).forEach((r,i)=>{
+    html+='<div class="w-row'+(i===myIdx?" me":"")+'"'+(i===myIdx?' id="wMeRow"':'')+'><span class="rk">'+(i+1)+'</span><span class="nm">'+escHtml(r.name)+'</span><span class="sc">'+r.score.toLocaleString("ja-JP")+'</span></div>';
   });
-  if(myIdx>=30){
-    html+='<div class="w-sep">…</div>';
-    html+='<div class="w-row me"><span class="rk">'+(myIdx+1)+'</span><span class="nm">'+escHtml(me)+'</span><span class="sc">'+rows[myIdx].score.toLocaleString("ja-JP")+'</span></div>';
-  }
   wList.innerHTML=html;
+  // 自分の順位の常設行(リストの下)。タッチでリスト内の自分の行までスクロール(圏外=リストに行が無ければ何も起きない)
+  const wMe=$("wMe");
+  if(me){
+    const myRank = myIdx>=0 ? (myIdx+1) : "—";
+    const mySc = myIdx>=0 ? rows[myIdx].score : (count|0);
+    wMe.innerHTML='<span class="rk">'+myRank+'</span><span class="nm">'+escHtml(me)+'</span><span class="sc">'+mySc.toLocaleString("ja-JP")+'</span>';
+    wMe.style.display="";
+  }else{
+    wMe.style.display="none";
+  }
 }
 function escHtml(s){ return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
 function closeWorld(){ worldOverlay.classList.remove("on"); document.body.classList.remove("veil"); }
 $("worldBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); worldOverlay.classList.add("on"); document.body.classList.add("veil"); loadWorld(); });
-$("worldClose").addEventListener("click",()=>{ playSelect(); closeWorld(); });
-worldOverlay.addEventListener("click",e=>{ if(e.target===worldOverlay){ closeWorld(); } });
+// 閉じるのは右上の×だけ(下部のとじるは廃止・枠外タップでも閉じない)
+$("worldX").addEventListener("click",()=>{ playSelect(); closeWorld(); });
+// 自分の順位の常設行タッチ→リスト内の自分の行まで自動スクロール(行が無い=圏外なら何も起きない)
+// ※smoothはrAF駆動で環境により動かないため、scrollTopを直接動かす確実な方式
+$("wMe").addEventListener("click",()=>{
+  const r=document.getElementById("wMeRow"); if(!r) return;
+  playSelect();
+  wList.scrollTop = r.offsetTop - wList.clientHeight/2 + r.offsetHeight/2;   // 自分の行をリスト中央へ
+});
 
 window.addEventListener("pointerdown",ensureAudio,{passive:true});
 

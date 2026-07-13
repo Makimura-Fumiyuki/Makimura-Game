@@ -220,13 +220,24 @@
     pointer-events:auto; cursor:grab; touch-action:none;
   }
   .cup-handle:active{ cursor:grabbing; }
-  .rot-hint{ position:absolute; left:50%; top:50%; width:100%; height:auto; overflow:visible;
-    transform:translate(-50%,-50%); pointer-events:none; opacity:.9; }
+  .rot-hint{ position:absolute; left:calc(50% + 10px); top:50%; width:100%; height:auto; overflow:visible;
+    transform:translate(-50%,-50%); pointer-events:none; opacity:.9; }   /* 少しカップから離す=取っ手の中央に円がくる */
+  /* 通常は丸+「回転」だけ(パルスで「触れるよ」感)。つかんでいる間だけ回転矢印が丸から飛び出す */
+  .rot-hint .rh-arrow{ transform-box:fill-box; transform-origin:center; transform:scaleY(.08); opacity:0;
+    transition:transform .24s cubic-bezier(.3,1.5,.5,1), opacity .08s linear; }
+  .cup-wrap.rotating .rot-hint .rh-arrow{ transform:scaleY(1); opacity:1; }
+  .rot-hint .rh-hub{ transform-box:fill-box; transform-origin:center; animation:hubPulse 1.5s ease-in-out infinite; }
+  .cup-wrap.rotating .rot-hint .rh-hub{ animation:none; }
+  /* 「回転」はアニメなし。矢印と同じく丸から飛び出す/格納される切替 */
+  .rot-hint .rh-txt{ transform-box:fill-box; transform-origin:center top; transform:scale(1); opacity:.85;
+    transition:transform .24s cubic-bezier(.3,1.5,.5,1), opacity .08s linear; }
+  .cup-wrap.rotating .rot-hint .rh-txt{ transform:scale(.08); opacity:0; }   /* 矢印表示中は丸に格納 */
+  @keyframes hubPulse{ 0%,100%{ transform:scale(1); opacity:.8; } 50%{ transform:scale(1.35); opacity:1; } }
   .cup-wrap.erasing{ background:#ec9377; }
   .cup-wrap.erasing .cup-handle{ background:#ec9377; }
   .cup-in{ position:relative; width:100%; height:100%; border-radius:50%; overflow:hidden;
     box-shadow:inset 0 4px 12px rgba(60,30,5,.4); }
-  #cup,#swirlCv,#art{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  #cup,#swirlCv,#fleckCv,#art{ position:absolute; inset:0; width:100%; height:100%; display:block; }
   #swirlCv{ animation:swirlSpin 26s linear infinite; }
   @keyframes swirlSpin{ to{ transform:rotate(360deg); } }
   /* ペン/消しゴムのカーソル */
@@ -234,6 +245,7 @@
     touch-action:none;
     cursor:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24'%3E%3Cpath d='M3 21l1.2-4.2L16.6 4.4a2 2 0 0 1 2.8 0l.2.2a2 2 0 0 1 0 2.8L7.2 19.8z' fill='%23fff7ea' stroke='%236b431f' stroke-width='1.6'/%3E%3C/svg%3E") 3 23, crosshair;
   }
+  .cup-wrap.topicing #art{ cursor:default; }   /* お題を考えている間はペンカーソルにしない */
   .cup-wrap.erasing #art{
     cursor:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24'%3E%3Cg transform='rotate(-35 12 12)' fill='none' stroke='%236b431f' stroke-width='1.7'%3E%3Crect x='4' y='8.5' width='16' height='8' rx='2' fill='%23fdfdf8'/%3E%3Cline x1='11.5' y1='8.5' x2='11.5' y2='16.5'/%3E%3C/g%3E%3C/svg%3E") 4 19, cell;
   }
@@ -241,6 +253,11 @@
 
   /* 円形タイマー(カップの縁上・半透明) */
   .tring{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:3; }
+  /* カーソルを合わせた時の「いまの太さでここに描かれる」ガイド(未クリック時のみ) */
+  #penGhost{ position:absolute; border-radius:50%; pointer-events:none; display:none; z-index:2;
+    background:rgba(255,247,234,.5); box-shadow:0 0 0 1.5px rgba(255,247,234,.9), 0 1px 6px rgba(120,70,20,.22);
+    transform:translate(-50%,-50%); }
+  #penGhost.er{ background:rgba(236,147,119,.4); box-shadow:0 0 0 1.5px rgba(236,147,119,.85); }
   /* お題入力中: 1台=タイマー全部非表示 / オンライン=リングはお題タイマー・ラベルだけ非表示 */
   .cup-wrap.hide-ring .tring{ display:none; }
   .cup-wrap.hide-ring .tier-label, .cup-wrap.hide-labels .tier-label{ display:none; }
@@ -593,16 +610,17 @@
       </div>
     </div>
     <div class="cup-wrap" id="cupWrap">
-      <div class="handle-arm" id="handleArm"><div class="cup-handle" id="cupHandle"><svg class="rot-hint" viewBox="0 0 44 64" aria-hidden="true"><path d="M 15 10 A 28 28 0 0 1 15 54" fill="none" stroke="#c9a97e" stroke-width="4" stroke-linecap="round"/><path d="M7 3 L18 5.5 L11.5 13.5 Z" fill="#c9a97e"/><path d="M7 61 L18 58.5 L11.5 50.5 Z" fill="#c9a97e"/><circle cx="25.5" cy="32" r="5" fill="#c9a97e"/></svg></div></div>
-      <div class="cup-in" id="cupIn"><canvas id="cup"></canvas><canvas id="swirlCv"></canvas><canvas id="art"></canvas></div>
+      <div class="handle-arm" id="handleArm"><div class="cup-handle" id="cupHandle"><svg class="rot-hint" viewBox="0 0 44 64" aria-hidden="true"><g class="rh-arrow"><path d="M 18 9 A 110 110 0 0 1 18 55" fill="none" stroke="#c9a97e" stroke-width="2.4" stroke-linecap="round"/><polygon points="0,-8 -5,0 5,0" fill="#c9a97e" transform="translate(18,9) rotate(-12)"/><polygon points="0,8 -5,0 5,0" fill="#c9a97e" transform="translate(18,55) rotate(12)"/></g><g id="rhTxtWrap"><text class="rh-txt" x="20.4" y="47" text-anchor="middle" font-size="8.5" font-weight="900" fill="#c9a97e">回転</text></g><circle class="rh-hub" cx="20.4" cy="32" r="4.2" fill="#c9a97e"/></svg></div></div>
+      <div class="cup-in" id="cupIn"><canvas id="cup"></canvas><canvas id="swirlCv"></canvas><canvas id="fleckCv"></canvas><canvas id="art"></canvas></div>
+      <div id="penGhost"></div>
       <svg class="tring" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <g fill="none" stroke-width="5.8" stroke-linecap="butt" stroke="#2f9e55" stroke-opacity=".55">
-          <path class="tr-seg" d="M 94.76 35.17 A 47.15 47.15 0 0 0 50.28 2.85"/>
-          <path class="tr-seg" d="M 77.94 87.98 A 47.15 47.15 0 0 0 94.93 35.69"/>
-          <path class="tr-seg" d="M 22.51 88.31 A 47.15 47.15 0 0 0 77.49 88.31"/>
-          <path class="tr-seg" d="M 5.07 35.69 A 47.15 47.15 0 0 0 22.06 87.98"/>
-          <path class="tr-seg" d="M 49.72 2.85 A 47.15 47.15 0 0 0 5.24 35.17"/>
-          <path class="tr-full" d="M 50 2.85 A 47.15 47.15 0 1 0 50.05 2.85"/>
+        <g fill="none" stroke-width="3.0" stroke-linecap="butt" stroke="#2f9e55" stroke-opacity=".55">
+          <path class="tr-seg" d="M 96.09 34.73 A 48.55 48.55 0 0 0 50.28 1.45"/>
+          <path class="tr-seg" d="M 78.77 89.11 A 48.55 48.55 0 0 0 96.26 35.27"/>
+          <path class="tr-seg" d="M 21.69 89.44 A 48.55 48.55 0 0 0 78.31 89.44"/>
+          <path class="tr-seg" d="M 3.74 35.27 A 48.55 48.55 0 0 0 21.23 89.11"/>
+          <path class="tr-seg" d="M 49.72 1.45 A 48.55 48.55 0 0 0 3.91 34.73"/>
+          <path class="tr-full" d="M 50 1.45 A 48.55 48.55 0 1 0 50.05 1.45"/>
         </g>
       </svg>
       <div class="tier-label t5" id="tl5" style="left:78.6%; top:10.7%; transform:translate(-50%,-50%) rotate(36deg);">+5</div>
@@ -931,20 +949,43 @@ $("ruleReset").addEventListener("click",()=>{ ensureAudio(); playSelect(); timeL
 /* ================= カップ ================= */
 const SIZE=720;
 const cupCv=$("cup"), artCv=$("art"), swCv=$("swirlCv");
-const C=cupCv.getContext("2d"), A=artCv.getContext("2d"), SW=swCv.getContext("2d");
-cupCv.width=cupCv.height=SIZE; artCv.width=artCv.height=SIZE; swCv.width=swCv.height=SIZE;
+const fleckCv=$("fleckCv");
+const C=cupCv.getContext("2d"), A=artCv.getContext("2d"), SW=swCv.getContext("2d"), FC=fleckCv.getContext("2d");
+cupCv.width=cupCv.height=SIZE; artCv.width=artCv.height=SIZE; swCv.width=swCv.height=SIZE; fleckCv.width=fleckCv.height=SIZE;
 function clipCup(ctx){ ctx.beginPath(); ctx.arc(SIZE/2,SIZE/2,SIZE/2,0,7); ctx.clip(); }
 function drawCrema(){
   C.save(); clipCup(C);
   const g=C.createRadialGradient(SIZE*0.44,SIZE*0.4,SIZE*0.06, SIZE/2,SIZE/2,SIZE*0.56);
   g.addColorStop(0,"#e0b077"); g.addColorStop(0.55,"#c8945a"); g.addColorStop(1,"#a9713a");
   C.fillStyle=g; C.fillRect(0,0,SIZE,SIZE);
-  C.fillStyle="rgba(255,246,226,.14)";
-  for(let i=0;i<14;i++){ const a=Math.random()*6.28, r=SIZE*(0.42+Math.random()*0.05);
-    C.beginPath(); C.arc(SIZE/2+Math.cos(a)*r, SIZE/2+Math.sin(a)*r, 2+Math.random()*3.5, 0, 7); C.fill(); }
   C.restore();
 }
 function clearArt(){ A.clearRect(0,0,SIZE,SIZE); }
+/* カップ内の装飾の点々(クレマの泡)は静止画ではなく、ゆっくり漂わせる */
+const flecks=[];
+(function initFlecks(){
+  for(let i=0;i<18;i++){
+    flecks.push({ a:Math.random()*6.283, r:0.2+Math.random()*0.27, s:2+Math.random()*3.5,
+      spd:(0.02+Math.random()*0.045)*(Math.random()<0.85?1:-1),   // ほとんどは渦と同じ向きにゆっくり周回
+      wob:Math.random()*6.283, ws:0.25+Math.random()*0.55 });
+  }
+})();
+let fleckLast=0;
+function fleckLoop(ts){
+  const dt=Math.min(0.05,(ts-fleckLast)/1000)||0.016; fleckLast=ts;
+  FC.clearRect(0,0,SIZE,SIZE);
+  FC.save(); clipCup(FC);
+  FC.fillStyle="rgba(255,246,226,.16)";
+  for(const f of flecks){
+    f.a+=f.spd*dt; f.wob+=f.ws*dt;
+    const r=SIZE*(f.r+Math.sin(f.wob)*0.014);   // 半径もゆっくり揺れる=漂い
+    FC.globalAlpha=0.7+Math.sin(f.wob*1.7)*0.3;
+    FC.beginPath(); FC.arc(SIZE/2+Math.cos(f.a)*r, SIZE/2+Math.sin(f.a)*r, f.s, 0, 7); FC.fill();
+  }
+  FC.globalAlpha=1; FC.restore();
+  requestAnimationFrame(fleckLoop);
+}
+requestAnimationFrame(fleckLoop);
 function drawSwirl(){   // 渦(回転するレイヤーに描く=カフェオレが動いて見える)
   SW.clearRect(0,0,SIZE,SIZE);
   SW.save(); clipCup(SW);
@@ -976,6 +1017,9 @@ function evPt(e){
 function applyCupRot(){
   $("cupIn").style.transform="rotate("+cupRot+"rad)";
   $("handleArm").style.transform="rotate("+cupRot+"rad)";
+  // 取っ手が左半分に回ったら「回転」文字を丸中心で180°回す=上下逆さまを防ぎ、常に読める向きに
+  const w=$("rhTxtWrap");
+  if(w) w.setAttribute("transform", Math.cos(cupRot)<0 ? "rotate(180 20.4 32)" : "");
 }
 (function(){
   function angTo(e){ const r=$("cupWrap").getBoundingClientRect(); return Math.atan2(e.clientY-(r.top+r.height/2), e.clientX-(r.left+r.width/2)); }
@@ -983,6 +1027,7 @@ function applyCupRot(){
   $("cupHandle").addEventListener("pointerdown",e=>{
     e.preventDefault(); e.stopPropagation(); ensureAudio();
     grab=angTo(e)-cupRot;
+    $("cupWrap").classList.add("rotating");   // つかんでいる間だけ矢印を見せる
     let lastSend=0;
     const shareRot=(force)=>{   // 回転を他プレイヤーにも反映(ロストしても次の送信で補正)
       if(!online||!ch) return;
@@ -990,7 +1035,7 @@ function applyCupRot(){
       try{ ch.send({type:"broadcast",event:"rot",payload:{r:cupRot}}); }catch(e){}
     };
     const mv=ev=>{ cupRot=angTo(ev)-grab; applyCupRot(); shareRot(false); };
-    const up=()=>{ window.removeEventListener("pointermove",mv); window.removeEventListener("pointerup",up); grab=null; shareRot(true); };
+    const up=()=>{ window.removeEventListener("pointermove",mv); window.removeEventListener("pointerup",up); grab=null; shareRot(true); $("cupWrap").classList.remove("rotating"); };
     window.addEventListener("pointermove",mv); window.addEventListener("pointerup",up);
   });
 })();
@@ -1032,6 +1077,22 @@ artCv.addEventListener("pointermove",e=>{
 ["pointerup","pointercancel","pointerleave"].forEach(ev=>artCv.addEventListener(ev,e=>{
   if(!drawing) return; drawing=false; last=null; pourStop();
 }));
+/* カーソルを合わせた時、いまのペン(消しゴム)の太さで描かれる場所のガイドを出す(未クリック時) */
+const penGhost=$("penGhost");
+function hideGhost(){ penGhost.style.display="none"; }
+artCv.addEventListener("pointermove",e=>{
+  if(drawing || e.pointerType==="touch" || phase!=="draw" || !isDrawer()){ hideGhost(); return; }
+  const wrap=$("cupWrap").getBoundingClientRect();
+  const w=$("cupIn").offsetWidth||1;
+  const d=PEN_W[penIdx]*(erasing?2.2:1)*w;   // 表示上の太さ=論理太さ×表示スケール
+  penGhost.style.width=d+"px"; penGhost.style.height=d+"px";
+  penGhost.style.left=(e.clientX-wrap.left)+"px"; penGhost.style.top=(e.clientY-wrap.top)+"px";
+  penGhost.classList.toggle("er", !!erasing);
+  penGhost.style.display="block";
+});
+artCv.addEventListener("pointerleave",hideGhost);
+artCv.addEventListener("pointerout",hideGhost);
+artCv.addEventListener("pointerdown",hideGhost);
 function startDrawFlush(){
   stopDrawFlush();
   drawFlushIv=setInterval(()=>{
@@ -1100,11 +1161,11 @@ setInterval(()=>{
 
 /* ================= 円形タイマー(カップの縁・時計回りに消える) ================= */
 const SEG_ELS=[...document.querySelectorAll(".tr-seg")];
-const SEG_LEN=58.7;
+const SEG_LEN=60.44;
 const TIER_COLORS={5:"#2f9e55",4:"#7ab53a",3:"#f39a1f",2:"#e07028",1:"#e3452f"};
 function setRingColor(t){ SEG_ELS.forEach(e=>e.setAttribute("stroke",TIER_COLORS[t])); FULL_EL.setAttribute("stroke",TIER_COLORS[t]); }
 const FULL_EL=document.querySelector(".tr-full");
-const FULL_LEN=296.25;
+const FULL_LEN=305.05;
 function setRing(remain){   // 5つのパーツが時計回り順に食われていく(nogap時は1本の全周弧)
   FULL_EL.setAttribute("stroke-dasharray",(FULL_LEN*Math.max(0,remain))+" 999");
   SEG_ELS.forEach((el,i)=>{
@@ -1132,7 +1193,7 @@ function renderRing(){
 }
 function resetRing(){
   topicRingOn=false;
-  $("cupWrap").classList.remove("hide-ring","hide-labels","nogap");
+  $("cupWrap").classList.remove("hide-ring","hide-labels","nogap","topicing");
   if(isCoop()){ $("cupWrap").classList.add("hide-labels","nogap"); }   // 協力=区切りと+5〜+1表示なし
   curTier=5;
   [5,4,3,2,1].forEach(k=>$("tl"+k).classList.toggle("off",k!==5));
@@ -1182,7 +1243,7 @@ function updateInfo(){
 function openTopic(){
   phase="topic";
   stopTimer(); resetRing();
-  $("cupWrap").classList.add(online?"hide-labels":"hide-ring");   // お題中: 1台=タイマー全非表示/オンライン=ラベルのみ非表示
+  $("cupWrap").classList.add(online?"hide-labels":"hide-ring","topicing");   // お題中: 1台=タイマー全非表示/オンライン=ラベルのみ非表示
   if(online) $("cupWrap").classList.add("nogap");                  // お題タイマーは区切りなし
   clearTimeout(topicTmr);
   if(online){   // お題を考える時間はオンラインのみ90秒固定(1台は無制限)
@@ -1660,7 +1721,7 @@ function enterTopicAll(){
     $("waitDot").setAttribute("style", dotStyle(d?d.c:"#999"));
     $("waitNm").textContent=(d?d.n:"？")+"の番！";
     $("waitOverlay").classList.add("on");
-    $("cupWrap").classList.add("hide-labels","nogap");
+    $("cupWrap").classList.add("hide-labels","nogap","topicing");
     startTopicRing();
   }
   renderChatSend();
