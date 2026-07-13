@@ -69,8 +69,9 @@
      スクロールバーは常時表示・つかんで操作できるタイプ(トラックも薄く見せる)・行から少し右に離す(padding-right) */
   /* 注意: scrollbar-width/scrollbar-color(標準プロパティ)を書くと::-webkit-scrollbarが無効化され
      オーバーレイ型(自動で隠れる)に戻ってしまう→疑似要素だけで指定=常時表示・つかんで操作できるクラシック型 */
-  /* 左にも20px(スクロールバーと同じぶん)の余白=リスト全体が左右中央に見える */
-  .w-list{ margin-top:42px; width:min(472px,100%); padding:0 20px; flex:0 1 auto; max-height:42vh; min-height:0; overflow-y:scroll; position:relative; }
+  /* クラシックスクロールバー(8px)がコンテンツ幅を右から削るぶんを織り込む:
+     左padding28 = 右padding20+スクロールバー8 → 行が箱のど真ん中に来る */
+  .w-list{ margin-top:42px; width:min(480px,100%); padding:0 20px 0 28px; flex:0 1 auto; max-height:42vh; min-height:0; overflow-y:scroll; position:relative; }
   .w-list::-webkit-scrollbar{ width:8px; }
   .w-list::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.55); border-radius:99px; }
   .w-list::-webkit-scrollbar-track{ background:rgba(255,255,255,.14); border-radius:99px; }
@@ -88,9 +89,10 @@
   .w-retry{ margin-top:14px; font-size:14px; font-weight:700; letter-spacing:.1em; color:#fff; border:1px solid rgba(255,255,255,.55); border-radius:999px; padding:9px 26px; }
   /* 自分の順位の常設行(リストの下に固定)。タッチでリスト内の自分の行まで自動スクロール(圏外なら何も起きない)。
      枠はリスト内の自分枠(.w-row.me::after)と同じ見た目・同じ寸法(inset左18px・スクロールバー分の右20pxは枠の外) */
-  #wMe{ margin-top:12px; flex:none; width:min(472px,100%); display:flex; align-items:baseline; gap:12px; padding:7px 30px 7px 30px;
+  /* 常設行はリストの行と「文字の左右端」「枠の左右端」が完全に揃う寸法(リスト側のスクロールバー8pxを織り込み済み) */
+  #wMe{ margin-top:12px; flex:none; width:min(480px,100%); display:flex; align-items:baseline; gap:12px; padding:7px 38px;
     position:relative; border:none; cursor:pointer; font-size:15px; text-align:left; color:#fff; }
-  #wMe::after{ content:""; position:absolute; inset:0 20px 0 38px; border:1px solid rgba(255,255,255,.85); border-radius:9px; pointer-events:none; }
+  #wMe::after{ content:""; position:absolute; inset:0 28px 0 46px; border:1px solid rgba(255,255,255,.85); border-radius:9px; pointer-events:none; }
   #wMe:active{ opacity:.7; }
   #wMe .rk{ width:2.2em; text-align:right; font-family:var(--fnum); font-weight:500; font-size:17px; color:rgba(255,255,255,.55); flex:none; transform:translateY(-1.5px); }
   #wMe .nm{ flex:1 1 auto; min-width:0; font-weight:700; letter-spacing:.04em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -250,7 +252,7 @@ function getUid(){
     return u;
   }catch(e){ return "anon"; }
 }
-let MYMODE="nomi:"+getUid();   // 隠しコマンドのリセットでIDごと作り直すためlet
+const MYMODE="nomi:"+getUid();
 function playerName(){ try{ return (localStorage.getItem("nomi.name")||"").trim(); }catch(e){ return ""; } }
 function setPlayerName(n){ const v=[...(n||"")].slice(0,10).join("").trim(); try{ localStorage.setItem("nomi.name",v); }catch(e){} addNameHistory(v); }
 function nameHistory(){ try{ return JSON.parse(localStorage.getItem("nomi.names")||"[]"); }catch(e){ return []; } }
@@ -313,28 +315,6 @@ renderCount();
 window.addEventListener("storage",e=>{
   if(e.key==="nomi.count"){ const v=parseInt(e.newValue||"0",10)||0; if(v>count){ count=v; renderCount(); } }
 });
-/* 隠しコマンド(PCのみ): Ctrl+A+P で数字(累計)をリセット。名前は保持・個人IDは作り直し
-   ※過去に送信済みのオンライン記録の行は消せないので、ランキングに古い記録が残っていたら
-     SupabaseのSQLエディタで削除する(DELETE FROM scores WHERE mode LIKE 'nomi%';) */
-const heldKeys=new Set();
-document.addEventListener("keydown",e=>{
-  const tg=e.target; if(tg && tg.tagName==="INPUT") return;
-  heldKeys.add((e.key||"").toLowerCase());
-  if(e.ctrlKey && heldKeys.has("a") && heldKeys.has("p")){
-    heldKeys.clear();
-    e.preventDefault();
-    count=0; lastSentScore=0;
-    try{
-      localStorage.setItem("nomi.count","0");
-      const a=new Uint8Array(8); crypto.getRandomValues(a);
-      const u=[...a].map(b=>b.toString(16).padStart(2,"0")).join("");
-      localStorage.setItem("nomi.uid",u); MYMODE="nomi:"+u;
-    }catch(e2){}
-    renderCount(); countEl.classList.remove("pop"); void countEl.offsetWidth; countEl.classList.add("pop");
-    playSelect();
-  }
-});
-document.addEventListener("keyup",e=>heldKeys.delete((e.key||"").toLowerCase()));
 
 /* ================= ノミの野原 ================= */
 const cv=$("cv"), ctx=cv.getContext("2d");
@@ -459,7 +439,7 @@ function drawFx(dt){
   for(let i=ripples.length-1;i>=0;i--){ const r=ripples[i]; r.t+=dt; const k=r.t/0.32;
     if(k>=1){ ripples.splice(i,1); continue; }
     ctx.globalAlpha=0.24*(1-k); ctx.strokeStyle="#777"; ctx.lineWidth=1.5;
-    ctx.beginPath(); ctx.arc(r.x,r.y,HIT_R+k*26,0,6.284); ctx.stroke(); ctx.globalAlpha=1; }   // 波紋は当たり判定と同じ大きさから始まり、広がっていく
+    ctx.beginPath(); ctx.arc(r.x,r.y,HIT_R*0.55+k*26,0,6.284); ctx.stroke(); ctx.globalAlpha=1; }   // 波紋は当たり判定より2回り小さい円から始まり、広がっていく
 }
 
 let lastTs=0, lastFrameAt=Date.now(), avgFrameMs=16;   // avgFrameMs=描画の重さ(スマホ保護の判定に使う)
