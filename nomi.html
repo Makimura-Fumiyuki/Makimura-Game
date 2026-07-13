@@ -36,8 +36,9 @@
   #myName{ font-size:14px; font-weight:700; letter-spacing:.05em; max-width:34vw; overflow:hidden; text-overflow:ellipsis; }
   #editBtn{ width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; }
   #editBtn svg{ width:14px; height:14px; display:block; }
-  /* つぶした数=固定表示ではなく、ノミに押されて動かされる(位置はJSの物理が管理・初期位置は上中央) */
-  #countWrap{ position:absolute; left:0; top:0; pointer-events:none; will-change:transform; }
+  /* つぶした数=固定表示ではなく、ノミに押されて動かされる(位置はJSの物理が管理・初期位置は上中央)
+     ※fixedでビューポート直付け=物理座標(cX,cY)と見た目が完全一致(hud-top内のabsoluteだとtop10pxぶんズレる) */
+  #countWrap{ position:fixed; left:0; top:0; pointer-events:none; will-change:transform; }
   #count{ display:inline-block; font-family:var(--fnum); font-weight:500; letter-spacing:.06em;
     font-size:clamp(38px,9vw,58px); line-height:1; color:rgba(27,27,27,.92); }
   #count.pop{ animation:cpop .22s cubic-bezier(.2,1.6,.4,1); }
@@ -59,8 +60,8 @@
 
   /* ===== 世界オーバーレイ(黒・半透明=うしろでノミが彷徨う) ===== */
   #worldOverlay{ position:fixed; inset:0; z-index:40; background:rgba(0,0,0,.6); color:#fff;
-    display:flex; flex-direction:column; align-items:center; padding:calc(7vh + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom));
-    opacity:0; pointer-events:none; transition:opacity .22s linear; }
+    display:flex; flex-direction:column; align-items:center; padding:calc(9vh + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom));   /* 全体を少し下に */
+    opacity:0; pointer-events:none; }   /* フェードなし=パッと出てパッと消える */
   #worldOverlay.on{ opacity:1; pointer-events:auto; }
   .w-label{ margin-top:10px; font-size:13px; font-weight:700; letter-spacing:.22em; color:rgba(255,255,255,.72); }   /* ほんの少し下に */
   .w-total{ font-family:var(--fnum); font-weight:500; font-size:clamp(48px,13vw,84px); line-height:1.12; letter-spacing:.04em; margin-top:2px; }
@@ -68,7 +69,8 @@
      スクロールバーは常時表示・つかんで操作できるタイプ(トラックも薄く見せる)・行から少し右に離す(padding-right) */
   /* 注意: scrollbar-width/scrollbar-color(標準プロパティ)を書くと::-webkit-scrollbarが無効化され
      オーバーレイ型(自動で隠れる)に戻ってしまう→疑似要素だけで指定=常時表示・つかんで操作できるクラシック型 */
-  .w-list{ margin-top:42px; width:min(452px,100%); padding-right:20px; flex:0 1 auto; max-height:42vh; min-height:0; overflow-y:scroll; position:relative; }
+  /* 左にも20px(スクロールバーと同じぶん)の余白=リスト全体が左右中央に見える */
+  .w-list{ margin-top:42px; width:min(472px,100%); padding:0 20px; flex:0 1 auto; max-height:42vh; min-height:0; overflow-y:scroll; position:relative; }
   .w-list::-webkit-scrollbar{ width:8px; }
   .w-list::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.55); border-radius:99px; }
   .w-list::-webkit-scrollbar-track{ background:rgba(255,255,255,.14); border-radius:99px; }
@@ -86,9 +88,9 @@
   .w-retry{ margin-top:14px; font-size:14px; font-weight:700; letter-spacing:.1em; color:#fff; border:1px solid rgba(255,255,255,.55); border-radius:999px; padding:9px 26px; }
   /* 自分の順位の常設行(リストの下に固定)。タッチでリスト内の自分の行まで自動スクロール(圏外なら何も起きない)。
      枠はリスト内の自分枠(.w-row.me::after)と同じ見た目・同じ寸法(inset左18px・スクロールバー分の右20pxは枠の外) */
-  #wMe{ margin-top:12px; flex:none; width:min(452px,100%); display:flex; align-items:baseline; gap:12px; padding:7px 30px 7px 10px;
+  #wMe{ margin-top:12px; flex:none; width:min(472px,100%); display:flex; align-items:baseline; gap:12px; padding:7px 30px 7px 30px;
     position:relative; border:none; cursor:pointer; font-size:15px; text-align:left; color:#fff; }
-  #wMe::after{ content:""; position:absolute; inset:0 20px 0 18px; border:1px solid rgba(255,255,255,.85); border-radius:9px; pointer-events:none; }
+  #wMe::after{ content:""; position:absolute; inset:0 20px 0 38px; border:1px solid rgba(255,255,255,.85); border-radius:9px; pointer-events:none; }
   #wMe:active{ opacity:.7; }
   #wMe .rk{ width:2.2em; text-align:right; font-family:var(--fnum); font-weight:500; font-size:17px; color:rgba(255,255,255,.55); flex:none; transform:translateY(-1.5px); }
   #wMe .nm{ flex:1 1 auto; min-width:0; font-weight:700; letter-spacing:.04em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -217,19 +219,19 @@ function popCrisp(t,hpf,vol,dur){   // ごく短い高域のパリッ
   n.connect(h); h.connect(g); g.connect(actx.destination); n.start(t); n.stop(t+dur+0.01);
 }
 let lastSquishVar=-1;
-function playSquish(){   // ポップに=明るく高く短く(鈍い低音は最小限)
+function playSquish(){   // とにかくポップに=高く・短く・カリッと(鈍さの原因になる低いボディはごく薄く)
   if(!actx) return;
-  const t=actx.currentTime, p=0.9+Math.random()*0.35;
+  const t=actx.currentTime, p=0.92+Math.random()*0.35;
   let v=Math.floor(Math.random()*4); if(v===lastSquishVar) v=(v+1)%4; lastSquishVar=v;
   if(v===0){        // 標準のポンッ
-    popNoise(t,2300*p,1150*p,1.5,0.5,0.03); popCrisp(t,3800*p,0.18,0.012); popBody(t,430*p,170*p,0.3,0.055);
+    popNoise(t,3100*p,1600*p,1.6,0.5,0.024); popCrisp(t,4600*p,0.22,0.01); popBody(t,560*p,240*p,0.24,0.04);
   }else if(v===1){  // 高めのピッ
-    popNoise(t,2900*p,1500*p,1.7,0.45,0.026); popCrisp(t,4400*p,0.16,0.01); popBody(t,520*p,220*p,0.24,0.045);
+    popNoise(t,3700*p,2000*p,1.8,0.44,0.02); popCrisp(t,5200*p,0.2,0.009); popBody(t,660*p,300*p,0.18,0.035);
   }else if(v===2){  // ちょい丸めのポコッ
-    popNoise(t,1800*p,900*p,1.3,0.5,0.034); popCrisp(t,3200*p,0.14,0.012); popBody(t,360*p,140*p,0.34,0.06);
-  }else{            // ポポッ(小さな二連)
-    popNoise(t,2400*p,1200*p,1.5,0.46,0.026); popBody(t,430*p,180*p,0.24,0.045);
-    popNoise(t+0.035,2900*p,1500*p,1.7,0.3,0.022); popBody(t+0.035,520*p,230*p,0.15,0.04);
+    popNoise(t,2400*p,1250*p,1.4,0.5,0.028); popCrisp(t,3900*p,0.16,0.01); popBody(t,470*p,200*p,0.28,0.05);
+  }else{            // ポポッ(軽い二連)
+    popNoise(t,3200*p,1700*p,1.6,0.44,0.021); popBody(t,560*p,250*p,0.18,0.035);
+    popNoise(t+0.03,3800*p,2100*p,1.8,0.3,0.018); popBody(t+0.03,680*p,320*p,0.12,0.03);
   }
 }
 function playSelect(){ if(!actx) return; const t=actx.currentTime; note(440,t,0.06,0.1,"triangle"); }
@@ -241,6 +243,14 @@ function playSelect(){ if(!actx) return; const t=actx.currentTime; note(440,t,0.
 const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co";
 const SB_KEY="sb_publishable_cak3-W9Mmgahnwawreoa1Q_CVuhmkKL";
 const SB_HEAD={ "apikey":SB_KEY, "Authorization":"Bearer "+SB_KEY };
+/* 公開前の全記録リセット(2026-07-13): テスト中のローカル記録(累計・ID・名前)を各端末で一度だけ自動消去。
+   ※オンライン側のテスト行は牧村さんがSupabaseの管理画面から削除する(公開キーでは消せないが、持ち主は消せる) */
+try{
+  if(!localStorage.getItem("nomi.reset2")){
+    ["nomi.count","nomi.uid","nomi.name","nomi.names"].forEach(k=>localStorage.removeItem(k));
+    localStorage.setItem("nomi.reset2","1");
+  }
+}catch(e){}
 function getUid(){
   try{
     let u=localStorage.getItem("nomi.uid");
@@ -253,15 +263,13 @@ function playerName(){ try{ return (localStorage.getItem("nomi.name")||"").trim(
 function setPlayerName(n){ const v=[...(n||"")].slice(0,10).join("").trim(); try{ localStorage.setItem("nomi.name",v); }catch(e){} addNameHistory(v); }
 function nameHistory(){ try{ return JSON.parse(localStorage.getItem("nomi.names")||"[]"); }catch(e){ return []; } }
 function addNameHistory(n){ n=(n||"").trim(); if(!n) return; try{ const h=nameHistory(); if(!h.includes(n)){ h.push(n); localStorage.setItem("nomi.names",JSON.stringify(h)); } }catch(e){} }
-function myNames(){   // 自分が過去に使った名前(dox側もあわせて)=同じ端末なら取り戻せる
+function myNames(){   // 自分がこのゲームで過去に使った名前=同じ端末なら取り戻せる(doxとは独立)
   const s=new Set(nameHistory()); const cur=playerName(); if(cur) s.add(cur);
-  try{ JSON.parse(localStorage.getItem("dox.names")||"[]").forEach(n=>s.add(n)); }catch(e){}
-  try{ const dn=(localStorage.getItem("dox.name")||"").trim(); if(dn) s.add(dn); }catch(e){}
   return s;
 }
-async function sbNameTaken(name){   // 他の誰かが使っている名前か(自分のIDの行は除く。通信エラー時は塞がない=doxと同じ)
+async function sbNameTaken(name){   // ノミのみの記録内で、他の誰かが使っている名前か(doxの名前とは別=doxで使われていてもここでは使える。通信エラー時は塞がない)
   try{
-    const r=await fetch(SB_URL+"/rest/v1/scores?name=eq."+encodeURIComponent(name)+"&select=mode&limit=10",{headers:SB_HEAD});
+    const r=await fetch(SB_URL+"/rest/v1/scores?name=eq."+encodeURIComponent(name)+"&mode=like.nomi:*&select=mode&limit=10",{headers:SB_HEAD});
     if(!r.ok) return false;
     const a=await r.json();
     return Array.isArray(a)&&a.some(x=>x.mode!==MYMODE);
@@ -309,6 +317,10 @@ function bumpCount(n){
   scheduleSync();
 }
 renderCount();
+/* 複数タブ対策: 別のタブが保存した累計の方が大きければ取り込む(上書きで数字が巻き戻るのを防ぐ) */
+window.addEventListener("storage",e=>{
+  if(e.key==="nomi.count"){ const v=parseInt(e.newValue||"0",10)||0; if(v>count){ count=v; renderCount(); } }
+});
 
 /* ================= ノミの野原 ================= */
 const cv=$("cv"), ctx=cv.getContext("2d");
@@ -352,18 +364,17 @@ function updateNoGo(){
 setInterval(updateNoGo,2000); window.addEventListener("resize",updateNoGo); setTimeout(updateNoGo,300);
 
 const FLEA_CAP=20000;     // 実質無限にたまる(描画=点1個をスタンプするだけなので大量でも軽い。1.5秒に1匹なので到達には8時間超)
-const SPAWN_MS=1000;      // 1秒に1匹
+const SPAWN_MS=5000;      // 5秒に1匹
 const fleas=[], parts=[], splats=[], ripples=[];
 function spawnFlea(inside){
   if(fleas.length>=FLEA_CAP) return;
   if(vw<50||vh<50) return;   // 画面サイズが取れていない間(裏タブでの起動直後など)は湧かせない
   const m=26;
-  // 動ける帯(上下)の中の高さで、左右の画面外から入ってくる(上下から入れると禁止の帯を横切ってしまう)
   const top=Math.max(20,bandTop), bot=Math.min(vh-20,bandBottom);
   const bandY=()=> top+Math.random()*Math.max(40,bot-top);
   let x,y;
   if(inside){ x=20+Math.random()*(vw-40); y=bandY(); }   // 留守の間に入りこんでいた分は画面内(帯の中)に
-  else if(Math.random()<0.5){ x=-m; y=bandY(); }
+  else if(Math.random()<0.5){ x=-m; y=bandY(); }   // 左右の画面外からだけ(上下から入れるとボタンの帯を横切るのでやめた)
   else{ x=vw+m; y=bandY(); }
   const toward=Math.atan2(((top+bot)/2 + (Math.random()-0.5)*(bot-top)*0.5)-y, vw*(0.25+Math.random()*0.5)-x);
   fleas.push({
@@ -392,12 +403,6 @@ setInterval(()=>{
 },1000);
 for(let i=0;i<5;i++) spawnFlea();   // 起動した瞬間から出はじめる
 window.addEventListener("pagehide",()=>{ try{ localStorage.setItem("nomi.lastAlive",String(Date.now())); }catch(e){} });
-// ★デバッグ用: Nキーでノミを上限(FLEA_CAP)まで一気に湧かせる(性能・見た目確認)。本番アップロード前に必ず削除すること！
-document.addEventListener("keydown",e=>{
-  if(e.key!=="n"&&e.key!=="N") return;
-  const tg=e.target; if(tg && tg.tagName==="INPUT") return;   // 名前入力中は無視
-  for(let i=0;i<FLEA_CAP && fleas.length<FLEA_CAP;i++) spawnFlea(true);   // ※whileだと画面サイズ0の時に無限ループでフリーズする
-});
 
 function updateFlea(f,dt,t){
   // 特殊な動きは無し=本当にじーっとゆっくり動き続けるだけ(ふらふら彷徨う)
@@ -461,10 +466,10 @@ function frame(ts){
 /* ===== スコアはノミに押されて動かされる(rAFと1fps保険の両方から呼ぶ) ===== */
 function updateCountPush(dt,t){
   if(!cReady){
-    if(vw>50){ cX=vw/2; cY=Math.max(bandTop+46,96); cReady=true; placeCount(); }   // 初期位置=上中央(ノミが届く高さ=帯のすぐ下)
+    if(vw>50){ cX=vw/2; cY=vh/2; cReady=true; placeCount(); }   // 初期位置=画面の上下左右ど真ん中
     return;
   }
-  const rx=countEl.offsetWidth/2+8, ry=countEl.offsetHeight/2+6;   // 数字の当たり(楕円)
+  const rx=countEl.offsetWidth/2+8, ry=countEl.offsetHeight/2+6;   // 数字の当たり(楕円)。ノミは被ってOK(押すだけ)
   let fx=0, fy=0, pc=0;
   for(let i=0;i<fleas.length;i++){ const f=fleas[i];
     const dx=cX-f.x, dy=cY-f.y;
@@ -474,7 +479,7 @@ function updateCountPush(dt,t){
       if(d<1.15){ const w=0.3+((f.ph*1.618)%1)*1.4 + 0.35*Math.sin(t*1.3+f.turnSeed); fx+=nx/d*w; fy+=ny/d*w; pc++; }
     } }
   if(pc){ const k=64/Math.sqrt(pc); cVX+=fx*k*dt; cVY+=fy*k*dt; }
-  const fr=Math.max(0,1-1.5*dt); cVX*=fr; cVY*=fr;   // 摩擦=押されなくなったらすっと止まる
+  const fr=Math.pow(0.22,dt); cVX*=fr; cVY*=fr;   // 摩擦(指数)=押されなくなったらすっと止まる。※`1-1.5*dt`だと低fps環境でdtが大きい時に0になり完全静止するバグがあった
   cX+=cVX*dt; cY+=cVY*dt;
   const mTop=Math.max(60,bandTop+24), mBot=Math.min(vh-40,bandBottom-24);   // ノミの動ける範囲の中にとどめる=押されっぱなしで画面外に行かない
   if(cX<70){ cX=70; cVX=Math.abs(cVX)*0.3; } if(cX>vw-70){ cX=vw-70; cVX=-Math.abs(cVX)*0.3; }
@@ -595,17 +600,6 @@ async function loadWorld(){
     else seen.set(MYMODE,{name:me, score:count|0, mode:MYMODE});
   }
   const rows=[...seen.values()].sort((a,b)=>b.score-a.score);
-  // ★デバッグ用: ランキングを999位まで偽データで埋めて表示する(自分の順位が3桁=150位前後になるよう自分のスコア基準で生成)。本番アップロード前に必ず false にすること！
-  const DEBUG_FILL_RANKING=true;
-  if(DEBUG_FILL_RANKING){
-    let seed=7, k=0;
-    const myScore=Math.max(1, count|0);
-    while(rows.length<999){ seed=(seed*1103515245+12345)%2147483648; k++;
-      const sc = k<=149 ? myScore + (150-k)*137 + (seed%97)          // 自分より上に約149人
-                        : Math.max(1, Math.floor(myScore*(999-k)/852) );   // 残りは自分より下
-      rows.push({name:"デバッグノミ"+k, score:sc, mode:"debug:"+k}); }
-    rows.sort((a,b)=>b.score-a.score);
-  }
   const SHOW_N=999;   // ランキングは999位まで表示
   const total=rows.reduce((s,r)=>s+r.score,0);
   wTotal.textContent=total.toLocaleString("ja-JP");

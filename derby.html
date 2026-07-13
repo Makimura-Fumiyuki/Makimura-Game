@@ -185,7 +185,7 @@
   .txt-btn:active{ transform:translateY(1px); }
 
   /* ===== 進行画面(ラウンド) ===== */
-  #gameScene{ padding:19vh 16px 80px; gap:0; justify-content:flex-start; }
+  #gameScene{ padding:clamp(168px,23vh,232px) 16px 90px; gap:0; justify-content:flex-start; }
   .panel{ display:none; flex-direction:column; align-items:center; gap:20px; width:min(96vw, 480px); }
   .panel.on{ display:flex; animation:panelIn .32s cubic-bezier(.2,.9,.3,1); }
   @keyframes panelIn{ from{ opacity:0; transform:translateY(16px); } to{ opacity:1; transform:translateY(0); } }
@@ -410,11 +410,11 @@
   .deal-badge .dd-title{ font-size:22px; font-weight:900; letter-spacing:.06em; color:var(--gold-dark); }
   .deal-badge .dd-amtline{ margin-top:6px; font-size:19px; font-weight:900; color:var(--red); }
   .deal-badge .dd-amtline.minus{ color:var(--turf-dark); }
-  .deal-badge .dd-flow{ display:flex; align-items:center; justify-content:space-around; gap:36px; margin-top:12px; position:relative; }
+  .deal-badge .dd-flow{ display:flex; align-items:flex-start; justify-content:space-around; gap:36px; margin-top:12px; position:relative; }
   .deal-badge .dd-av{ position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:4px; width:66px; flex:none; }
   .deal-badge .dd-dot{ width:36px; height:36px; border-radius:50%; box-shadow:inset 0 2px 4px rgba(255,255,255,.45), 0 2px 4px rgba(0,0,0,.25); }
   .deal-badge .dd-nm{ font-size:12px; font-weight:900; color:var(--ink); max-width:66px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .deal-badge .dd-coin{ position:absolute; top:6px; z-index:0; width:16px; height:16px; border-radius:50%; opacity:0;
+  .deal-badge .dd-coin{ position:absolute; top:10px; z-index:0; width:16px; height:16px; border-radius:50%; opacity:0;   /* アイコン(径36)の中央=上端から18・コイン半分8 → top10 */
     background:radial-gradient(circle at 38% 32%,#ffe9a8,var(--gold) 66%,#dc9c14);
     box-shadow:inset 0 0 0 3px rgba(255,255,255,.5), 0 1px 2px rgba(0,0,0,.3); animation:ddFly 1s ease-in-out infinite; }
   @keyframes dealPop{ 0%{ transform:translate(-50%,-50%) scale(.5); opacity:0; } 12%{ transform:translate(-50%,-50%) scale(1.06); opacity:1; } 84%{ opacity:1; } 100%{ transform:translate(-50%,-50%) scale(1); opacity:0; } }
@@ -426,6 +426,12 @@
     background:rgba(24,26,22,.5); opacity:0; pointer-events:none; transition:opacity .3s linear;
   }
   #chipsOverlay{ z-index:82; }   /* チップボタン(z81)から開くので少し上に */
+  #declineBtn{ position:fixed; left:50%; bottom:14px; transform:translateX(-50%); z-index:79; display:none;
+    padding:11px 22px; border:2px solid rgba(31,155,220,.5); border-radius:999px; cursor:pointer;
+    background:#fff; color:var(--turf-dark); font-weight:900; font-size:14px; letter-spacing:.04em; white-space:nowrap;
+    box-shadow:0 3px 9px rgba(31,155,220,.22); }
+  #declineBtn.declined{ background:linear-gradient(160deg,#f0603f,var(--red) 55%,#b93117); color:#fff; border-color:#8f2510; }
+  #declineBtn:active{ transform:translateX(-50%) translateY(2px); }
   #begOverlay{ z-index:78; }
   #handoffOverlay.on, #resultOverlay.on, #confirmOverlay.on, #helpOverlay.on, #champOverlay.on, #chipsOverlay.on, #begOverlay.on{ opacity:1; pointer-events:auto; }
   .nego-retire{ color:var(--red); }
@@ -911,6 +917,8 @@
     </div>
   </div>
 
+  <button id="declineBtn">ねだりを断る</button>
+
   <!-- スタンプ(気持ちを送る。対局中つねに表示。結果/総合ダイアログ表示中は隠す=中断ボタンと重ならないように) -->
   <div id="stampBar">
     <button class="stamp-btn" data-i="0" aria-label="泣き"></button>
@@ -980,6 +988,8 @@
   function playSelect(){ if(actx) click(actx.currentTime,1100,0.5); }
   function playTick(){ if(actx) click(actx.currentTime,1500,0.35); }
   function playChip(){ if(!actx) return; const t=actx.currentTime; click(t,1300,0.4); note(2000,t,0.05,0.2,"square"); }
+  function playSad(){ if(!actx) return; const t=actx.currentTime;   // 脱落=しょんぼり下降
+    note(392,t,0.3,0.3,"sine"); note(311,t+0.24,0.32,0.3,"sine"); note(233,t+0.5,0.6,0.28,"sine"); note(117,t+0.5,0.65,0.18,"sine"); }
   function playDeal(){ if(!actx) return; const t=actx.currentTime;   // 交渉成立=コインがチャリンチャリンと相手へ移る
     for(let k=0;k<5;k++){ click(t+k*0.08, 1500-k*90, 0.34); note(1800-k*60, t+k*0.08, 0.05, 0.16, "square"); }
     note(784,t+0.44,0.18,0.2,"triangle"); note(1175,t+0.52,0.22,0.14,"triangle"); note(1568,t+0.6,0.3,0.1,"sine"); }   // 着地のきらめき
@@ -1207,7 +1217,7 @@
     if(parts.length<2){ voidRound(); return; }   // 参加者が2人未満なら無効レース(レース数は消費しない)
     stopHostTimer(); oPhase="bet"; broadcastSnap(); startHostTimer();
   }
-  function endBetPhase(){ stopHostTimer(); oPhase="race"; broadcastSnap(); }
+  function endBetPhase(){ stopHostTimer(); hostRace=genRaceParams(); oPhase="race"; broadcastSnap(); }
   function voidRound(){   // 無効レース: レース数を消費せず、同じ回をやり直す
     numbers=new Array(players.length).fill(null);
     bets=new Array(players.length).fill(null);
@@ -1253,8 +1263,9 @@
   document.getElementById("negoMin").addEventListener("click",()=>{ ensureAudio(); negoSet(NEG_MIN); });
   document.getElementById("negoMax").addEventListener("click",()=>{ ensureAudio(); negoSet(negoMaxCur); });
   // 交渉パネル描画(1台・オンライン共通)。onPick(donorIdx)/onRetire()
-  function renderNegoPanel(brokeIdx, refusedSet, onPick, onRetire){
-    negoRerender=()=>renderNegoPanel(brokeIdx, refusedSet, onPick, onRetire);
+  function renderNegoPanel(brokeIdx, refusedSet, onPick, onRetire, declinedSet){
+    declinedSet=declinedSet||new Set();
+    negoRerender=()=>renderNegoPanel(brokeIdx, refusedSet, onPick, onRetire, declinedSet);
     negoMaxCur=negoMaxAvail(brokeIdx, refusedSet);   // もらえる上限
     if(negoAmt>negoMaxCur) negoAmt=negoMaxCur;
     document.getElementById("negoAmtVal").textContent=negoAmt;
@@ -1266,10 +1277,11 @@
     players.forEach((p,i)=>{
       if(i===brokeIdx) return;
       const el=document.createElement("div"); el.className="cand";
-      const ok=negoDonorEligible(i, brokeIdx, refusedSet), refused=refusedSet.has(i);
+      const declined=declinedSet.has(i), refused=refusedSet.has(i);
+      const ok=negoDonorEligible(i, brokeIdx, refusedSet) && !declined;
       if(!ok) el.classList.add("dim");
       el.innerHTML='<span class="p-dot" style="'+dotStyle(p.color)+'"></span><span class="c-nm">'+esc(p.name)+'</span>'
-        +(refused?'<span class="c-me">ことわられた</span>':(!ok?'<span class="c-me">よゆうなし</span>':''))   // 状態はチップ枚数の左
+        +(declined?'<span class="c-me nego-retire">お断り</span>':(refused?'<span class="c-me">ことわられた</span>':(!ok?'<span class="c-me">よゆうなし</span>':'')))   // 状態はチップ枚数の左
         +'<span class="cand-chips">'+p.chips+'枚</span>';   // 全員の現在の枚数(右端)
       if(ok){ any=true; el.addEventListener("click",()=>{ ensureAudio(); playSelect(); onPick(i); }); }
       list.appendChild(el);
@@ -1322,7 +1334,7 @@
           });
         }, ()=>{   // リタイア
           const bi=players.indexOf(bp); bp._out=true; if(bi>=0) players.splice(bi,1);
-          showToast(bp.name+" はリタイア…",2200); localNego(done);
+          showToast(bp.name+" はリタイア…",2200); if(seOn) playSad(); localNego(done);
         });
       });
     };
@@ -1657,6 +1669,17 @@
     runRace(runners, rankOf, set, W);
   }
   let raceDone=false, raceRunners=[];
+  let hostRace=null, netRace=null;
+  function genRaceParams(){   // ホストが1回だけ生成→全員に配って同じレースにする
+    const drama=0.4+Math.random()*0.6;
+    const jn=players.map((p,i)=>{
+      if(numbers[i]==null) return null;
+      const roll=Math.random();
+      const k = roll<0.28 ? (0.5+Math.random()*0.45) : roll>0.72 ? (2.7+Math.random()*1.5) : (1.0+Math.random()*1.5);
+      return { k, amp:(0.14+Math.random()*0.28)*drama, f:0.6+Math.random()*1.3, p:Math.random()*6.283 };
+    });
+    return { drama, jn };
+  }
   function runRace(runners, rankOf, winSet, W){
     playGo();
     raceDone=false;
@@ -1667,13 +1690,15 @@
     const goalCX = W - 25;                      // ゴールテープ中心(.goal は right:22px・width:6px → 中心=右から25px)
     const startX = 4, endX = goalCX - dotW/2;   // つねに右向き(左→右)。アイコン中央がゴールテープ中心に触れた瞬間=ゴール(人数で縮小してもずれない)
     const setLeft=(run,prog)=>{ run.style.left=(startX + prog*(endX-startX))+"px"; };
-    const drama = 0.4 + Math.random()*0.6;
-    // ペースは各馬ランダム(順位と無関係)。脚質を3タイプから抽選し、逃げ切り/中団まくり/大逆転が毎回バラバラに出るように
+    // オンラインはホスト配信の脚質を使う(全端末で同じレース)。1台/未配信は各自ランダム
+    const useNet = (mode==="online" && netRace && netRace.jn);
+    const drama = useNet ? netRace.drama : (0.4 + Math.random()*0.6);
     const jn=runners.map((r,i)=>{
+      if(useNet && netRace.jn[i]) return netRace.jn[i];
       const roll=Math.random();
-      const k = roll<0.28 ? (0.5 + Math.random()*0.45)     // 逃げ(序盤から前に出る)
-             : roll>0.72 ? (2.7 + Math.random()*1.5)       // 追い込み(後方待機→終盤に爆発)
-             :             (1.0 + Math.random()*1.5);       // 標準(中団から)
+      const k = roll<0.28 ? (0.5 + Math.random()*0.45)
+             : roll>0.72 ? (2.7 + Math.random()*1.5)
+             :             (1.0 + Math.random()*1.5);
       return { k, amp:(0.14+Math.random()*0.28)*drama, f:0.6+Math.random()*1.3, p:Math.random()*6.283 };
     });
     const jRaw=(o,t)=> t + (o.amp/(6.283*o.f))*(Math.sin(6.283*o.f*t+o.p)-Math.sin(o.p));   // 単調増加の道のり(ゆらぎ)
@@ -2252,18 +2277,33 @@
   let pendingDeal=null, dealId=0;   // 交渉成立の演出を次のsnapに載せる
   function onlineDonors(){
     if(!nego) return [];
-    const ref=new Set(nego.refused), amt=nego.amt||NEG_GIFT;
-    return players.filter(p=>p.id!==nego.begId && !ref.has(p.id) && p.chips-amt>=MIN_BET);
+    const ref=new Set(nego.refused), dec=new Set(nego.declined||[]), amt=nego.amt||NEG_GIFT;
+    return players.filter(p=>p.id!==nego.begId && !ref.has(p.id) && !dec.has(p.id) && p.chips-amt>=MIN_BET);
   }
+  function myDeclined(neg){ return !!(neg && (neg.declined||[]).includes(myId)); }
+  function updateDeclineBtn(neg, mi){
+    const b=document.getElementById("declineBtn");
+    const show = mode==="online" && neg && mi>=0 && players[mi] && players[mi].id!==neg.begId && !neg.dealing;
+    b.style.display = show ? "" : "none";
+    if(!show) return;
+    const dec=myDeclined(neg);
+    b.textContent = dec ? "断り解除" : "ねだりを断る";
+    b.classList.toggle("declined", dec);
+  }
+  function hideDeclineBtn(){ const b=document.getElementById("declineBtn"); if(b) b.style.display="none"; }
+  document.getElementById("declineBtn").addEventListener("click",()=>{ ensureAudio(); playSelect();
+    const dec=document.getElementById("declineBtn").classList.contains("declined");
+    sendAct("decline",{on:!dec});
+  });
   function startOnlineNego(){
     stopHostTimer();
     const bp=players.find(p=>p.chips<MIN_BET);
     if(!bp){ oProceedRound(); return; }
-    nego={ begId:bp.id, refused:[], pending:null, amt:NEG_GIFT };
+    nego={ begId:bp.id, refused:[], declined:[], pending:null, amt:NEG_GIFT };
     oPhase="nego"; broadcastSnap(); startHostTimer();   // 交渉も制限時間に含む(時間切れ→強制リタイア)
   }
   function retireBeggarOnline(){
-    const bi=idxOfId(nego.begId); if(bi>=0) players.splice(bi,1);
+    const bi=idxOfId(nego.begId); if(bi>=0){ const nm=players[bi].name; players.splice(bi,1); noticeId++; lastNotice=nm+" が脱落…"; }
     startOnlineNego();   // 次のチップ切れ or 進行
   }
   function onAct(a){   // ホストがゲストの操作を受信
@@ -2300,6 +2340,15 @@
     }else if(a.kind==="retire"){   // 貧乏人が自らリタイア
       if(oPhase!=="nego" || !nego || nego.begId!==a.id) return;
       retireBeggarOnline();
+    }else if(a.kind==="decline"){   // お断りトグル(この交渉phase中はねだられない)
+      if(oPhase!=="nego" || !nego || a.id===nego.begId) return;
+      nego.declined=nego.declined||[];
+      const has=nego.declined.includes(a.id);
+      if(a.on && !has) nego.declined.push(a.id);
+      else if(!a.on && has) nego.declined=nego.declined.filter(x=>x!==a.id);
+      if(nego.pending===a.id) nego.pending=null;   // 断った人が返事待ちなら解除
+      if(!onlineDonors().length){ retireBeggarOnline(); return; }   // 全員が断り/よゆうなし=脱落
+      broadcastSnap();
     }
   }
   // ホスト自身の操作もこの窓口に流す
@@ -2325,7 +2374,11 @@
     broadcastSnap();
   }
   function oEnd(){ oPhase="champ"; broadcastSnap(); }
-  function oRestart(){ players.forEach(p=>p.chips=initChips); round=0; carry=0; oNextRound(); }
+  function oRestart(){   // 脱落者も復活(退室していない全員でやり直す)
+    const ids=orderedMembers();
+    players=ids.map((id,i)=>({id, name:members[id].name||("P"+(i+1)), color:COLORS[i%COLORS.length], chips:initChips}));
+    round=0; carry=0; oNextRound();
+  }
   function oToLobby(){ stopHostTimer(); oPhase="lobby"; round=0; carry=0; picks={}; nego=null; broadcastSnap(); }   // 完全終了→出走メンバー待機画面へ
 
   function broadcastSnap(){
@@ -2348,8 +2401,9 @@
     if(oPhase==="race"||oPhase==="result"||oPhase==="champ"){
       snap.numbers=numbers.slice();
     }
+    if(oPhase==="race" && hostRace) snap.race=hostRace;
     if(oPhase==="result" && window.__lastResult){ snap.result=window.__lastResult; }
-    if(oPhase==="nego"){ snap.nego = nego ? {begId:nego.begId, refused:nego.refused.slice(), pending:nego.pending, amt:nego.amt||NEG_GIFT, dealing:!!nego.dealing} : null; }
+    if(oPhase==="nego"){ snap.nego = nego ? {begId:nego.begId, refused:nego.refused.slice(), declined:(nego.declined||[]).slice(), pending:nego.pending, amt:nego.amt||NEG_GIFT, dealing:!!nego.dealing} : null; }
     if(pendingDeal){ snap.deal=pendingDeal; pendingDeal=null; }
     try{ ch.send({ type:"broadcast", event:"snap", payload:snap }); }catch(e){}
     if(isHost) applySnap(snap);   // ホスト自身も同じ描画経路
@@ -2368,13 +2422,14 @@
     repIdx=Math.max(0, players.findIndex(p=>p.id===s.repId));
     // ホストは自分が権威なので上書きしない。ゲストは届いた分だけ反映(数字はレース時のみ届く)
     if(s.numbers) numbers=s.numbers.slice();
+    if(s.race) netRace=s.race;
     if(s.bets) bets=s.bets.map(b=>b?{on:b.on,amt:b.amt}:null);
     if(s.entered) lastEntered=s.entered;
     if(!isHost) picks = s.picks || {};
     oPhase=s.phase;
     if(s.lobby) lastLobby=s.lobby;   // スタンプ色の割り出し用
     if(s.phase!=="race") lastRacedRound=-1;   // レース以外に来たらリセット=次のレースは必ず走る(ロビー/もう一回で前回レースが残るバグ対策)
-    if(s.noticeId && s.noticeId>lastNoticeShown){ lastNoticeShown=s.noticeId; if(s.notice) showToast(s.notice, 2600); }   // 無効レース等のお知らせ
+    if(s.noticeId && s.noticeId>lastNoticeShown){ lastNoticeShown=s.noticeId; if(s.notice){ showToast(s.notice, 2600); if(/脱落/.test(s.notice) && seOn) playSad(); } }   // 無効レース/脱落のお知らせ
     if(s.deal && s.deal.id>lastDealShown){ lastDealShown=s.deal.id; celebrateDeal(s.deal.amt, s.deal.from, s.deal.to, s.deal.fromId===myId); }   // 交渉成立の演出(あげた人は−表示)
     document.getElementById("roundPill").textContent = s.phase==="lobby" ? "ロビー" : ("第"+round+" / "+totalRounds+" レース");
     setDirBadge(s.phase==="enter"||s.phase==="bet"||s.phase==="race"||s.phase==="result");
@@ -2387,7 +2442,7 @@
     // フェーズが結果/総合でなければ、開きっぱなしのオーバーレイを閉じる(次ラウンドへの遷移など)
     if(s.phase!=="result") document.getElementById("resultOverlay").classList.remove("on");
     if(s.phase!=="champ") document.getElementById("champOverlay").classList.remove("on");
-    if(s.phase!=="nego"){ document.getElementById("begOverlay").classList.remove("on"); negoBegSeen=null; }
+    if(s.phase!=="nego"){ document.getElementById("begOverlay").classList.remove("on"); negoBegSeen=null; hideDeclineBtn(); }
     if(s.phase==="race"||s.phase==="result"||s.phase==="champ"||s.phase==="lobby") stopDisplayTimer();
     if(s.phase==="lobby"){ renderLobby(s); return; }
     if(s.phase==="nego"){
@@ -2398,6 +2453,7 @@
       const begName=(players.find(p=>p.id===neg.begId)||{}).name||"だれか";
       const iAmBeggar = (mi>=0 && players[mi].id===neg.begId);
       startDisplayTimer(timeLimit, "nego"+neg.begId);   // 交渉も制限時間に含む(全員に残り時間)
+      hideDeclineBtn();
       if(neg.pending===myId){                    // 自分がねだられている→返事ダイアログ
         showWait(begName+" と交渉中…", true);
         showBegOverlay(players[mi], (players.find(p=>p.id===neg.begId)||{name:begName}), (neg.amt||NEG_GIFT), (ok)=>{ document.getElementById("begOverlay").classList.remove("on"); sendAct("begReply",{ok:!!ok}); });
@@ -2406,10 +2462,12 @@
         if(negoBegSeen!==neg.begId){ negoBegSeen=neg.begId; negoAmt=NEG_GIFT; }   // 交渉開始時に金額リセット
         if(neg.pending){ showWait("返事を待っています…", true); }
         else{ const refusedSet=new Set((neg.refused||[]).map(id=>idxOfId(id)).filter(x=>x>=0));
-          renderNegoPanel(idxOfId(neg.begId), refusedSet, (donorIdx)=>sendAct("beg",{to:donorIdx, amt:negoAmt}), ()=>sendAct("retire",{})); }
-      }else{                                       // 傍観
+          const declinedSet=new Set((neg.declined||[]).map(id=>idxOfId(id)).filter(x=>x>=0));
+          renderNegoPanel(idxOfId(neg.begId), refusedSet, (donorIdx)=>sendAct("beg",{to:donorIdx, amt:negoAmt}), ()=>sendAct("retire",{}), declinedSet); }
+      }else{                                       // 傍観(ねだられ待ち)
         document.getElementById("begOverlay").classList.remove("on");
         showWait(begName+" がチップを交渉中…", true);
+        updateDeclineBtn(neg, mi);
       }
       return;
     }
