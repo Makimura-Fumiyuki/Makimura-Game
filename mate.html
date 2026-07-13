@@ -880,7 +880,7 @@ let topic="", phase="title";
 let tStart=0, timerIv=0, curTier=5, pausedAt=0;
 let erasing=false;
 let penIdx=1;
-const PEN_W=[0.004,0.006,0.010,0.015,0.022];   // SIZE比。5段階(一番太い0.032は廃止)・左から2つめ(index1)が標準
+const PEN_W=[0.003,0.004,0.006,0.010,0.015];   // SIZE比。5段階・左から2つめ(index1)が標準(最細0.003を追加し旧最太0.022を廃止)
 let online=false, isHost=false, sb=null, ch=null, myId=Math.random().toString(36).slice(2,10);
 let myName="", code="", hostId=null, joinWatch=0, hbIv=0, snapAt=0, snapEl=0, lastPh="";
 let drawBuf=[], drawFlushIv=0, armedRow=null, armedTmr=0, celebTmr=0, lastCele=null, dobonId=null;
@@ -1175,7 +1175,7 @@ function toggleErase(){
 function spendErase(dist){
   if(!erasing) return;
   const wRatio=PEN_W[penIdx]/PEN_W[1];   // 太い消しゴムほど早く減る(標準ペン=1)
-  eraseLeft=Math.max(0, eraseLeft - dist*wRatio/20);   // 消した距離×太さぶん減る
+  eraseLeft=Math.max(0, eraseLeft - dist*wRatio/30);   // 消した距離×太さぶん減る(減り具合は控えめ=旧比2/3)
   if(eraseLeft<=0){ eraseLeft=0; erasing=false; $("cupWrap").classList.remove("erasing"); eraseBroadcast(false); }
   renderGauge();
 }
@@ -1652,7 +1652,7 @@ function renderLobby(){
   }else{
     html+='<div class="room-note">制限時間 '+timeLimit+'秒 ／ '+(co?"協力モード":("時間切れで負け"+(dobonOn?"あり":"なし")))+' ／ 消しゴム'+ERASE_OPTS[eraserAmt].k+'</div>';
   }
-  html+='<div class="room-note room-wait">'+(players.length<2?"2人以上集まれば開始できます":"そろったらスタート！")+'</div>';
+  html+='<div class="room-note room-wait">'+(players.length<2?"2人以上集まれば開始できます":"いつでもはじめれるよ")+'</div>';
   if(isHost) html+='<button class="start-btn" id="lobbyStart"'+(players.length<2?" disabled":"")+'>スタート</button>';
   $("lobbyBox").innerHTML=html;
   $("codeShow").addEventListener("click", async ()=>{
@@ -1722,6 +1722,7 @@ function hostAct(a){
     drawPausedEl=Date.now()-tStart;               // 描画クロックを一時停止
     oAns={by:a.from, byName:pp.n, text:null, judging:false};
     answerEnd=Date.now()+ANSWER_MS;
+    curAns={by:oAns.by, byName:oAns.byName, text:null, judging:false}; ansEnd=answerEnd;   // ホスト自身の表示用(snapは自分に届かない)
     phase="answer"; stopTimer();
     enterAnswerAll(); sendSnap();
     clearTimeout(ansTmr);
@@ -1729,6 +1730,7 @@ function hostAct(a){
   }
   if(a.t==="answer" && phase==="answer" && oAns && a.from===oAns.by && !oAns.judging){
     oAns.text=String(a.tx||"").slice(0,20); oAns.judging=true;
+    curAns={by:oAns.by, byName:oAns.byName, text:oAns.text, judging:true};   // ホスト自身の表示用
     clearTimeout(ansTmr);
     renderAnswerArea(); stopAnsTicker(); sendSnap();
   }
