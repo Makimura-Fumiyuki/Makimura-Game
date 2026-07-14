@@ -369,7 +369,7 @@ function updateNoGo(){
 setInterval(updateNoGo,2000); window.addEventListener("resize",updateNoGo); setTimeout(updateNoGo,300);
 
 const FLEA_CAP=20000;     // 実質無限にたまる(描画=点1個をスタンプするだけなので大量でも軽い。1.5秒に1匹なので到達には8時間超)
-const SPAWN_MS=5000;      // 5秒に1匹
+const SPAWN_MS=3000;      // 3秒に1匹
 const fleas=[], parts=[], splats=[], ripples=[];
 function spawnFlea(scatter){
   if(fleas.length>=FLEA_CAP) return;
