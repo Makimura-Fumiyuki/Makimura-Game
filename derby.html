@@ -1402,6 +1402,8 @@
   function nextEnter(){
     if(seatIdx>=players.length){ seatIdx=0; nextBet(); return; }
     const idx=seatIdx;
+    { const ni=document.getElementById("numInput"); if(ni) ni.value=""; }   // 前の人の数字を消す
+    showPanel("");   // 入力画面を一旦閉じてから交代ダイアログ(前の数字が透けて見えるのを防ぐ)
     handoff(idx, "お題を見て数字を入力", ()=>{
       document.getElementById("enterQ").innerHTML='<span class="em">'+esc(players[idx].name)+'</span>さん<br>お題を見て数字を入力';
       const inp=document.getElementById("numInput"); inp.value=(numbers[idx]!=null)?String(numbers[idx]):"";   // 戻ってきた時は前の数字を維持
