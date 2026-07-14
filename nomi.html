@@ -294,6 +294,17 @@ let count=0; try{ count=parseInt(localStorage.getItem("nomi.count")||"0",10)||0;
 const countEl=$("count"), countWrap=$("countWrap");
 /* スコアはノミに押されて動く(物理はframe()内。初期位置=上中央のノミが届く高さ) */
 let cX=0, cY=0, cVX=0, cVY=0, cReady=false;
+let cH=Math.random()*6.283, cSeed=Math.random()*6.283;   // 数字のさまよい用(向きとゆらぎの種)
+/* タップ/長押しが数字の近くに当たったら、かるーくノックバック */
+function nudgeCount(x,y,power){
+  if(!cReady) return;
+  const rx=countEl.offsetWidth/2+26, ry=countEl.offsetHeight/2+24;   // 少し外側まで効く
+  const dx=cX-x, dy=cY-y, nd=Math.hypot(dx/rx,dy/ry);
+  if(nd<1.2){
+    const dist=Math.hypot(dx,dy)||1, k=power*(1.2-nd);
+    cVX+=dx/dist*k; cVY+=dy/dist*k;
+  }
+}
 function placeCount(){ countWrap.style.transform="translate("+cX+"px,"+cY+"px) translate(-50%,-50%)"; }
 function renderCount(){ countEl.textContent=(count|0).toLocaleString("ja-JP"); }
 function bumpCount(n){
@@ -471,6 +482,10 @@ function updateCountPush(dt,t){
     } }
   if(pc){ const k=64/Math.sqrt(pc); cVX+=fx*k*dt; cVY+=fy*k*dt; }
   const fr=Math.pow(0.22,dt); cVX*=fr; cVY*=fr;   // 摩擦(指数)=押されなくなったらすっと止まる。※`1-1.5*dt`だと低fps環境でdtが大きい時に0になり完全静止するバグがあった
+  // 何にも触れられていなくても、本当にすこーしだけ彷徨い続ける(ノミと同じ動かし方・動きは小さめ)
+  cH += Math.sin(t*0.5+cSeed)*0.6*dt + (Math.random()-0.5)*0.4*dt;
+  const drift=3.5+1.5*Math.sin(t*0.7+cSeed);
+  cX+=Math.cos(cH)*drift*dt; cY+=Math.sin(cH)*drift*dt;
   cX+=cVX*dt; cY+=cVY*dt;
   const mTop=Math.max(60,bandTop+24), mBot=Math.min(vh-40,bandBottom-24);   // ノミの動ける範囲の中にとどめる=押されっぱなしで画面外に行かない
   if(cX<70){ cX=70; cVX=Math.abs(cVX)*0.3; } if(cX>vw-70){ cX=vw-70; cVX=-Math.abs(cVX)*0.3; }
@@ -499,6 +514,7 @@ cv.addEventListener("pointerdown",e=>{
   heldPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
   const n=squishHits(e.clientX,e.clientY);
   squishFeedback(n);
+  nudgeCount(e.clientX,e.clientY,80);   // 数字の近くを叩いたら、かるーくノックバック
   if(n===0) ripples.push({x:e.clientX,y:e.clientY,t:0});
 });
 /* 動かした時は前回位置からの経路を刻んで全部判定=素早く動かしても取りこぼさない。
@@ -509,13 +525,13 @@ cv.addEventListener("pointermove",e=>{
   const steps=Math.max(1, Math.ceil(dist/(HIT_R*0.6)));
   let n=0;
   for(let i=1;i<=steps;i++){ const sx=p.x+dx*i/steps, sy=p.y+dy*i/steps;
-    n+=squishHits(sx,sy); ripples.push({x:sx,y:sy,t:0}); }
+    n+=squishHits(sx,sy); ripples.push({x:sx,y:sy,t:0}); nudgeCount(sx,sy,16); }   // なぞりが数字をかすめたら少しずつ押す
   squishFeedback(n);
   p.x=e.clientX; p.y=e.clientY;
 });
 ["pointerup","pointercancel","lostpointercapture"].forEach(ev=>cv.addEventListener(ev,e=>heldPts.delete(e.pointerId)));   // ※pointerleaveで消さない=HUDの上や画面外に出ただけで長押しが切れていたバグの修正
-/* 長押し中: 80msごとに足元をつぶし+波紋を出しつづける(押してる感) */
-setInterval(()=>{ heldPts.forEach(p=>{ squishFeedback(squishHits(p.x,p.y)); ripples.push({x:p.x,y:p.y,t:0}); }); },80);
+/* 長押し中: 80msごとに足元をつぶし+波紋を出しつづける(押してる感)。数字の近くなら押しつづけてノックバック */
+setInterval(()=>{ heldPts.forEach(p=>{ squishFeedback(squishHits(p.x,p.y)); ripples.push({x:p.x,y:p.y,t:0}); nudgeCount(p.x,p.y,22); }); },80);
 cv.addEventListener("contextmenu",e=>e.preventDefault());
 
 /* ================= 名前 ================= */

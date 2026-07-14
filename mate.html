@@ -232,8 +232,6 @@
   .cup-wrap.rotating .rot-hint .rh-hub{ animation:none; }
   /* 「回転」はアニメなし。矢印と同じく丸から飛び出す/格納される切替 */
   @keyframes hubPulse{ 0%,100%{ transform:scale(1); opacity:.8; } 50%{ transform:scale(1.35); opacity:1; } }
-  .cup-wrap.erasing{ outline:4px solid rgba(226,71,46,.72); outline-offset:1px; }   /* カップの円に密着(outlineはborder-radius追従) */
-  .cup-wrap.erasing .cup-handle{ outline:4px solid rgba(226,71,46,.72); outline-offset:1px; }   /* 取っ手にも密着 */
   .cup-in{ position:relative; width:100%; height:100%; border-radius:50%; overflow:hidden;
     box-shadow:inset 0 4px 12px rgba(60,30,5,.4); }
   #cup,#swirlCv,#fleckCv,#art{ position:absolute; inset:0; width:100%; height:100%; display:block; }
@@ -246,7 +244,7 @@
   }
   .cup-wrap.topicing #art{ cursor:default; }   /* お題を考えている間はペンカーソルにしない */
   .cup-wrap.erasing #art{
-    cursor:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24'%3E%3Cg transform='rotate(-35 12 12)' fill='none' stroke='%236b431f' stroke-width='1.7'%3E%3Crect x='4' y='8.5' width='16' height='8' rx='2' fill='%23fdfdf8'/%3E%3Cline x1='15' y1='8.5' x2='15' y2='16.5'/%3E%3C/g%3E%3C/svg%3E") 4 19, cell;
+    cursor:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24'%3E%3Cg transform='rotate(145 12 12)' fill='none' stroke='%236b431f' stroke-width='1.7'%3E%3Crect x='4' y='8.5' width='16' height='8' rx='2' fill='%23fdfdf8'/%3E%3Cline x1='15' y1='8.5' x2='15' y2='16.5'/%3E%3C/g%3E%3C/svg%3E") 4 19, cell;
   }
   #gameScene.online .cup-wrap{ --cup: min(80vw,40svh); }
   .cup-wrap.no-rotate .rot-hint{ display:none; }
@@ -304,8 +302,8 @@
     position:absolute; left:0; top:0; bottom:0; width:0%;
     background:linear-gradient(90deg,#fdf4e4,#f6e7c9); transition:width .12s ease; z-index:0;   /* 未選択時は薄く */
   }
-  #spoonBtn.on .gfill{ background:linear-gradient(90deg,#ffb49e,#f2794f); }
-  #spoonBtn.on{ border-color:var(--red); }   /* 選択中はペンの太さと同じ赤枠 */
+  #spoonBtn.on .gfill{ background:linear-gradient(90deg,#ffd2c2,#f6a686); }   /* 赤は控えめに */
+  #spoonBtn.on{ border-color:var(--red); background:#fff0e8; }   /* 選択中はペンの太さ選択と同じ雰囲気 */
   #spoonBtn>*{ position:relative; z-index:1; }
   #spoonBtn span{ font-size:13px; font-weight:800; letter-spacing:.04em; white-space:nowrap; }
   #spoonBtn .sp-ico{ width:19px; height:19px; flex:none; margin-right:6px; }
@@ -685,7 +683,7 @@
         <div id="penSizes"></div>
         <button id="spoonBtn">
           <span class="gfill" id="gfill"></span>
-          <svg class="sp-ico" viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(-35 12 12)" fill="none" stroke="#6b431f" stroke-width="1.7"><rect x="4" y="8.5" width="16" height="8" rx="2" fill="#fdfdf8"/><line x1="15" y1="8.5" x2="15" y2="16.5"/></g></svg>
+          <svg class="sp-ico" viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(145 12 12)" fill="none" stroke="#6b431f" stroke-width="1.7"><rect x="4" y="8.5" width="16" height="8" rx="2" fill="#fdfdf8"/><line x1="15" y1="8.5" x2="15" y2="16.5"/></g></svg>
           <span id="spoonTxt">連打で消しゴム用意</span>
         </button>
       </div>
@@ -895,7 +893,7 @@ let topic="", phase="title";
 let tStart=0, timerIv=0, curTier=5, pausedAt=0;
 let erasing=false;
 let penIdx=2;
-const PEN_W=[0.003,0.004,0.006,0.010,0.015];   // SIZE比。5段階・左から2つめ(index1)が標準(最細0.003を追加し旧最太0.022を廃止)
+const PEN_W=[0.002,0.0035,0.006,0.0105,0.018];   // SIZE比。3(0.006)を中心に変化率一定の等比×1.75=5が3のちょうど3倍
 let online=false, isHost=false, sb=null, ch=null, myId=Math.random().toString(36).slice(2,10);
 let myName="", code="", hostId=null, joinWatch=0, hbIv=0, snapAt=0, snapEl=0, lastPh="";
 let drawBuf=[], drawFlushIv=0, armedRow=null, armedTmr=0, celebTmr=0, lastCele=null, dobonId=null;
@@ -1208,7 +1206,7 @@ function spendErase(a,b){
   if(frac<=0) return;   // 何も描かれていない所はタダ
   const dist=Math.hypot(b.x-a.x,b.y-a.y);
   const wRatio=PEN_W[penIdx]/PEN_W[2];   // 太い消しゴムほど早く減る(標準ペン=1)
-  eraseLeft=Math.max(0, eraseLeft - dist*wRatio*frac/30);   // 消した距離×太さ×実際に消した割合
+  eraseLeft=Math.max(0, eraseLeft - dist*wRatio*frac/23);   // 消した距離×太さ×実際に消した割合(分母23=旧30の1.3倍減りやすい)
   if(eraseLeft<=0){ eraseLeft=0; erasing=false; $("cupWrap").classList.remove("erasing"); eraseBroadcast(false); }
   renderGauge();
 }
@@ -1364,6 +1362,7 @@ $("mateBtn").addEventListener("click",()=>{
   if(phase!=="draw"||online) return;
   ensureAudio(); playSelect(); pourStop(); drawing=false;
   pauseTimer();
+  spawnMateFx();   // 1台でも待て!演出
   const list=$("judgeList"); list.innerHTML="";
   players.forEach(p=>{
     if(p.id===drawerId) return;
