@@ -968,10 +968,14 @@
       el.classList.add("coming");
       const soonHref=el.getAttribute("href");
       el.removeAttribute("href");                          // クリックで遷移させない
-      el.addEventListener("click", e=>{ if(heldKeys.has("d") && heldKeys.has("g")){ window.location.href=soonHref; return; } e.preventDefault(); });   // D+G+クリック=確認用に開ける
-      let pressTmr=0;   // スマホ: 5秒長押しでも開ける
-      el.addEventListener("pointerdown",()=>{ clearTimeout(pressTmr); pressTmr=setTimeout(()=>{ window.location.href=soonHref; },5000); });
-      ["pointerup","pointerleave","pointercancel"].forEach(ev=>el.addEventListener(ev,()=>clearTimeout(pressTmr)));
+      el.addEventListener("click", e=>{ if(heldKeys.has("d") && heldKeys.has("g")){ window.location.href=soonHref; return; } e.preventDefault(); });   // PC: D+G+クリック=確認用に開ける
+      // スマホ: 5回連続タップで開ける(長押しは端末差で不安定なため。2秒以内に5回タップ)
+      let taps=0, tapTmr=0;
+      el.addEventListener("pointerup",()=>{
+        taps++; clearTimeout(tapTmr);
+        if(taps>=5){ taps=0; window.location.href=soonHref; return; }
+        tapTmr=setTimeout(()=>{ taps=0; },2000);   // 間隔が空いたらカウントをリセット
+      });
       el.addEventListener("contextmenu",e=>e.preventDefault());   // 長押しメニューで中断されないように
       if(players) players.remove();                        // プレイ人数は隠す
       if(thumb){ const b=document.createElement("span"); b.className="coming-badge"; b.textContent="COMING SOON"; thumb.appendChild(b); }
