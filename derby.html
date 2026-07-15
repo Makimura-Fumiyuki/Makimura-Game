@@ -625,6 +625,14 @@
     background:rgba(255,255,255,.9); box-shadow:0 2px 7px rgba(30,40,70,.32);
     display:flex; align-items:center; justify-content:center; font-size:27px; line-height:1; }
   .stamp-btn:active{ transform:translateY(1px) scale(.93); }
+  .stamp-mute{ width:34px; height:34px; padding:0; border:none; border-radius:50%; cursor:pointer;
+    position:absolute; left:100%; top:7px; margin-left:9px; background:rgba(255,255,255,.9); box-shadow:0 2px 7px rgba(30,40,70,.32);
+    display:flex; align-items:center; justify-content:center; color:#555; }
+  .stamp-mute svg{ width:19px; height:19px; }
+  .stamp-mute .mute-slash{ display:none; }
+  .stamp-mute.muted{ color:#d23b30; }
+  .stamp-mute.muted .mute-slash{ display:block; }
+  .stamp-mute:active{ transform:translateY(1px) scale(.93); }
   .stamp-fly{ position:fixed; bottom:-30px; width:120px; z-index:63; pointer-events:none;
     display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
     filter:drop-shadow(0 5px 9px rgba(0,0,0,.28)); animation:stampFloat 2.2s cubic-bezier(.2,.75,.35,1) forwards; }
@@ -943,6 +951,7 @@
     <button class="stamp-btn" data-i="0" aria-label="泣き"></button>
     <button class="stamp-btn" data-i="1" aria-label="うっとり"></button>
     <button class="stamp-btn" data-i="2" aria-label="爆笑"></button>
+    <button id="stampMute" class="stamp-mute" aria-label="スタンプをミュート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10.5 16.2a1.7 1.7 0 0 0 3 0"/><line class="mute-slash" x1="3.2" y1="3.2" x2="20.8" y2="20.8"/></svg></button>
   </div>
 
   <!-- あそびかた -->
@@ -985,7 +994,7 @@
   let initChips=INIT_CHIPS;   // 初期チップ枚数(設定可能・10刻み)
 
   let players=[];        // {name,color,chips}
-  let round=0, repIdx=0, carry=0;
+  let round=0, repIdx=0, carry=0, repStart=0;   // repStart=最初の出題者オフセット(ゲーム開始ごとにランダム・順番は維持)
   let theme="", dir="hi";
   let numbers=[];        // 各プレイヤーの申告数字(index対応)
   let bets=[];           // {on:idx, amt:number}
@@ -1139,7 +1148,7 @@
     const names=playersSetup.map((s,i)=>(s||"").trim()||String(i+1));
     if(names.length<MINP){ showToast("2人以上でね"); return; }
     players=names.map((nm,i)=>({name:nm, color:COLORS[i%COLORS.length], chips:initChips}));
-    mode="local"; round=0; carry=0;
+    mode="local"; round=0; carry=0; repStart=Math.floor(Math.random()*players.length);
     titleScene.classList.remove("on"); gameScene.classList.add("on");
     startRound();
   });
@@ -1251,7 +1260,7 @@
     localNego(()=>{
       if(players.length<MINP){ setDirBadge(false); showChampion(); return; }
       round++;
-      repIdx=(round-1)%players.length;
+      repIdx=(repStart+round-1)%players.length;
       numbers=new Array(players.length).fill(null);
       bets=new Array(players.length).fill(null);
       theme=""; dir="hi"; setDirBadge(false);
@@ -1909,6 +1918,7 @@
     else{ const seq=[900,680,850,640,800,600,760,560]; seq.forEach((f,k)=>note(f, t+k*0.072, 0.07, 0.26, "triangle")); note(400, t+seq.length*0.072, 0.16, 0.24, "triangle"); }
   }
   function spawnStamp(i, name, color){
+    if(stampMuted) return;
     i=Math.max(0, Math.min(2, i|0));
     const el=document.createElement("div"); el.className="stamp-fly";
     const hx=0.06+Math.random()*0.88;                        // 横位置: 画面全幅(両端も含む)
@@ -1938,6 +1948,11 @@
       spawnStamp(i);   // 1台回しは押した人が特定できないので名前は出さない
     }
   }
+  let stampMuted=false; try{ stampMuted=localStorage.getItem("drb.smute")==="1"; }catch(e){}
+  (function(){ const mb=document.getElementById("stampMute"); if(!mb) return;
+    const rndr=()=>mb.classList.toggle("muted", stampMuted); rndr();
+    mb.addEventListener("click",()=>{ stampMuted=!stampMuted; try{ localStorage.setItem("drb.smute", stampMuted?"1":"0"); }catch(e){} rndr(); });
+  })();
   document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{
     const i=+b.dataset.i; b.textContent=STAMP_SVGS[i];
     b.addEventListener("click",()=>{ ensureAudio(); sendStamp(i); });
@@ -2067,7 +2082,7 @@
   document.getElementById("champAgain").addEventListener("click",()=>{ ensureAudio(); playConfirm();
     document.getElementById("champOverlay").classList.remove("on");
     if(mode==="online"){ oRestart(); return; }
-    players.forEach(p=>p.chips=initChips); round=0; carry=0; startRound(); });
+    players.forEach(p=>p.chips=initChips); round=0; carry=0; repStart=Math.floor(Math.random()*players.length); startRound(); });
   document.getElementById("champHome").addEventListener("click",()=>{ ensureAudio(); playSelect();
     if(mode==="online"){ if(isHost) oToLobby(); return; }   // オンラインは待機画面(ロビー)へ戻す
     goTitle(); });
@@ -2292,7 +2307,7 @@
     const ids=orderedMembers();
     if(ids.length<MINP){ showToast("2人以上でね"); return; }
     players=ids.map((id,i)=>({id, name:members[id].name||("P"+(i+1)), color:COLORS[i%COLORS.length], chips:initChips}));
-    round=0; carry=0;
+    round=0; carry=0; repStart=Math.floor(Math.random()*players.length);
     oNextRound();
   }
   function idxOfId(id){ return players.findIndex(p=>p.id===id); }
@@ -2305,7 +2320,7 @@
     nego=null;
     if(players.length<MINP){ oPhase="champ"; broadcastSnap(); return; }
     round++;
-    repIdx=(round-1)%players.length;
+    repIdx=(repStart+round-1)%players.length;
     numbers=new Array(players.length).fill(null);
     bets=new Array(players.length).fill(null);
     picks={};
@@ -2425,7 +2440,7 @@
     bankrupts=[]; bankruptInfo=null;
     const ids=orderedMembers();
     players=ids.map((id,i)=>({id, name:members[id].name||("P"+(i+1)), color:COLORS[i%COLORS.length], chips:initChips}));
-    round=0; carry=0; oNextRound();
+    round=0; carry=0; repStart=Math.floor(Math.random()*players.length); oNextRound();
   }
   function oToLobby(){ stopHostTimer(); oPhase="lobby"; round=0; carry=0; picks={}; nego=null; broadcastSnap(); }   // 完全終了→出走メンバー待機画面へ
 

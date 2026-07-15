@@ -449,6 +449,14 @@
     background:rgba(255,255,255,.9); box-shadow:0 2px 7px rgba(90,60,25,.3);
     display:flex; align-items:center; justify-content:center; font-size:27px; line-height:1; }
   .stamp-btn:active{ transform:translateY(1px) scale(.93); }
+  .stamp-mute{ width:34px; height:34px; padding:0; border:none; border-radius:50%; cursor:pointer;
+    position:absolute; left:100%; top:7px; margin-left:9px; background:rgba(255,255,255,.9); box-shadow:0 2px 7px rgba(90,60,25,.3);
+    display:flex; align-items:center; justify-content:center; color:#555; }
+  .stamp-mute svg{ width:19px; height:19px; }
+  .stamp-mute .mute-slash{ display:none; }
+  .stamp-mute.muted{ color:#d23b30; }
+  .stamp-mute.muted .mute-slash{ display:block; }
+  .stamp-mute:active{ transform:translateY(1px) scale(.93); }
   .stamp-fly{ position:fixed; bottom:-30px; width:120px; z-index:63; pointer-events:none;
     display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
     filter:drop-shadow(0 5px 9px rgba(0,0,0,.28)); animation:stampFloat 2.2s cubic-bezier(.2,.75,.35,1) forwards; }
@@ -719,6 +727,7 @@
     <button class="stamp-btn" data-i="0" aria-label="泣き"></button>
     <button class="stamp-btn" data-i="1" aria-label="うっとり"></button>
     <button class="stamp-btn" data-i="2" aria-label="爆笑"></button>
+    <button id="stampMute" class="stamp-mute" aria-label="スタンプをミュート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10.5 16.2a1.7 1.7 0 0 0 3 0"/><line class="mute-slash" x1="3.2" y1="3.2" x2="20.8" y2="20.8"/></svg></button>
   </div>
 
   <button class="help-btn" id="helpBtn"><span>?</span>あそびかた</button>
@@ -2094,6 +2103,7 @@ function playStamp(i){   // スタンプ別の音(0泣く=しょんぼり下降 
   else{ const seq=[900,680,850,640,800,600,760,560]; seq.forEach((f,k)=>note(f, t+k*0.072, 0.07, 0.26, "triangle")); note(400, t+seq.length*0.072, 0.16, 0.24, "triangle"); }
 }
 function spawnStamp(i, name, color){
+  if(stampMuted) return;
   i=Math.max(0, Math.min(2, i|0));
   const el=document.createElement("div"); el.className="stamp-fly";
   const hx=0.06+Math.random()*0.88;                        // 横位置: 画面全幅
@@ -2119,6 +2129,11 @@ function sendStamp(i){
     spawnStamp(i);   // 1台は押した人を特定できないので名前なし
   }
 }
+let stampMuted=false; try{ stampMuted=localStorage.getItem("mate.smute")==="1"; }catch(e){}
+(function(){ const mb=document.getElementById("stampMute"); if(!mb) return;
+  const rndr=()=>mb.classList.toggle("muted", stampMuted); rndr();
+  mb.addEventListener("click",()=>{ stampMuted=!stampMuted; try{ localStorage.setItem("mate.smute", stampMuted?"1":"0"); }catch(e){} rndr(); });
+})();
 document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{
   const i=+b.dataset.i; b.textContent=STAMP_SVGS[i];
   b.addEventListener("click",()=>{ ensureAudio(); sendStamp(i); });
