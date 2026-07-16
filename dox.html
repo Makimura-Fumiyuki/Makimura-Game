@@ -1212,26 +1212,24 @@
   }
   // NOTE: the public key allows INSERT/SELECT only — DELETE/PATCH return 401 (42501, verified 2026-07-12).
   // Rows can never be removed, so writes are INSERT-only and the reader collapses history per player:
-  // a score-0 row is a "tombstone" that hides all OLDER rows of that name (used for rename & delete-my-records).
+  // 墓標(score0で古い行を隠す)は2026-07-14に廃止=INSERTは誰でもできるので他人の名前で墓標を注入して記録を隠す嫌がらせが可能だったため。読み側collapseRowsは名前ごと最高得点だけを見る。
   const SB_MODES=["score","speed","endless"];
   function sbPost(name, sc, mode){   // one INSERT (the only write the public key permits)
     return fetch(SB_URL+"/rest/v1/scores", { method:"POST",
       headers:{ ...SB_HEAD, "Content-Type":"application/json", "Prefer":"return=minimal" },
       body: JSON.stringify({ name:(name||"").slice(0,10), score:sc|0, mode:mode }) });
   }
-  async function sbRename(oldName, newName){   // rename = repost my local bests under the new name + tombstone the old name (PATCH is not permitted)
+  async function sbRename(oldName, newName){   // rename = 新しい名前で自分のベストを出し直すだけ(墓標で旧名を隠す処理は廃止=他人を隠せる穴になるため。旧名の行は残るが無害)
     if(!oldName || !newName || oldName===newName) return;
     try{
       for(const m of SB_MODES){
         const b=(loadBest(m)[0]|0);
         if(b>0) await sbPost(newName, b, m);   // carry my best over to the new name
-        await sbPost(oldName, 0, m);           // hide every older row of the old name
       }
     }catch(e){}
   }
-  async function sbDeleteMine(){   // "delete my records" = tombstone my name in every mode (DELETE is not permitted)
-    const name=playerName(); if(!name) return;
-    try{ for(const m of SB_MODES) await sbPost(name, 0, m); }catch(e){}
+  async function sbDeleteMine(){   // オンライン記録の削除は公開キーでは不可(墓標方式は他人を隠せる穴になるため廃止=2026-07-14)。ローカル記録の消去のみ(呼び出し側で実施)。オンライン側を消したい時はサイト運営者がSupabaseで削除
+    return;
   }
   try{ addNameHistory(playerName()); }catch(e){}   // seed the current name so the player can always reclaim it
   async function sbSubmit(mode, sc){            // send a score (skips 0s and runs only if a name is set)
@@ -1315,11 +1313,14 @@
       html += '<div class="rank-row'+(mine?" mine":"")+'"><span class="rk">'+rank+'</span><span class="nm">'+escRank(r.name)+'</span><span class="sc">'+rankScoreHTML(r.score|0)+'</span></div>'; });
     return html;
   }
-  function collapseRows(rows){   // rows are newest-first; keep each player's best since their last tombstone (score-0 row = "hide everything older")
-    const best=new Map(), dead=new Set();
+  // ランキング除外リスト: 明らかな不正(偽スコア注入等)の名前を運営が指定してランキングから隠す。
+  // ※コード内の固定リスト=運営だけが編集でき攻撃者は他人を消せない。名前指定なので同名の別人も隠れる点に注意。
+  const DOX_BAN_NAMES=[];   // 例: ["ずるっこ"]
+  function collapseRows(rows){   // 名前ごとに最高得点の1行だけ残す。※墓標(score0で古い行を隠す)は廃止(2026-07-14)=他人が墓標を注入して人の記録を消す嫌がらせを防ぐため。0点行は単に無視
+    const best=new Map();
     for(const r of (rows||[])){
-      if(dead.has(r.name)) continue;
-      if(!(r.score>0)){ dead.add(r.name); continue; }   // tombstone: rows newer than it were already taken above, older ones are dropped
+      if(!(r.score>0)) continue;   // 0点(旧・墓標行を含む)は無視するだけ=誰も他人を隠せない
+      if(DOX_BAN_NAMES.indexOf(r.name)>=0) continue;   // 除外リストの人はランキング非表示
       const b=best.get(r.name);
       if(!b || r.score>b.score) best.set(r.name, r);
     }

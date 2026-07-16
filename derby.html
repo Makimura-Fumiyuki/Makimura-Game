@@ -210,13 +210,13 @@
   .dir-badge svg{ width:14px; height:14px; flex:none; }
   .dir-box.hi{ background:linear-gradient(150deg,#ff7a5f,var(--red)); }
   .dir-box.lo{ background:linear-gradient(150deg,#41b4ec,var(--turf-dark)); }
-  .timer{ position:fixed; top:calc(clamp(12px,4.5vh,40px) + 42px); left:50%; transform:translateX(-50%); z-index:19;
-    display:inline-flex; align-items:center; gap:6px; font-size:15px; font-weight:800; letter-spacing:.02em; color:#3a2c05;
+  .tb-row2{ display:flex; align-items:center; justify-content:center; gap:8px; }   /* 上部2行目=タイマー(左)+大小バッジ(右)。第Nレース表示の下に出す */
+  .timer{ display:inline-flex; align-items:center; gap:6px; font-size:15px; font-weight:800; letter-spacing:.02em; color:#3a2c05;
     background:linear-gradient(150deg,#ffe08a,var(--gold) 70%,#e6a51c); border:none; border-radius:999px; padding:5px 15px 6px; white-space:nowrap;
     box-shadow:0 2px 7px rgba(210,144,20,.45); }
   .timer svg{ width:15px; height:15px; flex:none; }
   .timer.urgent{ color:#fff; background:var(--red); box-shadow:0 2px 9px rgba(227,69,47,.55); animation:tPulse .5s ease-in-out infinite; }
-  @keyframes tPulse{ 0%,100%{ transform:translateX(-50%) scale(1); } 50%{ transform:translateX(-50%) scale(1.12); } }
+  @keyframes tPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.12); } }
   .big-q{ font-size:clamp(20px,5.4vw,26px); font-weight:900; text-align:center; letter-spacing:.04em; line-height:1.45; }
   .big-q .em{ color:var(--red); }
   .hint{ font-size:13px; opacity:.62; font-weight:700; letter-spacing:.06em; text-align:center; }
@@ -628,7 +628,7 @@
   .stamp-mute{ width:34px; height:34px; padding:0; border:none; border-radius:50%; cursor:pointer;
     position:absolute; left:100%; top:7px; margin-left:9px; background:rgba(255,255,255,.9); box-shadow:0 2px 7px rgba(30,40,70,.32);
     display:flex; align-items:center; justify-content:center; color:#555; }
-  .stamp-mute svg{ width:19px; height:19px; }
+  .stamp-mute svg{ width:19px; height:19px; transform:translateY(1px); }   /* ベルを1px下げる */
   .stamp-mute .mute-slash{ display:none; }
   .stamp-mute.muted{ color:#d23b30; }
   .stamp-mute.muted .mute-slash{ display:block; }
@@ -845,11 +845,13 @@
       <span class="ib-seg round-pill" id="roundPill"></span>
       <span class="ib-seg theme-badge" id="themeBadge"></span>
     </div>
-    <div class="info-box dir-box" id="infoDir" style="display:none;">
-      <span class="ib-seg dir-badge" id="dirBadge"></span>
+    <div class="tb-row2">
+      <div class="timer" id="timer" style="display:none;"></div>
+      <div class="info-box dir-box" id="infoDir" style="display:none;">
+        <span class="ib-seg dir-badge" id="dirBadge"></span>
+      </div>
     </div>
   </div>
-  <div class="timer" id="timer" style="display:none;"></div>
 
   <!-- タイトルへ戻るフッター -->
   <a class="home-foot" id="homeFoot" href="./index.html"><span>牧村が作ったゲーム集へ</span></a>
@@ -974,12 +976,10 @@
     "#d35400","#3b4b8a","#b8930f","#2a9d8f"];
   /* おまかせのお題は「今すぐ確認すれば絶対にわかる固定値」だけ(主観・記憶頼み・推定は入れない) */
   const THEMES=[
-    "今のスマホの充電残量","LINEの未読数","カメラロールの写真の枚数","スマホの昨日の利用時間","入れてるアプリの数",
-    "Twitterのフォロワー数","インスタのフォロワー数","今目の前に見えた数字","今日歩いた歩数(スマホの記録)","財布の中の小銭の枚数",
-    "スマホの空き容量(GB)","今の手持ちの現金","財布のカードの枚数","プレイリストの曲数","今月のカレンダーの予定数",
-    "スマホのホーム画面のアプリ数","持ってるポイントカードの数","カバンの中のレシートの枚数","今のスマホの通知の数","開いてるタブの数",
-    "連絡先の登録数","昨日の歩数(スマホの記録)","入れてるサブスクの数","財布の中のお札の枚数","スマホの画面の明るさ(%)"
-  ];
+    "今のスマホの充電残量","LINEの未読数","カメラロールの写真の枚数","今目の前に見えた数字","今日歩いた歩数(スマホの記録)",
+    "財布の中の小銭の枚数","今の手持ちの現金","財布のカードの枚数","持ってるポイントカードの数","カバンの中のレシートの枚数",
+    "今のスマホの通知の数","開いてるタブの数","財布の中のお札の枚数"
+  ];   // 誰でもすぐ確認できる高認知度のものだけ(2026-07-16: 利用時間/アプリ数/空き容量/プレイリスト/予定数/連絡先数/サブスク数/明るさ/フォロワー数など確認しづらい・特定アプリ前提のものを削除)
   let lastTheme="";
   function randTheme(){ let t; do{ t=THEMES[Math.floor(Math.random()*THEMES.length)]; }while(THEMES.length>1 && t===lastTheme); lastTheme=t; return t; }
   const INIT_CHIPS=100, MIN_BET=10, RESCUE=20;
@@ -1158,7 +1158,16 @@
     theme:document.getElementById("themePanel"), enter:document.getElementById("enterPanel"),
     bet:document.getElementById("betPanel"), check:document.getElementById("checkPanel"), race:document.getElementById("racePanel"),
     nego:document.getElementById("negoPanel") };
-  function showPanel(name){ Object.keys(panels).forEach(k=> panels[k].classList.toggle("on", k===name)); gameScene.classList.toggle("lobbying", name==="lobby"); try{ updateBackBtn(); }catch(e){} }
+  function showPanel(name){ Object.keys(panels).forEach(k=> panels[k].classList.toggle("on", k===name)); gameScene.classList.toggle("lobbying", name==="lobby"); try{ updateBackBtn(); }catch(e){} try{ adjustTopPad(); }catch(e){} }
+  /* 上部バー(お題が長いと折り返して下に伸びる)の実高さに合わせて、中身が隠れないようgameSceneを下げる */
+  function adjustTopPad(){
+    const tb=document.getElementById("topBar");
+    if(!tb||!gameScene) return;
+    if(getComputedStyle(tb).display==="none"){ gameScene.style.paddingTop=""; return; }   // 非表示(タイトル等)はCSS既定に戻す
+    const b=tb.getBoundingClientRect().bottom;
+    if(b>0) gameScene.style.paddingTop=Math.round(b+20)+"px";
+  }
+  window.addEventListener("resize", ()=>{ try{ adjustTopPad(); }catch(e){} });
   function dotStyle(c){ return "background:radial-gradient(circle at 35% 30%, "+tint(c)+", "+c+")"; }
 
   // もち金が足りない人は誰かからチップをもらう。出せる人がいなければ脱落
@@ -1186,12 +1195,13 @@
   function setDirBadge(show){
     const b=document.getElementById("dirBadge"), tb=document.getElementById("themeBadge"), dirBox=document.getElementById("infoDir");
     // レース数(infoMain)は常に出る。勝利条件は別枠(infoDir)でshow時だけ点灯
-    if(!show){ if(dirBox) dirBox.style.display="none"; if(tb) tb.style.display="none"; return; }
+    if(!show){ if(dirBox) dirBox.style.display="none"; if(tb) tb.style.display="none"; try{ adjustTopPad(); }catch(e){} return; }
     dirBox.style.display="inline-flex"; dirBox.className="info-box dir-box "+(dir==="hi"?"hi":"lo");
     b.innerHTML=dirArrowSVG(dir)+"<span>"+(dir==="hi"?"大きいほど勝ち":"小さいほど勝ち")+"</span>";
     // お題は「レース数」と同じ枠に横並びで常時表示(数字入力・賭け画面でも上部に出す)
     if(theme){ tb.style.display="inline-flex"; tb.innerHTML='お題「<span class="em">'+esc(theme)+'</span>」'; }
     else tb.style.display="none";
+    try{ adjustTopPad(); }catch(e){}   // お題の長さでバー高さが変わるので中身の位置を追従
   }
 
   // ---- 制限時間タイマー(自分の操作画面で作動。0=無制限) ----
@@ -1224,7 +1234,7 @@
   function stopDisplayTimer(){ if(dispTimerInt){ clearInterval(dispTimerInt); dispTimerInt=0; } dispKey=""; const el=document.getElementById("timer"); if(el && !timerInt){ el.style.display="none"; el.classList.remove("urgent"); } }
   function onTimeout(){   // 時間切れ→お題は自動確定(お題は必須)、数字/賭けは「間に合わなかった=不参加/賭けなし」で自動確定しない
     if(panels.theme.classList.contains("on")){ const ti=document.getElementById("themeInput"); if(!ti.value.trim()) ti.value=randTheme(); document.getElementById("themeGo").click(); return; }
-    if(panels.enter.classList.contains("on")){ enterGaveUp=round; showWait("時間切れ…今回のレースは不参加<br>次のレースを待ってね", true); return; }
+    if(panels.enter.classList.contains("on")){ enterGaveUp=round; showWait("時間切れ…今回は不参加<br>このあと観戦できます", true); return; }
     if(panels.bet.classList.contains("on")){ betGaveUp=round; showWait("時間切れ…今回は賭けなし<br>レースを待ってね", true); return; }
   }
   // ホスト側の強制進行(誰かが放置しても進める。クライアントより少し遅らせる)
@@ -2565,13 +2575,13 @@
       const mi=myIndex(), gave=(enterGaveUp===round);
       if(mi>=0 && !myNumDoneFor(round) && !gave){
         if(!on("enter")){
-          document.getElementById("enterQ").innerHTML='あなた<br>お題を見て数字を入力';
+          document.getElementById("enterQ").innerHTML='お題を見て数字を入力';
           document.getElementById("secretNote").style.display="none";   // オンラインは各自の端末なので不要
           const inp=document.getElementById("numInput"); inp.value=""; showPanel("enter"); startTimer(); setTimeout(()=>inp.focus(),60);
         }
         renderDoneRoster(document.getElementById("enterDone"), s.entered, "入力ずみ");   // 誰が入力済みか
       }else if(gave){
-        showWait("時間切れ…今回のレースは不参加<br>次のレースを待ってね", true);
+        showWait("時間切れ…今回は不参加<br>このあと観戦できます", true);
         startDisplayTimer(timeLimit, "enter"+round);
       }else{
         showWaitProgress("みんなの入力を待っています", s.entered, false);
@@ -2583,7 +2593,7 @@
     if(s.phase==="bet"){
       const mi=myIndex(), gave=(betGaveUp===round);
       const iAmIn = mi>=0 && s.entered && s.entered.includes(myId);   // 数字を入れた人=このレースの参加者
-      if(mi>=0 && !iAmIn){ showWait("入力が間に合わず、今回は不参加…<br>次のレースを待っています", true); renderBetLive(document.getElementById("betLiveWait")); return; }
+      if(mi>=0 && !iAmIn){ showWait("今回は観戦モード<br>みんなの賭けを見てみよう", true); renderBetLive(document.getElementById("betLiveWait")); return; }
       if(mi>=0 && !myBetDoneFor(round) && !gave){
         if(!on("bet")){
           betIdx=mi; curCand=-1; curBet=MIN_BET; reBet=false;
