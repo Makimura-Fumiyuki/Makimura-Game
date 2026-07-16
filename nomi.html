@@ -452,7 +452,7 @@ try{
 }catch(e){}
 function flushBacklog(){   // たまっていた分を全部その場で出す(分割しない)
   if(backlog<=0 || vw<50 || vh<50) return;   // 裏タブ起動などで画面サイズ不明の間だけ保留(見えた瞬間に一括で出す)
-  while(backlog>0 && fleas.length<FLEA_CAP){ spawnFlea(true, nijiBaseP()); backlog--; }   // 留守分=ベース確率
+  while(backlog>0 && fleas.length<FLEA_CAP){ spawnFlea(true, nijiBaseP()*0.5); backlog--; }   // 閉じている間(留守分)=ベース確率の半分(2026-07-16。放置中のライブ湧き×2より控えめに)
   backlog=0;
 }
 /* 複数タブ対策: 同時に「数える/湧く」タブは1つだけ(タブごとにノミが湧いて倍速で稼げるのを防ぐ)。
