@@ -899,7 +899,7 @@ const DEFAULT_NAMES=["1","2"];
 let playersSetup=DEFAULT_NAMES.slice();
 let players=[];                              // [{id,n,s,c}]
 let timeLimit=45, dobonOn=true, topicTmr=0;
-const ERASE_OPTS=[{k:"なし",v:0},{k:"ちょっと",v:50},{k:"普通",v:100},{k:"たくさん",v:200}];
+const ERASE_OPTS=[{k:"なし",v:0},{k:"ちょっと",v:32.5},{k:"普通",v:65},{k:"たくさん",v:130}];   // 消せる総量(残量の最大)。2026-07-16: 半分(25/50/100)は減りが早すぎ→1.3倍に
 let eraserAmt=2;              // 消しゴム量の設定(0なし/1ちょっと/2普通/3たくさん・初期=普通)
 let eraseMax=100, eraseLeft=0;
 let roundNo=1, drawerId=null, nextDrawerId=null;
