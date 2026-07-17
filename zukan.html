@@ -33,7 +33,7 @@
   .logo-txt .k{ font-size:12px; font-weight:900; letter-spacing:.22em; color:rgba(255,255,255,.82); margin-bottom:4px; margin-left:2px; }
   .logo-txt .m{ font-size:clamp(27px,7.4vw,36px); font-weight:900; letter-spacing:.02em; color:#fff; text-shadow:0 2px 4px rgba(20,60,38,.3); }
   .logo-txt .m b{ color:#ffe08a; }
-  header p{ margin:0; font-size:13px; font-weight:500; opacity:.92; }
+  header p{ margin:0; font-size:12px; font-weight:500; opacity:.92; }   /* 13px→12px: スマホで1文字だけ折り返すのを防ぐ */
   header .yaku{ position:fixed; top:10px; right:10px; z-index:50; background:rgba(31,92,57,.55); border:none; color:#fff;
     font-size:12px; font-weight:800; padding:7px 14px; border-radius:999px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,.18); }
   .name-pill{ position:fixed; top:10px; left:10px; z-index:50; display:flex; align-items:center; gap:6px; max-width:44vw;
@@ -46,6 +46,8 @@
   #nameInput:focus, .ov-in:focus{ border-color:var(--grn); }
   .ov-note{ display:block; margin-top:9px; font-size:12px; font-weight:500; line-height:1.7; color:rgba(51,41,31,.45); }
   .adm-del{ color:var(--red) !important; border-color:rgba(215,71,63,.5) !important; }
+  .adm-ban{ color:#b8860b !important; border-color:rgba(184,134,11,.5) !important; }
+  .ban-tag{ font-size:11px; font-weight:800; color:#b8860b; }
 
   .section-label{ font-size:12px; font-weight:900; letter-spacing:.12em; color:var(--grn-d); margin:22px 4px 10px; display:flex; align-items:center; gap:8px; }
   .section-label::before{ content:""; width:6px; height:16px; border-radius:3px; background:var(--gold); }
@@ -197,7 +199,7 @@
       <div class="detail-head">
         <div class="nm" id="dNm"></div>
         <div class="note" id="dNote"></div>
-        <div id="admCrRow" style="display:none;margin-top:12px;"><button class="btn ghost mini" id="crDelBtn" style="color:var(--red);border-color:rgba(215,71,63,.5);">この生き物を削除</button></div>
+        <div id="admCrRow" style="display:none;margin-top:12px;gap:8px;"><button class="btn ghost mini" id="crEditBtn">この生き物を編集</button><button class="btn ghost mini" id="crDelBtn" style="color:var(--red);border-color:rgba(215,71,63,.5);">この生き物を削除</button></div>
       </div>
       <div id="myArea"></div>
       <div class="section-label">みんなの図鑑</div>
@@ -243,7 +245,7 @@
   <!-- 管理(牧村専用): 新しい生き物を出す -->
   <div class="ov" id="crOv">
     <div class="ov-card">
-      <h3>新しい生き物を出す</h3>
+      <h3 id="crTitle">新しい生き物を出す</h3>
       <input id="crName" class="ov-in" maxlength="30" placeholder="生き物の名前">
       <input id="crNote" class="ov-in" maxlength="60" placeholder="ヒント（なくてもOK）">
       <div class="ov-btns">
@@ -405,15 +407,16 @@
     creatures=cr.data||[];
     // 図鑑の件数(全件のcreature_idだけ取得して集計)
     counts={};
-    const ec=await sb.from("zukan_entry").select("creature_id");
-    if(!ec.error && ec.data){ ec.data.forEach(r=>{ counts[r.creature_id]=(counts[r.creature_id]||0)+1; }); }
+    try{ await loadBans(); }catch(e){}
+    const ec=await sb.from("zukan_entry").select("creature_id,user_id");
+    if(!ec.error && ec.data){ ec.data.forEach(r=>{ if(DYN_BAN_UIDS.has(r.user_id)) return; counts[r.creature_id]=(counts[r.creature_id]||0)+1; }); }
     renderList();
   }
 
   function renderList(){
     const b=$("listBody");
     const admBtn=isAdmin?'<button class="btn p" id="admNew" style="width:100%;margin:2px 0 0;">＋ 新しい生き物を出す</button>':'';
-    const wireAdm=()=>{ if($("admNew")) $("admNew").addEventListener("click",()=>{ $("crName").value=""; $("crNote").value=""; $("crOv").classList.add("on"); setTimeout(()=>$("crName").focus(),50); }); };
+    const wireAdm=()=>{ if($("admNew")) $("admNew").addEventListener("click",()=>{ crEditId=null; $("crTitle").textContent="新しい生き物を出す"; $("crPost").textContent="出題する"; $("crName").value=""; $("crNote").value=""; $("crOv").classList.add("on"); setTimeout(()=>$("crName").focus(),50); }); };
     if(!creatures.length){ b.innerHTML=admBtn+'<div class="empty">まだ生き物がいません<br>牧村が連れてくるのを待ってね</div>'; wireAdm(); return; }   // 0匹でも管理者は出題できる
     const [today,...rest]=creatures;
     let html='<div class="section-label">今日の生き物</div>';
@@ -441,7 +444,7 @@
     $("listView").style.display="none"; $("detailView").style.display="block";
     window.scrollTo(0,0);
     $("dNm").textContent=cur.name; $("dNote").textContent=cur.note||"";
-    $("admCrRow").style.display=isAdmin?"block":"none";
+    $("admCrRow").style.display=isAdmin?"flex":"none";
     $("myArea").innerHTML=""; $("entries").innerHTML='<div class="loading">よみこみ中…</div>';
     if(DEMO){
       likeCount={}; myLiked=new Set(); curEntries=demoEntries(id);
@@ -455,6 +458,8 @@
     const r=await sb.from("zukan_entry").select("*").eq("creature_id",id).order("created_at",{ascending:false});
     if(r.error){ $("entries").innerHTML='<div class="empty">よみこみに失敗しました。</div>'; return; }
     curEntries=r.data||[];
+    try{ await loadBans(); }catch(e){}
+    if(!isAdmin) curEntries=curEntries.filter(e=>!DYN_BAN_UIDS.has(e.user_id));   // 除外中の人の投稿は非表示(管理者は管理のため表示)
     myEntry=curEntries.find(e=>e.user_id===myUid)||null;
     likeCount={}; myLiked=new Set();
     try{ const lk=await sb.from("zukan_like").select("entry_id,user_id");
@@ -493,6 +498,15 @@
     }
   }
 
+  /* 除外リスト(ban_list: game="zukan"/kind="uid"=ユーザーID単位)。除外した人の投稿は全生き物で非表示(管理者には「除外中」タグ付きで見える) */
+  let DYN_BAN_UIDS=new Set(), bansReady=null;
+  function loadBans(){
+    if(DEMO || !sb) return Promise.resolve();
+    if(!bansReady) bansReady=sb.from("ban_list").select("value").eq("game","zukan").eq("kind","uid")
+      .then(r=>{ if(!r.error && r.data) r.data.forEach(x=>DYN_BAN_UIDS.add(x.value)); }).catch(()=>{});
+    return bansReady;
+  }
+
   let entSort="likes";   // いいね数順(初期) / 新着順
   document.querySelectorAll(".tabs .tab").forEach(t=>t.addEventListener("click",()=>{
     if(entSort===t.dataset.s) return;
@@ -508,7 +522,7 @@
     if(!list.length){ box.innerHTML='<div class="empty">まだ図鑑がありません<br>最初の1ページを書いてみよう</div>'; return; }
     if(entSort==="likes"){ list=list.slice().sort((a,b)=>((likeCount[b.id]||0)-(likeCount[a.id]||0)) || (new Date(b.created_at)-new Date(a.created_at))); }
     else{ list=list.slice().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)); }
-    box.innerHTML=list.map(e=>'<div class="entry"><div class="eh"><span class="au">'+esc(e.author)+'</span>'+(isMineEntry(e)?'<span class="me-tag">じぶん</span>':'')+'<span class="dt">'+fmtDate(e.updated_at||e.created_at)+'</span></div><div class="bd">'+esc(e.body)+'</div><div class="efoot">'+(isAdmin&&!isMineEntry(e)?'<div class="eact"><button class="btn ghost mini adm-del" data-adel="'+e.id+'">削除</button></div>':'')+likeBtnHTML(e.id)+'</div></div>').join("");
+    box.innerHTML=list.map(e=>'<div class="entry"><div class="eh"><span class="au">'+esc(e.author)+'</span>'+(isMineEntry(e)?'<span class="me-tag">じぶん</span>':'')+(isAdmin&&DYN_BAN_UIDS.has(e.user_id)?'<span class="ban-tag">除外中</span>':'')+'<span class="dt">'+fmtDate(e.updated_at||e.created_at)+'</span></div><div class="bd">'+esc(e.body)+'</div><div class="efoot">'+(isAdmin&&!isMineEntry(e)?'<div class="eact">'+(DYN_BAN_UIDS.has(e.user_id)?'<button class="btn ghost mini" data-aub="'+esc(e.user_id)+'">除外解除</button>':'<button class="btn ghost mini adm-ban" data-ab="'+esc(e.user_id)+'">除外</button>')+'<button class="btn ghost mini adm-del" data-adel="'+e.id+'">削除</button></div>':'')+likeBtnHTML(e.id)+'</div></div>').join("");
     wireLikes(box);
     box.querySelectorAll("[data-adel]").forEach(bn=>bn.addEventListener("click",async()=>{
       if(DEMO){ toast("デモ表示中は削除できません"); return; }
@@ -516,6 +530,20 @@
       const r=await sb.from("zukan_entry").delete().eq("id",bn.dataset.adel);
       if(r.error){ toast("削除に失敗しました"); return; }
       toast("削除しました"); await openDetail(cur.id);
+    }));
+    box.querySelectorAll("[data-ab]").forEach(bn=>bn.addEventListener("click",async()=>{
+      if(DEMO){ toast("デモ表示中は除外できません"); return; }
+      if(!confirm("この人を除外しますか？\n（この人の投稿は、すべての生き物で表示されなくなります。投稿し直しても出ません）")) return;
+      const r=await sb.from("ban_list").insert({ game:"zukan", kind:"uid", value:bn.dataset.ab });
+      if(r.error){ toast("除外に失敗しました"); return; }
+      DYN_BAN_UIDS.add(bn.dataset.ab); toast("除外しました"); renderEntries();
+    }));
+    box.querySelectorAll("[data-aub]").forEach(bn=>bn.addEventListener("click",async()=>{
+      if(DEMO){ toast("デモ表示中は解除できません"); return; }
+      if(!confirm("この人の除外を解除しますか？")) return;
+      const r=await sb.from("ban_list").delete().eq("game","zukan").eq("kind","uid").eq("value",bn.dataset.aub);
+      if(r.error){ toast("解除に失敗しました"); return; }
+      DYN_BAN_UIDS.delete(bn.dataset.aub); toast("解除しました"); renderEntries();
     }));
   }
 
@@ -577,19 +605,38 @@
     try{ const s2=r.data.session; localStorage.setItem("mk.admin",JSON.stringify({ at:s2.access_token, rt:s2.refresh_token, exp:(s2.expires_at||0)-60 })); }catch(e){}
     location.href="zukan.html?live=1";   // 管理者として入り直す
   });
+  let crEditId=null;   // null=新しい生き物を出す / id=その生き物の編集(名前・ヒントの書き換え。図鑑はそのまま残る)
   $("crCancel").addEventListener("click",()=>$("crOv").classList.remove("on"));
   $("crOv").addEventListener("click",e=>{ if(e.target===$("crOv")) $("crOv").classList.remove("on"); });
+  $("crEditBtn").addEventListener("click",()=>{
+    if(!cur) return;
+    crEditId=cur.id;
+    $("crTitle").textContent="生き物を編集する";
+    $("crName").value=cur.name; $("crNote").value=cur.note||"";
+    $("crPost").textContent="保存する";
+    $("crOv").classList.add("on"); setTimeout(()=>$("crName").focus(),50);
+  });
   $("crPost").addEventListener("click",async()=>{
-    if(DEMO){ toast("デモ表示中は出題できません"); return; }
+    const editing=!!crEditId;
+    if(DEMO){ toast(editing?"デモ表示中は編集できません":"デモ表示中は出題できません"); return; }
     const name=($("crName").value||"").trim();
     const note=($("crNote").value||"").trim();
     if(!name){ toast("生き物の名前を入れてね"); return; }
     $("crPost").disabled=true; $("crPost").textContent="送信中…";
-    const r=await sb.from("zukan_creature").insert({ name, note:(note||null) });
-    $("crPost").disabled=false; $("crPost").textContent="出題する";
-    if(r.error){ toast("出題に失敗しました"); return; }
-    $("crOv").classList.remove("on"); toast("出題しました");
-    await loadList();
+    const r = editing
+      ? await sb.from("zukan_creature").update({ name, note:(note||null) }).eq("id",crEditId)   // UPDATEなので図鑑(zukan_entry)は消えない
+      : await sb.from("zukan_creature").insert({ name, note:(note||null) });
+    $("crPost").disabled=false; $("crPost").textContent=editing?"保存する":"出題する";
+    if(r.error){ toast(editing?"保存に失敗しました":"出題に失敗しました"); return; }
+    $("crOv").classList.remove("on"); toast(editing?"保存しました":"出題しました");
+    if(editing){
+      const c=creatures.find(x=>x.id===crEditId);
+      if(c){ c.name=name; c.note=note||null; }
+      if(cur && cur.id===crEditId){ cur.name=name; cur.note=note||null; $("dNm").textContent=name; $("dNote").textContent=note||""; }
+      crEditId=null;
+    } else {
+      await loadList();
+    }
   });
 
   /* 管理: 生き物の削除(図鑑・いいねごと消す) */
