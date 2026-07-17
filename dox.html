@@ -3327,6 +3327,20 @@
     const ADMIN_EMAIL="zentyu721wood@gmail.com";
     const MODE_LB={ score:"スコア", speed:"スピード", endless:"エンドレス" };
     let admToken=null, admMode="score";
+    async function admSharedToken(){   // ハブで1回ログインした共有セッション(mk.admin)。期限切れは自動更新
+      let s=null; try{ s=JSON.parse(localStorage.getItem("mk.admin")||"null"); }catch(e){}
+      if(!s || !s.rt) return null;
+      if(s.at && s.exp && s.exp*1000 > Date.now()+60000) return s.at;
+      try{
+        const r=await fetch(SB_URL+"/auth/v1/token?grant_type=refresh_token",{ method:"POST",
+          headers:{ apikey:SB_KEY, "Content-Type":"application/json" }, body:JSON.stringify({ refresh_token:s.rt }) });
+        const d=await r.json();
+        if(!r.ok || !d.access_token){ try{ localStorage.removeItem("mk.admin"); }catch(e){} return null; }
+        const ns={ at:d.access_token, rt:d.refresh_token||s.rt, exp:Math.floor(Date.now()/1000)+((d.expires_in|0)||3600)-60 };
+        try{ localStorage.setItem("mk.admin",JSON.stringify(ns)); }catch(e){}
+        return ns.at;
+      }catch(e){ return null; }
+    }
     const wrap=document.createElement("div");
     wrap.style.cssText="position:fixed;inset:0;z-index:9999;background:rgba(10,12,14,.94);color:#fff;font-family:'Noto Sans JP',sans-serif;overflow:auto;padding:24px;";
     document.body.appendChild(wrap);
@@ -3359,7 +3373,9 @@
             body:JSON.stringify({ email:ADMIN_EMAIL, password:pw }) });
           const d=await r.json();
           if(!r.ok || !d.access_token) throw 0;
-          admToken=d.access_token; listView();
+          admToken=d.access_token;
+          try{ localStorage.setItem("mk.admin",JSON.stringify({ at:d.access_token, rt:d.refresh_token||"", exp:Math.floor(Date.now()/1000)+((d.expires_in|0)||3600)-60 })); }catch(e){}
+          listView();
         }catch(e){ g.disabled=false; g.textContent="ログイン"; document.getElementById("admMsg").textContent="ログインに失敗しました"; }
       };
     }
@@ -3428,7 +3444,7 @@
         listView();
       });
     }
-    loginView();
+    (async()=>{ const t=await admSharedToken(); if(t){ admToken=t; listView(); } else loginView(); })();   // ハブでログイン済みならパスワード入力を省略
   })();
 
   applyLang(LANG_CODES[langSel]);   // apply the saved language before the title appears

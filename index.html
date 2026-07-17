@@ -888,10 +888,10 @@
   /* ゲームのデータ: release=リリース日 / cats=カテゴリ / clicks=あそばれた回数(サーバー集計) */
   const GAMES=[
     { id:"zukan", tpl:"tpl-zukan", release:"2026-07-17", cats:["交流"], clicks:null, likes:null, soon:true },   // 交流作品。リリース時にsoon:trueを外す
-    { id:"nomi", tpl:"tpl-nomi", release:"2026-07-12", cats:["スコアアタック"], clicks:null, likes:null },
+    { id:"nomi", tpl:"tpl-nomi", release:"2026-07-12", cats:["１人でコツコツ"], clicks:null, likes:null },
     { id:"mate", tpl:"tpl-mate", release:"2026-07-11", cats:["パーティ"], clicks:null, likes:null },
     { id:"derby", tpl:"tpl-derby", release:"2026-07-10", cats:["パーティ"], clicks:null, likes:null, soon:true },   // リリース時にsoon:trueを外す
-    { id:"dox",  tpl:"tpl-dox",  release:"2026-07-06", cats:["スコアアタック"], clicks:null, likes:null },   // clicks/likes: null=集計未着(表示しない)
+    { id:"dox",  tpl:"tpl-dox",  release:"2026-07-06", cats:["１人でコツコツ"], clicks:null, likes:null },   // clicks/likes: null=集計未着(表示しない)
     { id:"bamiri", tpl:"tpl-bamiri", release:"2026-07-08", cats:["対戦"], clicks:null, likes:null },
     { id:"maigomoku", tpl:"tpl-maigomoku", release:"2026-07-08", cats:["対戦"], clicks:null, likes:null },
     { id:"maigo", tpl:"tpl-maigo", release:"2026-07-07", cats:["対戦"], clicks:null, likes:null },   // 同日リリースはこの並び順が優先される(新しい方を先頭に)
@@ -902,8 +902,8 @@
   const SECTIONS=[
     { label:"パーティ", filter:g=>g.cats.includes("パーティ") },
     { label:"対戦", filter:g=>g.cats.includes("対戦") },
-    { label:"スコアアタック", filter:g=>g.cats.includes("スコアアタック") },
     { label:"交流", filter:g=>g.cats.includes("交流") },
+    { label:"１人でコツコツ", filter:g=>g.cats.includes("１人でコツコツ") },
   ];
   /* ---- 集計: あそばれた回数(hub_<id>)と いいね(hub_like_<id>)をSupabaseに記録・集計 ---- */
   const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co";
@@ -1057,6 +1057,57 @@
   sel.addEventListener("change", ()=>{ try{ localStorage.setItem("hub.sort", sel.value); }catch(e){} render(); });
   render();
   loadCounts();
+
+  /* ---------- 管理モード(牧村専用): ハブで1回ログイン→各ゲームを管理者として開ける ----------
+     共有セッションはlocalStorage"mk.admin"({at:アクセストークン, rt:リフレッシュトークン, exp:期限秒})。
+     各ゲームの?admin=1はこれがあればパスワード入力を省略する */
+  const ADMIN_EMAIL="zentyu721wood@gmail.com";
+  function admSes(){ try{ return JSON.parse(localStorage.getItem("mk.admin")||"null"); }catch(e){ return null; } }
+  // 管理中はdox/nomi/zukanカードのリンクに?admin=1を付与(クリックの瞬間に付ける=並び替え再描画の影響を受けない)
+  document.addEventListener("click",e=>{
+    if(!admSes()) return;
+    const a=(e.target && e.target.closest) ? e.target.closest("a.card") : null; if(!a) return;
+    const href=a.getAttribute("href")||"";
+    if(!/(dox|nomi|zukan)\.html/.test(href) || href.indexOf("admin=1")>=0) return;
+    a.setAttribute("href", href+(href.indexOf("?")>=0?"&":"?")+"admin=1");
+  },true);
+  // 管理中バッジ(左下・タップでログアウト)
+  if(admSes()){
+    const b=document.createElement("button");
+    b.textContent="管理モード中（タップでログアウト）";
+    b.style.cssText="position:fixed;left:10px;bottom:10px;z-index:9998;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:999px;padding:8px 14px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;";
+    b.onclick=()=>{ if(confirm("管理モードをログアウトしますか？")){ try{ localStorage.removeItem("mk.admin"); }catch(e){} location.reload(); } };
+    document.body.appendChild(b);
+  }
+  // index.html?admin=1 → ログイン画面
+  if(/[?&]admin=1/.test(location.search) && !admSes()){
+    const wrap=document.createElement("div");
+    wrap.style.cssText="position:fixed;inset:0;z-index:9999;background:rgba(10,12,14,.94);color:#fff;overflow:auto;padding:24px;font-family:inherit;";
+    wrap.innerHTML='<div style="max-width:420px;margin:12vh auto;">'
+      +'<div style="font-size:22px;font-weight:900;margin-bottom:4px;">管理ログイン</div>'
+      +'<div style="opacity:.65;font-size:13px;margin-bottom:14px;">牧村専用。ここで1回ログインすると、ここから開いた各ゲームが管理者モードになります</div>'
+      +'<input id="hubAdmPw" type="password" placeholder="パスワード" style="width:100%;padding:12px;border-radius:10px;border:none;font-size:16px;color:#111;box-sizing:border-box;">'
+      +'<div style="display:flex;gap:10px;margin-top:14px;">'
+      +'<button id="hubAdmGo" style="flex:1;padding:12px;border:none;border-radius:10px;font-weight:900;font-size:15px;background:#006987;color:#fff;cursor:pointer;">ログイン</button>'
+      +'<button id="hubAdmQuit" style="padding:12px 18px;border:none;border-radius:10px;font-weight:900;font-size:15px;cursor:pointer;">やめる</button></div>'
+      +'<div id="hubAdmMsg" style="margin-top:10px;color:#ff8f8f;font-size:13px;"></div></div>';
+    document.body.appendChild(wrap);
+    document.getElementById("hubAdmQuit").onclick=()=>{ location.href="index.html"; };
+    document.getElementById("hubAdmGo").onclick=async()=>{
+      const pw=document.getElementById("hubAdmPw").value||"";
+      if(!pw){ document.getElementById("hubAdmMsg").textContent="パスワードを入れてください"; return; }
+      const g=document.getElementById("hubAdmGo"); g.disabled=true; g.textContent="ログイン中…";
+      try{
+        const r=await fetch(SB_URL+"/auth/v1/token?grant_type=password",{ method:"POST",
+          headers:{ apikey:SB_KEY, "Content-Type":"application/json" },
+          body:JSON.stringify({ email:ADMIN_EMAIL, password:pw }) });
+        const d=await r.json();
+        if(!r.ok || !d.access_token) throw 0;
+        try{ localStorage.setItem("mk.admin",JSON.stringify({ at:d.access_token, rt:d.refresh_token||"", exp:Math.floor(Date.now()/1000)+((d.expires_in|0)||3600)-60 })); }catch(e){}
+        location.href="index.html";
+      }catch(e){ g.disabled=false; g.textContent="ログイン"; document.getElementById("hubAdmMsg").textContent="ログインに失敗しました"; }
+    };
+  }
 })();
 </script>
 </body>
