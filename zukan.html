@@ -477,8 +477,7 @@
       const bd=(editing&&myEntry?myEntry.body:"");
       const nameHtml = myName
         ? '<div class="pen-name">ペンネーム：<b>'+esc(myName)+'</b></div>'
-        : '<input id="fAuthor" maxlength="16" placeholder="ペンネーム" value="'+esc(savedName())+'">'
-          +'<div class="pen-hint">※ほかの人と同じペンネームは使えません。登録したあとは、画面左上からいつでも変えられます</div>';
+        : '<input id="fAuthor" maxlength="16" placeholder="ペンネーム" value="'+esc(savedName())+'">';
       a.innerHTML='<div class="section-label">'+(myEntry?"図鑑を編集する":"この生き物の図鑑を書く")+'</div>'
         +'<div class="form-card">'
         +nameHtml

@@ -905,7 +905,7 @@ $("wMe").addEventListener("click",()=>{
       b.disabled=true; b.textContent="削除中…";
       const r=await fetch(SB_URL+"/rest/v1/scores?mode=eq."+encodeURIComponent(b.getAttribute("data-md")),
         { method:"DELETE", headers:{ apikey:SB_KEY, Authorization:"Bearer "+admToken } });
-      if(!r.ok){ alert("削除に失敗しました"); b.disabled=false; b.textContent="削除"; return; }
+      if(!r.ok){ alert("削除に失敗しました（エラー "+r.status+"）"); b.disabled=false; b.textContent="削除"; return; }
       listView();
     });
     box.querySelectorAll("[data-ban]").forEach(b=>b.onclick=async()=>{
@@ -914,7 +914,7 @@ $("wMe").addEventListener("click",()=>{
       const r=await fetch(SB_URL+"/rest/v1/ban_list",{ method:"POST",
         headers:{ apikey:SB_KEY, Authorization:"Bearer "+admToken, "Content-Type":"application/json", "Prefer":"return=minimal" },
         body:JSON.stringify({ game:"nomi", kind:"mode", value:b.getAttribute("data-ban") }) });
-      if(!r.ok){ alert("除外に失敗しました"); b.disabled=false; return; }
+      if(!r.ok){ alert("除外に失敗しました（エラー "+r.status+"）"); b.disabled=false; return; }
       listView();
     });
     box.querySelectorAll("[data-unban]").forEach(b=>b.onclick=async()=>{
@@ -922,7 +922,7 @@ $("wMe").addEventListener("click",()=>{
       b.disabled=true;
       const r=await fetch(SB_URL+"/rest/v1/ban_list?game=eq.nomi&kind=eq.mode&value=eq."+encodeURIComponent(b.getAttribute("data-unban")),
         { method:"DELETE", headers:{ apikey:SB_KEY, Authorization:"Bearer "+admToken } });
-      if(!r.ok){ alert("解除に失敗しました"); b.disabled=false; return; }
+      if(!r.ok){ alert("解除に失敗しました（エラー "+r.status+"）"); b.disabled=false; return; }
       listView();
     });
   }

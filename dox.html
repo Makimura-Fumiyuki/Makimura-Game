@@ -3420,7 +3420,7 @@
         b.disabled=true; b.textContent="削除中…";
         const r=await fetch(SB_URL+"/rest/v1/scores?mode=eq."+admMode+"&name=eq."+encodeURIComponent(nm),
           { method:"DELETE", headers:{ apikey:SB_KEY, Authorization:"Bearer "+admToken } });
-        if(!r.ok){ alert("削除に失敗しました"); b.disabled=false; b.textContent="削除"; return; }
+        if(!r.ok){ alert("削除に失敗しました（エラー "+r.status+"）"); b.disabled=false; b.textContent="削除"; return; }
         listView();
       });
       box.querySelectorAll("[data-ban]").forEach(b=>b.onclick=async()=>{
@@ -3430,7 +3430,7 @@
         const r=await fetch(SB_URL+"/rest/v1/ban_list",{ method:"POST",
           headers:{ apikey:SB_KEY, Authorization:"Bearer "+admToken, "Content-Type":"application/json", "Prefer":"return=minimal" },
           body:JSON.stringify({ game:"dox", kind:"name", value:nm }) });
-        if(!r.ok){ alert("除外に失敗しました"); b.disabled=false; return; }
+        if(!r.ok){ alert("除外に失敗しました（エラー "+r.status+"）"); b.disabled=false; return; }
         listView();
       });
       box.querySelectorAll("[data-unban]").forEach(b=>b.onclick=async()=>{
@@ -3439,7 +3439,7 @@
         b.disabled=true;
         const r=await fetch(SB_URL+"/rest/v1/ban_list?game=eq.dox&kind=eq.name&value=eq."+encodeURIComponent(nm),
           { method:"DELETE", headers:{ apikey:SB_KEY, Authorization:"Bearer "+admToken } });
-        if(!r.ok){ alert("解除に失敗しました"); b.disabled=false; return; }
+        if(!r.ok){ alert("解除に失敗しました（エラー "+r.status+"）"); b.disabled=false; return; }
         listView();
       });
     }
