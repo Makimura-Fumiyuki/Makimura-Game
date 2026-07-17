@@ -527,8 +527,8 @@
     box.querySelectorAll("[data-adel]").forEach(bn=>bn.addEventListener("click",async()=>{
       if(DEMO){ toast("デモ表示中は削除できません"); return; }
       if(!confirm("この投稿を削除しますか？")) return;
-      const r=await sb.from("zukan_entry").delete().eq("id",bn.dataset.adel);
-      if(r.error){ toast("削除に失敗しました"); return; }
+      const r=await sb.from("zukan_entry").delete().eq("id",bn.dataset.adel).select();
+      if(r.error || !r.data || !r.data.length){ toast("削除できませんでした（権限SQLが未実行かも）"); return; }
       toast("削除しました"); await openDetail(cur.id);
     }));
     box.querySelectorAll("[data-ab]").forEach(bn=>bn.addEventListener("click",async()=>{
@@ -624,10 +624,10 @@
     if(!name){ toast("生き物の名前を入れてね"); return; }
     $("crPost").disabled=true; $("crPost").textContent="送信中…";
     const r = editing
-      ? await sb.from("zukan_creature").update({ name, note:(note||null) }).eq("id",crEditId)   // UPDATEなので図鑑(zukan_entry)は消えない
+      ? await sb.from("zukan_creature").update({ name, note:(note||null) }).eq("id",crEditId).select()   // UPDATEなので図鑑(zukan_entry)は消えない。.select()=実際に更新できた行を確認(権限なしだとエラーにならず0件で空振りするため)
       : await sb.from("zukan_creature").insert({ name, note:(note||null) });
     $("crPost").disabled=false; $("crPost").textContent=editing?"保存する":"出題する";
-    if(r.error){ toast(editing?"保存に失敗しました":"出題に失敗しました"); return; }
+    if(r.error || (editing && (!r.data || !r.data.length))){ toast(editing?"保存できませんでした（編集の権限SQLが未実行かも）":"出題に失敗しました"); return; }
     $("crOv").classList.remove("on"); toast(editing?"保存しました":"出題しました");
     if(editing){
       const c=creatures.find(x=>x.id===crEditId);
@@ -651,7 +651,7 @@
     const ids=curEntries.map(e=>e.id);   // いいね→図鑑→生き物の順で消す(外部キーの都合)
     if(ids.length){ const r1=await sb.from("zukan_like").delete().in("entry_id",ids); if(r1.error) err=r1.error; }
     if(!err){ const r2=await sb.from("zukan_entry").delete().eq("creature_id",cur.id); if(r2.error) err=r2.error; }
-    if(!err){ const r3=await sb.from("zukan_creature").delete().eq("id",cur.id); if(r3.error) err=r3.error; }
+    if(!err){ const r3=await sb.from("zukan_creature").delete().eq("id",cur.id).select(); if(r3.error) err=r3.error; else if(!r3.data||!r3.data.length) err={message:"no rows"}; }   // 権限なしの空振り(0件)も失敗扱い
     busy=false; $("crDelYes").disabled=false; $("crDelYes").textContent="削除する";
     $("crDelOv").classList.remove("on");
     if(err){ toast("削除に失敗しました"); return; }
