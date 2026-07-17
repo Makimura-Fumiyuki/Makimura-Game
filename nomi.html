@@ -280,7 +280,7 @@ const MYMODE="nomi:"+getUid();
    名前 または mode(="nomi:個人ID") で指定。※コード内の固定リスト=運営だけが編集でき、攻撃者が他人を勝手に消すことはできない。
    使い方: 悪い人の名前を NOMI_BAN_NAMES に足す(例 ["ずるっこ"])。名前が同じ別人も隠れるので、確実に狙うならその人のmodeをSQLで調べてNOMI_BAN_MODESへ */
 const NOMI_BAN_NAMES=[];
-const NOMI_BAN_MODES=["nomi:64e5dba132b43c2c"];   // あのふぃーの旧ID(日付変更で増えた分)=ランキング非表示&名前予約も解除。本人は新IDで遊び直せば普通に出るし「あのふぃー」の名前も使える
+const NOMI_BAN_MODES=[];   // 例: ["nomi:xxxx"]。※恒久除外は基本オンライン除外リスト(管理画面の「除外」)を使う。あのふぃー旧IDは2026-07-17に登録解除(記録自体を削除する方針になったため)
 // オンライン除外リスト(ban_listテーブル)。管理画面(?admin=1)の「除外」ボタンで追加/解除できる=コード編集なしで恒久的に隠せる
 let DYN_BAN_NAMES=[], DYN_BAN_MODES=[];
 let bansReady=null;
@@ -839,7 +839,6 @@ $("wMe").addEventListener("click",()=>{
   function loginView(){
     wrap.innerHTML='<div style="max-width:420px;margin:12vh auto;">'
       +'<div style="font-size:22px;font-weight:700;margin-bottom:4px;">管理ログイン</div>'
-      +'<div style="opacity:.65;font-size:13px;margin-bottom:14px;">牧村専用のログインです</div>'
       +'<input id="admPw" type="password" placeholder="パスワード" style="width:100%;padding:12px;border-radius:10px;border:none;font-size:16px;color:#111;box-sizing:border-box;">'
       +'<div style="display:flex;gap:10px;margin-top:14px;">'
       +'<button id="admGo" style="flex:1;padding:12px;border:none;border-radius:10px;font-weight:700;font-size:15px;background:#006987;color:#fff;cursor:pointer;">ログイン</button>'

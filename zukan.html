@@ -232,7 +232,6 @@
   <div class="ov" id="loginOv">
     <div class="ov-card">
       <h3>管理ログイン</h3>
-      <div class="yaku-body">牧村専用のログインです。</div>
       <input id="admPw" type="password" class="ov-in" placeholder="パスワード">
       <div class="ov-btns">
         <button class="btn p" id="admLogin">ログイン</button>
@@ -310,7 +309,7 @@
   let likeCount={}, myLiked=new Set(), likeBusy=false;
 
   /* ---- デバッグ表示: zukan.html?demo=1 で開くとダミーデータでデザイン確認できる(DBには触らない) ---- */
-  const DEMO=!/[?&]live=1/.test(location.search);   // ★開発中はダミー表示が既定。?live=1で本番DB接続。公開前にこの行を /[?&]demo=1/.test(location.search) に戻すこと
+  const DEMO=/[?&]demo=1/.test(location.search);   // 本番DBが既定(公開仕様)。?demo=1でダミー表示(動作確認用)
   const DEMO_NAMES=["チンピラニウム","アライダーグマ","ネコバンバン","モグライオン","パンダコウモリ","カメレオンガメ","ハシビロコウテイ","タコヤキイカ","ゴリラッコ","ペンギンモドキ"];
   const DEMO_BODIES=[
     "夜行性で、月のない夜にだけ川べりに集まって集会を開くと言われています。集会の内容は不明ですが、翌朝は決まって川の石がきれいに並んでいます。",
