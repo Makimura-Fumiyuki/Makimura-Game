@@ -804,21 +804,6 @@ $("wMe").addEventListener("click",()=>{
 
 window.addEventListener("pointerdown",ensureAudio,{passive:true});
 
-/* デバッグ: スマホで「3本指で画面を約10秒押さえる」とスコア+50000(このブラウザで1回だけ)。
-   普通の片手タップでは絶対に起きない隠しコマンド。本番アップロード前に削除すること */
-let dbgCutTmr=0;
-function dbgAdd50k(){
-  try{ if(localStorage.getItem("nomi.dbgcut")==="1") return; localStorage.setItem("nomi.dbgcut","1"); }catch(_){ return; }
-  count=(count|0)+50000;
-  try{ localStorage.setItem("nomi.count",String(count)); }catch(_){}
-  renderCount();
-  try{ countEl.classList.remove("pop"); void countEl.offsetWidth; countEl.classList.add("pop"); }catch(_){}   // 増えたのが分かるよう軽く演出
-  try{ scheduleSync(); }catch(_){}   // 復元した分をオンラインにも反映
-}
-window.addEventListener("touchstart",e=>{ if(e.touches && e.touches.length>=3){ clearTimeout(dbgCutTmr); dbgCutTmr=setTimeout(dbgAdd50k,10000); } },{passive:true});
-window.addEventListener("touchend",e=>{ if(!e.touches || e.touches.length<3){ clearTimeout(dbgCutTmr); dbgCutTmr=0; } });
-window.addEventListener("touchcancel",()=>{ clearTimeout(dbgCutTmr); dbgCutTmr=0; });
-
 /* 入力欄は、内容があればタッチで全選択(全入力欄共通) */
 document.addEventListener("focusin",e=>{
   const t=e.target;
