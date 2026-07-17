@@ -1316,11 +1316,19 @@
   // ランキング除外リスト: 明らかな不正(偽スコア注入等)の名前を運営が指定してランキングから隠す。
   // ※コード内の固定リスト=運営だけが編集でき攻撃者は他人を消せない。名前指定なので同名の別人も隠れる点に注意。
   const DOX_BAN_NAMES=["御奈新ヶ万出機内"];   // 例: ["ずるっこ"]
+  // オンライン除外リスト(ban_listテーブル)。管理画面(?admin=1)の「除外」ボタンで追加/解除できる=コード編集なしで恒久的に隠せる
+  let DYN_BAN_NAMES=[];
+  let bansReady=null;
+  function loadBans(){   // 1セッション1回。失敗しても空のまま(コード内の固定リストは生きる)
+    if(!bansReady) bansReady=fetch(SB_URL+"/rest/v1/ban_list?game=eq.dox&kind=eq.name&select=value",{headers:SB_HEAD})
+      .then(r=>r.ok?r.json():[]).then(a=>{ DYN_BAN_NAMES=(a||[]).map(x=>x.value); }).catch(()=>{});
+    return bansReady;
+  }
   function collapseRows(rows){   // 名前ごとに最高得点の1行だけ残す。※墓標(score0で古い行を隠す)は廃止(2026-07-14)=他人が墓標を注入して人の記録を消す嫌がらせを防ぐため。0点行は単に無視
     const best=new Map();
     for(const r of (rows||[])){
       if(!(r.score>0)) continue;   // 0点(旧・墓標行を含む)は無視するだけ=誰も他人を隠せない
-      if(DOX_BAN_NAMES.indexOf(r.name)>=0) continue;   // 除外リストの人はランキング非表示
+      if(DOX_BAN_NAMES.indexOf(r.name)>=0 || DYN_BAN_NAMES.indexOf(r.name)>=0) continue;   // 除外リスト(コード内+オンライン)の人はランキング非表示
       const b=best.get(r.name);
       if(!b || r.score>b.score) best.set(r.name, r);
     }
@@ -1394,6 +1402,7 @@
     const myName=playerName(), myBest=loadBest(mode)[0];
     rankLoadFailed=false;
     try{
+      await loadBans();   // オンライン除外リストを反映してから集計
       const all = collapseRows(await sbTop(mode));   // one row per player (their best), highest first; tombstoned (deleted/renamed) players hidden
       if(myReq!==rankReqId) return;   // superseded by a newer request
       rankLoadFailed=false; const rows = all.slice(0, 300); setRankRows(rows, myName, animDir);
@@ -3180,6 +3189,15 @@
   if(menuHome) menuHome.addEventListener("click", menuToCenter);
   // middle mouse button (wheel click) bails out to the title
   document.addEventListener("mousedown",(e)=>{ if(e.button===1){ e.preventDefault(); ensureAudio(); if(scene==="over"){ if(!menuLock){ menuLock=true; playConfirm(); goHome(); } } else returnToTitle(); } });
+  // ランキング表示中はマウスホイールでページをめくれる(2026-07-17)。端では止まる(巡回しない)
+  let lastWheelFlip=0;
+  document.addEventListener("wheel",(e)=>{
+    if(!othersOpen || othersSel!==2 || nameModalOpen) return;
+    if(Math.abs(e.deltaY)<4) return;   // 触れただけの微小スクロールは無視
+    const now=performance.now(); if(now-lastWheelFlip<140) return;   // 慣性ホイールの連打を抑制
+    lastWheelFlip=now; ensureAudio();
+    flipPage(e.deltaY>0?1:-1, true);
+  },{passive:true});
 
   // ===== mouse / tap support for the その他 overlay (keyboard-only before; this is why delete couldn't be done by tap) =====
   (function(){
@@ -3301,6 +3319,117 @@
 
   // unlock audio (and start the title BGM) on the very first interaction, wherever it happens
   ["pointerdown","keydown","touchstart"].forEach(ev=> window.addEventListener(ev, ensureAudio, {passive:true}));
+
+
+  /* ---------- 管理モード(牧村専用・?admin=1)。ゲームUIとは独立の簡易オーバーレイ ---------- */
+  (function(){
+    if(!/[?&]admin=1/.test(location.search)) return;
+    const ADMIN_EMAIL="zentyu721wood@gmail.com";
+    const MODE_LB={ score:"スコア", speed:"スピード", endless:"エンドレス" };
+    let admToken=null, admMode="score";
+    const wrap=document.createElement("div");
+    wrap.style.cssText="position:fixed;inset:0;z-index:9999;background:rgba(10,12,14,.94);color:#fff;font-family:'Noto Sans JP',sans-serif;overflow:auto;padding:24px;";
+    document.body.appendChild(wrap);
+    const escA=t=>String(t).replace(/[&<>\"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    function admCollapse(rows){   // 管理用: 除外リストの人も0点行しか無い人も全部見える(消すため)
+      const best=new Map();
+      for(const r of (rows||[])){
+        const b=best.get(r.name);
+        if(!b || (+r.score||0)>(+b.score||0)) best.set(r.name,{name:r.name,score:(+r.score||0)});
+      }
+      return [...best.values()].sort((a,b)=>b.score-a.score);
+    }
+    function loginView(){
+      wrap.innerHTML='<div style="max-width:420px;margin:12vh auto;">'
+        +'<div style="font-size:22px;font-weight:900;margin-bottom:4px;">管理ログイン</div>'
+        +'<div style="opacity:.65;font-size:13px;margin-bottom:14px;">牧村専用のログインです</div>'
+        +'<input id="admPw" type="password" placeholder="パスワード" style="width:100%;padding:12px;border-radius:10px;border:none;font-size:16px;color:#111;box-sizing:border-box;">'
+        +'<div style="display:flex;gap:10px;margin-top:14px;">'
+        +'<button id="admGo" style="flex:1;padding:12px;border:none;border-radius:10px;font-weight:900;font-size:15px;background:#006987;color:#fff;cursor:pointer;">ログイン</button>'
+        +'<button id="admQuit" style="padding:12px 18px;border:none;border-radius:10px;font-weight:900;font-size:15px;cursor:pointer;">やめる</button></div>'
+        +'<div id="admMsg" style="margin-top:10px;color:#ff8f8f;font-size:13px;"></div></div>';
+      document.getElementById("admQuit").onclick=()=>{ location.href="dox.html"; };
+      document.getElementById("admGo").onclick=async()=>{
+        const pw=document.getElementById("admPw").value||"";
+        if(!pw){ document.getElementById("admMsg").textContent="パスワードを入れてください"; return; }
+        const g=document.getElementById("admGo"); g.disabled=true; g.textContent="ログイン中…";
+        try{
+          const r=await fetch(SB_URL+"/auth/v1/token?grant_type=password",{ method:"POST",
+            headers:{ apikey:SB_KEY, "Content-Type":"application/json" },
+            body:JSON.stringify({ email:ADMIN_EMAIL, password:pw }) });
+          const d=await r.json();
+          if(!r.ok || !d.access_token) throw 0;
+          admToken=d.access_token; listView();
+        }catch(e){ g.disabled=false; g.textContent="ログイン"; document.getElementById("admMsg").textContent="ログインに失敗しました"; }
+      };
+    }
+    async function listView(){
+      wrap.innerHTML='<div style="max-width:680px;margin:24px auto;">'
+        +'<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">'
+        +'<div style="font-size:22px;font-weight:900;">ランキング管理</div>'
+        +'<button id="admClose" style="margin-left:auto;padding:8px 16px;border:none;border-radius:8px;font-weight:900;cursor:pointer;">閉じてゲームへ</button></div>'
+        +'<div style="opacity:.6;font-size:12.5px;margin-top:4px;line-height:1.7;">削除=その人のその部門のオンライン記録を全て消す（本人の端末に記録が残っていると再送で戻ることがあります）。戻したくない人は「除外」=再送されてもランキングに出ません（全部門）</div>'
+        +'<div id="admTabs" style="display:flex;gap:8px;margin:16px 0;"></div>'
+        +'<div id="admList" style="font-size:14.5px;">読み込み中…</div></div>';
+      document.getElementById("admClose").onclick=()=>{ location.href="dox.html"; };
+      const tabs=document.getElementById("admTabs");
+      Object.keys(MODE_LB).forEach(m=>{
+        const b=document.createElement("button");
+        b.textContent=MODE_LB[m];
+        b.style.cssText="padding:8px 20px;border:none;border-radius:999px;font-weight:900;font-size:14px;cursor:pointer;"+(m===admMode?"background:#ff3616;color:#fff;":"background:#333;color:#ccc;");
+        b.onclick=()=>{ admMode=m; listView(); };
+        tabs.appendChild(b);
+      });
+      let rows, dyn=[];
+      try{ rows=admCollapse(await sbTop(admMode)); }catch(e){ document.getElementById("admList").textContent="読み込みに失敗しました"; return; }
+      try{ const br=await fetch(SB_URL+"/rest/v1/ban_list?game=eq.dox&kind=eq.name&select=value",{headers:{apikey:SB_KEY}}); if(br.ok) dyn=(await br.json()).map(x=>x.value); }catch(e){}
+      const box=document.getElementById("admList");
+      if(!rows.length){ box.textContent="記録なし"; return; }
+      const bcss="padding:6px 12px;border:none;border-radius:8px;font-weight:900;cursor:pointer;";
+      box.innerHTML=rows.map((r,i)=>{
+        const hard=DOX_BAN_NAMES.indexOf(r.name)>=0, dynB=dyn.indexOf(r.name)>=0;
+        return '<div style="display:flex;align-items:center;gap:10px;padding:9px 6px;border-bottom:1px solid rgba(255,255,255,.12);">'
+        +'<span style="width:48px;opacity:.55;">'+(i+1)+'位</span>'
+        +'<span style="flex:1;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escA(r.name)
+        +(hard?' <span style="font-size:11px;color:#ffb35c;font-weight:900;">(コード内除外)</span>':'')
+        +(dynB?' <span style="font-size:11px;color:#ffb35c;font-weight:900;">(除外中)</span>':'')+'</span>'
+        +'<span style="opacity:.85;">'+r.score+'</span>'
+        +(hard?'':(dynB
+          ?'<button data-unban="'+escA(r.name)+'" style="'+bcss+'background:#555;color:#fff;">除外解除</button>'
+          :'<button data-ban="'+escA(r.name)+'" style="'+bcss+'background:#b8860b;color:#fff;">除外</button>'))
+        +'<button data-nm="'+escA(r.name)+'" style="'+bcss+'background:#a5302a;color:#fff;">削除</button></div>';
+      }).join("");
+      box.querySelectorAll("[data-nm]").forEach(b=>b.onclick=async()=>{
+        const nm=b.getAttribute("data-nm");
+        if(!confirm("「"+nm+"」の"+MODE_LB[admMode]+"の記録を全て消しますか？")) return;
+        b.disabled=true; b.textContent="削除中…";
+        const r=await fetch(SB_URL+"/rest/v1/scores?mode=eq."+admMode+"&name=eq."+encodeURIComponent(nm),
+          { method:"DELETE", headers:{ apikey:SB_KEY, Authorization:"Bearer "+admToken } });
+        if(!r.ok){ alert("削除に失敗しました"); b.disabled=false; b.textContent="削除"; return; }
+        listView();
+      });
+      box.querySelectorAll("[data-ban]").forEach(b=>b.onclick=async()=>{
+        const nm=b.getAttribute("data-ban");
+        if(!confirm("「"+nm+"」を除外リストに入れますか？\n（全部門のランキングに出なくなります。記録を送り直しても出ません）")) return;
+        b.disabled=true;
+        const r=await fetch(SB_URL+"/rest/v1/ban_list",{ method:"POST",
+          headers:{ apikey:SB_KEY, Authorization:"Bearer "+admToken, "Content-Type":"application/json", "Prefer":"return=minimal" },
+          body:JSON.stringify({ game:"dox", kind:"name", value:nm }) });
+        if(!r.ok){ alert("除外に失敗しました"); b.disabled=false; return; }
+        listView();
+      });
+      box.querySelectorAll("[data-unban]").forEach(b=>b.onclick=async()=>{
+        const nm=b.getAttribute("data-unban");
+        if(!confirm("「"+nm+"」の除外を解除しますか？")) return;
+        b.disabled=true;
+        const r=await fetch(SB_URL+"/rest/v1/ban_list?game=eq.dox&kind=eq.name&value=eq."+encodeURIComponent(nm),
+          { method:"DELETE", headers:{ apikey:SB_KEY, Authorization:"Bearer "+admToken } });
+        if(!r.ok){ alert("解除に失敗しました"); b.disabled=false; return; }
+        listView();
+      });
+    }
+    loginView();
+  })();
 
   applyLang(LANG_CODES[langSel]);   // apply the saved language before the title appears
   showTitle();   // start on the title screen

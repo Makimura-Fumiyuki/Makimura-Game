@@ -276,6 +276,44 @@
     </div>
     <div id="sections"></div>
 
+    <template id="tpl-zukan">
+      <a class="card" href="./zukan.html">
+        <div class="c-bar"></div>
+        <div class="c-thumb t-zukan" style="background:linear-gradient(160deg,#3a9a63,#2f7d4f 60%,#1f5c39);">
+          <!-- みんなで生き物図鑑: 開いた本を虫眼鏡でのぞく(本編ロゴ)+謎の生き物の「？」 -->
+          <svg viewBox="0 0 260 132" xmlns="http://www.w3.org/2000/svg">
+            <g transform="translate(76,23) scale(1.9)">
+              <path d="M28 10 C23.5 6 15 5 6 6.6 V36 c9-1.6 17.5-.6 22 3.4 Z" fill="#fdf6e9" stroke="#1f5c39" stroke-width="2.2" stroke-linejoin="round"/>
+              <path d="M28 10 C32.5 6 41 5 50 6.6 V36 c-9-1.6-17.5-.6-22 3.4 Z" fill="#f3ead6" stroke="#1f5c39" stroke-width="2.2" stroke-linejoin="round"/>
+              <path d="M11 13.5 c4.5-.7 8.5-.3 12 1.2 M11 19.5 c4.5-.7 8.5-.3 12 1.2 M11 25.5 c4.5-.7 8.5-.3 12 1.2" fill="none" stroke="rgba(31,92,57,.35)" stroke-width="1.6" stroke-linecap="round"/>
+              <circle cx="37" cy="20" r="9.5" fill="rgba(255,224,138,.3)" stroke="#fdf6e9" stroke-width="7"/>
+              <path d="M44 27.5 L50.5 34.5" stroke="#fdf6e9" stroke-width="8" stroke-linecap="round"/>
+              <circle cx="37" cy="20" r="9.5" fill="none" stroke="#b98a1e" stroke-width="3.4"/>
+              <path d="M44 27.5 L50.5 34.5" stroke="#b98a1e" stroke-width="4.6" stroke-linecap="round"/>
+            </g>
+            <g fill="rgba(255,255,255,.75)" font-weight="900" text-anchor="middle">
+              <text x="44" y="44" font-size="26" transform="rotate(-10 44 44)">？</text>
+              <text x="214" y="40" font-size="20" transform="rotate(12 214 40)">？</text>
+              <text x="56" y="112" font-size="17" transform="rotate(8 56 112)">？</text>
+              <text x="208" y="106" font-size="22" transform="rotate(-8 208 106)">？</text>
+            </g>
+          </svg>
+        </div>
+        <div class="c-body">
+          <div class="c-name">みんなで生き物図鑑
+            <span class="c-players"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6.5" cy="9" r="2.6"/><path d="M6.5 12.6c-2.6 0-4.5 1.5-4.5 3.6V18h9v-1.8c0-2.1-1.9-3.6-4.5-3.6z"/><circle cx="17.5" cy="9" r="2.6"/><path d="M17.5 12.6c-2.6 0-4.5 1.5-4.5 3.6V18h9v-1.8c0-2.1-1.9-3.6-4.5-3.6z"/><circle cx="12" cy="6.5" r="3"/><path d="M12 10.6c-3 0-5.2 1.8-5.2 4.2V17.4h10.4v-2.6c0-2.4-2.2-4.2-5.2-4.2z"/></svg>みんなで</span>
+          </div>
+          <div class="c-desc">
+            牧村が毎日へんてこな生き物の名前を出題。その生態を、みんなで自由に想像して図鑑に書き込もう。世界にひとつの、みんなで作る生き物図鑑 ※おそらく毎日投稿のはず...
+          </div>
+          <div class="c-tags">
+            <span class="tag">掲示板</span><span class="tag">想像力</span>
+          </div>
+          <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
+        </div>
+      </a>
+    </template>
+
     <template id="tpl-nomi">
       <a class="card" href="./nomi.html">
         <div class="c-bar"></div>
@@ -352,7 +390,7 @@
             画面に映るのはノミのみ。そのノミたちをひたすらつぶすだけ。目的なし、終わりなし。あなたと世界のつぶした数が、ただ積み重なっていく
           </div>
           <div class="c-tags">
-            <span class="tag">ひまつぶし</span><span class="tag">世界ランキング</span>
+            <span class="tag">ひまつぶし</span><span class="tag">放置</span><span class="tag">世界ランキング</span>
           </div>
           <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
         </div>
@@ -398,7 +436,7 @@
             いちばん近い数字にドッキング！十字に並んだ数字を瞬時に見比べて、中央のboxを正しい方向へ
           </div>
           <div class="c-tags">
-            <span class="tag">知育</span><span class="tag">世界ランキング</span>
+            <span class="tag">反射神経</span><span class="tag">知育</span><span class="tag">世界ランキング</span>
           </div>
           <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
         </div>
@@ -465,10 +503,7 @@
             Q.普通の五目並べ？ A.いいえ、置いた碁石が煙になって別の場所へワープするかも。
           </div>
           <div class="c-tags">
-            <!-- wrap-reverse: DOM順の逆から積む(下段=先頭の2つ / 上段=運まかせ) -->
-            <span class="tag">ローカル対戦</span><span class="tag">オンライン対戦</span>
-            <span class="t-brk"></span>
-            <span class="tag">運まかせ</span>
+            <span class="tag">運まかせ</span><span class="tag">五目並べ</span>
           </div>
           <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
         </div>
@@ -532,10 +567,7 @@
             Q.普通の囲碁？ A.いいえ、置いた碁石が迷子になって盤のどこかへ動くかも。※先に碁石を取ったら勝ちの簡易ルールを採用しています
           </div>
           <div class="c-tags">
-            <!-- wrap-reverse: DOM順の逆から積む(下段=先頭の2つ / 上段=運まかせ) -->
-            <span class="tag">ローカル対戦</span><span class="tag">オンライン対戦</span>
-            <span class="t-brk"></span>
-            <span class="tag">運まかせ</span>
+            <span class="tag">運まかせ</span><span class="tag">囲碁</span>
           </div>
           <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
         </div>
@@ -595,10 +627,7 @@
             Q.普通のリバーシ？ A.いいえ、勝負前にこっそり「バミリ」を貼りましょう。そのマスの駒は二度とひっくり返りません ※バミリとは：舞台で立ち位置を示す目印テープのこと
           </div>
           <div class="c-tags">
-            <!-- wrap-reverse: DOM順の逆から積む(下段=先頭の2つ / 上段=心理戦) -->
-            <span class="tag">ローカル対戦</span><span class="tag">オンライン対戦</span>
-            <span class="t-brk"></span>
-            <span class="tag">心理戦</span>
+            <span class="tag">心理戦</span><span class="tag">リバーシ</span>
           </div>
           <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
         </div>
@@ -687,10 +716,7 @@
             『ま囲碁』と『五もくもく並べ』が夢のコラボレーション！並べて勝ってもよし、囲んで勝ってもよし
           </div>
           <div class="c-tags">
-            <!-- wrap-reverse: DOM順の逆から積む(下段=先頭の2つ / 上段=運まかせ) -->
-            <span class="tag">ローカル対戦</span><span class="tag">オンライン対戦</span>
-            <span class="t-brk"></span>
-            <span class="tag">運まかせ</span>
+            <span class="tag">運まかせ</span><span class="tag">囲碁</span><span class="tag">五目並べ</span>
           </div>
           <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
         </div>
@@ -751,10 +777,7 @@
             「コースを走るのは馬じゃない。俺たちだ」お題に数字で答え、誰が一番大きい数字を回答したか予想して、チップを賭けよう
           </div>
           <div class="c-tags">
-            <!-- wrap-reverse: DOM順の逆から積む(下段=先頭の2つ / 上段=大人数) -->
-            <span class="tag">ローカル対戦</span><span class="tag">オンライン対戦</span>
-            <span class="t-brk"></span>
-            <span class="tag">大人数</span>
+            <span class="tag">ギャンブル</span><span class="tag">仲良くなれる</span>
           </div>
           <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
         </div>
@@ -813,9 +836,7 @@
             何を描いている分かったら「待て！」誰よりも早く答えよう。——そして、次のお題の絵は“続き”から描きます。つまり「上書きお絵描きゲーム」です
           </div>
           <div class="c-tags">
-            <span class="tag">ローカル対戦</span><span class="tag">オンライン対戦</span>
-            <span class="t-brk"></span>
-            <span class="tag">大人数</span>
+            <span class="tag">おえかき</span><span class="tag">早押し</span>
           </div>
           <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
         </div>
@@ -866,6 +887,7 @@
 (function(){
   /* ゲームのデータ: release=リリース日 / cats=カテゴリ / clicks=あそばれた回数(サーバー集計) */
   const GAMES=[
+    { id:"zukan", tpl:"tpl-zukan", release:"2026-07-17", cats:["交流"], clicks:null, likes:null, soon:true },   // 交流作品。リリース時にsoon:trueを外す
     { id:"nomi", tpl:"tpl-nomi", release:"2026-07-12", cats:["スコアアタック"], clicks:null, likes:null },
     { id:"mate", tpl:"tpl-mate", release:"2026-07-11", cats:["パーティ"], clicks:null, likes:null },
     { id:"derby", tpl:"tpl-derby", release:"2026-07-10", cats:["パーティ"], clicks:null, likes:null, soon:true },   // リリース時にsoon:trueを外す
@@ -881,6 +903,7 @@
     { label:"パーティ", filter:g=>g.cats.includes("パーティ") },
     { label:"対戦", filter:g=>g.cats.includes("対戦") },
     { label:"スコアアタック", filter:g=>g.cats.includes("スコアアタック") },
+    { label:"交流", filter:g=>g.cats.includes("交流") },
   ];
   /* ---- 集計: あそばれた回数(hub_<id>)と いいね(hub_like_<id>)をSupabaseに記録・集計 ---- */
   const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co";

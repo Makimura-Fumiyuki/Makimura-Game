@@ -281,7 +281,15 @@ const MYMODE="nomi:"+getUid();
    使い方: 悪い人の名前を NOMI_BAN_NAMES に足す(例 ["ずるっこ"])。名前が同じ別人も隠れるので、確実に狙うならその人のmodeをSQLで調べてNOMI_BAN_MODESへ */
 const NOMI_BAN_NAMES=[];
 const NOMI_BAN_MODES=["nomi:64e5dba132b43c2c"];   // あのふぃーの旧ID(日付変更で増えた分)=ランキング非表示&名前予約も解除。本人は新IDで遊び直せば普通に出るし「あのふぃー」の名前も使える
-function nomiBanned(name, mode){ return (name!=null && NOMI_BAN_NAMES.indexOf(name)>=0) || NOMI_BAN_MODES.indexOf(mode)>=0; }
+// オンライン除外リスト(ban_listテーブル)。管理画面(?admin=1)の「除外」ボタンで追加/解除できる=コード編集なしで恒久的に隠せる
+let DYN_BAN_NAMES=[], DYN_BAN_MODES=[];
+let bansReady=null;
+function loadBans(){   // 1セッション1回。失敗しても空のまま(コード内の固定リストは生きる)
+  if(!bansReady) bansReady=fetch(SB_URL+"/rest/v1/ban_list?game=eq.nomi&select=kind,value",{headers:SB_HEAD})
+    .then(r=>r.ok?r.json():[]).then(a=>{ (a||[]).forEach(x=>{ (x.kind==="name"?DYN_BAN_NAMES:DYN_BAN_MODES).push(x.value); }); }).catch(()=>{});
+  return bansReady;
+}
+function nomiBanned(name, mode){ return (name!=null && (NOMI_BAN_NAMES.indexOf(name)>=0 || DYN_BAN_NAMES.indexOf(name)>=0)) || NOMI_BAN_MODES.indexOf(mode)>=0 || DYN_BAN_MODES.indexOf(mode)>=0; }
 function playerName(){ try{ return (localStorage.getItem("nomi.name")||"").trim(); }catch(e){ return ""; } }
 function setPlayerName(n){ const v=[...(n||"")].slice(0,10).join("").trim(); try{ localStorage.setItem("nomi.name",v); }catch(e){} addNameHistory(v); }
 function nameHistory(){ try{ return JSON.parse(localStorage.getItem("nomi.names")||"[]"); }catch(e){ return []; } }
@@ -292,10 +300,11 @@ function myNames(){   // 自分がこのゲームで過去に使った名前=同
 }
 async function sbNameTaken(name){   // ノミのみの記録内で、他の誰かが使っている名前か(doxの名前とは別=doxで使われていてもここでは使える。通信エラー時は塞がない)
   try{
+    await loadBans();
     const r=await fetch(SB_URL+"/rest/v1/scores?name=eq."+encodeURIComponent(name)+"&mode=like.nomi:*&select=mode&limit=10",{headers:SB_HEAD});
     if(!r.ok) return false;
     const a=await r.json();
-    return Array.isArray(a)&&a.some(x=>x.mode!==MYMODE && NOMI_BAN_MODES.indexOf(x.mode)<0);   // 除外リスト(旧ID等)は名前を予約しない=その名前を使えるようにする
+    return Array.isArray(a)&&a.some(x=>x.mode!==MYMODE && NOMI_BAN_MODES.indexOf(x.mode)<0 && DYN_BAN_MODES.indexOf(x.mode)<0);   // 除外リスト(旧ID等)は名前を予約しない=その名前を使えるようにする
   }catch(e){ return false; }
 }
 let lastSync=0, lastSentScore=0, flushTimer=null;
@@ -725,6 +734,7 @@ if(!playerName()) openNameModal(true);   // 初回起動時のみ名前入力を
 const worldOverlay=$("worldOverlay"), wTotal=$("wTotal"), wList=$("wList");
 async function refreshRank(){   // 起動時などに順位だけ軽く取得してrankPctを更新(虹ノミの出やすさに使う)
   try{
+    await loadBans();
     const r=await fetch(SB_URL+"/rest/v1/scores?mode=like.nomi:*&order=score.desc,created_at.asc&limit=1000&select=score,mode",{headers:SB_HEAD});
     noteServerTime(r); creditBacklog(true);   // サーバー時刻が取れたら留守分を反映(ok/失敗どちらでも応答Dateは取れる)
     if(!r.ok) return;
@@ -739,6 +749,7 @@ async function refreshRank(){   // 起動時などに順位だけ軽く取得し
 }
 async function loadWorld(){
   wTotal.textContent="-";
+  try{ await loadBans(); }catch(e){}
   wList.innerHTML='<div class="w-state">読み込み中…</div>';
   let raw=[];
   try{
@@ -801,6 +812,107 @@ $("wMe").addEventListener("click",()=>{
   playSelect();
   wList.scrollTop = r.offsetTop - wList.clientHeight/2 + r.offsetHeight/2;   // 自分の行をリスト中央へ
 });
+
+
+/* ---------- 管理モード(牧村専用・?admin=1)。ゲームUIとは独立の簡易オーバーレイ(dox.htmlと同方式) ---------- */
+(function(){
+  if(!/[?&]admin=1/.test(location.search)) return;
+  const ADMIN_EMAIL="zentyu721wood@gmail.com";
+  let admToken=null;
+  const wrap=document.createElement("div");
+  wrap.style.cssText="position:fixed;inset:0;z-index:9999;background:rgba(10,12,14,.94);color:#fff;font-family:inherit;overflow:auto;padding:24px;";
+  document.body.appendChild(wrap);
+  function loginView(){
+    wrap.innerHTML='<div style="max-width:420px;margin:12vh auto;">'
+      +'<div style="font-size:22px;font-weight:700;margin-bottom:4px;">管理ログイン</div>'
+      +'<div style="opacity:.65;font-size:13px;margin-bottom:14px;">牧村専用のログインです</div>'
+      +'<input id="admPw" type="password" placeholder="パスワード" style="width:100%;padding:12px;border-radius:10px;border:none;font-size:16px;color:#111;box-sizing:border-box;">'
+      +'<div style="display:flex;gap:10px;margin-top:14px;">'
+      +'<button id="admGo" style="flex:1;padding:12px;border:none;border-radius:10px;font-weight:700;font-size:15px;background:#006987;color:#fff;cursor:pointer;">ログイン</button>'
+      +'<button id="admQuit" style="padding:12px 18px;border:none;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer;">やめる</button></div>'
+      +'<div id="admMsg" style="margin-top:10px;color:#ff8f8f;font-size:13px;"></div></div>';
+    document.getElementById("admQuit").onclick=()=>{ location.href="nomi.html"; };
+    document.getElementById("admGo").onclick=async()=>{
+      const pw=document.getElementById("admPw").value||"";
+      if(!pw){ document.getElementById("admMsg").textContent="パスワードを入れてください"; return; }
+      const g=document.getElementById("admGo"); g.disabled=true; g.textContent="ログイン中…";
+      try{
+        const r=await fetch(SB_URL+"/auth/v1/token?grant_type=password",{ method:"POST",
+          headers:{ apikey:SB_KEY, "Content-Type":"application/json" },
+          body:JSON.stringify({ email:ADMIN_EMAIL, password:pw }) });
+        const d=await r.json();
+        if(!r.ok || !d.access_token) throw 0;
+        admToken=d.access_token; listView();
+      }catch(e){ g.disabled=false; g.textContent="ログイン"; document.getElementById("admMsg").textContent="ログインに失敗しました"; }
+    };
+  }
+  async function listView(){
+    wrap.innerHTML='<div style="max-width:680px;margin:24px auto;">'
+      +'<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">'
+      +'<div style="font-size:22px;font-weight:700;">ランキング管理</div>'
+      +'<button id="admClose" style="margin-left:auto;padding:8px 16px;border:none;border-radius:8px;font-weight:700;cursor:pointer;">閉じてゲームへ</button></div>'
+      +'<div style="opacity:.6;font-size:12.5px;margin-top:4px;line-height:1.7;">削除=その人のオンライン記録を全て消す（本人の端末にローカル累計が残っていると再送で戻ることがあります）。戻したくない人は「除外」=再送されてもランキングに出ません</div>'
+      +'<div id="admList" style="font-size:14.5px;margin-top:16px;">読み込み中…</div></div>';
+    document.getElementById("admClose").onclick=()=>{ location.href="nomi.html"; };
+    let raw=[];
+    try{
+      for(let pg=0; pg<8; pg++){   // loadWorldと同じページング(新しい順→mode=個人IDごとの最初=最新=最大)
+        const r=await fetch(SB_URL+"/rest/v1/scores?mode=like.nomi:*&order=created_at.desc&limit=1000&offset="+(pg*1000)+"&select=name,score,mode",{headers:SB_HEAD});
+        if(!r.ok) throw 0;
+        const page=await r.json(); raw=raw.concat(page);
+        if(page.length<1000) break;
+      }
+    }catch(e){ document.getElementById("admList").textContent="読み込みに失敗しました"; return; }
+    let dyn=[];
+    try{ const br=await fetch(SB_URL+"/rest/v1/ban_list?game=eq.nomi&kind=eq.mode&select=value",{headers:{apikey:SB_KEY}}); if(br.ok) dyn=(await br.json()).map(x=>x.value); }catch(e){}
+    const seen=new Map();
+    raw.forEach(r=>{ if(!seen.has(r.mode)) seen.set(r.mode,{name:r.name, score:r.score|0, mode:r.mode}); });   // 管理用: 除外リストの人も表示(消すため)
+    const rows=[...seen.values()].sort((a,b)=>b.score-a.score);
+    const box=document.getElementById("admList");
+    if(!rows.length){ box.textContent="記録なし"; return; }
+    const bcss="padding:6px 12px;border:none;border-radius:8px;font-weight:700;cursor:pointer;";
+    box.innerHTML=rows.map((r,i)=>{
+      const hard=(NOMI_BAN_NAMES.indexOf(r.name)>=0 || NOMI_BAN_MODES.indexOf(r.mode)>=0), dynB=dyn.indexOf(r.mode)>=0;
+      return '<div style="display:flex;align-items:center;gap:10px;padding:9px 6px;border-bottom:1px solid rgba(255,255,255,.12);">'
+      +'<span style="width:48px;opacity:.55;">'+(i+1)+'位</span>'
+      +'<span style="flex:1;min-width:0;"><span style="font-weight:700;">'+escHtml(r.name)+'</span>'
+      +(hard?' <span style="font-size:11px;color:#ffb35c;font-weight:700;">(コード内除外)</span>':'')
+      +(dynB?' <span style="font-size:11px;color:#ffb35c;font-weight:700;">(除外中)</span>':'')
+      +'<br><span style="font-size:11px;opacity:.4;">'+escHtml(r.mode)+'</span></span>'
+      +'<span style="opacity:.85;">'+r.score.toLocaleString("ja-JP")+'</span>'
+      +(hard?'':(dynB
+        ?'<button data-unban="'+escHtml(r.mode)+'" data-nm="'+escHtml(r.name)+'" style="'+bcss+'background:#555;color:#fff;">除外解除</button>'
+        :'<button data-ban="'+escHtml(r.mode)+'" data-nm="'+escHtml(r.name)+'" style="'+bcss+'background:#b8860b;color:#fff;">除外</button>'))
+      +'<button data-md="'+escHtml(r.mode)+'" data-nm="'+escHtml(r.name)+'" style="'+bcss+'background:#a5302a;color:#fff;">削除</button></div>';
+    }).join("");
+    box.querySelectorAll("[data-md]").forEach(b=>b.onclick=async()=>{
+      if(!confirm("「"+b.getAttribute("data-nm")+"」の記録を全て消しますか？")) return;
+      b.disabled=true; b.textContent="削除中…";
+      const r=await fetch(SB_URL+"/rest/v1/scores?mode=eq."+encodeURIComponent(b.getAttribute("data-md")),
+        { method:"DELETE", headers:{ apikey:SB_KEY, Authorization:"Bearer "+admToken } });
+      if(!r.ok){ alert("削除に失敗しました"); b.disabled=false; b.textContent="削除"; return; }
+      listView();
+    });
+    box.querySelectorAll("[data-ban]").forEach(b=>b.onclick=async()=>{
+      if(!confirm("「"+b.getAttribute("data-nm")+"」を除外リストに入れますか？\n（ランキングに出なくなります。記録を送り直しても出ません。この人のID指定なので同名の別人には影響しません）")) return;
+      b.disabled=true;
+      const r=await fetch(SB_URL+"/rest/v1/ban_list",{ method:"POST",
+        headers:{ apikey:SB_KEY, Authorization:"Bearer "+admToken, "Content-Type":"application/json", "Prefer":"return=minimal" },
+        body:JSON.stringify({ game:"nomi", kind:"mode", value:b.getAttribute("data-ban") }) });
+      if(!r.ok){ alert("除外に失敗しました"); b.disabled=false; return; }
+      listView();
+    });
+    box.querySelectorAll("[data-unban]").forEach(b=>b.onclick=async()=>{
+      if(!confirm("「"+b.getAttribute("data-nm")+"」の除外を解除しますか？")) return;
+      b.disabled=true;
+      const r=await fetch(SB_URL+"/rest/v1/ban_list?game=eq.nomi&kind=eq.mode&value=eq."+encodeURIComponent(b.getAttribute("data-unban")),
+        { method:"DELETE", headers:{ apikey:SB_KEY, Authorization:"Bearer "+admToken } });
+      if(!r.ok){ alert("解除に失敗しました"); b.disabled=false; return; }
+      listView();
+    });
+  }
+  loginView();
+})();
 
 window.addEventListener("pointerdown",ensureAudio,{passive:true});
 

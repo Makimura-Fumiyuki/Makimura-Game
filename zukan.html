@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>みんなで生き物図鑑</title>
+<meta name="apple-mobile-web-app-title" content="生き物図鑑">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2f7d4f">
+<meta name="description" content="牧村が毎日へんてこな生き物の名前を出題。その生態を、みんなで自由に想像して図鑑に書き込もう。世界にひとつの、みんなで作る生き物図鑑">
+<meta property="og:title" content="みんなで生き物図鑑">
+<meta property="og:description" content="牧村が毎日へんてこな生き物の名前を出題。その生態を、みんなで自由に想像して図鑑に書き込もう。世界にひとつの、みんなで作る生き物図鑑">
+<!-- Google AdSense -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8539036056022595" crossorigin="anonymous"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+  *{ box-sizing:border-box; font-family:"Noto Sans JP",sans-serif; -webkit-tap-highlight-color:transparent; }
+  :root{
+    --grn:#2f7d4f; --grn-d:#1f5c39; --grn-l:#e7f3ea; --brown:#8a5a2b; --brown-d:#5f3d17;
+    --cream:#f6efe0; --paper:#fffdf7; --ink:#33291f; --gold:#d8a53a; --red:#d7473f;
+  }
+  html,body{ margin:0; min-height:100%; }
+  body{ background:var(--cream); color:var(--ink); line-height:1.7; }
+  .wrap{ max-width:680px; margin:0 auto; padding:26px 14px 90px; }
+
+  header.site{ background:linear-gradient(160deg,#3a9a63,var(--grn) 60%,var(--grn-d)); color:#fff; padding:26px 16px 28px;
+    position:relative; display:flex; align-items:center; justify-content:center; }   /* 縦幅1.3倍+ロゴ一式を上下左右中央に */
+  header .in{ width:100%; max-width:680px; margin:0 auto; position:relative; z-index:1; text-align:center; }
+  header h1.logo{ margin:0 0 8px; display:flex; align-items:center; justify-content:center; gap:11px; }
+  .logo-mark{ flex:none; width:92px; height:78px; display:flex; align-items:center; justify-content:center; }
+  .logo-mark svg{ width:92px; height:78px; filter:drop-shadow(0 2px 4px rgba(0,0,0,.22)); transform:translateY(2px); }
+  .logo-txt{ display:flex; flex-direction:column; align-items:flex-start; text-align:left; line-height:1; }
+  .logo-txt .k{ font-size:12px; font-weight:900; letter-spacing:.22em; color:rgba(255,255,255,.82); margin-bottom:4px; margin-left:2px; }
+  .logo-txt .m{ font-size:clamp(27px,7.4vw,36px); font-weight:900; letter-spacing:.02em; color:#fff; text-shadow:0 2px 4px rgba(20,60,38,.3); }
+  .logo-txt .m b{ color:#ffe08a; }
+  header p{ margin:0; font-size:13px; font-weight:500; opacity:.92; }
+  header .yaku{ position:fixed; top:10px; right:10px; z-index:50; background:rgba(31,92,57,.55); border:none; color:#fff;
+    font-size:12px; font-weight:800; padding:7px 14px; border-radius:999px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,.18); }
+  .name-pill{ position:fixed; top:10px; left:10px; z-index:50; display:flex; align-items:center; gap:6px; max-width:44vw;
+    background:rgba(31,92,57,.55); border:none; color:#fff; font-family:inherit; font-size:12px; font-weight:800;
+    padding:7px 12px; border-radius:999px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,.18); }
+  .name-pill svg{ width:13px; height:13px; flex:none; }
+  .name-pill .pn{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #nameInput, .ov-in{ width:100%; border:2px solid rgba(47,125,79,.3); border-radius:11px; padding:10px 12px; margin-top:12px;
+    font-family:inherit; font-size:15px; font-weight:700; color:var(--ink); background:#fff; outline:none; }
+  #nameInput:focus, .ov-in:focus{ border-color:var(--grn); }
+  .ov-note{ display:block; margin-top:9px; font-size:12px; font-weight:500; line-height:1.7; color:rgba(51,41,31,.45); }
+  .adm-del{ color:var(--red) !important; border-color:rgba(215,71,63,.5) !important; }
+
+  .section-label{ font-size:12px; font-weight:900; letter-spacing:.12em; color:var(--grn-d); margin:22px 4px 10px; display:flex; align-items:center; gap:8px; }
+  .section-label::before{ content:""; width:6px; height:16px; border-radius:3px; background:var(--gold); }
+
+  /* 今日の生き物 */
+  .hero{ position:relative; background:var(--paper); border:2px solid var(--grn); border-radius:18px; padding:20px 18px; box-shadow:0 8px 22px rgba(47,125,79,.14);
+    cursor:pointer; transition:transform .15s; }
+  .hero:active{ transform:scale(.99); }
+  .hero .cdate{ position:absolute; top:15px; right:18px; font-size:12px; font-weight:800; color:rgba(138,90,43,.55); }
+  .hero .nm{ font-size:clamp(26px,7vw,38px); font-weight:900; color:var(--grn-d); margin:0 0 2px; letter-spacing:.02em; }
+  .hero .note{ font-size:13px; font-weight:600; color:rgba(51,41,31,.7); }
+  .hero-foot{ display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-top:12px; }
+  .hero .cnt{ font-size:13px; font-weight:800; color:var(--brown); margin:-2px 0 2px 4px; white-space:nowrap; }   /* 左端を生き物名に合わせ、5px上へ */
+  .hero .note{ margin:8px 0 0 4px; }   /* ヒントも生き物名と左端を揃える(8px下げ) */
+  .write-btn{ flex:none; font-size:14px; font-weight:900; letter-spacing:.06em; color:#fff;
+    background:linear-gradient(150deg,#48b06e,var(--grn) 60%,var(--grn-d)); border-radius:999px; padding:9px 22px 10px;
+    box-shadow:0 3px 8px rgba(47,125,79,.35); white-space:nowrap; }
+
+  /* 過去の生き物リスト */
+  .clist{ display:flex; flex-direction:column; gap:9px; }
+  .crow{ background:var(--paper); border:1.5px solid rgba(138,90,43,.22); border-radius:13px; padding:12px 15px; cursor:pointer;
+    display:flex; align-items:center; gap:12px; transition:transform .12s, border-color .12s; }
+  .crow:active{ transform:scale(.99); }
+  .crow .cmain{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  .crow .cn{ font-size:17px; font-weight:900; color:var(--grn-d); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .crow .cday{ font-size:11px; font-weight:700; color:rgba(138,90,43,.6); }
+  .crow .cc{ font-size:12px; font-weight:800; color:var(--brown); flex:none; }
+  .crow .arw{ color:rgba(138,90,43,.5); flex:none; display:flex; align-items:center; }
+  .crow .arw svg{ width:11px; height:11px; }
+
+  .empty{ background:var(--paper); border:2px dashed rgba(138,90,43,.35); border-radius:16px; padding:28px 18px; text-align:center;
+    color:rgba(51,41,31,.6); font-weight:700; font-size:14px; }
+
+  /* 詳細 */
+  .back{ margin:2px 0 12px; background:#fff; border:2px solid rgba(47,125,79,.4); color:var(--grn-d); font-weight:900; font-size:14px;
+    cursor:pointer; padding:9px 18px; border-radius:999px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(47,125,79,.12); }
+  .back:active{ transform:translateY(1px); box-shadow:none; }
+  .detail-head{ background:var(--paper); border:2px solid var(--grn); border-radius:18px; padding:18px; margin-bottom:8px; }
+  .detail-head .nm{ font-size:clamp(24px,6.4vw,34px); font-weight:900; color:var(--grn-d); letter-spacing:.02em; }
+  .detail-head .note{ font-size:13px; font-weight:600; color:rgba(51,41,31,.7); margin-top:4px; }
+
+  /* 投稿フォーム */
+  .form-card{ background:var(--grn-l); border:1.5px solid rgba(47,125,79,.3); border-radius:16px; padding:15px; margin:14px 0; }
+  .form-card .ft{ font-size:14px; font-weight:900; color:var(--grn-d); margin-bottom:10px; }
+  .form-card input, .form-card textarea{ width:100%; border:2px solid rgba(47,125,79,.3); border-radius:11px; padding:10px 12px;
+    font-size:15px; font-weight:500; color:var(--ink); background:#fff; outline:none; resize:vertical; }
+  .form-card input:focus, .form-card textarea:focus{ border-color:var(--grn); }
+  .form-card textarea{ min-height:150px; margin-top:9px; line-height:1.7; }
+  .form-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; }
+  .pen-name{ font-size:13.5px; font-weight:800; color:rgba(51,41,31,.72); margin-bottom:2px; }
+  .pen-name b{ color:var(--grn-d); }
+  .pen-hint{ font-size:11.5px; font-weight:700; color:rgba(51,41,31,.5); margin-top:5px; line-height:1.6; }
+  .charc{ font-size:12px; font-weight:700; color:rgba(51,41,31,.5); }
+  .charc.over{ color:var(--red); }
+  .btn{ border:none; border-radius:12px; cursor:pointer; font-weight:900; font-size:15px; padding:11px 22px; white-space:nowrap; }
+  .btn.p{ color:#fff; background:linear-gradient(160deg,#48b06e,var(--grn) 60%,var(--grn-d)); box-shadow:0 4px 0 var(--grn-d); }
+  .btn.p:active{ transform:translateY(2px); box-shadow:0 2px 0 var(--grn-d); }
+  .btn.p:disabled{ filter:grayscale(.7); opacity:.55; }
+  .btn.ghost{ background:#fff; color:var(--grn-d); border:2px solid rgba(47,125,79,.4); box-shadow:none; }
+  .btn.mini{ font-size:12px; font-weight:800; padding:6px 13px; border-radius:9px; }
+
+  /* 図鑑エントリ */
+  .entries{ display:flex; flex-direction:column; gap:11px; margin-top:6px; }
+  .entry{ background:var(--paper); border:1.5px solid rgba(138,90,43,.2); border-left:5px solid var(--gold); border-radius:12px; padding:13px 15px; }
+  .entry.mine{ background:#fbfef9; }   /* 左線は他カードと同じ金色のまま */
+  .entry .eh{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  .entry .au{ font-weight:900; font-size:14px; color:var(--brown-d); }
+  .entry .me-tag{ font-size:10.5px; font-weight:900; color:#fff; background:var(--grn); border-radius:999px; padding:1px 8px 2px; }
+  .entry .dt{ font-size:11px; font-weight:600; color:rgba(51,41,31,.4); margin-left:auto; }
+  .entry .bd{ font-size:14.5px; font-weight:500; white-space:pre-wrap; word-break:break-word; color:var(--ink); }
+  .tabs{ display:flex; gap:8px; margin:0 0 10px; }
+  .tab{ border:1.5px solid rgba(47,125,79,.35); background:#fff; color:var(--grn-d); font-weight:800; font-size:12.5px;
+    min-width:96px; text-align:center; padding:6px 15px 7px; border-radius:999px; cursor:pointer; }
+  .tab.on{ background:var(--grn); color:#fff; border-color:var(--grn); }
+  .efoot{ display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-top:10px; }
+  .efoot .eact{ margin-right:auto; display:flex; gap:8px; }
+  .like-btn{ flex:none; display:inline-flex; align-items:center; gap:5px; cursor:pointer; font-family:inherit;
+    font-size:12px; font-weight:800; color:var(--red); background:#fff; border:1.5px solid var(--red); border-radius:999px; padding:5px 12px 6px;
+    transition:transform .14s cubic-bezier(.3,1.4,.5,1), background .15s, color .15s; }
+  .like-btn svg{ width:13px; height:13px; fill:currentColor; flex:none; }
+  .like-btn.liked{ color:#fff; background:linear-gradient(150deg,#ff6a4a,var(--red) 60%,#a5302a); border-color:transparent; }
+  .like-btn:active{ transform:scale(.92); }
+  @keyframes likePop{ 0%{ transform:scale(1); } 40%{ transform:scale(1.4); } 100%{ transform:scale(1); } }
+  .like-btn.pop svg{ animation:likePop .4s ease-out; }
+
+  /* オーバーレイ */
+  .ov{ position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center; padding:18px;
+    background:rgba(25,40,30,.55); opacity:0; pointer-events:none; transition:opacity .25s; }
+  .ov.on{ opacity:1; pointer-events:auto; }
+  .ov-card{ width:min(94vw,460px); max-height:86vh; overflow-y:auto; background:var(--paper); border-radius:18px; padding:20px;
+    box-shadow:0 16px 40px rgba(0,0,0,.3); transform:scale(.94); transition:transform .25s; }
+  .ov.on .ov-card{ transform:scale(1); }
+  .ov-card h3{ margin:0 0 12px; font-size:19px; font-weight:900; color:var(--grn-d); text-align:center; }
+  .yaku-lead{ background:linear-gradient(150deg,#3a9a63,var(--grn) 60%,var(--grn-d)); color:#fff; border-radius:14px;
+    padding:16px 14px; text-align:center; font-size:clamp(17px,4.8vw,21px); font-weight:900; line-height:1.5; letter-spacing:.02em;
+    box-shadow:0 5px 14px rgba(47,125,79,.25); margin-bottom:14px; }
+  .ov-card .yaku-body{ font-size:13px; font-weight:500; line-height:1.9; color:rgba(51,41,31,.85); }
+  .ov-card .yaku-body b{ color:var(--grn-d); }
+  .ov-card .yaku-body ul{ margin:8px 0; padding-left:1.1em; }
+  .ov-card .yaku-body li{ margin-bottom:7px; }
+  .ov-btns{ display:flex; flex-direction:column; gap:8px; margin-top:16px; }
+
+  .toast{ position:fixed; left:50%; bottom:24px; transform:translate(-50%,10px); z-index:90; background:rgba(30,22,14,.93); color:#fff;
+    font-weight:800; font-size:14px; padding:10px 18px; border-radius:999px; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; }
+  .toast.on{ opacity:1; transform:translate(-50%,0); }
+
+  .loading{ text-align:center; padding:40px 0; color:rgba(51,41,31,.5); font-weight:700; }
+  .home-foot{ position:fixed; left:0; right:0; bottom:0; z-index:40; display:block; text-align:center;
+    padding:34px 0 16px; font-size:13px; font-weight:800; letter-spacing:.2em; text-decoration:none;
+    color:rgba(255,255,255,.95); text-shadow:0 1px 2px rgba(20,60,38,.45);
+    background:linear-gradient(to top, rgba(31,92,57,.34), rgba(31,92,57,.16) 50%, rgba(31,92,57,0)); }   /* 他作品と同じフェード付き固定フッター(薄め) */
+  .home-foot:active{ opacity:.6; }
+</style>
+</head>
+<body>
+  <header class="site">
+    <div class="in">
+      <button class="yaku" id="yakuBtn">約束</button>
+      <button class="name-pill" id="namePill" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        <span class="pn" id="namePillTxt">ペンネーム</span>
+      </button>
+      <h1 class="logo">
+        <span class="logo-mark"><svg viewBox="0 0 56 48" aria-hidden="true">
+          <!-- 開いた本を虫眼鏡でのぞいている -->
+          <path d="M28 10 C23.5 6 15 5 6 6.6 V36 c9-1.6 17.5-.6 22 3.4 Z" fill="#fdf6e9" stroke="#1f5c39" stroke-width="2.2" stroke-linejoin="round"/>
+          <path d="M28 10 C32.5 6 41 5 50 6.6 V36 c-9-1.6-17.5-.6-22 3.4 Z" fill="#f3ead6" stroke="#1f5c39" stroke-width="2.2" stroke-linejoin="round"/>
+          <path d="M11 13.5 c4.5-.7 8.5-.3 12 1.2 M11 19.5 c4.5-.7 8.5-.3 12 1.2 M11 25.5 c4.5-.7 8.5-.3 12 1.2" fill="none" stroke="rgba(31,92,57,.35)" stroke-width="1.6" stroke-linecap="round"/>
+          <circle cx="37" cy="20" r="9.5" fill="rgba(255,224,138,.3)" stroke="#fdf6e9" stroke-width="7"/>
+          <path d="M44 27.5 L50.5 34.5" stroke="#fdf6e9" stroke-width="8" stroke-linecap="round"/>
+          <circle cx="37" cy="20" r="9.5" fill="none" stroke="#b98a1e" stroke-width="3.4"/>
+          <path d="M44 27.5 L50.5 34.5" stroke="#b98a1e" stroke-width="4.6" stroke-linecap="round"/>
+        </svg></span>
+        <span class="logo-txt"><span class="k">みんなで</span><span class="m">生き物<b>図鑑</b></span></span>
+      </h1>
+      <p>牧村が１日１生物つれてくるから、生態をみんなで考えよう</p>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- 一覧 -->
+    <div id="listView">
+      <div id="listBody"><div class="loading">よみこみ中…</div></div>
+    </div>
+
+    <!-- 詳細 -->
+    <div id="detailView" style="display:none;">
+      <button class="back" id="backBtn">一覧にもどる</button>
+      <div class="detail-head">
+        <div class="nm" id="dNm"></div>
+        <div class="note" id="dNote"></div>
+      </div>
+      <div id="myArea"></div>
+      <div class="section-label">みんなの図鑑</div>
+      <div class="tabs">
+        <button class="tab on" data-s="likes">いいね数</button>
+        <button class="tab" data-s="new">新着</button>
+      </div>
+      <div class="entries" id="entries"></div>
+    </div>
+  </div>
+  <a class="home-foot" href="./index.html">牧村が作ったゲーム集へ</a>
+
+  <!-- やくそく -->
+  <div class="ov" id="yakuOv">
+    <div class="ov-card">
+      <div class="yaku-lead">みんなで書いた図鑑<br>牧村の制作活動で活用するかも</div>
+      <div class="yaku-body">
+        <ul>
+          <li>誰でも自由に図鑑を書けます。ただし、人を傷つける / 公序良俗に反する / 他人の権利を侵す内容はNG。見つけしだい予告なく削除します。</li>
+          <li>投稿された文章・アイデアは、本サイトや牧村の今後の制作活動で自由に使わせてもらうことがあります。投稿した時点で、これに同意したものとします。</li>
+          <li>投稿はインターネット上に公開されます。個人情報や特定される情報は書かない方が安全です。</li>
+          <li>自分の投稿は、記入した端末から編集・削除ができます（端末やデータを変えると編集できなくなることがあります）</li>
+        </ul>
+      </div>
+      <div class="ov-btns">
+        <button class="btn p" id="yakuOk">確認しました</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 管理(牧村専用): ログイン -->
+  <div class="ov" id="loginOv">
+    <div class="ov-card">
+      <h3>管理ログイン</h3>
+      <div class="yaku-body">牧村専用のログインです。</div>
+      <input id="admPw" type="password" class="ov-in" placeholder="パスワード">
+      <div class="ov-btns">
+        <button class="btn p" id="admLogin">ログイン</button>
+        <button class="btn ghost" id="admCancel">やめる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 管理(牧村専用): 新しい生き物を出す -->
+  <div class="ov" id="crOv">
+    <div class="ov-card">
+      <h3>新しい生き物を出す</h3>
+      <input id="crName" class="ov-in" maxlength="30" placeholder="生き物の名前">
+      <input id="crNote" class="ov-in" maxlength="60" placeholder="ヒント（なくてもOK）">
+      <div class="ov-btns">
+        <button class="btn p" id="crPost">出題する</button>
+        <button class="btn ghost" id="crCancel">やめる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ペンネーム変更 -->
+  <div class="ov" id="nameOv">
+    <div class="ov-card">
+      <h3>ペンネーム</h3>
+      <div class="yaku-body">図鑑に載るあなたのペンネームです</div>
+      <input id="nameInput" maxlength="16" placeholder="ペンネーム">
+      <div class="ov-note">※あとから変更した場合、いままでの投稿のペンネームも全て変わります</div>
+      <div class="ov-btns">
+        <button class="btn p" id="nameSave">決定</button>
+        <button class="btn ghost" id="nameCancel">やめる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 削除確認 -->
+  <div class="ov" id="delOv">
+    <div class="ov-card">
+      <h3>この図鑑を削除しますか？</h3>
+      <div class="yaku-body">削除すると元に戻せません</div>
+      <div class="ov-btns">
+        <button class="btn p" id="delYes" style="background:linear-gradient(160deg,#e8635c,var(--red) 60%,#a5302a);box-shadow:0 4px 0 #a5302a;">削除する</button>
+        <button class="btn ghost" id="delNo">やめる</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+(function(){
+  "use strict";
+  const $=id=>document.getElementById(id);
+  const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co";
+  const SB_KEY="sb_publishable_cak3-W9Mmgahnwawreoa1Q_CVuhmkKL";
+  const MAXBODY=800;
+  let sb=null, myUid=null, myName=null;   // myName=登録済みペンネーム(左上のピルでいつでも変更可・名前被りは不可)
+  let isAdmin=false;   // 管理モード(牧村専用)。?admin=1でログイン→メールがADMIN_EMAILならtrue
+  const ADMIN_EMAIL="zentyu721wood@gmail.com";
+  const WANT_ADMIN=/[?&]admin=1/.test(location.search);
+  let creatures=[], counts={}, cur=null, curEntries=[], myEntry=null, editing=false, busy=false;
+  let likeCount={}, myLiked=new Set(), likeBusy=false;
+
+  /* ---- デバッグ表示: zukan.html?demo=1 で開くとダミーデータでデザイン確認できる(DBには触らない) ---- */
+  const DEMO=!/[?&]live=1/.test(location.search);   // ★開発中はダミー表示が既定。?live=1で本番DB接続。公開前にこの行を /[?&]demo=1/.test(location.search) に戻すこと
+  const DEMO_NAMES=["チンピラニウム","アライダーグマ","ネコバンバン","モグライオン","パンダコウモリ","カメレオンガメ","ハシビロコウテイ","タコヤキイカ","ゴリラッコ","ペンギンモドキ"];
+  const DEMO_BODIES=[
+    "夜行性で、月のない夜にだけ川べりに集まって集会を開くと言われています。集会の内容は不明ですが、翌朝は決まって川の石がきれいに並んでいます。",
+    "とても臆病な性格ですが、背中の模様が強そうなので誰にも襲われません。本人はそのことに気づいておらず、毎日ヒヤヒヤしながら暮らしています。",
+    "主食は木の実ですが、たまに靴下を食べます。片方だけなくなる靴下の多くはこの生き物のしわざです。",
+    "鳴き声が炊飯器の炊きあがり音とそっくりで、住宅街に現れると誰かが必ず台所を見に行きます。",
+    "走るのは速いのに方向音痴で、全力で走ったあと高確率で出発地点に戻ってきます。本人は納得していません。",
+    "雨の日は葉っぱを傘にしますが、傘のサイズ選びを毎回間違えます。",
+  ];
+  function demoSetup(){
+    const now=Date.now();
+    creatures=DEMO_NAMES.map((n,i)=>({ id:"demo"+i, name:n, note:i===0?"ヒント：川で目をつけられたら最後":"", created_at:new Date(now-i*86400000-i*3600000).toISOString() }));
+    counts={}; creatures.forEach((c,i)=>{ counts[c.id]=(i*7+3)%12; });
+  }
+  function demoEntries(cid){
+    const now=Date.now(); const arr=[];
+    const n=4+(cid.length%3);
+    for(let i=0;i<n;i++){
+      const id=cid+"-e"+i;
+      arr.push({ id, creature_id:cid, user_id:"demo-user-"+i, author:["はかせ","のんびり係","目撃者A","森のともだち","図鑑マニア","たまたま通りかかった人"][i%6],
+        body:DEMO_BODIES[(i+cid.length)%DEMO_BODIES.length], created_at:new Date(now-i*5400000).toISOString(), updated_at:null });
+      likeCount[id]=(i*5+cid.length)%14;
+    }
+    return arr;
+  }
+
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+  let toastTmr=0;
+  function toast(m,ms){ const el=$("toast"); el.textContent=m; el.classList.add("on"); clearTimeout(toastTmr); toastTmr=setTimeout(()=>el.classList.remove("on"), ms||1800); }
+  function agreed(){ try{ return localStorage.getItem("zukan.agreed")==="1"; }catch(e){ return false; } }
+  function setAgreed(){ try{ localStorage.setItem("zukan.agreed","1"); }catch(e){} }
+  function savedName(){ try{ return localStorage.getItem("zukan.author")||""; }catch(e){ return ""; } }
+  function saveName(n){ try{ localStorage.setItem("zukan.author",n); }catch(e){} }
+  function fmtDT(s){ if(!s) return ""; const d=new Date(s); if(isNaN(d)) return ""; const p=n=>("0"+n).slice(-2);
+    return d.getFullYear()+"/"+p(d.getMonth()+1)+"/"+p(d.getDate())+"　"+p(d.getHours())+":"+p(d.getMinutes()); }   // yyyy/mm/dd hh:mm(間は全角スペースで離す)
+  function fmtDay(s){ if(!s) return ""; const d=new Date(s); if(isNaN(d)) return ""; const p=n=>("0"+n).slice(-2);
+    return d.getFullYear()+"/"+p(d.getMonth()+1)+"/"+p(d.getDate()); }   // 生き物の投稿日は年月日のみ
+  const fmtDate=fmtDT;
+  const HEART='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21C6.5 16.7 3 13.4 3 9.3 3 6.6 5.1 4.6 7.7 4.6c1.6 0 3.2.8 4.3 2.2 1.1-1.4 2.7-2.2 4.3-2.2C18.9 4.6 21 6.6 21 9.3c0 4.1-3.5 7.4-9 11.7z"/></svg>';
+  function likeBtnHTML(eid){ return '<button class="like-btn'+(myLiked.has(eid)?' liked':'')+'" data-eid="'+eid+'" aria-label="いいね">'+HEART+'<b>'+(likeCount[eid]||0)+'</b></button>'; }
+  function paintLike(btn,eid,liked){ btn.classList.toggle("liked",liked); btn.classList.remove("pop"); void btn.offsetWidth; btn.classList.add("pop"); const b=btn.querySelector("b"); if(b) b.textContent=likeCount[eid]||0; }
+  async function toggleLike(eid,btn){
+    if(!sb||likeBusy) return; likeBusy=true;
+    const wasLiked=myLiked.has(eid);
+    if(wasLiked){ myLiked.delete(eid); likeCount[eid]=Math.max(0,(likeCount[eid]||1)-1); }
+    else{ myLiked.add(eid); likeCount[eid]=(likeCount[eid]||0)+1; }
+    paintLike(btn,eid,!wasLiked);
+    let r; try{ r = wasLiked ? await sb.from("zukan_like").delete().eq("entry_id",eid) : await sb.from("zukan_like").insert({entry_id:eid}); }catch(e){ r={error:e}; }
+    likeBusy=false;
+    if(r && r.error){   // 失敗→元に戻す
+      if(wasLiked){ myLiked.add(eid); likeCount[eid]=(likeCount[eid]||0)+1; } else { myLiked.delete(eid); likeCount[eid]=Math.max(0,(likeCount[eid]||1)-1); }
+      paintLike(btn,eid,wasLiked); toast("いいねに失敗しました");
+    }
+  }
+  function wireLikes(root){ if(!root) return; root.querySelectorAll(".like-btn").forEach(b=>{ if(b.dataset.w) return; b.dataset.w="1";
+    b.addEventListener("click",ev=>{ ev.preventDefault(); ev.stopPropagation(); toggleLike(b.dataset.eid,b); }); }); }
+
+  /* ---------- 起動 ---------- */
+  async function init(){
+    if(DEMO){ if(WANT_ADMIN) isAdmin=true; myName=savedName()||null; paintNamePill(); demoSetup(); renderList(); return; }   // デモ表示(DB接続なし。?admin=1で管理UIの見た目だけ確認可)
+    if(!window.supabase){ $("listBody").innerHTML='<div class="empty">読み込みに失敗しました。通信環境を確認して、ページを開き直してください。</div>'; return; }
+    try{
+      sb=window.supabase.createClient(SB_URL, SB_KEY);
+      let ses=(await sb.auth.getSession()).data.session;
+      if(!ses){ const r=await sb.auth.signInAnonymously(); if(r.error) throw r.error; ses=r.data.session; }
+      myUid=ses.user.id;
+      isAdmin=((ses.user.email||"")===ADMIN_EMAIL);
+      if(WANT_ADMIN && !isAdmin){ $("admPw").value=""; $("loginOv").classList.add("on"); }
+      try{ const nr=await sb.from("zukan_name").select("name").eq("user_id",myUid).maybeSingle();
+        if(!nr.error && nr.data && nr.data.name){ myName=nr.data.name; saveName(myName); } }catch(e){}
+      paintNamePill();
+    }catch(e){ $("listBody").innerHTML='<div class="empty">接続に失敗しました。少し時間をおいて開き直してください。</div>'; return; }
+    await loadList();
+  }
+
+  async function loadList(){
+    if(DEMO){ renderList(); return; }
+    $("listBody").innerHTML='<div class="loading">よみこみ中…</div>';
+    const cr=await sb.from("zukan_creature").select("*").order("created_at",{ascending:false});
+    if(cr.error){ $("listBody").innerHTML='<div class="empty">よみこみに失敗しました。開き直してみてください。</div>'; return; }
+    creatures=cr.data||[];
+    // 図鑑の件数(全件のcreature_idだけ取得して集計)
+    counts={};
+    const ec=await sb.from("zukan_entry").select("creature_id");
+    if(!ec.error && ec.data){ ec.data.forEach(r=>{ counts[r.creature_id]=(counts[r.creature_id]||0)+1; }); }
+    renderList();
+  }
+
+  function renderList(){
+    const b=$("listBody");
+    if(!creatures.length){ b.innerHTML='<div class="empty">まだ生き物がいません。<br>牧村が「今日の生き物」を出すのを待っててね。</div>'; return; }
+    const [today,...rest]=creatures;
+    let html='<div class="section-label">今日の生き物</div>';
+    html+='<div class="hero" data-id="'+today.id+'">'
+      +'<div class="cdate">'+fmtDay(today.created_at)+'</div>'
+      +'<div class="nm">'+esc(today.name)+'</div>'
+      +'<div class="cnt">図鑑 '+(counts[today.id]||0)+'件</div>'
+      +(today.note?'<div class="note">'+esc(today.note)+'</div>':'')
+      +'<div class="hero-foot"><span class="write-btn">図鑑をかいてみる</span></div></div>';
+    if(rest.length){
+      html+='<div class="section-label">これまでの生き物</div><div class="clist">';
+      const triSvg='<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2 L9 6 L4 10 Z" fill="currentColor"/></svg>';
+      rest.forEach(c=>{ html+='<div class="crow" data-id="'+c.id+'"><span class="cmain"><span class="cn">'+esc(c.name)+'</span><span class="cday">'+fmtDay(c.created_at)+'</span></span><span class="cc">図鑑'+(counts[c.id]||0)+'件</span><span class="arw">'+triSvg+'</span></div>'; });
+      html+='</div>';
+    }
+    if(isAdmin) html='<button class="btn p" id="admNew" style="width:100%;margin:2px 0 0;">＋ 新しい生き物を出す</button>'+html;
+    b.innerHTML=html;
+    if($("admNew")) $("admNew").addEventListener("click",()=>{ $("crName").value=""; $("crNote").value=""; $("crOv").classList.add("on"); setTimeout(()=>$("crName").focus(),50); });
+    b.querySelectorAll("[data-id]").forEach(el=>el.addEventListener("click",()=>openDetail(el.dataset.id)));
+  }
+
+  /* ---------- 詳細 ---------- */
+  async function openDetail(id){
+    cur=creatures.find(c=>c.id===id); if(!cur) return;
+    editing=false;
+    $("listView").style.display="none"; $("detailView").style.display="block";
+    window.scrollTo(0,0);
+    $("dNm").textContent=cur.name; $("dNote").textContent=cur.note||"";
+    $("myArea").innerHTML=""; $("entries").innerHTML='<div class="loading">よみこみ中…</div>';
+    if(DEMO){
+      likeCount={}; myLiked=new Set(); curEntries=demoEntries(id);
+      if(id==="demo1"){   // 2体目(アライダーグマ)は「自分が投稿済み」の見た目を確認できる
+        myEntry={ id:id+"-mine", creature_id:id, user_id:"demo-me", author:savedName()||"あなた",
+          body:"洗いすぎて毛がフワフワになったクマ。川で獲物を洗っているうちに洗うこと自体が好きになってしまい、今では食べ物より石鹸のにおいに敏感です。", created_at:new Date().toISOString(), updated_at:null };
+        likeCount[myEntry.id]=3;
+      } else myEntry=null;
+      renderMyArea(); renderEntries(); return;
+    }
+    const r=await sb.from("zukan_entry").select("*").eq("creature_id",id).order("created_at",{ascending:false});
+    if(r.error){ $("entries").innerHTML='<div class="empty">よみこみに失敗しました。</div>'; return; }
+    curEntries=r.data||[];
+    myEntry=curEntries.find(e=>e.user_id===myUid)||null;
+    likeCount={}; myLiked=new Set();
+    try{ const lk=await sb.from("zukan_like").select("entry_id,user_id");
+      if(!lk.error && lk.data) lk.data.forEach(x=>{ likeCount[x.entry_id]=(likeCount[x.entry_id]||0)+1; if(x.user_id===myUid) myLiked.add(x.entry_id); });
+    }catch(e){}
+    renderMyArea(); renderEntries();
+  }
+  $("backBtn").addEventListener("click",()=>{ $("detailView").style.display="none"; $("listView").style.display="block"; window.scrollTo(0,0); loadList(); });
+
+  function renderMyArea(){
+    const a=$("myArea");
+    if(myEntry && !editing){
+      a.innerHTML='<div class="section-label">あなたの図鑑</div>'
+        +'<div class="entry mine"><div class="eh"><span class="au">'+esc(myEntry.author)+'</span><span class="dt">'+fmtDate(myEntry.updated_at||myEntry.created_at)+'</span></div>'
+        +'<div class="bd">'+esc(myEntry.body)+'</div>'
+        +'<div class="efoot"><div class="eact"><button class="btn ghost mini" id="editBtn">編集</button><button class="btn ghost mini" id="delBtn" style="color:var(--red);border-color:rgba(215,71,63,.5);">削除</button></div>'+likeBtnHTML(myEntry.id)+'</div></div>';
+      $("editBtn").addEventListener("click",()=>{ editing=true; renderMyArea(); });
+      $("delBtn").addEventListener("click",()=>$("delOv").classList.add("on"));
+      wireLikes(a);
+    } else {
+      const bd=(editing&&myEntry?myEntry.body:"");
+      const nameHtml = myName
+        ? '<div class="pen-name">ペンネーム：<b>'+esc(myName)+'</b></div>'
+        : '<input id="fAuthor" maxlength="16" placeholder="ペンネーム" value="'+esc(savedName())+'">'
+          +'<div class="pen-hint">※ほかの人と同じペンネームは使えません。登録したあとは、画面左上からいつでも変えられます</div>';
+      a.innerHTML='<div class="section-label">'+(myEntry?"図鑑を編集する":"この生き物の図鑑を書く")+'</div>'
+        +'<div class="form-card">'
+        +nameHtml
+        +'<textarea id="fBody" maxlength="'+MAXBODY+'" placeholder="どんな生き物？\n生態や見た目、変わった習性など、自由に書いてみよう">'+esc(bd)+'</textarea>'
+        +'<div class="form-row"><span class="charc" id="charc">0 / '+MAXBODY+'</span>'
+        +'<span style="display:flex;gap:8px;">'+(editing?'<button class="btn ghost" id="cancelBtn">やめる</button>':'')+'<button class="btn p" id="postBtn">'+(myEntry?"更新する":"投稿する")+'</button></span></div></div>';
+      const bt=$("fBody"), cc=$("charc");
+      const upd=()=>{ const n=[...bt.value].length; cc.textContent=n+" / "+MAXBODY; cc.classList.toggle("over",n>MAXBODY); };
+      bt.addEventListener("input",upd); upd();
+      $("postBtn").addEventListener("click",submitEntry);
+      if($("cancelBtn")) $("cancelBtn").addEventListener("click",()=>{ editing=false; renderMyArea(); });
+    }
+  }
+
+  let entSort="likes";   // いいね数順(初期) / 新着順
+  document.querySelectorAll(".tabs .tab").forEach(t=>t.addEventListener("click",()=>{
+    if(entSort===t.dataset.s) return;
+    entSort=t.dataset.s;
+    document.querySelectorAll(".tabs .tab").forEach(x=>x.classList.toggle("on", x===t));
+    renderEntries();
+  }));
+  function isMineEntry(e){ return (myUid && e.user_id===myUid) || (myEntry && e.id===myEntry.id); }
+  function renderEntries(){
+    const box=$("entries");
+    let list=curEntries.slice();
+    if(myEntry && !list.some(e=>e.id===myEntry.id)) list=[myEntry].concat(list);   // 自分の投稿もみんなの図鑑に載せる
+    if(!list.length){ box.innerHTML='<div class="empty">まだ図鑑がありません<br>最初の1ページを書いてみよう</div>'; return; }
+    if(entSort==="likes"){ list=list.slice().sort((a,b)=>((likeCount[b.id]||0)-(likeCount[a.id]||0)) || (new Date(b.created_at)-new Date(a.created_at))); }
+    else{ list=list.slice().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)); }
+    box.innerHTML=list.map(e=>'<div class="entry"><div class="eh"><span class="au">'+esc(e.author)+'</span>'+(isMineEntry(e)?'<span class="me-tag">じぶん</span>':'')+'<span class="dt">'+fmtDate(e.updated_at||e.created_at)+'</span></div><div class="bd">'+esc(e.body)+'</div><div class="efoot">'+(isAdmin&&!isMineEntry(e)?'<div class="eact"><button class="btn ghost mini adm-del" data-adel="'+e.id+'">削除</button></div>':'')+likeBtnHTML(e.id)+'</div></div>').join("");
+    wireLikes(box);
+    box.querySelectorAll("[data-adel]").forEach(bn=>bn.addEventListener("click",async()=>{
+      if(DEMO){ toast("デモ表示中は削除できません"); return; }
+      if(!confirm("この投稿を削除しますか？")) return;
+      const r=await sb.from("zukan_entry").delete().eq("id",bn.dataset.adel);
+      if(r.error){ toast("削除に失敗しました"); return; }
+      toast("削除しました"); await openDetail(cur.id);
+    }));
+  }
+
+  async function submitEntry(){
+    if(DEMO){ toast("デモ表示中は投稿できません"); return; }
+    if(busy) return;
+    if(!agreed()){ pendingSubmit=true; $("yakuOk").textContent="同意して投稿"; $("yakuOv").classList.add("on"); return; }
+    const author=myName || (($("fAuthor")&&$("fAuthor").value||"").trim());
+    const body=($("fBody").value||"").trim();
+    if(!author){ toast("ペンネームを入れてね"); return; }
+    if(!body){ toast("本文を書いてね"); return; }
+    if([...body].length>MAXBODY){ toast("本文が長すぎます（"+MAXBODY+"字まで）"); return; }
+    busy=true; $("postBtn").disabled=true; $("postBtn").textContent="送信中…";
+    if(!myName){   // 初回のみ: ペンネームを登録(DBのuniqueで名前被りは早い者勝ち)
+      const reg=await sb.from("zukan_name").insert({ user_id:myUid, name:author });
+      if(reg.error){
+        busy=false; $("postBtn").disabled=false; $("postBtn").textContent=myEntry?"更新する":"投稿する";
+        const m=(reg.error.message||"")+" "+(reg.error.code||"");
+        if(m.indexOf("duplicate")>=0||m.indexOf("23505")>=0) toast("そのペンネームはもう使われています");
+        else toast("ペンネームの登録に失敗しました。もう一度ためしてね");
+        return;
+      }
+      myName=author; saveName(author); paintNamePill();
+    }
+    let res;
+    if(myEntry){ res=await sb.from("zukan_entry").update({author,body,updated_at:new Date().toISOString()}).eq("id",myEntry.id).select(); }
+    else{ res=await sb.from("zukan_entry").insert({creature_id:cur.id,author,body}).select(); }
+    busy=false;
+    if(res.error){
+      if((res.error.message||"").indexOf("duplicate")>=0){ toast("この生き物にはもう投稿済みです"); await openDetail(cur.id); return; }
+      toast("送信に失敗しました。もう一度ためしてね"); $("postBtn").disabled=false; $("postBtn").textContent=myEntry?"更新する":"投稿する"; return;
+    }
+    editing=false;
+    toast(myEntry?"更新しました":"投稿しました");
+    await openDetail(cur.id);
+  }
+
+  /* 削除 */
+  $("delNo").addEventListener("click",()=>$("delOv").classList.remove("on"));
+  $("delOv").addEventListener("click",e=>{ if(e.target===$("delOv")) $("delOv").classList.remove("on"); });
+  $("delYes").addEventListener("click",async()=>{
+    if(DEMO){ $("delOv").classList.remove("on"); toast("デモ表示中は削除できません"); return; }
+    if(!myEntry||busy){ $("delOv").classList.remove("on"); return; }
+    busy=true; const r=await sb.from("zukan_entry").delete().eq("id",myEntry.id); busy=false;
+    $("delOv").classList.remove("on");
+    if(r.error){ toast("削除に失敗しました"); return; }
+    toast("削除しました"); editing=false; await openDetail(cur.id);
+  });
+
+  /* 管理モード(牧村専用): ログインと出題 */
+  $("admCancel").addEventListener("click",()=>$("loginOv").classList.remove("on"));
+  $("admLogin").addEventListener("click",async()=>{
+    const pw=$("admPw").value||"";
+    if(!pw){ toast("パスワードを入れてね"); return; }
+    $("admLogin").disabled=true; $("admLogin").textContent="ログイン中…";
+    const r=await sb.auth.signInWithPassword({ email:ADMIN_EMAIL, password:pw });
+    $("admLogin").disabled=false; $("admLogin").textContent="ログイン";
+    if(r.error){ toast("ログインに失敗しました"); return; }
+    location.href="zukan.html?live=1";   // 管理者として入り直す
+  });
+  $("crCancel").addEventListener("click",()=>$("crOv").classList.remove("on"));
+  $("crOv").addEventListener("click",e=>{ if(e.target===$("crOv")) $("crOv").classList.remove("on"); });
+  $("crPost").addEventListener("click",async()=>{
+    if(DEMO){ toast("デモ表示中は出題できません"); return; }
+    const name=($("crName").value||"").trim();
+    const note=($("crNote").value||"").trim();
+    if(!name){ toast("生き物の名前を入れてね"); return; }
+    $("crPost").disabled=true; $("crPost").textContent="送信中…";
+    const r=await sb.from("zukan_creature").insert({ name, note:(note||null) });
+    $("crPost").disabled=false; $("crPost").textContent="出題する";
+    if(r.error){ toast("出題に失敗しました"); return; }
+    $("crOv").classList.remove("on"); toast("出題しました");
+    await loadList();
+  });
+
+  /* ペンネーム(左上ピル+変更ダイアログ) */
+  function paintNamePill(){ $("namePillTxt").textContent = myName ? myName : "ペンネームをきめる"; }
+  paintNamePill();
+  $("namePill").addEventListener("click",()=>{
+    $("nameInput").value = myName || savedName() || "";
+    $("nameOv").classList.add("on");
+    setTimeout(()=>$("nameInput").focus(),50);
+  });
+  $("nameCancel").addEventListener("click",()=>$("nameOv").classList.remove("on"));
+  $("nameOv").addEventListener("click",e=>{ if(e.target===$("nameOv")) $("nameOv").classList.remove("on"); });
+  $("nameSave").addEventListener("click",async()=>{
+    const nm=($("nameInput").value||"").trim();
+    if(!nm){ toast("ペンネームを入れてね"); return; }
+    if(nm===myName){ $("nameOv").classList.remove("on"); return; }
+    if(DEMO){ myName=nm; saveName(nm); paintNamePill(); $("nameOv").classList.remove("on"); toast("ペンネームを変えました"); return; }
+    if(busy) return;
+    busy=true; $("nameSave").disabled=true; $("nameSave").textContent="送信中…";
+    const had=!!myName;
+    const r = had ? await sb.from("zukan_name").update({name:nm}).eq("user_id",myUid)
+                  : await sb.from("zukan_name").insert({user_id:myUid,name:nm});
+    if(r.error){
+      busy=false; $("nameSave").disabled=false; $("nameSave").textContent="決定";
+      const m=(r.error.message||"")+" "+(r.error.code||"");
+      if(m.indexOf("duplicate")>=0||m.indexOf("23505")>=0) toast("そのペンネームはもう使われています");
+      else toast("ペンネームの変更に失敗しました。もう一度ためしてね");
+      return;
+    }
+    myName=nm; saveName(nm);
+    try{ await sb.from("zukan_entry").update({author:nm}).eq("user_id",myUid); }catch(e){}   // 過去の投稿の署名もまとめて変更
+    curEntries.forEach(e=>{ if(e.user_id===myUid) e.author=nm; });
+    if(myEntry) myEntry.author=nm;
+    busy=false; $("nameSave").disabled=false; $("nameSave").textContent="決定";
+    paintNamePill(); $("nameOv").classList.remove("on");
+    if($("detailView").style.display!=="none"){ renderMyArea(); renderEntries(); }
+    toast(had?"ペンネームを変えました":"ペンネームを登録しました");
+  });
+
+  /* やくそく */
+  let pendingSubmit=false;
+  $("yakuBtn").addEventListener("click",()=>{ pendingSubmit=false; $("yakuOk").textContent="確認しました"; $("yakuOv").classList.add("on"); });
+  $("yakuOv").addEventListener("click",e=>{ if(e.target===$("yakuOv")) $("yakuOv").classList.remove("on"); });
+  $("yakuOk").addEventListener("click",()=>{ setAgreed(); $("yakuOv").classList.remove("on"); if(pendingSubmit){ pendingSubmit=false; submitEntry(); } });
+
+  init();
+})();
+</script>
+
+<!-- 端末別のタップ/クリック表記(全ゲーム共通スニペット) -->
+<script>
+(function(){
+  window.__TAPW = matchMedia("(pointer:coarse)").matches ? "タップ" : "クリック";
+  const w=document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null); const arr=[]; let n;
+  while(n=w.nextNode()) arr.push(n);
+  arr.forEach(t=>{ if(t.nodeValue && t.nodeValue.indexOf("タッチ")<0 && (t.nodeValue.indexOf("タップ")>=0||t.nodeValue.indexOf("クリック")>=0)){ t.nodeValue=t.nodeValue.replace(/タップ|クリック/g, window.__TAPW); } });
+})();
+document.addEventListener("focusin",e=>{ const el=e.target; if(el&&el.tagName==="INPUT"&&el.value){ setTimeout(()=>{ try{ el.select(); }catch(_){} },0); } });
+</script>
+</body>
+</html>
