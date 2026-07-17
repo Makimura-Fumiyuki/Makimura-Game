@@ -412,7 +412,9 @@
 
   function renderList(){
     const b=$("listBody");
-    if(!creatures.length){ b.innerHTML='<div class="empty">まだ生き物がいません。<br>牧村が「今日の生き物」を出すのを待っててね。</div>'; return; }
+    const admBtn=isAdmin?'<button class="btn p" id="admNew" style="width:100%;margin:2px 0 0;">＋ 新しい生き物を出す</button>':'';
+    const wireAdm=()=>{ if($("admNew")) $("admNew").addEventListener("click",()=>{ $("crName").value=""; $("crNote").value=""; $("crOv").classList.add("on"); setTimeout(()=>$("crName").focus(),50); }); };
+    if(!creatures.length){ b.innerHTML=admBtn+'<div class="empty">まだ生き物がいません<br>牧村が連れてくるのを待ってね</div>'; wireAdm(); return; }   // 0匹でも管理者は出題できる
     const [today,...rest]=creatures;
     let html='<div class="section-label">今日の生き物</div>';
     html+='<div class="hero" data-id="'+today.id+'">'
@@ -427,9 +429,8 @@
       rest.forEach(c=>{ html+='<div class="crow" data-id="'+c.id+'"><span class="cmain"><span class="cn">'+esc(c.name)+'</span><span class="cday">'+fmtDay(c.created_at)+'</span></span><span class="cc">図鑑'+(counts[c.id]||0)+'件</span><span class="arw">'+triSvg+'</span></div>'; });
       html+='</div>';
     }
-    if(isAdmin) html='<button class="btn p" id="admNew" style="width:100%;margin:2px 0 0;">＋ 新しい生き物を出す</button>'+html;
-    b.innerHTML=html;
-    if($("admNew")) $("admNew").addEventListener("click",()=>{ $("crName").value=""; $("crNote").value=""; $("crOv").classList.add("on"); setTimeout(()=>$("crName").focus(),50); });
+    b.innerHTML=admBtn+html;
+    wireAdm();
     b.querySelectorAll("[data-id]").forEach(el=>el.addEventListener("click",()=>openDetail(el.dataset.id)));
   }
 
