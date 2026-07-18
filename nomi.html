@@ -608,7 +608,9 @@ function frame(ts){
   const t=ts/1000;
   nijiClock=Date.now()/1000;
   ctx.clearRect(0,0,vw,vh);
-  fleas.forEach(f=>{ updateFlea(f,dt,t); drawFlea(f); });
+  fleas.forEach(f=>updateFlea(f,dt,t));
+  fleas.forEach(f=>{ if(!f.niji) drawFlea(f); });   // 黒ノミを先に描く(奥)
+  fleas.forEach(f=>{ if(f.niji) drawFlea(f); });     // 虹ノミは最後に描く(手前=常に一番上)
   drawFx(dt);
   updateCountPush(dt,t);
   requestAnimationFrame(frame);
@@ -643,7 +645,7 @@ function updateCountPush(dt,t){
 requestAnimationFrame(frame);
 /* rAFが止まる環境(裏タブ等)でも最低限動かす保険 */
 setInterval(()=>{ if(Date.now()-lastFrameAt>900){ lastFrameAt=Date.now(); const t=Date.now()/1000; nijiClock=t;
-  ctx.clearRect(0,0,vw,vh); fleas.forEach(f=>{ updateFlea(f,0.9,t); drawFlea(f); }); drawFx(0.9); updateCountPush(0.9,t); } },1000);
+  ctx.clearRect(0,0,vw,vh); fleas.forEach(f=>updateFlea(f,0.9,t)); fleas.forEach(f=>{ if(!f.niji) drawFlea(f); }); fleas.forEach(f=>{ if(f.niji) drawFlea(f); }); drawFx(0.9); updateCountPush(0.9,t); } },1000);
 
 /* ================= つぶす ================= */
 const HIT_R=(matchMedia("(pointer:coarse)").matches?48:40);   // 広め=タップ地点のまわりをまとめてつぶせる

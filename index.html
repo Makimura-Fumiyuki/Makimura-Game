@@ -267,8 +267,8 @@
     <div class="sort-row">
       <span class="sort-label">並び替え</span>
       <select id="sortSel">
-        <option value="cat" selected>カテゴリ順</option>
-        <option value="release">リリース順</option>
+        <option value="release" selected>リリース順</option>
+        <option value="cat">カテゴリ順</option>
         <option value="pop">いいね数順</option>
         <option value="play">あそばれた回数順</option>
         <option value="fav">お気に入り順</option>
@@ -887,7 +887,7 @@
 (function(){
   /* ゲームのデータ: release=リリース日 / cats=カテゴリ / clicks=あそばれた回数(サーバー集計) */
   const GAMES=[
-    { id:"zukan", tpl:"tpl-zukan", release:"2026-07-17", cats:["交流"], clicks:null, likes:null, soon:true },   // 交流作品。リリース時にsoon:trueを外す
+    { id:"zukan", tpl:"tpl-zukan", release:"2026-07-17", cats:["交流"], clicks:null, likes:null },
     { id:"nomi", tpl:"tpl-nomi", release:"2026-07-12", cats:["１人でコツコツ"], clicks:null, likes:null },
     { id:"mate", tpl:"tpl-mate", release:"2026-07-11", cats:["パーティ"], clicks:null, likes:null },
     { id:"derby", tpl:"tpl-derby", release:"2026-07-10", cats:["パーティ"], clicks:null, likes:null, soon:true },   // リリース時にsoon:trueを外す
