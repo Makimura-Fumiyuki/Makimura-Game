@@ -26,8 +26,8 @@
   header.site{ background:linear-gradient(160deg,#3a9a63,var(--grn) 60%,var(--grn-d)); color:#fff; padding:26px 16px 28px;
     position:relative; display:flex; align-items:center; justify-content:center; }   /* 縦幅1.3倍+ロゴ一式を上下左右中央に */
   header .in{ width:100%; max-width:680px; margin:0 auto; position:relative; z-index:1; text-align:center; }
-  header h1.logo{ margin:0 0 8px; display:flex; align-items:center; justify-content:center; gap:11px; }
-  .logo-mark{ flex:none; width:92px; height:78px; display:flex; align-items:center; justify-content:center; }
+  header h1.logo{ margin:0 0 8px; display:flex; align-items:center; justify-content:center; gap:11px; transform:translateX(-4px); }   /* ロゴ一式を4px左へ(2026-07-18牧村指示。3px→さらに1px) */
+  .logo-mark{ flex:none; width:92px; height:78px; display:flex; align-items:center; justify-content:center; }   /* 2026-07-18 二段階拡大後「2回り小さく」で92x78へ戻した */
   .logo-mark svg{ width:92px; height:78px; filter:drop-shadow(0 2px 4px rgba(0,0,0,.22)); transform:translateY(2px); }
   .logo-txt{ display:flex; flex-direction:column; align-items:flex-start; text-align:left; line-height:1; }
   .logo-txt .k{ font-size:12px; font-weight:900; letter-spacing:.22em; color:rgba(255,255,255,.82); margin-bottom:4px; margin-left:2px; }
@@ -475,10 +475,9 @@
       a.innerHTML='<div class="section-label">あなたの図鑑</div>'
         +'<div class="entry mine"><div class="eh"><span class="au">'+esc(myEntry.author)+'</span><span class="dt">'+fmtDate(myEntry.updated_at||myEntry.created_at)+'</span></div>'
         +'<div class="bd">'+esc(myEntry.body)+'</div>'
-        +'<div class="efoot"><div class="eact"><button class="btn ghost mini" id="editBtn">編集</button><button class="btn ghost mini" id="delBtn" style="color:var(--red);border-color:rgba(215,71,63,.5);">削除</button></div>'+likeBtnHTML(myEntry.id)+'</div></div>';
+        +'<div class="efoot"><div class="eact"><button class="btn ghost mini" id="editBtn">編集</button><button class="btn ghost mini" id="delBtn" style="color:var(--red);border-color:rgba(215,71,63,.5);">削除</button></div></div></div>';   // あなたの図鑑にはいいねボタンを出さない(みんなの図鑑側の自分の行では押せる)
       $("editBtn").addEventListener("click",()=>{ editing=true; renderMyArea(); });
       $("delBtn").addEventListener("click",()=>$("delOv").classList.add("on"));
-      wireLikes(a);
     } else {
       const bd=(editing&&myEntry?myEntry.body:"");
       const nameHtml = myName
@@ -594,17 +593,27 @@
   });
 
   /* 管理モード(牧村専用): ログインと出題 */
-  $("admCancel").addEventListener("click",()=>$("loginOv").classList.remove("on"));
-  $("admLogin").addEventListener("click",async()=>{
+  // セキュリティ(obscurity): ログイン/やめる どちらのボタンでもログインできない。
+  // 正式ログイン=パスワードが正しい状態で「3本指で10秒以上長押し」or「M+Kを10秒以上長押し」
+  $("admLogin").addEventListener("click",()=>toast("パスワードが違います"));   // 「ログイン」=正誤問わず失敗表示(ダミー)
+  $("admCancel").addEventListener("click",()=>$("loginOv").classList.remove("on"));   // 「やめる」=管理画面を閉じる
+  const doAdmLogin=async()=>{
+    if(!$("loginOv").classList.contains("on")) return;   // ログイン画面が出ている時だけ
     const pw=$("admPw").value||"";
-    if(!pw){ toast("パスワードを入れてね"); return; }
-    $("admLogin").disabled=true; $("admLogin").textContent="ログイン中…";
+    if(!pw){ toast("パスワードが違います"); return; }
     const r=await sb.auth.signInWithPassword({ email:ADMIN_EMAIL, password:pw });
-    $("admLogin").disabled=false; $("admLogin").textContent="ログイン";
-    if(r.error){ toast("ログインに失敗しました"); return; }
+    if(r.error){ toast("パスワードが違います"); return; }
     try{ const s2=r.data.session; localStorage.setItem("mk.admin",JSON.stringify({ at:s2.access_token, rt:s2.refresh_token, exp:(s2.expires_at||0)-60 })); }catch(e){}
     location.href="zukan.html?live=1";   // 管理者として入り直す
-  });
+  };
+  let admSecT=0; const armA=()=>{ clearTimeout(admSecT); admSecT=setTimeout(doAdmLogin,10000); }, disA=()=>{ clearTimeout(admSecT); admSecT=0; };
+  window.addEventListener("touchstart",e=>{ if(e.touches&&e.touches.length>=3) armA(); },{passive:true});
+  window.addEventListener("touchend",e=>{ if(!e.touches||e.touches.length<3) disA(); });
+  window.addEventListener("touchcancel",disA);
+  const admKeys=new Set();
+  window.addEventListener("keydown",e=>{ admKeys.add((e.key||"").toLowerCase()); if(admKeys.has("m")&&admKeys.has("k")) armA(); });
+  window.addEventListener("keyup",e=>{ admKeys.delete((e.key||"").toLowerCase()); if(!(admKeys.has("m")&&admKeys.has("k"))) disA(); });
+  window.addEventListener("blur",()=>{ admKeys.clear(); disA(); });
   let crEditId=null;   // null=新しい生き物を出す / id=その生き物の編集(名前・ヒントの書き換え。図鑑はそのまま残る)
   $("crCancel").addEventListener("click",()=>$("crOv").classList.remove("on"));
   $("crOv").addEventListener("click",e=>{ if(e.target===$("crOv")) $("crOv").classList.remove("on"); });

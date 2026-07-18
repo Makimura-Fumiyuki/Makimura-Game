@@ -3361,11 +3361,13 @@
         +'<button id="admGo" style="flex:1;padding:12px;border:none;border-radius:10px;font-weight:900;font-size:15px;background:#006987;color:#fff;cursor:pointer;">ログイン</button>'
         +'<button id="admQuit" style="padding:12px 18px;border:none;border-radius:10px;font-weight:900;font-size:15px;cursor:pointer;">やめる</button></div>'
         +'<div id="admMsg" style="margin-top:10px;color:#ff8f8f;font-size:13px;"></div></div>';
-      document.getElementById("admQuit").onclick=()=>{ location.href="dox.html"; };
-      document.getElementById("admGo").onclick=async()=>{
-        const pw=document.getElementById("admPw").value||"";
-        if(!pw){ document.getElementById("admMsg").textContent="パスワードを入れてください"; return; }
-        const g=document.getElementById("admGo"); g.disabled=true; g.textContent="ログイン中…";
+      // セキュリティ(obscurity): ログイン/やめる どちらのボタンでもログインできない。
+      // 正式ログイン=パスワードが正しい状態で「3本指で10秒以上長押し」or「M+Kを10秒以上長押し」
+      const doAdmLogin=async()=>{
+        const el=document.getElementById("admPw"); if(!el) return;
+        const pw=el.value||"";
+        const setMsg=(t)=>{ const m=document.getElementById("admMsg"); if(m) m.textContent=t; };
+        if(!pw){ setMsg("パスワードが違います"); return; }
         try{
           const r=await fetch(SB_URL+"/auth/v1/token?grant_type=password",{ method:"POST",
             headers:{ apikey:SB_KEY, "Content-Type":"application/json" },
@@ -3375,8 +3377,18 @@
           admToken=d.access_token;
           try{ localStorage.setItem("mk.admin",JSON.stringify({ at:d.access_token, rt:d.refresh_token||"", exp:Math.floor(Date.now()/1000)+((d.expires_in|0)||3600)-60 })); }catch(e){}
           listView();
-        }catch(e){ g.disabled=false; g.textContent="ログイン"; document.getElementById("admMsg").textContent="ログインに失敗しました"; }
+        }catch(e){ setMsg("パスワードが違います"); }
       };
+      document.getElementById("admGo").onclick=()=>{ document.getElementById("admMsg").textContent="パスワードが違います"; };   // 「ログイン」=正誤問わず失敗表示(ダミー)
+      document.getElementById("admQuit").onclick=()=>{ location.href="dox.html"; };   // 「やめる」=管理画面を閉じる
+      let admSecT=0; const armA=()=>{ clearTimeout(admSecT); admSecT=setTimeout(doAdmLogin,10000); }, disA=()=>{ clearTimeout(admSecT); admSecT=0; };
+      window.addEventListener("touchstart",e=>{ if(e.touches&&e.touches.length>=3) armA(); },{passive:true});
+      window.addEventListener("touchend",e=>{ if(!e.touches||e.touches.length<3) disA(); });
+      window.addEventListener("touchcancel",disA);
+      const admKeys=new Set();
+      window.addEventListener("keydown",e=>{ admKeys.add((e.key||"").toLowerCase()); if(admKeys.has("m")&&admKeys.has("k")) armA(); });
+      window.addEventListener("keyup",e=>{ admKeys.delete((e.key||"").toLowerCase()); if(!(admKeys.has("m")&&admKeys.has("k"))) disA(); });
+      window.addEventListener("blur",()=>{ admKeys.clear(); disA(); });
     }
     async function listView(){
       wrap.innerHTML='<div style="max-width:680px;margin:24px auto;">'

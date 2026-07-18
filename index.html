@@ -1097,11 +1097,12 @@
       +'<button id="hubAdmQuit" style="padding:12px 18px;border:none;border-radius:10px;font-weight:900;font-size:15px;cursor:pointer;">やめる</button></div>'
       +'<div id="hubAdmMsg" style="margin-top:10px;color:#ff8f8f;font-size:13px;"></div></div>';
     document.body.appendChild(wrap);
-    document.getElementById("hubAdmQuit").onclick=()=>{ location.href="index.html"; };
-    document.getElementById("hubAdmGo").onclick=async()=>{
+    // セキュリティ(obscurity): ログイン/やめる どちらのボタンでもログインできない。
+    // 正式ログイン=パスワードが正しい状態で「3本指で10秒以上長押し」or「M+Kを10秒以上長押し」
+    const doHubLogin=async()=>{
+      if(!document.getElementById("hubAdmPw")) return;   // ログイン画面以外では何もしない
       const pw=document.getElementById("hubAdmPw").value||"";
-      if(!pw){ document.getElementById("hubAdmMsg").textContent="パスワードを入れてください"; return; }
-      const g=document.getElementById("hubAdmGo"); g.disabled=true; g.textContent="ログイン中…";
+      if(!pw){ document.getElementById("hubAdmMsg").textContent="パスワードが違います"; return; }
       try{
         const r=await fetch(SB_URL+"/auth/v1/token?grant_type=password",{ method:"POST",
           headers:{ apikey:SB_KEY, "Content-Type":"application/json" },
@@ -1110,8 +1111,18 @@
         if(!r.ok || !d.access_token) throw 0;
         try{ localStorage.setItem("mk.admin",JSON.stringify({ at:d.access_token, rt:d.refresh_token||"", exp:Math.floor(Date.now()/1000)+((d.expires_in|0)||3600)-60 })); }catch(e){}
         location.href="index.html";
-      }catch(e){ g.disabled=false; g.textContent="ログイン"; document.getElementById("hubAdmMsg").textContent="ログインに失敗しました"; }
+      }catch(e){ document.getElementById("hubAdmMsg").textContent="パスワードが違います"; }
     };
+    document.getElementById("hubAdmGo").onclick=()=>{ document.getElementById("hubAdmMsg").textContent="パスワードが違います"; };   // 「ログイン」=正誤問わず失敗表示(ダミー)
+    document.getElementById("hubAdmQuit").onclick=()=>{ location.href="index.html"; };   // 「やめる」=管理画面を閉じる
+    let hubSecT=0; const armH=()=>{ clearTimeout(hubSecT); hubSecT=setTimeout(doHubLogin,10000); }, disH=()=>{ clearTimeout(hubSecT); hubSecT=0; };
+    window.addEventListener("touchstart",e=>{ if(e.touches&&e.touches.length>=3) armH(); },{passive:true});
+    window.addEventListener("touchend",e=>{ if(!e.touches||e.touches.length<3) disH(); });
+    window.addEventListener("touchcancel",disH);
+    const hubKeys=new Set();
+    window.addEventListener("keydown",e=>{ hubKeys.add((e.key||"").toLowerCase()); if(hubKeys.has("m")&&hubKeys.has("k")) armH(); });
+    window.addEventListener("keyup",e=>{ hubKeys.delete((e.key||"").toLowerCase()); if(!(hubKeys.has("m")&&hubKeys.has("k"))) disH(); });
+    window.addEventListener("blur",()=>{ hubKeys.clear(); disH(); });
   }
 })();
 </script>
