@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>更新履歴 | 牧村が作ったゲーム集</title>
+<meta name="apple-mobile-web-app-title" content="更新履歴">
+<meta name="description" content="「牧村が作ったゲーム集」の更新履歴。新作ゲームのリリースやアップデートの記録をまとめています。">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=DotGothic16&display=swap');
+  :root{ --red:#ff3616; --red-dark:#d92a10; --teal:#006987; --teal-dark:#00506b; --ink:#20211f; --bg:#f7f6f3; }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{ background:var(--bg); color:var(--ink);
+    font-family:"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif;
+    min-height:100vh; display:flex; flex-direction:column; align-items:center; }
+  main{ width:100%; max-width:760px; padding:56px 24px 60px; flex:1; }
+  h1{ font-size:30px; font-weight:800; letter-spacing:.05em; color:var(--red); margin-bottom:8px; }
+  .updated{ font-size:13px; color:rgba(32,33,31,.5); margin-bottom:34px; }
+  h2{ font-size:19px; font-weight:800; letter-spacing:.04em; color:var(--teal); margin:34px 0 12px; }
+  p{ font-size:14.5px; font-weight:500; line-height:2; color:rgba(32,33,31,.8); margin-bottom:10px; }
+  a{ color:var(--teal); font-weight:700; }
+  /* 本文中のリンク: Notion風=本文と同じ濃さ+うすいグレー下線(通常テキストとの差別化は下線のみ) */
+  main p a, main ol a, main ul a{ color:inherit; font-weight:500; text-decoration:underline; text-underline-offset:2px; text-decoration-thickness:1px; text-decoration-color:rgba(32,33,31,.32); }
+  ul,ol{ margin:4px 0 10px; }
+  ul{ list-style:none; }
+  ul li{ font-size:14.5px; font-weight:500; line-height:2; color:rgba(32,33,31,.8); padding-left:1.2em; position:relative; }
+  ul li::before{ content:"・"; position:absolute; left:0; color:var(--red); font-weight:900; }
+  ol{ list-style:none; counter-reset:step; }
+  ol li{ font-size:14.5px; font-weight:500; line-height:2; color:rgba(32,33,31,.8); padding-left:1.7em; position:relative; counter-increment:step; }
+  ol li::before{ content:counter(step); position:absolute; left:0; top:.35em; width:1.25em; height:1.25em; border-radius:50%;
+    background:var(--teal); color:#fff; font-size:11px; font-weight:800; line-height:1.25em; text-align:center; }
+  .play-row{ display:flex; align-items:center; gap:14px; margin:26px 0 8px; flex-wrap:wrap; }
+  .play-btn{ display:inline-block; font-size:15px; font-weight:800; letter-spacing:.18em; text-indent:.09em; color:#fff; text-decoration:none;
+    background:linear-gradient(150deg,#ff4a2b,var(--red) 60%,var(--red-dark)); border-radius:999px; padding:12px 34px;
+    box-shadow:0 3px 8px rgba(255,54,22,.35); }
+  .play-btn.soon{ background:#b9b9b6; box-shadow:none; pointer-events:none; letter-spacing:.08em; }
+  .back-hub{ font-size:13.5px; }
+  .others{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .others a{ font-size:12.5px; font-weight:700; color:var(--teal); border:1.5px solid rgba(0,105,135,.45);
+    border-radius:999px; padding:5px 13px; text-decoration:none; background:#fff; }
+  .news-item{ border-left:4px solid rgba(0,105,135,.25); padding:2px 0 2px 16px; margin-bottom:26px; }
+  .news-date{ font-size:12.5px; font-weight:800; letter-spacing:.06em; color:var(--red); margin-bottom:2px; }
+  .news-title{ font-size:16.5px; font-weight:800; color:var(--ink); margin-bottom:4px; }
+  footer{ width:100%; text-align:center; padding:40px 20px 30px;
+    background:linear-gradient(150deg, var(--teal), var(--teal-dark)); color:rgba(255,255,255,.85); font-size:13px;
+    clip-path:polygon(0 0, 100% 10px, 100% 100%, 0 100%); }
+  footer a{ color:#fff; text-decoration:none; margin:0 10px; }
+  footer nav a{ display:inline-flex; align-items:center; gap:5px; vertical-align:middle; }
+  footer nav a svg{ width:13px; height:13px; flex:none; opacity:.85; }
+  .copy{ margin-top:14px; color:rgba(255,255,255,.55); font-size:12px; letter-spacing:.12em; font-family:"DotGothic16",sans-serif; }
+</style>
+<!-- Google AdSense -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8539036056022595" crossorigin="anonymous"></script>
+</head>
+<body>
+  <main>
+    <h1>更新履歴</h1>
+    <div class="updated">新作リリースやアップデートの記録</div>
+
+    <div class="news-item">
+      <div class="news-date">2026/07/18（土）</div>
+      <div class="news-title">各ゲームの説明ページを追加</div>
+      <p>すべてのゲームに、あそびかたや制作のこだわりをまとめた説明ページを追加しました。ゲーム一覧のサムネにある「？」マークから読めます。</p>
+    </div>
+    <div class="news-item">
+      <div class="news-date">2026/07/18（土）</div>
+      <div class="news-title">新作「みんなで生き物図鑑」を公開</div>
+      <p>掲示的なゲームまで登場。<br>詳しくは<a href="./intro-zukan.html">みんなで生き物図鑑のゲーム説明</a>へ。</p>
+    </div>
+    <div class="news-item">
+      <div class="news-date">2026/07/12（日）</div>
+      <div class="news-title">新作「ノミのみ」を公開</div>
+      <p>放置ゲームまで登場。<br>詳しくは<a href="./intro-nomi.html">ノミのみのゲーム説明</a>へ。</p>
+    </div>
+    <div class="news-item">
+      <div class="news-date">2026/07/11（土）</div>
+      <div class="news-title">新作「待てアート」を公開</div>
+      <p>ついにお絵描きゲームが登場。<br>詳しくは<a href="./intro-mate.html">待てアートのゲーム説明</a>へ。</p>
+    </div>
+    <div class="news-item">
+      <div class="news-date">2026/07/10（金）</div>
+      <div class="news-title">お問い合わせページと公式コミュニティを開設</div>
+      <p>運営者情報と連絡先をまとめた<a href="./contact.html">お問い合わせページ</a>を作りました。公式ディスコードサーバーとLINE公式アカウントもこちらから確認できます。感想・不具合報告・要望など、お気軽にご相談ください。</p>
+    </div>
+    <div class="news-item">
+      <div class="news-date">2026/07/08（水）</div>
+      <div class="news-title">新作「ま囲碁もくもく並べ」「バミリバーシ」を公開</div>
+      <p>夢のコラボレーションと心理戦が登場。<br>詳しくは<a href="./intro-maigomoku.html">ま囲碁もくもく並べのゲーム説明</a>＆<a href="./intro-bamiri.html">バミリバーシのゲーム説明</a>へ。</p>
+    </div>
+    <div class="news-item">
+      <div class="news-date">2026/07/07（火）</div>
+      <div class="news-title">新作「五もくもく並べ」「ま囲碁」を公開</div>
+      <p>和風コンビが登場。<br>詳しくは<a href="./intro-moku.html">五もくもく並べのゲーム説明</a>＆<a href="./intro-maigo.html">ま囲碁のゲーム説明</a>へ。</p>
+    </div>
+    <div class="news-item">
+      <div class="news-date">2026/07/06（月）</div>
+      <div class="news-title">新作「dox」を公開</div>
+      <p>記念すべき第１作が登場。<br>詳しくは<a href="./intro-dox.html">doxのゲーム説明</a>へ。</p>
+    </div>
+    <div class="news-item">
+      <div class="news-date">2026/07/06（月）</div>
+      <div class="news-title">「牧村が作ったゲーム集」をオープン</div>
+      <p>このサイトを開設しました。牧村の作ったゲームをブラウザで手軽に遊べる場所です。これからどんどんゲームを増やしていきますので、よろしくお願いします。</p>
+    </div>
+
+    <h2>今後の更新について</h2>
+    <p>新作の公開や、大きめのアップデートがあった時に、このページへ追記していきます。最新情報をいち早く知りたい方は、<a href="./contact.html">お問い合わせページ</a>から公式Discordにご参加ください。新作リリース・アプデ情報など、様々な情報を発信しています。</p>
+  </main>
+
+  <footer>
+    <nav>
+      <a href="./index.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 3 10.5h2.2V20h5.3v-5.5h3v5.5h5.3v-9.5H21z"/></svg>ホーム</a>
+      <a href="./guideline.html"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="6.5" width="13" height="11" rx="2"/><path d="M16.5 10.5 22 7v10l-5.5-3.5z"/></svg>実況ガイドライン</a>
+      <a href="./privacy.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5 20 5.5v5.8c0 4.8-3.4 8.2-8 10.7-4.6-2.5-8-5.9-8-10.7V5.5z"/></svg>プライバシーポリシー</a>
+      <a href="./contact.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>お問い合わせ</a>
+      <a href="./news.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm3 18H7v-2h10v2zm0-4H7v-2h10v2zm0-4H7v-2h10v2zm-4-4V3.5L18.5 9H13z"/></svg>更新履歴</a>
+    </nav>
+    <div class="copy">&copy; 2026 MAKIMURA</div>
+  </footer>
+<script>document.addEventListener("focusin",function(e){var t=e.target;if(t&&t.tagName==="INPUT"&&t.value){setTimeout(function(){try{t.select();}catch(_){}},0);}});(function(){var tap=(window.matchMedia&&matchMedia("(pointer:coarse)").matches)?"タップ":"クリック";window.__TAPW=tap;function run(){var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);var n;while(n=w.nextNode()){var v=n.nodeValue;if(v&&(v.indexOf("タップ")>=0||v.indexOf("タッチ")>=0))n.nodeValue=v.split("タッチ").join(tap).split("タップ").join(tap);}}if(document.readyState!=="loading")run();else document.addEventListener("DOMContentLoaded",run);})();</script>
+</body>
+</html>

@@ -1712,18 +1712,19 @@
   let hostRace=null, netRace=null;
   function genRaceParams(){   // ホストが1回だけ生成→全員に配って同じレースにする
     const drama=0.4+Math.random()*0.6;
+    const dur=10000+Math.floor(Math.random()*20001);   // レース時間10〜30秒ランダム(全端末で共有)
     const jn=players.map((p,i)=>{
       if(numbers[i]==null) return null;
       const roll=Math.random();
       const k = roll<0.28 ? (0.5+Math.random()*0.45) : roll>0.72 ? (2.7+Math.random()*1.5) : (1.0+Math.random()*1.5);
       return { k, amp:(0.14+Math.random()*0.28)*drama, f:0.6+Math.random()*1.3, p:Math.random()*6.283 };
     });
-    return { drama, jn };
+    return { drama, jn, dur };
   }
   function runRace(runners, rankOf, winSet, W){
     playGo();
     raceDone=false;
-    const N=runners.filter(Boolean).length, DUR=10000;   // 参加者のみ(不参加スロットはnull)
+    const N=runners.filter(Boolean).length;   // 参加者のみ(不参加スロットはnull)
     // 着差=上位ほど詰める(先頭付近は団子=写真判定でどっちが勝つか最後まで不明・後方は今まで通り自然に伸びる)。全体幅は昔と同じ0.5
     const maxRank=Math.max(1,N-1), spread=0.5;
     const dotW = N>24 ? 15 : N>8 ? 22 : 32;    // アイコン径(CSS .track.tiny/.compact/既定と一致)
@@ -1732,6 +1733,7 @@
     const setLeft=(run,prog)=>{ run.style.left=(startX + prog*(endX-startX))+"px"; };
     // オンラインはホスト配信の脚質を使う(全端末で同じレース)。1台/未配信は各自ランダム
     const useNet = (mode==="online" && netRace && netRace.jn);
+    const DUR = (useNet && netRace.dur) ? netRace.dur : (10000+Math.floor(Math.random()*20001));   // レース時間10〜30秒(オンラインはホスト配信値で全端末一致)
     const drama = useNet ? netRace.drama : (0.4 + Math.random()*0.6);
     const jn=runners.map((r,i)=>{
       if(useNet && netRace.jn[i]) return netRace.jn[i];

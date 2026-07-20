@@ -613,7 +613,7 @@
       <div class="rule-frame">
         <div class="rule-col">
           <div class="rc-name">制限時間</div>
-          <div class="rc-row"><button class="rc-btn" data-tl="-15">−</button><span class="rc-val" id="tlVal">45秒</span><button class="rc-btn" data-tl="15">＋</button></div>
+          <div class="rc-row"><button class="rc-btn" data-tl="-15">−</button><span class="rc-val" id="tlVal">30秒</span><button class="rc-btn" data-tl="15">＋</button></div>
         </div>
         <div class="rule-col">
           <div class="rc-name">時間切れで負け</div>
@@ -898,7 +898,7 @@ const MINP=2, MAXP=99;
 const DEFAULT_NAMES=["1","2"];
 let playersSetup=DEFAULT_NAMES.slice();
 let players=[];                              // [{id,n,s,c}]
-let timeLimit=45, dobonOn=true, topicTmr=0;
+let timeLimit=30, dobonOn=true, topicTmr=0;
 const ERASE_OPTS=[{k:"なし",v:0},{k:"ちょっと",v:32.5},{k:"普通",v:65},{k:"たくさん",v:130}];   // 消せる総量(残量の最大)。2026-07-16: 半分(25/50/100)は減りが早すぎ→1.3倍に
 let eraserAmt=2;              // 消しゴム量の設定(0なし/1ちょっと/2普通/3たくさん・初期=普通)
 let eraseMax=100, eraseLeft=0;
@@ -1014,7 +1014,7 @@ document.querySelectorAll('.rc-btn[data-er]').forEach(b=>{
   b.addEventListener("click",()=>{ ensureAudio(); const d=+b.dataset.er; const nv=Math.max(0,Math.min(ERASE_OPTS.length-1,eraserAmt+d));
     if(nv!==eraserAmt){ eraserAmt=nv; playTick(); renderRules(); } });
 });
-$("ruleReset").addEventListener("click",()=>{ ensureAudio(); playSelect(); timeLimit=45; dobonOn=true; eraserAmt=2; renderRules(); });
+$("ruleReset").addEventListener("click",()=>{ ensureAudio(); playSelect(); timeLimit=30; dobonOn=true; eraserAmt=2; renderRules(); });
 
 /* ================= カップ ================= */
 const SIZE=720;

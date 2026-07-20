@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>みんなで生き物図鑑の紹介 | 牧村が作ったゲーム集</title>
+<meta name="apple-mobile-web-app-title" content="みんなで生き物図鑑紹介">
+<meta name="description" content="「みんなで生き物図鑑」の紹介ページ。牧村が毎日出題するへんてこな生き物の生態を、みんなで想像して書きこむ、世界にひとつだけの空想生き物図鑑です。">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=DotGothic16&display=swap');
+  :root{ --red:#ff3616; --red-dark:#d92a10; --teal:#006987; --teal-dark:#00506b; --ink:#20211f; --bg:#f7f6f3; }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{ background:var(--bg); color:var(--ink);
+    font-family:"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif;
+    min-height:100vh; display:flex; flex-direction:column; align-items:center; }
+  main{ width:100%; max-width:760px; padding:56px 24px 60px; flex:1; }
+  h1{ font-size:30px; font-weight:800; letter-spacing:.05em; color:var(--red); margin-bottom:8px; }
+  .updated{ font-size:13px; color:rgba(32,33,31,.5); margin-bottom:34px; }
+  h2{ font-size:19px; font-weight:800; letter-spacing:.04em; color:var(--teal); margin:34px 0 12px; }
+  p{ font-size:14.5px; font-weight:500; line-height:2; color:rgba(32,33,31,.8); margin-bottom:10px; }
+  a{ color:var(--teal); font-weight:700; }
+  /* 本文中の他作品リンク: 黒っぽい字+下線で、通常テキストと差別化(2026-07-18) */
+  main p a, main ol a, main ul a{ color:inherit; font-weight:500; text-decoration:underline; text-underline-offset:2px; text-decoration-thickness:1px; text-decoration-color:rgba(32,33,31,.32); }
+  ul,ol{ margin:4px 0 10px; }
+  ul{ list-style:none; }
+  ul li{ font-size:14.5px; font-weight:500; line-height:2; color:rgba(32,33,31,.8); padding-left:1.2em; position:relative; }
+  ul li::before{ content:"・"; position:absolute; left:0; color:var(--red); font-weight:900; }
+  /* 番号リスト: 丸はテキスト1行目と上下中央揃え(行高29px・丸18px)。数字は丸の完全中央(flex) */
+  ol{ list-style:none; counter-reset:step; }
+  ol li{ font-size:14.5px; font-weight:500; line-height:2; color:rgba(32,33,31,.8); padding-left:28px; position:relative; counter-increment:step; }
+  ol li::before{ content:counter(step); position:absolute; left:0; top:5.5px; width:18px; height:18px; border-radius:50%;
+    background:var(--teal); color:#fff; font-size:11px; font-weight:800; line-height:1; padding-bottom:1px;
+    display:flex; align-items:center; justify-content:center; }
+  /* あそぶ(ハブのボタンと同じ見た目)+一覧にもどる(同じ横幅で控えめ) */
+  .play-row{ display:flex; align-items:center; gap:12px; margin:26px 0 8px; flex-wrap:wrap; }
+  .play-btn{ display:inline-flex; align-items:center; justify-content:center; gap:.35em; width:150px; font-size:14px; font-weight:800; letter-spacing:.14em;
+    color:#fff; text-decoration:none; background:linear-gradient(150deg,#ff4a2b,var(--red) 60%,var(--red-dark));
+    border-radius:999px; padding:11px 0 12px; box-shadow:0 3px 8px rgba(255,54,22,.35); }
+  .play-btn .tri{ font-size:10px; line-height:1; }
+  .play-btn.soon{ background:#b9b9b6; box-shadow:none; pointer-events:none; font-size:12px; letter-spacing:.02em; }
+  .back-btn{ display:inline-block; width:150px; text-align:center; font-size:13.5px; font-weight:800; letter-spacing:.06em;
+    color:var(--teal); text-decoration:none; background:#fff; border:1.8px solid rgba(0,105,135,.5);
+    border-radius:999px; padding:9.5px 0 10.5px; }
+  /* 牧村コメント内の「〜の例」など、箇条書きの直前の一文は行間を詰める */
+  p.tight{ margin-bottom:2px; }
+  ul.tight-list{ margin-top:2px; }
+  .others{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .others a{ font-size:12.5px; font-weight:700; color:var(--teal); border:1.5px solid rgba(0,105,135,.45);
+    border-radius:999px; padding:5px 13px; text-decoration:none; background:#fff; }
+  footer{ width:100%; text-align:center; padding:40px 20px 30px;
+    background:linear-gradient(150deg, var(--teal), var(--teal-dark)); color:rgba(255,255,255,.85); font-size:13px;
+    clip-path:polygon(0 0, 100% 10px, 100% 100%, 0 100%); }
+  footer a{ color:#fff; text-decoration:none; margin:0 10px; }
+  footer nav a{ display:inline-flex; align-items:center; gap:5px; vertical-align:middle; }
+  footer nav a svg{ width:13px; height:13px; flex:none; opacity:.85; }
+  .copy{ margin-top:14px; color:rgba(255,255,255,.55); font-size:12px; letter-spacing:.12em; font-family:"DotGothic16",sans-serif; }
+</style>
+<!-- Google AdSense -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8539036056022595" crossorigin="anonymous"></script>
+</head>
+<body>
+  <main>
+    <h1>みんなで生き物図鑑</h1>
+    <div class="updated">プレイ人数 みんなで / リリース 2026年7月17日</div>
+
+    <h2>どんなゲーム？</h2>
+    <p>牧村が毎日「へんてこな生き物の名前」をひとつ出題します。姿も生態もいっさい不明。分かっているのは名前のみ。その生き物がどんな姿で、何を食べて、どんな暮らしをしているかを、みんなが自由に想像して図鑑に書き込みます。正解はありません。というより、書いた人の数だけ正解が生まれていく、世界にひとつだけの空想生き物図鑑です。</p>
+    <h2>遊ぶながれ（書く人）</h2>
+    <ol>
+      <li>牧村が生き物をつれてくる（１日１回）</li>
+      <li>その生き物の名前を見て、生態を想像する</li>
+      <li>図鑑を書いて投稿</li>
+    </ol>
+
+    <h2>遊ぶながれ（みんな）</h2>
+    <ol>
+      <li>牧村が生き物をつれてくる（１日１回）</li>
+      <li>みんなが書いた、その生き物の図鑑を読む</li>
+      <li>気に入った図鑑に「いいね」を送る</li>
+    </ol>
+
+    <h2>牧村コメント</h2>
+    <p>どんなゲームでもなんか図鑑って実装されがち。それを読むとき、自分でも書いてみたいと思ったことはないでしょうか。今作ではその夢が叶います。<br>図鑑はいいね順で表示されます（新着順もあり）。最高の図鑑を書いて、最高の評価を得ましょう。</p>
+    <p class="tight">登場する生き物の例</p>
+    <ul class="tight-list"><li>アソビーバー（ビーバー + 遊び場 + Bar）</li><li>チンピラニウム（ピラニア + チンピラ）</li><li>カイハツカネズミ（ハツカネズミ + 開発 + 二十日寝ずに）</li></ul>
+    <h2>こんな人におすすめ</h2>
+    <ul>
+      <li>創作や大喜利が好きな人</li>
+      <li>毎日ちょっと楽しめる日課を探している人</li>
+      <li>ほかの人の発想や文章を読むのが好きな人</li>
+    </ul>
+
+    <div class="play-row"><a class="play-btn" href="./zukan.html">あそぶ <span class="tri">▶</span></a><a class="back-btn" href="./index.html">一覧にもどる</a></div>
+
+    <h2>ほかのゲーム紹介（あいうえお順）</h2>
+    <div class="others"><a href="./intro-derby.html">俺たちダービー</a><a href="./intro-moku.html">五もくもく並べ</a><a href="./intro-dox.html">dox</a><a href="./intro-nomi.html">ノミのみ</a><a href="./intro-bamiri.html">バミリバーシ</a><a href="./intro-maigo.html">ま囲碁（迷子）</a><a href="./intro-maigomoku.html">ま囲碁もくもく並べ</a><a href="./intro-mate.html">待てアート</a></div>
+  </main>
+
+  <footer>
+    <nav>
+      <a href="./index.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 3 10.5h2.2V20h5.3v-5.5h3v5.5h5.3v-9.5H21z"/></svg>ホーム</a>
+      <a href="./guideline.html"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="6.5" width="13" height="11" rx="2"/><path d="M16.5 10.5 22 7v10l-5.5-3.5z"/></svg>実況ガイドライン</a>
+      <a href="./privacy.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5 20 5.5v5.8c0 4.8-3.4 8.2-8 10.7-4.6-2.5-8-5.9-8-10.7V5.5z"/></svg>プライバシーポリシー</a>
+      <a href="./contact.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>お問い合わせ</a>
+      <a href="./news.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm3 18H7v-2h10v2zm0-4H7v-2h10v2zm0-4H7v-2h10v2zm-4-4V3.5L18.5 9H13z"/></svg>更新履歴</a>
+    </nav>
+    <div class="copy">&copy; 2026 MAKIMURA</div>
+  </footer>
+<script>document.addEventListener("focusin",function(e){var t=e.target;if(t&&t.tagName==="INPUT"&&t.value){setTimeout(function(){try{t.select();}catch(_){}},0);}});(function(){var tap=(window.matchMedia&&matchMedia("(pointer:coarse)").matches)?"タップ":"クリック";window.__TAPW=tap;function run(){var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);var n;while(n=w.nextNode()){var v=n.nodeValue;if(v&&(v.indexOf("タップ")>=0||v.indexOf("タッチ")>=0))n.nodeValue=v.split("タッチ").join(tap).split("タップ").join(tap);}}if(document.readyState!=="loading")run();else document.addEventListener("DOMContentLoaded",run);})();</script>
+</body>
+</html>

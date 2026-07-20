@@ -135,15 +135,25 @@
     color:var(--teal); border:1.6px solid var(--teal); border-radius:999px; padding:2px 11px 3px;
   }
   /* カード下段: あそぶボタン(左) + いいね・あそばれた回数(右) */
-  .c-foot{ margin-top:18px; display:flex; align-items:flex-end; justify-content:space-between; gap:10px; }
-  .c-foot-right{ display:flex; align-items:center; gap:12px; }   /* いいねと回数を同じ高さで横並びに */
+  .c-foot{ margin-top:18px; display:flex; align-items:flex-end; justify-content:flex-start; gap:10px; flex-wrap:wrap; }   /* 2026-07-18: どんなゲーム？追加に伴いwrap可・右グループはmargin-left:autoで右寄せ */
+  .c-foot-right{ display:flex; align-items:center; gap:12px; margin-left:auto; }   /* いいねと回数を同じ高さで横並びに */
   .c-play{
     align-self:flex-start; flex:none;
-    font-size:14px; font-weight:800; letter-spacing:.18em; text-indent:.09em; color:#fff;
+    width:126px; display:inline-flex; align-items:center; justify-content:center; gap:.35em;
+    font-size:14px; font-weight:800; letter-spacing:.14em; color:#fff;
     background:linear-gradient(150deg, #ff4a2b, var(--red) 60%, var(--red-dark));
-    border-radius:999px; padding:9px 26px 10px;
+    border-radius:999px; padding:9px 0 10px;
     box-shadow:0 3px 8px rgba(255,54,22,.35);
   }
+  .c-play .tri{ font-size:10px; line-height:1; }   /* 三角はひと回り小さく+上下中央(2026-07-18) */
+  /* 「どんなゲーム？」=サムネ左上の半透明バッジ(人数バッジと同じ質感)。NEWがある時はその下へ */
+  .c-intro{ position:absolute; left:10px; top:10px; z-index:3; width:34px; height:34px; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center; padding:0; border:none; background:none;
+    color:#fff; transition:transform .12s ease; }
+  .c-intro.below-new{ top:45px; }   /* NEWバッジ(top18px)の下(2026-07-18に5px上げた) */
+  .c-intro:hover{ transform:translateY(-1px); }
+  .c-intro:active{ transform:scale(.9); }
+  .c-intro svg{ width:27px; height:27px; fill:currentColor; }
   /* いいねボタン(みんなが押せる。もう一度押すと取り消せる=トグル) */
   .c-like{
     flex:none; display:inline-flex; align-items:center; gap:4px; cursor:pointer;
@@ -208,7 +218,7 @@
      (単独の行に来て他カードに引き伸ばされない画面幅でも近づきすぎない) */
   .card.soon .c-body{ padding:34px 22px 30px; }
   .card.soon .c-desc{ flex:none; }
-  .card.soon .c-play{ margin-top:28px; background:rgba(32,33,31,.25); box-shadow:none; }
+  .card.soon .c-play{ margin-top:28px; background:rgba(32,33,31,.25); box-shadow:none; font-size:10px; letter-spacing:.04em; }
 
   /* ===== このサイトについて ===== */
   .about{
@@ -220,6 +230,10 @@
   .about h2{ font-size:19px; font-weight:800; letter-spacing:.06em; color:var(--teal); margin-bottom:12px; }
   .about p{ font-size:14px; font-weight:500; line-height:2; color:rgba(32,33,31,.75); }
   .about .about-ai{ margin-top:8px; font-size:12.5px; color:rgba(32,33,31,.5); }
+  .about p a{ color:inherit; font-weight:500; text-decoration:underline; text-underline-offset:2px; text-decoration-thickness:1px; text-decoration-color:rgba(32,33,31,.32); }
+  .about-intro-links{ display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 6px; }
+  .about-intro-links a{ font-size:12.5px; font-weight:700; color:var(--teal); text-decoration:none;
+    border:1.5px solid rgba(0,105,135,.45); border-radius:999px; padding:5px 13px; background:#fff; }
   /* 公式Discord・アンケートへのボタン */
   .about-links{ margin-top:20px; display:flex; gap:12px; flex-wrap:wrap; }
   .about-btn{
@@ -269,6 +283,7 @@
       <select id="sortSel">
         <option value="release" selected>リリース順</option>
         <option value="cat">カテゴリ順</option>
+        <option value="name">あいうえお順</option>
         <option value="pop">いいね数順</option>
         <option value="play">あそばれた回数順</option>
         <option value="fav">お気に入り順</option>
@@ -309,7 +324,7 @@
           <div class="c-tags">
             <span class="tag">掲示板</span><span class="tag">想像力</span>
           </div>
-          <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
+          <div class="c-foot"><span class="c-play">あそぶ <span class="tri">▶</span></span><span class="c-count"></span></div>
         </div>
       </a>
     </template>
@@ -392,7 +407,7 @@
           <div class="c-tags">
             <span class="tag">ひまつぶし</span><span class="tag">放置</span><span class="tag">世界ランキング</span>
           </div>
-          <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
+          <div class="c-foot"><span class="c-play">あそぶ <span class="tri">▶</span></span><span class="c-count"></span></div>
         </div>
       </a>
     </template>
@@ -438,7 +453,7 @@
           <div class="c-tags">
             <span class="tag">反射神経</span><span class="tag">知育</span><span class="tag">世界ランキング</span>
           </div>
-          <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
+          <div class="c-foot"><span class="c-play">あそぶ <span class="tri">▶</span></span><span class="c-count"></span></div>
         </div>
       </a>
     </template>
@@ -505,7 +520,7 @@
           <div class="c-tags">
             <span class="tag">運まかせ</span><span class="tag">五目並べ</span>
           </div>
-          <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
+          <div class="c-foot"><span class="c-play">あそぶ <span class="tri">▶</span></span><span class="c-count"></span></div>
         </div>
       </a>
     </template>
@@ -569,7 +584,7 @@
           <div class="c-tags">
             <span class="tag">運まかせ</span><span class="tag">囲碁</span>
           </div>
-          <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
+          <div class="c-foot"><span class="c-play">あそぶ <span class="tri">▶</span></span><span class="c-count"></span></div>
         </div>
       </a>
     </template>
@@ -629,7 +644,7 @@
           <div class="c-tags">
             <span class="tag">心理戦</span><span class="tag">リバーシ</span>
           </div>
-          <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
+          <div class="c-foot"><span class="c-play">あそぶ <span class="tri">▶</span></span><span class="c-count"></span></div>
         </div>
       </a>
     </template>
@@ -718,7 +733,7 @@
           <div class="c-tags">
             <span class="tag">運まかせ</span><span class="tag">囲碁</span><span class="tag">五目並べ</span>
           </div>
-          <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
+          <div class="c-foot"><span class="c-play">あそぶ <span class="tri">▶</span></span><span class="c-count"></span></div>
         </div>
       </a>
     </template>
@@ -779,7 +794,7 @@
           <div class="c-tags">
             <span class="tag">ギャンブル</span><span class="tag">仲良くなれる</span>
           </div>
-          <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
+          <div class="c-foot"><span class="c-play">あそぶ <span class="tri">▶</span></span><span class="c-count"></span></div>
         </div>
       </a>
     </template>
@@ -838,7 +853,7 @@
           <div class="c-tags">
             <span class="tag">おえかき</span><span class="tag">早押し</span>
           </div>
-          <div class="c-foot"><span class="c-play">あそぶ ▶</span><span class="c-count"></span></div>
+          <div class="c-foot"><span class="c-play">あそぶ <span class="tri">▶</span></span><span class="c-count"></span></div>
         </div>
       </a>
     </template>
@@ -879,6 +894,7 @@
       <a href="./guideline.html"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="6.5" width="13" height="11" rx="2"/><path d="M16.5 10.5 22 7v10l-5.5-3.5z"/></svg>実況ガイドライン</a>
       <a href="./privacy.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5 20 5.5v5.8c0 4.8-3.4 8.2-8 10.7-4.6-2.5-8-5.9-8-10.7V5.5z"/></svg>プライバシーポリシー</a>
       <a href="./contact.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>お問い合わせ</a>
+      <a href="./news.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm3 18H7v-2h10v2zm0-4H7v-2h10v2zm0-4H7v-2h10v2zm-4-4V3.5L18.5 9H13z"/></svg>更新履歴</a>
     </nav>
     <div class="copy">&copy; 2026 MAKIMURA</div>
   </footer>
@@ -887,18 +903,18 @@
 (function(){
   /* ゲームのデータ: release=リリース日 / cats=カテゴリ / clicks=あそばれた回数(サーバー集計) */
   const GAMES=[
-    { id:"zukan", tpl:"tpl-zukan", release:"2026-07-17", cats:["交流"], clicks:null, likes:null },
-    { id:"nomi", tpl:"tpl-nomi", release:"2026-07-12", cats:["１人でコツコツ"], clicks:null, likes:null },
-    { id:"mate", tpl:"tpl-mate", release:"2026-07-11", cats:["パーティ"], clicks:null, likes:null },
-    { id:"derby", tpl:"tpl-derby", release:"2026-07-10", cats:["パーティ"], clicks:null, likes:null, soon:true },   // リリース時にsoon:trueを外す
-    { id:"dox",  tpl:"tpl-dox",  release:"2026-07-06", cats:["１人でコツコツ"], clicks:null, likes:null },   // clicks/likes: null=集計未着(表示しない)
-    { id:"bamiri", tpl:"tpl-bamiri", release:"2026-07-08", cats:["対戦"], clicks:null, likes:null },
-    { id:"maigomoku", tpl:"tpl-maigomoku", release:"2026-07-08", cats:["対戦"], clicks:null, likes:null },
-    { id:"maigo", tpl:"tpl-maigo", release:"2026-07-07", cats:["対戦"], clicks:null, likes:null },   // 同日リリースはこの並び順が優先される(新しい方を先頭に)
-    { id:"moku", tpl:"tpl-moku", release:"2026-07-07", cats:["対戦"], clicks:null, likes:null },
+    { id:"zukan", yomi:"みんなでいきものずかん", tpl:"tpl-zukan", release:"2026-07-17", cats:["交流"], clicks:null, likes:null },
+    { id:"nomi", thumbLight:true, yomi:"のみのみ", tpl:"tpl-nomi", release:"2026-07-12", cats:["１人でコツコツ"], clicks:null, likes:null },
+    { id:"mate", thumbLight:true, yomi:"まてあーと", tpl:"tpl-mate", release:"2026-07-11", cats:["パーティ"], clicks:null, likes:null },
+    { id:"derby", thumbLight:true, yomi:"おれたちだーびー", tpl:"tpl-derby", release:"2026-07-10", cats:["パーティ"], clicks:null, likes:null },
+    { id:"dox", thumbLight:true, yomi:"どっくす",  tpl:"tpl-dox",  release:"2026-07-06", cats:["１人でコツコツ"], clicks:null, likes:null },
+    { id:"bamiri", thumbLight:true, yomi:"ばみりばーし", tpl:"tpl-bamiri", release:"2026-07-08", cats:["対戦"], clicks:null, likes:null },
+    { id:"maigomoku", thumbLight:true, yomi:"まいごもくもくならべ", tpl:"tpl-maigomoku", release:"2026-07-08", cats:["対戦"], clicks:null, likes:null },
+    { id:"maigo", thumbLight:true, yomi:"まいご", tpl:"tpl-maigo", release:"2026-07-07", cats:["対戦"], clicks:null, likes:null },   // 同日リリースはこの並び順が優先される(新しい方を先頭に)
+    { id:"moku", thumbLight:true, yomi:"ごもくもくならべ", tpl:"tpl-moku", release:"2026-07-07", cats:["対戦"], clicks:null, likes:null },
   ];
   /* Newはリリースから31日以内のゲームが自動判定(カテゴリと NEWバッジの両方に使う) */
-  const isNew=g=>g.release && (Date.now()-new Date(g.release+"T00:00:00"))/86400000<=31;
+  const isNew=g=>!g.noNew && g.release && (Date.now()-new Date(g.release+"T00:00:00"))/86400000<=31;
   const SECTIONS=[
     { label:"パーティ", filter:g=>g.cats.includes("パーティ") },
     { label:"対戦", filter:g=>g.cats.includes("対戦") },
@@ -959,6 +975,7 @@
   const REC_ORDER=["derby","mate","moku","maigo","maigomoku","bamiri","dox"];   // 牧村おすすめ順(手動)
   const recIdx=id=>{ const i=REC_ORDER.indexOf(id); return i<0?999:i; };
   const byRec=(a,b)=>(recIdx(a.id)-recIdx(b.id))||byRelease(a,b);
+  const byName=(a,b)=>String(a.yomi||"").localeCompare(String(b.yomi||""),"ja")||byRelease(a,b);   // あいうえお順(読み仮名。漢字も読みで並ぶ)
   /* あそばれた回数の表記: 9,999までは実数 / 1万以上は「万」(1.2万→12万→123万) / 1億以上は「億」 */
   function fmtPlays(n){
     if(n>=100000000){ const m=n/100000000; return (m>=10 ? Math.round(m) : Math.round(m*10)/10)+"億"; }
@@ -985,6 +1002,17 @@
         desc.textContent=raw.slice(0,i).trim();
         const note=document.createElement("span"); note.className="c-note"; note.textContent=raw.slice(i).trim();
         desc.appendChild(note);
+      }
+    }
+    if(g.id){   // あそぶの右に「どんなゲーム？」=紹介ページへ(カード全体のリンクとは独立。soonカードでも押せる)
+      const th=el.querySelector(".c-thumb");
+      if(th){
+        const ib=document.createElement("span"); ib.className="c-intro"+(isNew(g)?" below-new":""); ib.setAttribute("role","button");
+        ib.style.color = g.thumbLight ? "#20211f" : "#fff";   // 明るいサムネは黒・暗いサムネは白
+        ib.setAttribute("aria-label","どんなゲーム？"); ib.setAttribute("title","どんなゲーム？");
+        ib.innerHTML='<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18.2A8.2 8.2 0 1 1 12 3.8a8.2 8.2 0 0 1 0 16.4z"/><text x="12" y="16.3" text-anchor="middle" font-size="11" font-weight="900" fill="currentColor" font-family="Noto Sans JP,sans-serif">?</text></svg>';
+        ib.addEventListener("click",e=>{ e.preventDefault(); e.stopPropagation(); window.location.href="./intro-"+g.id+".html"; });
+        th.appendChild(ib);
       }
     }
     if(g.soon){   // 準備中: グレーアウト+COMING SOON。遊べない・集計もしない
@@ -1052,7 +1080,7 @@
         wrap.appendChild(head(sec.label)); wrap.appendChild(grid(list));
       });
     } else {            // リリース順/人気順/あそばれた回数順/お気に入り: カテゴリを分けず一覧で
-      const cmp = sort==="pop" ? byPop : sort==="play" ? byPlay : sort==="fav" ? byFav : sort==="rec" ? byRec : byRelease;
+      const cmp = sort==="pop" ? byPop : sort==="play" ? byPlay : sort==="fav" ? byFav : sort==="name" ? byName : sort==="rec" ? byRec : byRelease;
       const list=[...GAMES].sort(soonLast(cmp));
       const d=grid(list); d.appendChild(card({tpl:"tpl-soon"}));
       wrap.appendChild(d);
