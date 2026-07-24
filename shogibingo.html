@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>将棋onビンゴ</title>
+<meta name="apple-mobile-web-app-title" content="将棋onビンゴ">
+<meta name="description" content="基本は将棋、ただし盤はビンゴカード。一手打つたびにビンゴが回り、出た数字のマスが消えていく。運まかせ将棋(試作)">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="牧村が作ったゲーム集">
+<meta property="og:title" content="将棋onビンゴ">
+<meta property="og:description" content="基本は将棋、ただし盤はビンゴカード。一手打つたびにビンゴが回り、出た数字のマスが消えていく。運まかせ将棋(試作)">
+<meta name="twitter:card" content="summary">
+<!-- Google AdSense -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8539036056022595" crossorigin="anonymous"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Yuji+Syuku&family=Noto+Sans+JP:wght@400;700;900&display=swap');
+  :root{
+    --pp:#4a2490; --pp-d:#2e1259; --pp-ink:#3a1d66;
+    --yel:#ffd23e; --pk:#ff5fa8; --cy:#3fd8e8; --grn:#5fe07a; --orn:#ff9a3e;
+    --card:#fffdf6;
+    --bw:min(94vw, 470px);
+    --fw:"Yuji Syuku","Hiragino Mincho ProN","Yu Mincho",serif;   /* 和風=将棋要素(駒・「将棋」ロゴ)だけに使う */
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; font-family:"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif; -webkit-tap-highlight-color:transparent; }
+  html,body{ min-height:100%; }
+  body{ color:#fff; overflow-x:hidden;
+    background:linear-gradient(160deg,#5a2fa8 0%, var(--pp) 45%, var(--pp-d) 100%);
+    background-attachment:fixed; }
+  /* ななめストライプ(静) */
+  body::before{ content:""; position:fixed; inset:0; z-index:-2; pointer-events:none;
+    background:repeating-linear-gradient(115deg, rgba(255,255,255,.04) 0 30px, transparent 30px 78px); }
+  /* 浮遊する紙吹雪ドット(動き続ける背景。transformのみ=軽量) */
+  .bgfx{ position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden; }
+  .bgfx i{ position:absolute; border-radius:50%; will-change:transform; }
+  .bgfx i:nth-child(1){ left:6%;  top:10%; width:56px; height:56px; background:rgba(255,210,62,.2);  animation:bf1 11s ease-in-out infinite alternate; }
+  .bgfx i:nth-child(2){ left:88%; top:6%;  width:44px; height:44px; background:rgba(63,216,232,.18); animation:bf2 9s  ease-in-out infinite alternate; }
+  .bgfx i:nth-child(3){ left:92%; top:44%; width:64px; height:64px; background:rgba(255,95,168,.18); animation:bf3 13s ease-in-out infinite alternate; }
+  .bgfx i:nth-child(4){ left:4%;  top:58%; width:48px; height:48px; background:rgba(95,224,122,.15); animation:bf2 12s ease-in-out infinite alternate; }
+  .bgfx i:nth-child(5){ left:74%; top:86%; width:70px; height:70px; background:rgba(255,210,62,.13); animation:bf1 10s ease-in-out infinite alternate; }
+  .bgfx i:nth-child(6){ left:14%; top:88%; width:40px; height:40px; background:rgba(63,216,232,.13); animation:bf3 8s  ease-in-out infinite alternate; }
+  .bgfx i:nth-child(7){ left:52%; top:3%;  width:34px; height:34px; background:rgba(255,154,62,.16); animation:bf2 10.5s ease-in-out infinite alternate; }
+  @keyframes bf1{ from{ transform:translate(0,0) scale(1); } to{ transform:translate(26px,-34px) scale(1.15); } }
+  @keyframes bf2{ from{ transform:translate(0,0) scale(1); } to{ transform:translate(-30px,24px) scale(.9); } }
+  @keyframes bf3{ from{ transform:translate(0,0) scale(1); } to{ transform:translate(18px,30px) scale(1.1); } }
+  button{ color:inherit; cursor:pointer; white-space:nowrap; }
+
+  /* ===== 左上・右上の固定ボタン ===== */
+  .help-btn,.se-btn{ position:fixed; top:10px; z-index:40; display:flex; align-items:center; gap:6px;
+    background:rgba(255,255,255,.14); border:1.5px solid rgba(255,255,255,.5); border-radius:999px;
+    font-size:13px; font-weight:900; padding:8px 14px; color:#fff; backdrop-filter:blur(2px); transition:transform .12s; }
+  .help-btn{ left:10px; }
+  .help-btn span{ display:inline-flex; width:18px; height:18px; border-radius:50%; background:var(--yel); color:var(--pp-ink); align-items:center; justify-content:center; font-size:12px; }
+  .se-btn{ right:10px; }
+  .se-btn svg{ width:15px; height:15px; }
+  .se-btn.off{ opacity:.45; }
+
+  /* ===== タイトル(ロゴ=左上・メニュー=右下のななめ構図) ===== */
+  .scene{ display:none; }
+  .scene.on{ display:flex; }
+  #titleScene{ min-height:100vh; flex-direction:column; justify-content:center; gap:30px; padding:70px 16px 100px; }
+  .t-wrap{ align-self:flex-start; margin-left:4vw; position:relative; text-align:center;   /* ロゴは3行とも中央揃え */
+    animation:logoBob 4.5s ease-in-out infinite; }
+  @keyframes logoBob{ 0%,100%{ transform:rotate(-5deg) translateY(0); } 50%{ transform:rotate(-3.6deg) translateY(-9px); } }
+  .t-splat{ position:absolute; left:50%; top:50%; width:150%; height:150%; z-index:-1; opacity:.9;
+    transform:translate(-50%,-50%); animation:splatSpin 30s linear infinite; }
+  @keyframes splatSpin{ from{ transform:translate(-50%,-50%) rotate(0deg); } to{ transform:translate(-50%,-50%) rotate(360deg); } }
+  .tl-shogi{ font-family:var(--fw); font-size:clamp(54px,15vw,92px); line-height:1; color:#fdf3da;
+    text-shadow:4px 5px 0 rgba(20,8,45,.4); letter-spacing:.04em; }
+  .tl-on{ font-size:clamp(16px,4.4vw,24px); font-weight:900; font-style:italic; opacity:.9; margin:4px 0; letter-spacing:.14em; }
+  .tl-bingo{ font-size:clamp(46px,13.5vw,84px); font-weight:900; line-height:1; letter-spacing:.02em; }
+  .tl-bingo b{ display:inline-block; text-shadow:4px 4px 0 rgba(20,8,45,.45); animation:bBounce 1.35s ease-in-out infinite alternate; }
+  .tl-bingo b:nth-child(1){ --rot:-6deg; color:var(--yel); }
+  .tl-bingo b:nth-child(2){ --rot:3deg;  color:var(--pk);  animation-delay:.18s; }
+  .tl-bingo b:nth-child(3){ --rot:-2deg; color:var(--cy);  animation-delay:.36s; }
+  .tl-bingo b:nth-child(4){ --rot:7deg;  color:var(--grn); animation-delay:.54s; }
+  @keyframes bBounce{ from{ transform:rotate(var(--rot)) translateY(0); } to{ transform:rotate(var(--rot)) translateY(-8px); } }
+  .t-sub{ font-size:clamp(11px,3vw,13px); font-weight:700; opacity:.8; margin-top:10px; letter-spacing:.06em; }
+
+  .menu{ align-self:flex-end; margin-right:3vw; display:flex; flex-direction:column; gap:26px; align-items:flex-end; }
+  .sec-label{ font-size:12px; font-weight:900; letter-spacing:.3em; opacity:.75; text-align:right; margin-bottom:10px; }
+  .m-col{ display:flex; flex-direction:column; gap:13px; align-items:flex-end; }
+  .mbtn{ width:min(76vw,330px); padding:14px 20px 15px; border:none; border-radius:16px; text-align:left;
+    font-size:17px; font-weight:900; letter-spacing:.03em; color:var(--pp-ink);
+    box-shadow:0 6px 0 rgba(20,8,45,.35), 0 10px 18px rgba(0,0,0,.25);
+    transition:transform .14s ease, box-shadow .14s ease; outline:3px solid transparent; transform:rotate(var(--r,0deg)); }
+  .mbtn small{ display:block; font-size:11px; font-weight:700; opacity:.75; margin-top:2px; letter-spacing:.04em; }
+  .mbtn:active{ transform:rotate(var(--r,0deg)) translateY(4px); box-shadow:0 2px 0 rgba(20,8,45,.35); }
+  .mbtn.sel{ outline:3.5px solid #fff; }
+  #modeRow .mbtn:nth-child(1){ --r:-1.5deg; background:linear-gradient(150deg,#ffe27a,var(--yel)); }
+  #modeRow .mbtn:nth-child(2){ --r:1deg;    background:linear-gradient(150deg,#7de6f2,var(--cy)); }
+  #modeRow .mbtn:nth-child(3){ --r:2deg;    background:linear-gradient(150deg,#ff8fc0,var(--pk)); }
+  .opt-row{ display:flex; gap:9px; justify-content:flex-end; flex-wrap:wrap; }
+  .obtn{ padding:10px 14px 11px; border:none; border-radius:12px; font-size:14px; font-weight:900; color:var(--pp-ink);
+    background:linear-gradient(150deg,#fff,#e8e3f2); box-shadow:0 4px 0 rgba(20,8,45,.3); outline:3px solid transparent;
+    transition:transform .12s, box-shadow .12s; }
+  .obtn small{ display:block; font-size:10px; font-weight:700; opacity:.7; margin-top:1px; }
+  .obtn:active{ transform:translateY(3px); box-shadow:0 1px 0 rgba(20,8,45,.3); }
+  .obtn.sel{ background:linear-gradient(150deg,#ffe27a,var(--yel)); outline:3px solid #fff; }
+  .setup{ display:none; flex-direction:column; gap:20px; align-items:flex-end; }
+  .setup.on{ display:flex; animation:setupIn .3s cubic-bezier(.2,.9,.3,1); }
+  @keyframes setupIn{ 0%{ opacity:0; transform:translateY(16px); } 100%{ opacity:1; transform:translateY(0); } }
+  .prep-note{ font-size:12px; font-weight:700; opacity:.7; letter-spacing:.08em; text-align:right; }
+  .start-btn{ margin-top:2px; padding:15px 54px 17px; border:none; border-radius:16px;
+    font-size:22px; font-weight:900; letter-spacing:.18em; text-indent:.18em; color:var(--pp-ink);
+    background:linear-gradient(150deg,#ffe27a,var(--yel) 60%,#f0b71e);
+    box-shadow:0 7px 0 rgba(20,8,45,.4), 0 12px 22px rgba(0,0,0,.3); transform:rotate(-1deg);
+    transition:transform .14s, box-shadow .14s; }
+  .start-btn:active{ transform:rotate(-1deg) translateY(5px); box-shadow:0 2px 0 rgba(20,8,45,.4); }
+  /* マウスがある端末: カーソルを合わせた時の反応(スマホには影響なし) */
+  @media (hover:hover){
+    .mbtn:hover{ transform:rotate(var(--r,0deg)) translateY(-5px) scale(1.03); box-shadow:0 11px 0 rgba(20,8,45,.35), 0 16px 26px rgba(0,0,0,.3); }
+    .obtn:hover{ transform:translateY(-3px); box-shadow:0 7px 0 rgba(20,8,45,.3); }
+    .start-btn:hover{ transform:rotate(-2deg) translateY(-4px) scale(1.04); box-shadow:0 11px 0 rgba(20,8,45,.4), 0 18px 30px rgba(0,0,0,.35); }
+    .help-btn:hover,.se-btn:hover{ transform:scale(1.07); }
+    .txt-btn:hover{ background:rgba(255,255,255,.26); }
+    .tgl:hover .tgl-sw{ box-shadow:0 0 10px rgba(255,210,62,.6); }
+  }
+
+  /* ===== ゲーム画面 ===== */
+  #gameScene{ min-height:100vh; flex-direction:column; align-items:center; padding:56px 8px 130px; gap:4px; }
+
+  .hand{ width:var(--bw); min-height:44px; display:flex; gap:6px; align-items:center; flex-wrap:wrap; padding:3px 2px; }
+  .hand .hl{ font-size:12px; font-weight:900; letter-spacing:.1em; opacity:.8; flex:none; min-width:3em; }
+  .chip{ display:inline-flex; align-items:center; gap:3px; padding:4px 9px; background:linear-gradient(160deg,#f9e7bc,#eccf94); border:none; border-radius:9px; font-weight:900; font-size:16px; color:#241a0c;
+    box-shadow:0 3px 0 rgba(20,8,45,.35); }
+  .chip .kj{ font-family:var(--fw); font-weight:400; }
+  .chip.sel{ outline:3px solid var(--yel); box-shadow:0 3px 0 rgba(20,8,45,.35), 0 0 12px rgba(255,210,62,.7); }
+  .chip .cnt{ font-size:11px; opacity:.7; }
+  .chip.rot .kj{ display:inline-block; transform:rotate(180deg); }
+
+  .info-row{ width:var(--bw); display:flex; align-items:center; justify-content:space-between; padding:2px 2px 5px; min-height:38px; }
+  .turn-badge{ font-size:14px; font-weight:900; padding:6px 16px 7px; border-radius:999px; color:var(--pp-ink); background:linear-gradient(150deg,#ffe27a,var(--yel)); letter-spacing:.06em; box-shadow:0 3px 0 rgba(20,8,45,.3); }
+  .turn-badge.op{ color:#fff; background:rgba(255,255,255,.16); box-shadow:none; border:1.5px solid rgba(255,255,255,.45); }
+  .info-right{ display:flex; align-items:center; gap:10px; }
+  /* 表示切り替え(トグルスイッチ)。ON=駒を表示(ノブに駒)・OFF=数字メイン(ノブ無地)。駒は素早いフェード */
+  .tgl{ display:inline-flex; align-items:center; gap:6px; background:none; border:none; padding:0; }
+  .tgl-label{ font-size:10px; font-weight:900; opacity:.85; letter-spacing:.04em; }
+  .tgl-sw{ position:relative; width:50px; height:27px; border-radius:999px; background:rgba(255,255,255,.2); border:1.5px solid rgba(255,255,255,.55); transition:background .15s, border-color .15s; }
+  .tgl.on .tgl-sw{ background:var(--yel); border-color:#fff; }
+  .tgl-knob{ position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:#fff;
+    display:flex; align-items:center; justify-content:center; transition:transform .15s; box-shadow:0 1px 3px rgba(0,0,0,.35); }
+  .tgl.on .tgl-knob{ transform:translateX(23px); }
+  .tgl-knob svg{ width:13px; height:13px; opacity:0; transition:opacity .12s; }
+  .tgl.on .tgl-knob svg{ opacity:1; }
+  .bingo-view{ display:flex; align-items:center; gap:6px; font-size:12px; font-weight:900; opacity:.95; }
+  .bingo-view .ball{ display:inline-flex; align-items:center; justify-content:center; min-width:34px; height:34px; padding:0 6px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #fff, #eee 55%, #ccc); border:2px solid #fff; font-size:16px; font-weight:900; color:var(--pp-ink); box-shadow:0 2px 6px rgba(0,0,0,.3); }
+
+  /* ===== ビンゴカード盤(直角・BINGOヘッダー付き) ===== */
+  #boardWrap{ position:relative; padding:0 9px 9px;
+    background:linear-gradient(135deg, var(--yel) 0%, var(--orn) 22%, var(--pk) 48%, var(--pp) 74%, var(--cy) 100%);
+    box-shadow:0 10px 0 rgba(20,8,45,.4), 0 18px 34px rgba(0,0,0,.4); }
+  #boardWrap.shake{ animation:bShake .35s ease; }
+  @keyframes bShake{ 0%,100%{transform:translate(0,0);} 20%{transform:translate(-4px,2px);} 40%{transform:translate(4px,-2px);} 60%{transform:translate(-3px,-2px);} 80%{transform:translate(2px,2px);} }
+  .b-head{ display:flex; justify-content:center; align-items:center; gap:14px; padding:8px 0 9px; }
+  .b-head b{ font-size:21px; font-weight:900; color:#fff; letter-spacing:.02em; line-height:1;
+    text-shadow:2.5px 2.5px 0 rgba(20,8,45,.4); display:inline-block; }
+  .b-head b:nth-child(1){ transform:rotate(-6deg); }
+  .b-head b:nth-child(2){ transform:rotate(4deg); }
+  .b-head b:nth-child(3){ transform:rotate(-3deg); }
+  .b-head b:nth-child(4){ transform:rotate(5deg); }
+  .b-head b:nth-child(5){ transform:rotate(-4deg); }
+  #board{ width:calc(var(--bw) - 18px); height:calc(var(--bw) - 18px); display:grid; grid-template-columns:repeat(9,1fr); grid-template-rows:repeat(9,1fr);
+    background:var(--card); border:2.5px solid var(--pp-ink); }
+  .cell{ position:relative; border:1px solid rgba(58,29,102,.4); display:flex; align-items:center; justify-content:center; cursor:pointer; background:var(--card); }
+  /* 押し抜きタブ: 模様は丸・ミシン目は上下のアーチ(左右は紙が繋がっている) */
+  .cell .bn{ position:absolute; inset:9%; border-radius:50%; z-index:1; display:flex; align-items:center; justify-content:center;
+    border:1.6px dashed; background:radial-gradient(circle at 42% 34%, #fff 0%, #fdfaf1 62%, #f2edde 100%);
+    box-shadow:inset 0 -1px 2px rgba(60,47,30,.07);
+    font-size:calc(var(--bw)*0.046); font-weight:900; }
+  /* 左右のミシン目を紙色で隠す=上下だけのアーチに見せる */
+  .cell .bn::before,.cell .bn::after{ content:""; position:absolute; top:26%; bottom:26%; width:5px; background:var(--card); }
+  .cell .bn::before{ left:-2.5px; } .cell .bn::after{ right:-2.5px; }
+  .cell .bn.free{ font-size:calc(var(--bw)*0.026); letter-spacing:.04em; color:rgba(74,36,144,.55); }
+  #board.numtop .bn{ z-index:3; background:none; box-shadow:none; pointer-events:none; }
+  #board.numtop .bn::before,#board.numtop .bn::after{ display:none; }
+  #board.numtop .pc{ opacity:.22; }
+  .cell.hole{ cursor:default; }
+  .cell.hole .bn{ display:none; }
+  .cell.hole::after{ content:""; position:absolute; inset:9%; border-radius:50%;
+    background:radial-gradient(circle at 46% 40%, #150e1f 0%, #241733 66%, #33204a 100%);
+    box-shadow:inset 0 4px 8px rgba(0,0,0,.85), inset 0 -1px 2px rgba(255,255,255,.05); }
+  .punch{ position:absolute; inset:9%; border-radius:50%; z-index:5; display:flex; align-items:center; justify-content:center;
+    border:1.6px dashed rgba(74,36,144,.4); background:radial-gradient(circle at 42% 34%, #fff, #f2edde);
+    font-size:calc(var(--bw)*0.046); font-weight:900; color:rgba(74,36,144,.45); pointer-events:none;
+    animation:punchFly .55s ease-in forwards; }
+  .punch.free{ font-size:calc(var(--bw)*0.026); letter-spacing:.04em; }
+  @keyframes punchFly{ 0%{ transform:none; opacity:1; } 100%{ transform:perspective(280px) rotateX(76deg) translateY(36px) scale(.7); opacity:0; } }
+  .cell.sel{ outline:3px solid var(--pk); outline-offset:-3px; z-index:2; }
+  .cell.mv::before{ content:""; position:absolute; width:30%; height:30%; border-radius:50%; background:rgba(255,95,168,.5); pointer-events:none; z-index:3; }
+  .cell.mv.cap::before{ width:88%; height:88%; background:none; border:3px solid rgba(255,95,168,.7); border-radius:10px; }
+  .cell.last{ background:#f6edff; }
+  .cell.target{ z-index:4; }
+  .cell.target::before{ content:""; position:absolute; inset:2%; border-radius:50%; z-index:6; pointer-events:none;
+    border:4px solid var(--yel); box-shadow:0 0 16px 5px rgba(255,210,62,.85), inset 0 0 10px rgba(255,210,62,.5);
+    animation:tgtPulse .38s ease infinite alternate; }
+  @keyframes tgtPulse{ 0%{ transform:scale(.92); opacity:.7; } 100%{ transform:scale(1.06); opacity:1; } }
+
+  .pc{ position:relative; z-index:2; width:88%; height:88%; display:flex; align-items:center; justify-content:center;
+    font-family:var(--fw); font-weight:400; font-size:calc(var(--bw)*0.05); color:#241a0c; line-height:1; padding-top:10%;
+    clip-path:polygon(50% 1%, 84% 24%, 93% 99%, 7% 99%, 16% 24%);
+    background:linear-gradient(168deg,#f9e7bc 0%,#eccf94 55%,#dcb476 100%); pointer-events:none;
+    transition:opacity .15s; }   /* 表示切り替え時は素早いフェード */
+  .pc.rot{ transform:rotate(180deg); }
+  .pc.prom{ color:#c1271b; }
+  .pc.pop{ animation:pcPop .28s ease; }
+  @keyframes pcPop{ 0%{ transform:scale(1.35); } 100%{ transform:scale(1); } }
+  .pc.rot.pop{ animation:pcPopR .28s ease; }
+  @keyframes pcPopR{ 0%{ transform:rotate(180deg) scale(1.35); } 100%{ transform:rotate(180deg) scale(1); } }
+
+  /* ===== ビンゴ抽選(球がカードの周りを回り続ける) ===== */
+  #flow{ position:fixed; inset:0; z-index:55; pointer-events:none; overflow:hidden; display:none; }
+  .fb{ position:absolute; left:0; top:0; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-weight:900; color:#fff; text-shadow:0 2px 3px rgba(0,0,0,.35); will-change:transform;
+    box-shadow:inset -4px -6px 9px rgba(0,0,0,.28), inset 4px 6px 9px rgba(255,255,255,.45), 0 8px 18px rgba(0,0,0,.4); }
+
+  /* ===== 対局サブボタン ===== */
+  .sub-btns{ display:flex; gap:16px; margin-top:14px; }
+  .txt-btn{ padding:9px 24px; font-size:14px; font-weight:900; letter-spacing:.12em; color:#fff;
+    background:rgba(255,255,255,.14); border:1.5px solid rgba(255,255,255,.5); border-radius:999px; transition:background .12s; }
+  .txt-btn:active{ transform:translateY(1px); }
+  .txt-btn:disabled{ opacity:.35; cursor:default; pointer-events:none; }
+
+  /* ===== トースト ===== */
+  #toast{ position:fixed; bottom:86px; left:50%; transform:translateX(-50%); z-index:60; background:rgba(30,14,60,.94); color:#fff;
+    font-size:13px; font-weight:800; padding:9px 20px; border-radius:999px; opacity:0; transition:opacity .25s; pointer-events:none; white-space:nowrap;
+    border:1.5px solid rgba(255,255,255,.3); }
+  #toast.on{ opacity:1; }
+
+  /* ===== オーバーレイ(結果・確認・あそびかた) ===== */
+  .overlay{ position:fixed; inset:0; z-index:70; background:rgba(20,8,45,.6); display:flex; align-items:center; justify-content:center; padding:18px;
+    opacity:0; pointer-events:none; transition:opacity .25s linear; }
+  .overlay.on{ opacity:1; pointer-events:auto; }
+  .overlay .r-card{ transform:scale(.6); opacity:0; transition:transform .25s cubic-bezier(.2,1.2,.4,1), opacity .2s; }
+  .overlay.on .r-card{ transform:scale(1); opacity:1; }
+  .r-card{ background:#fff; border:none; border-radius:20px; color:var(--pp-ink);
+    width:min(88vw, 420px); padding:26px 22px 24px; text-align:center;
+    display:flex; flex-direction:column; gap:18px; align-items:center;
+    box-shadow:0 10px 0 rgba(20,8,45,.4), 0 22px 44px rgba(0,0,0,.45); }
+  .cf-msg{ font-size:clamp(19px,5vw,25px); font-weight:900; letter-spacing:.06em; }
+  .r-card .sub-btns{ width:100%; margin-top:0; }
+  .r-card .txt-btn{ flex:1 1 0; min-width:110px; color:var(--pp-ink); background:#f1edf8; border:none; box-shadow:0 4px 0 rgba(20,8,45,.25); }
+  .r-card .txt-btn:active{ transform:translateY(3px); box-shadow:0 1px 0 rgba(20,8,45,.25); }
+  .r-title{ font-size:32px; font-weight:900; animation:rPop .5s cubic-bezier(.2,1.4,.4,1); }
+  @keyframes rPop{ 0%{ transform:scale(.3); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
+  .r-reason{ font-size:14px; font-weight:700; opacity:.7; }
+  .help-body{ font-size:14px; font-weight:500; line-height:1.9; text-align:left; }
+  .help-body .h-sec{ font-size:13px; font-weight:900; color:var(--pk); margin:12px 0 2px; }
+
+  /* ===== フッター ===== */
+  .home-foot{ position:fixed; left:0; right:0; bottom:0; z-index:30; display:flex; justify-content:center; padding:14px 0 16px;
+    background:linear-gradient(to top, rgba(46,18,89,.96) 55%, rgba(46,18,89,0)); text-decoration:none; }
+  .home-foot span{ font-size:13px; font-weight:800; color:rgba(255,255,255,.6); letter-spacing:.06em; }
+</style>
+</head>
+<body>
+
+<div class="bgfx" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+<button class="help-btn" id="helpBtn"><span>?</span>あそびかた</button>
+<button class="se-btn" id="seBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>効果音</button>
+
+<!-- ===== タイトル(ロゴ=左上・メニュー=右下) ===== -->
+<div class="scene on" id="titleScene">
+  <div class="t-wrap">
+    <svg class="t-splat" viewBox="0 0 200 200" preserveAspectRatio="none" aria-hidden="true">
+      <path fill="rgba(255,210,62,.2)" d="M100 8 L118 52 L166 30 L142 74 L192 86 L146 108 L176 152 L124 136 L112 190 L88 142 L38 168 L60 118 L8 104 L58 84 L30 38 L80 58 Z"/>
+      <path fill="rgba(255,95,168,.18)" d="M104 30 L116 62 L152 50 L134 82 L170 94 L134 110 L154 144 L116 128 L104 166 L88 128 L50 146 L66 110 L28 98 L66 84 L46 52 L84 66 Z"/>
+    </svg>
+    <div class="tl-shogi">将棋</div>
+    <div class="tl-on">on</div>
+    <div class="tl-bingo"><b>ビ</b><b>ン</b><b>ゴ</b><b>!</b></div>
+    <div class="t-sub">― 一手打つたびにビンゴが回り、盤が消えていく ―</div>
+  </div>
+
+  <div class="menu">
+    <div>
+      <div class="sec-label">あそびかた</div>
+      <div class="m-col" id="modeRow">
+        <button class="mbtn" data-mode="local">1台で遊ぶ<small>近くの友と対局</small></button>
+        <button class="mbtn" data-mode="friend">オンラインで遊ぶ<small>遠くの友と対局</small></button>
+        <button class="mbtn" data-mode="robot">ひとりで遊ぶ<small>ロボットと対局</small></button>
+      </div>
+    </div>
+
+    <!-- 1台で遊ぶ -->
+    <div class="setup" id="localSetup">
+      <button class="start-btn" id="startLocalBtn">はじめる</button>
+    </div>
+
+    <!-- オンライン(準備中: UIのみ) -->
+    <div class="setup" id="friendSetup">
+      <div class="opt-row">
+        <button class="obtn" id="makeRoomBtn">部屋を作る<small>合言葉を発行</small></button>
+        <button class="obtn" id="joinRoomBtn">部屋に入る<small>合言葉で入室</small></button>
+      </div>
+      <div class="prep-note">※オンライン対局は準備中</div>
+    </div>
+
+    <!-- ロボットと対局 -->
+    <div class="setup" id="cpuSetup">
+      <div>
+        <div class="sec-label">つよさ</div>
+        <div class="opt-row" id="lvRow">
+          <button class="obtn" data-lv="0">初級<small>お手柔らかに</small></button>
+          <button class="obtn sel" data-lv="1">中級<small>いい勝負</small></button>
+          <button class="obtn" data-lv="2">上級<small>勝てたら天才</small></button>
+        </div>
+      </div>
+      <div>
+        <div class="sec-label">手番</div>
+        <div class="opt-row" id="orderRow">
+          <button class="obtn sel" data-first="1">先手<small>王で指す</small></button>
+          <button class="obtn" data-first="0">後手<small>玉で指す</small></button>
+          <button class="obtn" data-first="r">おまかせ<small>先後ランダム</small></button>
+        </div>
+      </div>
+      <button class="start-btn" id="startBtn">はじめる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 対局 ===== -->
+<div class="scene" id="gameScene">
+  <div class="hand" id="handTop"><span class="hl"></span></div>
+  <div class="info-row">
+    <span class="turn-badge" id="turnBadge"></span>
+    <span class="info-right">
+      <button class="tgl on" id="viewBtn" aria-label="駒と数字の表示切り替え">
+        <span class="tgl-label">表示切り替え</span>
+        <span class="tgl-sw"><span class="tgl-knob"><svg viewBox="0 0 24 24"><polygon points="12,2 18.5,7.5 17,22 7,22 5.5,7.5" fill="#dcb476" stroke="#8a6a3a" stroke-width="1.4"/></svg></span></span>
+      </button>
+      <span class="bingo-view">前回<span class="ball" id="ball">-</span></span>
+    </span>
+  </div>
+  <div id="boardWrap">
+    <div class="b-head"><b style="color:var(--yel)">B</b><b style="color:#fff">I</b><b style="color:var(--cy)">N</b><b style="color:var(--grn)">G</b><b style="color:var(--pk)">O</b></div>
+    <div id="board"></div>
+  </div>
+  <div class="hand" id="handBottom"><span class="hl"></span></div>
+  <div class="sub-btns">
+    <button class="txt-btn" id="undoBtn">一手戻る</button>
+    <button class="txt-btn" id="giveupBtn">降参</button>
+  </div>
+</div>
+
+<!-- 抽選の球(盤の周りを回る) -->
+<div id="flow"></div>
+
+<div id="toast"></div>
+
+<!-- 成り確認 -->
+<div class="overlay" id="promOv">
+  <div class="r-card">
+    <div class="cf-msg">成りますか？</div>
+    <div class="sub-btns">
+      <button class="txt-btn" id="promYes">成る</button>
+      <button class="txt-btn" id="promNo">成らない</button>
+    </div>
+  </div>
+</div>
+
+<!-- 待った確認(1台) -->
+<div class="overlay" id="undoOv">
+  <div class="r-card">
+    <div class="cf-msg">一手戻してもいい？</div>
+    <div class="sub-btns">
+      <button class="txt-btn" id="undoYes">いいよ</button>
+      <button class="txt-btn" id="undoNo">だめ</button>
+    </div>
+  </div>
+</div>
+
+<!-- 降参確認 -->
+<div class="overlay" id="cfOv">
+  <div class="r-card">
+    <div class="cf-msg">本当に降参する？</div>
+    <div class="sub-btns">
+      <button class="txt-btn" id="cfYes">降参する</button>
+      <button class="txt-btn" id="cfNo">やめる</button>
+    </div>
+  </div>
+</div>
+
+<!-- 結果 -->
+<div class="overlay" id="resultOv">
+  <div class="r-card">
+    <div class="r-title" id="rTitle"></div>
+    <div class="r-reason" id="rReason"></div>
+    <div class="sub-btns">
+      <button class="txt-btn" id="againBtn">もう一回</button>
+      <button class="txt-btn" id="homeBtn">タイトルへ</button>
+    </div>
+  </div>
+</div>
+
+<!-- あそびかた -->
+<div class="overlay" id="helpOv">
+  <div class="r-card">
+    <div class="cf-msg">あそびかた</div>
+    <div class="help-body" id="helpBody"></div>
+    <div class="sub-btns"><button class="txt-btn" id="helpClose">とじる</button></div>
+  </div>
+</div>
+
+<a class="home-foot" href="./index.html"><span>牧村が作ったゲーム集へ</span></a>
+
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const TAPW=(window.matchMedia&&matchMedia("(pointer:coarse)").matches)?"タップ":"クリック";
+window.__TAPW=TAPW;
+
+/* ================= 効果音(全合成) ================= */
+let actx=null, seBus=null, noiseBuf=null;
+let seOn=true; try{ seOn=localStorage.getItem("sgb.se")!=="0"; }catch(e){}
+function ensureAudio(){
+  if(!actx){
+    try{
+      actx=new (window.AudioContext||window.webkitAudioContext)();
+      seBus=actx.createGain(); seBus.gain.value=seOn?1:0; seBus.connect(actx.destination);
+      const len=actx.sampleRate; noiseBuf=actx.createBuffer(1,len,actx.sampleRate);
+      const d=noiseBuf.getChannelData(0); for(let i=0;i<len;i++) d[i]=Math.random()*2-1;
+    }catch(e){}
+  }
+  if(actx&&actx.state==="suspended"){ try{ actx.resume(); }catch(e){} }
+}
+function note(f,t,dur,vol,type){ if(!actx)return; const o=actx.createOscillator(),g=actx.createGain();
+  o.type=type||"sine"; o.frequency.setValueAtTime(f,t);
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+0.006); g.gain.exponentialRampToValueAtTime(0.0008,t+dur);
+  o.connect(g); g.connect(seBus); o.start(t); o.stop(t+dur+0.02); }
+function noiseHit(t,f1,f2,q,vol,dur){ if(!actx)return; const n=actx.createBufferSource(); n.buffer=noiseBuf;
+  const b=actx.createBiquadFilter(); b.type="bandpass"; b.frequency.setValueAtTime(f1,t); b.frequency.exponentialRampToValueAtTime(f2,t+dur*0.8); b.Q.value=q;
+  const g=actx.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+0.002); g.gain.exponentialRampToValueAtTime(0.0008,t+dur);
+  n.connect(b); b.connect(g); g.connect(seBus); n.start(t); n.stop(t+dur+0.02); }
+function playSelect(){ if(!actx)return; note(440,actx.currentTime,0.06,0.1,"triangle"); }
+function playPlace(){ if(!actx)return; const t=actx.currentTime;
+  noiseHit(t,2400,1100,1.5,0.5,0.03); note(190,t,0.06,0.22,"sine"); }
+function playCap(){ if(!actx)return; const t=actx.currentTime;
+  noiseHit(t,2400,1100,1.5,0.5,0.03); note(190,t,0.06,0.22,"sine"); note(660,t+0.05,0.09,0.1,"triangle"); }
+function playRattle(){ if(!actx)return; const t=actx.currentTime;
+  noiseHit(t,1500+Math.random()*900,700,2.2,0.12,0.03); if(Math.random()<0.5) note(520+Math.random()*300,t,0.03,0.05,"triangle"); }
+function playBallOut(){ if(!actx)return; const t=actx.currentTime;
+  note(820,t,0.06,0.14,"triangle"); note(560,t+0.07,0.1,0.14,"triangle"); noiseHit(t+0.02,2000,900,1.5,0.2,0.03); }
+function playTarget(){ if(!actx)return; const t=actx.currentTime;
+  note(988,t,0.07,0.12,"triangle"); note(1319,t+0.08,0.12,0.12,"triangle"); }
+function playOpen(){ if(!actx)return; const t=actx.currentTime;
+  noiseHit(t,900,240,1.1,0.42,0.14); note(150,t,0.2,0.26,"sine"); note(75,t+0.03,0.24,0.2,"sine"); }
+function playFall(){ if(!actx)return; const t=actx.currentTime;
+  const o=actx.createOscillator(),g=actx.createGain(); o.type="sine";
+  o.frequency.setValueAtTime(700,t); o.frequency.exponentialRampToValueAtTime(140,t+0.28);
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.16,t+0.01); g.gain.exponentialRampToValueAtTime(0.0008,t+0.32);
+  o.connect(g); g.connect(seBus); o.start(t); o.stop(t+0.36); }
+function playWin(){ if(!actx)return; const t=actx.currentTime;
+  [523,659,784,1047].forEach((f,i)=>note(f,t+i*0.09,0.28,0.14,"triangle"));
+  note(1319,t+0.4,0.4,0.1,"triangle"); }
+
+/* ================= 盤・状態 ================= */
+const KJ ={P:"歩",L:"香",N:"桂",S:"銀",G:"金",B:"角",R:"飛",K:"王"};
+const KJP={P:"と",L:"杏",N:"圭",S:"全",B:"馬",R:"竜"};
+const HAND_ORDER=["R","B","G","S","N","L","P"];
+const COL_HUES=[6,26,44,88,140,168,205,246,285];
+let board, holes, hands, turn, phase, sel, legalCells, pool, numAt, cellOfNum, moveCount, lastMoveCell, hist;
+let mode="local", cpuLv=1, humanSide=0, freeTmr=0;
+function bottomSide(){ return mode==="cpu" ? humanSide : 0; }
+function cpuSide(){ return 1-humanSide; }
+
+function initGame(){
+  clearTimeout(freeTmr);
+  board=[...Array(9)].map(()=>Array(9).fill(null));
+  holes=[...Array(9)].map(()=>Array(9).fill(false));
+  hands=[{},{}]; turn=0; sel=null; legalCells=[]; moveCount=0; lastMoveCell=null; hist=[];
+  numAt=[...Array(9)].map(()=>Array(9).fill(0)); cellOfNum={};
+  for(let c=0;c<9;c++){   // ビンゴカード式: 列cは c*9+1〜c*9+9 をシャッフル(左が小さく右が大きい)。中央(4,4)はFREE
+    const ns=[]; for(let k=1;k<=9;k++) ns.push(c*9+k);
+    for(let i=ns.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const tmp=ns[i]; ns[i]=ns[j]; ns[j]=tmp; }
+    let k=0;
+    for(let r=0;r<9;r++){
+      if(c===4&&r===4){ numAt[r][c]=0; continue; }   // FREE(数字なし)
+      const n=ns[k++]; numAt[r][c]=n; cellOfNum[n]=[r,c];
+    }
+  }
+  pool=Object.keys(cellOfNum).map(n=>+n);   // FREEのぶん80個
+  const back=["L","N","S","G","K","G","S","N","L"];
+  for(let c=0;c<9;c++){
+    board[0][c]={t:back[c],o:1,pr:false};
+    board[2][c]={t:"P",o:1,pr:false};
+    board[6][c]={t:"P",o:0,pr:false};
+    board[8][c]={t:back[c],o:0,pr:false};
+  }
+  board[1][1]={t:"R",o:1,pr:false}; board[1][7]={t:"B",o:1,pr:false};
+  board[7][1]={t:"B",o:0,pr:false}; board[7][7]={t:"R",o:0,pr:false};
+  $("ball").textContent="-"; $("ball").style.background=""; $("ball").style.color="";
+  $("flow").innerHTML=""; $("flow").style.display="none";
+  phase="anim";   // 開始演出(FREEが開く)まで入力は待つ
+  render();
+  freeTmr=setTimeout(()=>{
+    holes[4][4]=true;
+    playOpen(); render();
+    const el=boardEl.querySelector('.cell[data-r="4"][data-c="4"]');
+    if(el){ const pu=document.createElement("span"); pu.className="punch free"; pu.textContent="FREE"; el.appendChild(pu); setTimeout(()=>pu.remove(),600); }
+    const bw=$("boardWrap"); bw.classList.remove("shake"); void bw.offsetWidth; bw.classList.add("shake");
+    phase="idle"; updateBtns(); renderTurn();
+    if(mode==="cpu"&&turn===cpuSide()) setTimeout(cpuThink,650);
+  },750);
+}
+function nameOf(o){ return mode==="cpu" ? (o===humanSide?"あなた":"ロボット") : (o===0?"先手":"後手"); }
+
+/* ================= 駒の動き ================= */
+const GOLDM=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]];
+function movesFor(p){
+  if(p.pr){
+    if(p.t==="B") return {steps:[[-1,0],[1,0],[0,-1],[0,1]], slides:[[-1,-1],[-1,1],[1,-1],[1,1]]};
+    if(p.t==="R") return {steps:[[-1,-1],[-1,1],[1,-1],[1,1]], slides:[[-1,0],[1,0],[0,-1],[0,1]]};
+    return {steps:GOLDM, slides:[]};
+  }
+  switch(p.t){
+    case "P": return {steps:[[-1,0]],slides:[]};
+    case "L": return {steps:[],slides:[[-1,0]]};
+    case "N": return {steps:[[-2,-1],[-2,1]],slides:[]};
+    case "S": return {steps:[[-1,-1],[-1,0],[-1,1],[1,-1],[1,1]],slides:[]};
+    case "G": return {steps:GOLDM,slides:[]};
+    case "B": return {steps:[],slides:[[-1,-1],[-1,1],[1,-1],[1,1]]};
+    case "R": return {steps:[],slides:[[-1,0],[1,0],[0,-1],[0,1]]};
+    case "K": return {steps:[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],slides:[]};
+  }
+}
+function genMoves(r,c){
+  const p=board[r][c]; if(!p) return [];
+  const dir=p.o===0?1:-1, mv=movesFor(p), out=[];
+  mv.steps.forEach(d=>{
+    const rr=r+d[0]*dir, cc=c+d[1];
+    if(rr<0||rr>8||cc<0||cc>8) return;
+    if(holes[rr][cc]) return;
+    const q=board[rr][cc]; if(q&&q.o===p.o) return;
+    out.push([rr,cc]);
+  });
+  mv.slides.forEach(d=>{
+    let rr=r+d[0]*dir, cc=c+d[1];
+    while(rr>=0&&rr<=8&&cc>=0&&cc<=8){
+      if(holes[rr][cc]) break;
+      const q=board[rr][cc];
+      if(q){ if(q.o!==p.o) out.push([rr,cc]); break; }
+      out.push([rr,cc]);
+      rr+=d[0]*dir; cc+=d[1];
+    }
+  });
+  return out;
+}
+function canDropAt(t,o,r,c){
+  if(board[r][c]||holes[r][c]) return false;
+  const lastRow=o===0?0:8;
+  if((t==="P"||t==="L")&&r===lastRow) return false;
+  if(t==="N"&&(o===0? r<=1 : r>=7)) return false;
+  if(t==="P"){ for(let rr=0;rr<9;rr++){ const q=board[rr][c]; if(q&&q.o===o&&q.t==="P"&&!q.pr) return false; } }
+  return true;
+}
+function genDrops(t,o){ const out=[]; for(let r=0;r<9;r++)for(let c=0;c<9;c++){ if(canDropAt(t,o,r,c)) out.push([r,c]); } return out; }
+function hasAnyMove(o){
+  for(let r=0;r<9;r++)for(let c=0;c<9;c++){ const p=board[r][c]; if(p&&p.o===o&&genMoves(r,c).length) return true; }
+  for(const t of HAND_ORDER){ if((hands[o][t]|0)>0 && genDrops(t,o).length) return true; }
+  return false;
+}
+function inZone(o,r){ return o===0? r<=2 : r>=6; }
+function canProm(p,fr,tr){ return !p.pr && "PLNSBR".includes(p.t) && (inZone(p.o,fr)||inZone(p.o,tr)); }
+function mustProm(p,tr){
+  if(p.pr) return false;
+  if((p.t==="P"||p.t==="L")&&(p.o===0? tr===0 : tr===8)) return true;
+  if(p.t==="N"&&(p.o===0? tr<=1 : tr>=7)) return true;
+  return false;
+}
+
+/* ================= 履歴(一手戻る) ================= */
+function snapState(){
+  return { board:board.map(row=>row.map(p=>p?{t:p.t,o:p.o,pr:p.pr}:null)),
+    holes:holes.map(r=>r.slice()),
+    hands:[Object.assign({},hands[0]),Object.assign({},hands[1])],
+    turn:turn, pool:pool.slice(), moveCount:moveCount,
+    last:lastMoveCell?lastMoveCell.slice():null };
+}
+function restoreState(s){
+  board=s.board.map(row=>row.map(p=>p?{t:p.t,o:p.o,pr:p.pr}:null));
+  holes=s.holes.map(r=>r.slice());
+  hands=[Object.assign({},s.hands[0]),Object.assign({},s.hands[1])];
+  turn=s.turn; pool=s.pool.slice(); moveCount=s.moveCount;
+  lastMoveCell=s.last?s.last.slice():null;
+  sel=null; legalCells=[]; phase="idle";
+  render();
+  if(mode==="cpu"&&turn===cpuSide()) setTimeout(cpuThink,600);
+}
+function doUndo(){
+  if(!hist.length) return;
+  if(mode==="cpu"){
+    let i=hist.length-1;
+    while(i>=0 && hist[i].turn!==humanSide) i--;
+    if(i<0) return;
+    const s=hist[i]; hist.length=i;
+    restoreState(s);
+  }else{
+    const s=hist.pop();
+    restoreState(s);
+  }
+}
+
+/* ================= 描画 ================= */
+const boardEl=$("board");
+function viewFlip(){ return bottomSide()===1; }
+function render(){
+  const flip=viewFlip();
+  let html="";
+  for(let dr=0;dr<9;dr++)for(let dc=0;dc<9;dc++){
+    const r=flip?8-dr:dr, c=flip?8-dc:dc;
+    const n=numAt[r][c], p=board[r][c];
+    const hue=COL_HUES[c];
+    let cls="cell";
+    if(holes[r][c]) cls+=" hole";
+    if(sel&&sel.type==="board"&&sel.r===r&&sel.c===c) cls+=" sel";
+    const lg=legalCells.find(m=>m[0]===r&&m[1]===c);
+    if(lg) cls+=" mv"+(p?" cap":"");
+    if(lastMoveCell&&lastMoveCell[0]===r&&lastMoveCell[1]===c&&!holes[r][c]) cls+=" last";
+    html+='<div class="'+cls+'" data-r="'+r+'" data-c="'+c+'">';
+    if(!holes[r][c]){
+      const solid=boardEl.classList.contains("numtop");
+      if(n===0) html+='<span class="bn free">FREE</span>';
+      else html+='<span class="bn" style="border-color:hsla('+hue+',68%,48%,.5); color:hsla('+hue+',62%,'+(solid?'36%':'42%')+','+(solid?'0.95':'0.3')+')">'+n+'</span>';
+    }
+    if(p&&!holes[r][c]){
+      const kj = p.pr? KJP[p.t] : (p.t==="K"&&p.o===1? "玉" : KJ[p.t]);
+      const rot = p.o!==bottomSide();
+      const pop = lastMoveCell&&lastMoveCell[0]===r&&lastMoveCell[1]===c ? " pop" : "";
+      html+='<div class="pc'+(rot?" rot":"")+(p.pr?" prom":"")+pop+'">'+kj+'</div>';
+    }
+    html+='</div>';
+  }
+  boardEl.innerHTML=html;
+  renderHands(); renderTurn(); updateBtns();
+}
+function renderHands(){
+  const bo=bottomSide();
+  [["handBottom",bo],["handTop",1-bo]].forEach(pair=>{
+    const el=$(pair[0]), o=pair[1];
+    let html='<span class="hl">'+nameOf(o)+'</span>';
+    HAND_ORDER.forEach(t=>{
+      const n=hands[o][t]|0; if(!n) return;
+      const isSel = sel&&sel.type==="hand"&&sel.o===o&&sel.t===t;
+      html+='<button class="chip'+(o!==bo?" rot":"")+(isSel?" sel":"")+'" data-o="'+o+'" data-t="'+t+'"><span class="kj">'+KJ[t]+'</span>'+(n>1?'<span class="cnt">×'+n+'</span>':'')+'</button>';
+    });
+    el.innerHTML=html;
+  });
+}
+function renderTurn(){
+  const b=$("turnBadge"), mk=turn===0?"▲ ":"▽ ";
+  if(mode==="cpu") b.textContent = mk + (turn===humanSide? "あなたの番" : "ロボット思考中…");
+  else b.textContent = mk + (turn===0? "先手の番" : "後手の番");
+  b.classList.toggle("op", turn!==bottomSide());
+}
+function updateBtns(){
+  const busy = phase!=="idle" || (mode==="cpu"&&turn!==humanSide);
+  $("undoBtn").disabled = busy || !hist.length || phase==="over";
+  $("giveupBtn").disabled = phase!=="idle";
+}
+let toastTmr=0;
+function toast(msg,ms){ const t=$("toast"); t.textContent=msg; t.classList.add("on"); clearTimeout(toastTmr); toastTmr=setTimeout(()=>t.classList.remove("on"), ms||1800); }
+function ballBg(num){ const h=COL_HUES[Math.floor((num-1)/9)]; return "radial-gradient(circle at 35% 30%, hsl("+h+",85%,82%), hsl("+h+",78%,58%) 55%, hsl("+h+",72%,42%))"; }
+
+/* ================= 入力 ================= */
+function inputLocked(){ return phase!=="idle" || (mode==="cpu"&&turn!==humanSide); }
+boardEl.addEventListener("click",e=>{
+  ensureAudio();
+  const cell=e.target.closest(".cell"); if(!cell||inputLocked()) return;
+  const r=+cell.dataset.r, c=+cell.dataset.c;
+  const lg=legalCells.find(m=>m[0]===r&&m[1]===c);
+  if(sel&&lg){
+    if(sel.type==="board") doMove(sel.r,sel.c,r,c,false);
+    else doDrop(sel.t,r,c);
+    return;
+  }
+  const p=board[r][c];
+  if(p&&p.o===turn&&!holes[r][c]){
+    if(sel&&sel.type==="board"&&sel.r===r&&sel.c===c){ sel=null; legalCells=[]; }
+    else{ sel={type:"board",r:r,c:c}; legalCells=genMoves(r,c); playSelect(); }
+    render(); return;
+  }
+  if(sel){ sel=null; legalCells=[]; render(); }
+});
+document.addEventListener("click",e=>{
+  const chip=e.target.closest(".chip"); if(!chip||inputLocked()) return;
+  ensureAudio();
+  const o=+chip.dataset.o, t=chip.dataset.t;
+  if(o!==turn) return;
+  if(sel&&sel.type==="hand"&&sel.t===t){ sel=null; legalCells=[]; }
+  else{ sel={type:"hand",o:o,t:t}; legalCells=genDrops(t,o); playSelect(); }
+  render();
+});
+/* 表示切り替えトグル: ON=駒を表示(ノブに駒アイコン)・OFF=駒を薄く数字メイン */
+$("viewBtn").addEventListener("click",()=>{
+  ensureAudio(); playSelect();
+  const numtop=boardEl.classList.toggle("numtop");
+  $("viewBtn").classList.toggle("on", !numtop);
+  render();
+});
+
+/* ================= 手の実行 ================= */
+function doMove(fr,fc,tr,tc,autoProm){
+  hist.push(snapState());
+  const p=board[fr][fc], cap=board[tr][tc];
+  if(cap&&cap.t==="K"){
+    board[tr][tc]=p; board[fr][fc]=null; lastMoveCell=[tr,tc]; sel=null; legalCells=[]; render();
+    playCap(); gameOver(turn, nameOf(turn)+"が玉を取った"); return;
+  }
+  if(cap){ hands[turn][cap.t]=(hands[turn][cap.t]|0)+1; playCap(); } else playPlace();
+  board[tr][tc]=p; board[fr][fc]=null; lastMoveCell=[tr,tc];
+  sel=null; legalCells=[];
+  if(mustProm(p,tr)){ p.pr=true; render(); afterMove(); return; }
+  if(canProm(p,fr,tr)){
+    if(autoProm){ p.pr=true; render(); afterMove(); return; }
+    render();
+    phase="anim"; updateBtns();
+    $("promOv").classList.add("on");
+    promCb=(yes)=>{ if(yes) p.pr=true; render(); afterMove(); };
+    return;
+  }
+  render(); afterMove();
+}
+let promCb=null;
+$("promYes").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("promOv").classList.remove("on"); const cb=promCb; promCb=null; if(cb) cb(true); });
+$("promNo").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("promOv").classList.remove("on"); const cb=promCb; promCb=null; if(cb) cb(false); });
+
+function doDrop(t,r,c){
+  hist.push(snapState());
+  hands[turn][t]--; if(hands[turn][t]<=0) delete hands[turn][t];
+  board[r][c]={t:t,o:turn,pr:false}; lastMoveCell=[r,c];
+  sel=null; legalCells=[]; playPlace(); render();
+  afterMove();
+}
+
+/* ================= ビンゴ抽選(球がカードの周りを回り続け、その中から1つをピックアップ) ================= */
+function afterMove(){ moveCount++; bingoRoll(); }
+function bingoRoll(){
+  phase="anim"; updateBtns();
+  if(!pool.length){ switchTurn(); return; }
+  const num=pool.splice(Math.floor(Math.random()*pool.length),1)[0];
+  const flow=$("flow");
+  const wrapR=$("boardWrap").getBoundingClientRect();
+  const cx=wrapR.left+wrapR.width/2, cy=wrapR.top+wrapR.height/2, baseR=wrapR.width/2;
+  const nums=[num]; const cand=pool.slice();
+  while(nums.length<22 && cand.length){ nums.push(cand.splice(Math.floor(Math.random()*cand.length),1)[0]); }
+  const balls=[];
+  nums.forEach(n=>{
+    const isWin=n===num;
+    const size=isWin? 62+Math.random()*10 : 42+Math.random()*30;
+    const el=document.createElement("span");
+    el.className="fb"; el.textContent=n;
+    el.style.width=size+"px"; el.style.height=size+"px"; el.style.fontSize=Math.round(size*0.38)+"px";
+    el.style.background=ballBg(n);
+    flow.appendChild(el);
+    balls.push({ n:n, el:el, size:size, x:0, y:0,
+      ang:Math.random()*6.283,
+      av:(0.8+Math.random()*1.6),                                   // 角速度=バラバラ(みんな同方向にぐるぐる)
+      rx:baseR+26+Math.random()*84, ry:baseR*0.9+22+Math.random()*74,
+      rot:Math.random()*360, vr:(Math.random()<0.5?-1:1)*(140+Math.random()*420) });   // 球自身の回転もバラバラ
+  });
+  const winner=balls.find(b=>b.n===num);
+  flow.style.display="block";
+  const t0=performance.now();
+  let prev=t0, st=0, stT=0, fadeT=0, sx=0, sy=0, srot=0;   // st: 0=周回 1=ピックアップ 2=中央で見せる 3=マス強調
+  const targetSize=100;
+  const rattleIv=setInterval(playRattle,110);
+  const iv=setInterval(()=>{
+    const t=performance.now(), dt=Math.min(0.05,(t-prev)/1000); prev=t;
+    const inK=Math.min(1,(t-t0)/550), inE=1-Math.pow(1-inK,3);
+    const m=2.5-1.5*inE;   // 画面外(遠い軌道)から吸い込まれて、カードの周りの軌道へ
+    balls.forEach(b=>{
+      if(b===winner&&st>=1) return;
+      b.ang+=b.av*dt; b.rot+=b.vr*dt;
+      b.x=cx+b.rx*m*Math.cos(b.ang)-b.size/2;
+      b.y=cy+b.ry*m*Math.sin(b.ang)-b.size/2;
+      if(st>=1) b.el.style.opacity=Math.max(0, 1-(t-fadeT)/500);
+      b.el.style.transform="translate("+b.x+"px,"+b.y+"px) rotate("+b.rot+"deg)";
+    });
+    if(st===0 && t-t0>1500){
+      st=1; stT=t; fadeT=t; clearInterval(rattleIv);
+      sx=winner.x; sy=winner.y; srot=winner.rot%360;
+    }
+    else if(st===1){
+      const k=Math.min(1,(t-stT)/340), e=1-Math.pow(1-k,3);
+      const tx=cx-targetSize/2, ty=cy-targetSize/2;
+      const sc=1+(targetSize/winner.size-1)*e;
+      winner.el.style.transformOrigin="top left";
+      winner.el.style.transform="translate("+(sx+(tx-sx)*e)+"px,"+(sy+(ty-sy)*e)+"px) rotate("+(srot*(1-e))+"deg) scale("+sc+")";
+      if(k>=1){ st=2; stT=t; playBallOut();
+        $("ball").textContent=num; $("ball").style.background=ballBg(num); $("ball").style.color="#fff"; }
+    }
+    else if(st===2 && t-stT>480){
+      st=3; stT=t;
+      const cellPos=cellOfNum[num];
+      const cellEl=boardEl.querySelector('.cell[data-r="'+cellPos[0]+'"][data-c="'+cellPos[1]+'"]');
+      if(cellEl) cellEl.classList.add("target");   // 球が選ばれた瞬間、対応するマスを強調
+      playTarget();
+    }
+    else if(st===3 && t-stT>560){
+      clearInterval(iv);
+      flow.innerHTML=""; flow.style.display="none";
+      openSquare(num);
+    }
+  },16);
+}
+function openSquare(num){
+  const cell=cellOfNum[num], r=cell[0], c=cell[1];
+  const victim=board[r][c];
+  holes[r][c]=true; board[r][c]=null;
+  playOpen();
+  render();
+  const el=boardEl.querySelector('.cell[data-r="'+r+'"][data-c="'+c+'"]');
+  if(el){ const pu=document.createElement("span"); pu.className="punch"; pu.textContent=num; el.appendChild(pu); setTimeout(()=>pu.remove(),600); }
+  const bw=$("boardWrap"); bw.classList.remove("shake"); void bw.offsetWidth; bw.classList.add("shake");
+  if(victim){
+    if(victim.t==="K"){
+      playFall();
+      setTimeout(()=>gameOver(1-victim.o, nameOf(victim.o)+"の玉のマスが開いてしまった…"), 650);
+      return;
+    }
+    hands[1-victim.o][victim.t]=(hands[1-victim.o][victim.t]|0)+1;
+    playFall();
+    render();
+  }
+  setTimeout(switchTurn, 250);
+}
+function switchTurn(){
+  if(phase==="over") return;
+  turn=1-turn; phase="idle";
+  if(!hasAnyMove(turn)){ gameOver(1-turn, nameOf(turn)+"は動ける駒がなくなった"); return; }
+  render();
+  if(mode==="cpu"&&turn===cpuSide()) setTimeout(cpuThink, 600);
+}
+function gameOver(winner, reason){
+  phase="over"; sel=null; legalCells=[]; updateBtns();
+  $("rTitle").textContent=nameOf(winner)+"の勝ち";
+  $("rReason").textContent=reason;
+  playWin();
+  setTimeout(()=>$("resultOv").classList.add("on"), 500);
+}
+
+/* ================= ロボット ================= */
+const VAL={P:100,L:300,N:330,S:520,G:560,B:820,R:980,K:100000};
+function pieceVal(p){ return VAL[p.t]+(p.pr?230:0); }
+function allCands(o){
+  const out=[];
+  for(let r=0;r<9;r++)for(let c=0;c<9;c++){
+    const p=board[r][c]; if(!p||p.o!==o) continue;
+    genMoves(r,c).forEach(m=>{
+      let prom=false;
+      if(mustProm(p,m[0])) prom=true;
+      else if(canProm(p,r,m[0])) prom=true;
+      out.push({k:"m",fr:r,fc:c,tr:m[0],tc:m[1],prom:prom});
+    });
+  }
+  HAND_ORDER.forEach(t=>{ if((hands[o][t]|0)>0) genDrops(t,o).forEach(d=>out.push({k:"d",t:t,r:d[0],c:d[1]})); });
+  return out;
+}
+function bestCaptureVal(o){
+  let best=0;
+  for(let r=0;r<9;r++)for(let c=0;c<9;c++){
+    const p=board[r][c]; if(!p||p.o!==o) continue;
+    const ms=genMoves(r,c);
+    for(let i=0;i<ms.length;i++){ const q=board[ms[i][0]][ms[i][1]]; if(q&&q.o!==o){ const v=pieceVal(q); if(v>best) best=v; } }
+  }
+  return best;
+}
+function cpuThink(){
+  const me=cpuSide();
+  if(phase!=="idle"||turn!==me||mode!=="cpu") return;
+  const cands=allCands(me);
+  if(!cands.length){ gameOver(humanSide, "ロボットは動ける駒がなくなった"); return; }
+  let best=null, bestScore=-1e9;
+  const fwd = me===1? 1 : -1;
+  for(const cand of cands){
+    let gain=0, undo=null;
+    if(cand.k==="m"){
+      const p=board[cand.fr][cand.fc], cap=board[cand.tr][cand.tc];
+      if(cap) gain+=pieceVal(cap);
+      if(cap&&cap.t==="K"){ best=cand; bestScore=1e9; break; }
+      if(cand.prom&&!p.pr) gain+=180;
+      undo={k:"m",p:p,cap:cap,prevPr:p.pr};
+      board[cand.tr][cand.tc]=p; board[cand.fr][cand.fc]=null; if(cand.prom) p.pr=true;
+    }else{
+      gain+=15;
+      undo={k:"d"};
+      board[cand.r][cand.c]={t:cand.t,o:me,pr:false};
+    }
+    let score=gain;
+    if(cpuLv>=1){ score -= bestCaptureVal(1-me)*0.92; }
+    if(cpuLv>=2 && cand.k==="m"){ score += (cand.tr-cand.fr)*fwd*6 + (4-Math.abs(4-cand.tc))*2; }
+    score += (Math.random()-0.5)*(cpuLv===0? 400 : cpuLv===1? 60 : 10);
+    if(undo.k==="m"){ undo.p.pr=undo.prevPr; board[cand.fr][cand.fc]=undo.p; board[cand.tr][cand.tc]=undo.cap; }
+    else{ board[cand.r][cand.c]=null; }
+    if(score>bestScore){ bestScore=score; best=cand; }
+  }
+  if(cpuLv===0 && Math.random()<0.3) best=cands[Math.floor(Math.random()*cands.length)];
+  if(best.k==="m") doMove(best.fr,best.fc,best.tr,best.tc,true);
+  else doDrop(best.t,best.r,best.c);
+}
+
+/* ================= 一手戻る・降参 ================= */
+$("undoBtn").addEventListener("click",()=>{
+  ensureAudio(); playSelect();
+  if(inputLocked()||!hist.length) return;
+  if(mode==="cpu"){ doUndo(); return; }
+  $("undoOv").classList.add("on");   // 1台: 相手に聞く
+});
+$("undoYes").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("undoOv").classList.remove("on"); doUndo(); });
+$("undoNo").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("undoOv").classList.remove("on"); });
+$("giveupBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); if(phase!=="idle") return; $("cfOv").classList.add("on"); });
+$("cfYes").addEventListener("click",()=>{
+  ensureAudio(); playSelect(); $("cfOv").classList.remove("on");
+  const loser = mode==="cpu"? humanSide : turn;
+  gameOver(1-loser, nameOf(loser)+"が降参した");
+});
+$("cfNo").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("cfOv").classList.remove("on"); });
+
+/* ================= 画面遷移 ================= */
+function showSetup(m){
+  document.querySelectorAll("#modeRow .mbtn").forEach(b=>b.classList.toggle("sel", b.dataset.mode===m));
+  $("localSetup").classList.toggle("on", m==="local");
+  $("friendSetup").classList.toggle("on", m==="friend");
+  $("cpuSetup").classList.toggle("on", m==="robot");
+}
+document.querySelectorAll("#modeRow .mbtn").forEach(b=>{
+  b.addEventListener("click",()=>{ ensureAudio(); playSelect(); showSetup(b.dataset.mode); });
+});
+document.querySelectorAll("#lvRow .obtn").forEach(b=>{
+  b.addEventListener("click",()=>{ ensureAudio(); playSelect();
+    document.querySelectorAll("#lvRow .obtn").forEach(x=>x.classList.remove("sel")); b.classList.add("sel"); });
+});
+document.querySelectorAll("#orderRow .obtn").forEach(b=>{
+  b.addEventListener("click",()=>{ ensureAudio(); playSelect();
+    document.querySelectorAll("#orderRow .obtn").forEach(x=>x.classList.remove("sel")); b.classList.add("sel"); });
+});
+$("makeRoomBtn").addEventListener("click",()=>{ ensureAudio(); toast("オンライン対局は準備中"); });
+$("joinRoomBtn").addEventListener("click",()=>{ ensureAudio(); toast("オンライン対局は準備中"); });
+function toGame(){ $("titleScene").classList.remove("on"); $("gameScene").classList.add("on"); }
+function toTitle(){ clearTimeout(freeTmr); $("gameScene").classList.remove("on"); $("titleScene").classList.add("on"); }
+$("startLocalBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); mode="local"; humanSide=0; toGame(); initGame(); });
+$("startBtn").addEventListener("click",()=>{
+  ensureAudio(); playSelect();
+  mode="cpu";
+  const lvBtn=document.querySelector("#lvRow .obtn.sel"); cpuLv=lvBtn? +lvBtn.dataset.lv : 1;
+  const odBtn=document.querySelector("#orderRow .obtn.sel"); const f=odBtn? odBtn.dataset.first : "1";
+  humanSide = f==="r" ? (Math.random()<0.5?0:1) : (f==="1"?0:1);
+  toGame(); initGame();
+});
+$("againBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("resultOv").classList.remove("on"); initGame(); });
+$("homeBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("resultOv").classList.remove("on"); toTitle(); });
+
+/* ================= あそびかた ================= */
+function buildHelp(){
+  $("helpBody").innerHTML='<div class="h-sec">基本ルール</div>'
+   +'<p>ルールは将棋。ただし盤がビンゴカードになっている(中央はFREE=最初から開いている)</p>'
+   +'<div class="h-sec">ビンゴ</div>'
+   +'<p>一手打つたびにビンゴが回り、出た数字のマスが開く。開いたマスには入れない・通れない。開いたマスの駒は落ちて、相手の持ち駒になる</p>'
+   +'<div class="h-sec">勝ち負け</div>'
+   +'<p>相手の玉を取ったら勝ち(王手・詰みの判定はなし)。自分の玉のマスが開いたら、その瞬間に負け</p>'
+   +'<div class="h-sec">そのほか</div>'
+   +'<p>成り・持ち駒を打つのは将棋と同じ(二歩などの禁じ手も同じ)。駒の動きが分からなくても、'+TAPW+'すれば動ける場所が出るので大丈夫</p>';
+}
+$("helpBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); buildHelp(); $("helpOv").classList.add("on"); });
+$("helpClose").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("helpOv").classList.remove("on"); });
+$("helpOv").addEventListener("click",e=>{ if(e.target===$("helpOv")){ playSelect(); $("helpOv").classList.remove("on"); } });
+
+/* ================= 効果音トグル ================= */
+const seBtn=$("seBtn");
+function renderSnd(){ seBtn.classList.toggle("off",!seOn); }
+seBtn.addEventListener("click",()=>{
+  ensureAudio();
+  seOn=!seOn; try{ localStorage.setItem("sgb.se",seOn?"1":"0"); }catch(e){}
+  renderSnd();
+  if(seBus) seBus.gain.setTargetAtTime(seOn?1:0, actx.currentTime, 0.02);
+  if(seOn) playSelect();
+});
+window.addEventListener("pointerdown",ensureAudio,{passive:true});
+
+/* 入力欄は、内容があればタッチで全選択(全入力欄共通) */
+document.addEventListener("focusin",e=>{
+  const t=e.target;
+  if(t && t.tagName==="INPUT" && t.value){ setTimeout(()=>{ try{ t.select(); }catch(_){}} ,0); }
+});
+
+renderSnd();
+})();
+</script>
+</body>
+</html>
