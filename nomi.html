@@ -536,6 +536,11 @@ setInterval(()=>{
 flushBacklog();   // 前回閉じた時に画面にいたノミ(carryOver)をこの瞬間に復活(留守分は後でサーバー時刻が取れてから)
 setTimeout(()=>{ if(!backlogDone) creditBacklog(false); }, 4000);   // 4秒経ってもサーバー時刻が取れなければ端末時計で留守分を出す(オフライン等でも機能が止まらない)
 refreshRank();     // 起動時に順位を取得して虹ノミの出やすさを更新+サーバー時刻を取得して留守分を反映
+// スマホ復帰/リロード時、画面サイズがまだ0のあいだにflushBacklogが保留になったぶんを確実に出し直す(2026-07-18バグ修正:
+//   放置後に戻ると数匹しか読み込まれず2回リロードが必要だった対策)。resize/orientation/pageshow/表示復帰で再フラッシュ+留守分credit
+function recoverFleas(){ if(!backlogDone) creditBacklog(true); flushBacklog(); }
+["resize","orientationchange","pageshow"].forEach(ev=>window.addEventListener(ev, recoverFleas));
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") recoverFleas(); });
 window.addEventListener("pagehide",()=>{ try{ localStorage.setItem("nomi.lastAlive",String(Date.now())); const sn=serverNow(); if(sn) localStorage.setItem("nomi.lastAliveS",String(Math.floor(sn))); localStorage.setItem("nomi.fleaCount",String(fleas.length)); localStorage.setItem("nomi.nijiCount",String(fleas.reduce((a,f)=>a+(f.niji?1:0),0))); }catch(e){} });
 
 function updateFlea(f,dt,t){

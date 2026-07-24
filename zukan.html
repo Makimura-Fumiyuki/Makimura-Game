@@ -479,7 +479,10 @@
       $("editBtn").addEventListener("click",()=>{ editing=true; renderMyArea(); });
       $("delBtn").addEventListener("click",()=>$("delOv").classList.add("on"));
     } else {
-      const bd=(editing&&myEntry?myEntry.body:"");
+      // 下書き: 新規投稿の本文は入力するたびに自動でローカル保存し、次に開いた時に復元(投稿成功で消す)
+      const draftKey = cur ? ("zukan.draft."+cur.id) : "";
+      const loadDraft=()=>{ try{ return localStorage.getItem(draftKey)||""; }catch(e){ return ""; } };
+      const bd=(editing&&myEntry?myEntry.body:(myEntry?"":loadDraft()));
       const nameHtml = myName
         ? '<div class="pen-name">ペンネーム：<b>'+esc(myName)+'</b></div>'
         : '<input id="fAuthor" maxlength="16" placeholder="ペンネーム" value="'+esc(savedName())+'">';
@@ -488,10 +491,12 @@
         +nameHtml
         +'<textarea id="fBody" maxlength="'+MAXBODY+'" placeholder="どんな生き物？\n生態や見た目、変わった習性など、自由に書いてみよう">'+esc(bd)+'</textarea>'
         +'<div class="form-row"><span class="charc" id="charc">0 / '+MAXBODY+'</span>'
-        +'<span style="display:flex;gap:8px;">'+(editing?'<button class="btn ghost" id="cancelBtn">やめる</button>':'')+'<button class="btn p" id="postBtn">'+(myEntry?"更新する":"投稿する")+'</button></span></div></div>';
+        +'<span style="display:flex;gap:8px;">'+(editing?'<button class="btn ghost" id="cancelBtn">やめる</button>':'')+'<button class="btn p" id="postBtn">'+(myEntry?"更新する":"投稿する")+'</button></span></div>'
+        +(myEntry?'':'<div class="charc" style="margin-top:6px;">入力内容は自動で下書き保存されます</div>')+'</div>';
       const bt=$("fBody"), cc=$("charc");
       const upd=()=>{ const n=[...bt.value].length; cc.textContent=n+" / "+MAXBODY; cc.classList.toggle("over",n>MAXBODY); };
-      bt.addEventListener("input",upd); upd();
+      bt.addEventListener("input",()=>{ upd(); if(!myEntry && draftKey){ try{ localStorage.setItem(draftKey, bt.value); }catch(e){} } });   // 新規投稿は入力を下書き保存
+      upd();
       $("postBtn").addEventListener("click",submitEntry);
       if($("cancelBtn")) $("cancelBtn").addEventListener("click",()=>{ editing=false; renderMyArea(); });
     }
@@ -576,6 +581,7 @@
       toast("送信に失敗しました。もう一度ためしてね"); $("postBtn").disabled=false; $("postBtn").textContent=myEntry?"更新する":"投稿する"; return;
     }
     editing=false;
+    try{ if(cur) localStorage.removeItem("zukan.draft."+cur.id); }catch(e){}   // 投稿できたら下書きを消す
     toast(myEntry?"更新しました":"投稿しました");
     await openDetail(cur.id);
   }
