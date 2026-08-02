@@ -122,6 +122,12 @@
   .tab{ border:1.5px solid rgba(47,125,79,.35); background:#fff; color:var(--grn-d); font-weight:800; font-size:12.5px;
     min-width:96px; text-align:center; padding:6px 15px 7px; border-radius:999px; cursor:pointer; }
   .tab.on{ background:var(--grn); color:#fff; border-color:var(--grn); }
+  /* 自分の投稿までスクロールするボタン(みんなの図鑑の中で自分の行を探さなくていい) */
+  .jump{ margin-left:auto; border:none; background:none; color:var(--grn-d); font-weight:800; font-size:12.5px;
+    text-decoration:underline; text-decoration-color:rgba(47,125,79,.35); text-underline-offset:3px; cursor:pointer; padding:0 2px; }
+  .jump:active{ opacity:.6; }
+  .entry.mine-row{ animation:mineFlash 1.4s ease; }
+  @keyframes mineFlash{ 0%,100%{ background:#fbfef9; } 25%{ background:#eaf7e6; } }
   .efoot{ display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-top:10px; }
   .efoot .eact{ margin-right:auto; display:flex; gap:8px; }
   .like-btn{ flex:none; display:inline-flex; align-items:center; gap:5px; cursor:pointer; font-family:inherit;
@@ -208,6 +214,7 @@
       <div class="tabs">
         <button class="tab on" data-s="likes">いいね数</button>
         <button class="tab" data-s="new">新着</button>
+        <button class="jump" id="myJump" style="display:none;">自分の図鑑を見る</button>
       </div>
       <div class="entries" id="entries"></div>
     </div>
@@ -474,12 +481,7 @@
   function renderMyArea(){
     const a=$("myArea");
     if(myEntry && !editing){
-      a.innerHTML='<div class="section-label">あなたの図鑑</div>'
-        +'<div class="entry mine"><div class="eh"><span class="au">'+esc(myEntry.author)+'</span><span class="dt">'+fmtDate(myEntry.updated_at||myEntry.created_at)+'</span></div>'
-        +'<div class="bd">'+esc(myEntry.body)+'</div>'
-        +'<div class="efoot"><div class="eact"><button class="btn ghost mini" id="editBtn">編集</button><button class="btn ghost mini" id="delBtn" style="color:var(--red);border-color:rgba(215,71,63,.5);">削除</button></div></div></div>';   // あなたの図鑑にはいいねボタンを出さない(みんなの図鑑側の自分の行では押せる)
-      $("editBtn").addEventListener("click",()=>{ editing=true; renderMyArea(); });
-      $("delBtn").addEventListener("click",()=>$("delOv").classList.add("on"));
+      a.innerHTML="";   // 「あなたの図鑑」の重複表示は廃止(2026-08-01)=自分の投稿はみんなの図鑑の中だけに出し、編集/削除もそこから
     } else {
       // 下書き: 新規投稿の本文は入力するたびに自動でローカル保存し、次に開いた時に復元(投稿成功で消す)
       const draftKey = cur ? ("zukan.draft."+cur.id) : "";
@@ -520,15 +522,24 @@
     document.querySelectorAll(".tabs .tab").forEach(x=>x.classList.toggle("on", x===t));
     renderEntries();
   }));
+  { const jb=$("myJump"); if(jb) jb.addEventListener("click",()=>{
+      const row=$("myEntryRow"); if(!row) return;
+      row.scrollIntoView({block:"center"});
+      row.classList.remove("mine-row"); void row.offsetWidth; row.classList.add("mine-row");   // 光らせて位置を知らせる
+    }); }
   function isMineEntry(e){ return (myUid && e.user_id===myUid) || (myEntry && e.id===myEntry.id); }
   function renderEntries(){
     const box=$("entries");
+    const jb0=$("myJump"); if(jb0) jb0.style.display="none";
     let list=curEntries.slice();
     if(myEntry && !list.some(e=>e.id===myEntry.id)) list=[myEntry].concat(list);   // 自分の投稿もみんなの図鑑に載せる
     if(!list.length){ box.innerHTML='<div class="empty">まだ図鑑がありません<br>最初の1ページを書いてみよう</div>'; return; }
     if(entSort==="likes"){ list=list.slice().sort((a,b)=>((likeCount[b.id]||0)-(likeCount[a.id]||0)) || (new Date(b.created_at)-new Date(a.created_at))); }
     else{ list=list.slice().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)); }
-    box.innerHTML=list.map(e=>'<div class="entry"><div class="eh"><span class="au">'+esc(e.author)+'</span>'+(isMineEntry(e)?'<span class="me-tag">じぶん</span>':'')+(isAdmin&&DYN_BAN_UIDS.has(e.user_id)?'<span class="ban-tag">除外中</span>':'')+'<span class="dt">'+fmtDate(e.updated_at||e.created_at)+'</span></div><div class="bd">'+esc(e.body)+'</div><div class="efoot">'+(isAdmin&&!isMineEntry(e)?'<div class="eact">'+(DYN_BAN_UIDS.has(e.user_id)?'<button class="btn ghost mini" data-aub="'+esc(e.user_id)+'">除外解除</button>':'<button class="btn ghost mini adm-ban" data-ab="'+esc(e.user_id)+'">除外</button>')+'<button class="btn ghost mini adm-del" data-adel="'+e.id+'">削除</button></div>':'')+likeBtnHTML(e.id)+'</div></div>').join("");
+    box.innerHTML=list.map(e=>'<div class="entry'+(isMineEntry(e)?' mine" id="myEntryRow':'')+'"><div class="eh"><span class="au">'+esc(e.author)+'</span>'+(isMineEntry(e)?'<span class="me-tag">じぶん</span>':'')+(isAdmin&&DYN_BAN_UIDS.has(e.user_id)?'<span class="ban-tag">除外中</span>':'')+'<span class="dt">'+fmtDate(e.updated_at||e.created_at)+'</span></div><div class="bd">'+esc(e.body)+'</div><div class="efoot">'+(isMineEntry(e)?'<div class="eact"><button class="btn ghost mini" id="editBtn">編集</button><button class="btn ghost mini" id="delBtn" style="color:var(--red);border-color:rgba(215,71,63,.5);">削除</button></div>':'')+(isAdmin&&!isMineEntry(e)?'<div class="eact">'+(DYN_BAN_UIDS.has(e.user_id)?'<button class="btn ghost mini" data-aub="'+esc(e.user_id)+'">除外解除</button>':'<button class="btn ghost mini adm-ban" data-ab="'+esc(e.user_id)+'">除外</button>')+'<button class="btn ghost mini adm-del" data-adel="'+e.id+'">削除</button></div>':'')+likeBtnHTML(e.id)+'</div></div>').join("");
+    if($("editBtn")) $("editBtn").addEventListener("click",()=>{ editing=true; renderMyArea(); const f=$("fBody"); if(f) f.scrollIntoView({block:"center"}); });
+    if($("delBtn")) $("delBtn").addEventListener("click",()=>$("delOv").classList.add("on"));
+    { const jb=$("myJump"); if(jb) jb.style.display = $("myEntryRow")? "block" : "none"; }   // 自分の投稿がある時だけ出す
     wireLikes(box);
     box.querySelectorAll("[data-adel]").forEach(bn=>bn.addEventListener("click",async()=>{
       if(DEMO){ toast("デモ表示中は削除できません"); return; }

@@ -97,6 +97,7 @@
   .c-thumb svg{ width:100%; height:100%; display:block; }
   .c-thumb.t-dox{ background:#f4f4f1; }
   .c-thumb.t-nomi{ background:#ffffff; }
+  .c-thumb.t-shogibingo{ background:#4a2490; }
   .c-thumb.t-moku{ background:#f3ead7; }
   .c-thumb.t-maigo{ background:#f3ead7; }
   .c-thumb.t-maigomoku{ background:#f3ead7; }
@@ -293,6 +294,44 @@
       </select>
     </div>
     <div id="sections"></div>
+
+    <template id="tpl-shogibingo">
+      <a class="card" href="./shogibingo.html">
+        <div class="c-bar"></div>
+        <div class="c-thumb t-shogibingo">
+          <!-- 将棋onビンゴ: 紫地に黄色いビンゴカード。マスに駒・数字・押し抜かれた穴が混ざる -->
+          <svg viewBox="0 0 260 132" xmlns="http://www.w3.org/2000/svg">
+            <g fill="rgba(255,255,255,.05)">
+              <rect x="-40" y="-20" width="26" height="200" transform="rotate(20 0 66)"/>
+              <rect x="60" y="-20" width="26" height="200" transform="rotate(20 0 66)"/>
+              <rect x="160" y="-20" width="26" height="200" transform="rotate(20 0 66)"/>
+              <rect x="260" y="-20" width="26" height="200" transform="rotate(20 0 66)"/>
+            </g>
+            <g transform="translate(78,9)">
+              <rect x="0" y="0" width="104" height="114" fill="#ffd23e"/>
+              <text x="52" y="17" text-anchor="middle" font-size="12" font-weight="900" letter-spacing="2.6" fill="#4a2490" font-family="Noto Sans JP,sans-serif">BINGO</text>
+              <g fill="#fffdf6"><rect x="8" y="25" width="28" height="26"/><rect x="8" y="53" width="28" height="26"/><rect x="8" y="81" width="28" height="26"/><rect x="38" y="25" width="28" height="26"/><rect x="38" y="53" width="28" height="26"/><rect x="38" y="81" width="28" height="26"/><rect x="68" y="25" width="28" height="26"/><rect x="68" y="53" width="28" height="26"/><rect x="68" y="81" width="28" height="26"/></g>
+              <g fill="rgba(15,15,15,.3)" font-size="13" font-weight="900" text-anchor="middle" font-family="Noto Sans JP,sans-serif"><text x="22" y="43">1</text><text x="52" y="43">4</text><text x="52" y="71">5</text><text x="82" y="71">8</text><text x="82" y="99">9</text></g>
+              <g fill="#1d1128"><path d="M16 73 L16 65 A6 6 0 0 1 28 65 L28 73 Z"/></g>
+              <g fill="#d0a055"><polygon points="22,86.0 29,89.6 30,102 14,102 15,89.6"/><polygon points="52,86.0 59,89.6 60,102 44,102 45,89.6"/><polygon points="82,46.0 75,42.4 74,30 90,30 89,42.4"/></g>
+              <g fill="#241a0c" font-size="9" text-anchor="middle" dominant-baseline="central" font-family="Yuji Syuku,serif"><text x="22" y="94">王</text><text x="52" y="94">歩</text><text x="82" y="38" transform="rotate(180 82 38)">玉</text></g>
+            </g>
+          </svg>
+        </div>
+        <div class="c-body">
+          <div class="c-name">将棋onビンゴ
+            <span class="c-players"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="7.2" r="4.2"/><path d="M9 13.4c-4.4 0-8 2.5-8 6.1V21h16v-1.5c0-3.6-3.6-6.1-8-6.1z"/><circle cx="17.5" cy="8.2" r="3.3"/><path d="M17.5 13.2c-.8 0-1.6.1-2.3.3 1.9 1.3 3.1 3.2 3.1 5.5V21H23v-1.3c0-3-2.5-5.5-5.5-5.5z"/></svg>1〜2人</span>
+          </div>
+          <div class="c-desc">
+            ビンゴカードの上で将棋をするのは愉快だと思います。穴が空けば、上に乗っている駒は落ちます
+          </div>
+          <div class="c-tags">
+            <span class="tag">運まかせ</span><span class="tag">将棋</span><span class="tag">ビンゴ</span>
+          </div>
+          <div class="c-foot"><span class="c-play">あそぶ <span class="tri">▶</span></span><span class="c-count"></span></div>
+        </div>
+      </a>
+    </template>
 
     <template id="tpl-zukan">
       <a class="card" href="./zukan.html">
@@ -518,7 +557,7 @@
             <span class="c-players"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="7.2" r="4.2"/><path d="M9 13.4c-4.4 0-8 2.5-8 6.1V21h16v-1.5c0-3.6-3.6-6.1-8-6.1z"/><circle cx="17.5" cy="8.2" r="3.3"/><path d="M17.5 13.2c-.8 0-1.6.1-2.3.3 1.9 1.3 3.1 3.2 3.1 5.5V21H23v-1.3c0-3-2.5-5.5-5.5-5.5z"/></svg>1〜2人</span>
           </div>
           <div class="c-desc">
-            Q.普通の五目並べ？ A.いいえ、置いた碁石が煙になって別の場所へワープするかも。
+            Q.普通の五目並べ？ A.いいえ、置いた碁石が煙になって別の場所へワープするかも
           </div>
           <div class="c-tags">
             <span class="tag">運まかせ</span><span class="tag">五目並べ</span>
@@ -865,7 +904,7 @@
       <div class="card soon">
         <div class="c-body">
           <div class="c-name">???</div>
-          <div class="c-desc">鋭意制作中。リリースまでお待ちください。</div>
+          <div class="c-desc">鋭意制作中。リリースまでお待ちください</div>
           <span class="c-play">COMING SOON</span>
         </div>
       </div>
@@ -906,6 +945,7 @@
 (function(){
   /* ゲームのデータ: release=リリース日 / cats=カテゴリ / clicks=あそばれた回数(サーバー集計) */
   const GAMES=[
+    { id:"shogibingo", yomi:"しょうぎおんびんご", tpl:"tpl-shogibingo", release:"2026-08-01", cats:["対戦"], soon:true, noIntro:true, clicks:null, likes:null },   // 紹介ページはリリース時に作る
     { id:"zukan", yomi:"みんなでいきものずかん", tpl:"tpl-zukan", release:"2026-07-17", cats:["交流"], clicks:null, likes:null },
     { id:"nomi", thumbLight:true, yomi:"のみのみ", tpl:"tpl-nomi", release:"2026-07-12", cats:["１人でコツコツ"], clicks:null, likes:null },
     { id:"mate", thumbLight:true, yomi:"まてあーと", tpl:"tpl-mate", release:"2026-07-11", cats:["パーティ"], clicks:null, likes:null },
@@ -1007,7 +1047,7 @@
         desc.appendChild(note);
       }
     }
-    if(g.id){   // あそぶの右に「どんなゲーム？」=紹介ページへ(カード全体のリンクとは独立。soonカードでも押せる)
+    if(g.id && !g.noIntro){   // あそぶの右に「どんなゲーム？」=紹介ページへ(カード全体のリンクとは独立。soonカードでも押せる。noIntro=紹介ページ未作成の作品では出さない)
       const th=el.querySelector(".c-thumb");
       if(th){
         const ib=document.createElement("span"); ib.className="c-intro"+(isNew(g)?" below-new":""); ib.setAttribute("role","button");
