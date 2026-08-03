@@ -27,7 +27,8 @@
   }
   *{ box-sizing:border-box; margin:0; padding:0; font-family:"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif; -webkit-tap-highlight-color:transparent; }
   html,body{ min-height:100%; }
-  body{ color:#fff; overflow-x:hidden; background:var(--pp); }   /* フラット=単色べた塗り */
+  body{ color:#fff; overflow-x:hidden; background:var(--pp); -webkit-user-select:none; user-select:none; }   /* ドラッグで青く選択されるのを防ぐ */
+  input,textarea{ -webkit-user-select:text; user-select:text; }
   /* ななめストライプ(流れ続ける。transform=軽量) */
   body::before{ content:""; position:fixed; inset:-160px; z-index:-2; pointer-events:none;
     background:repeating-linear-gradient(115deg, rgba(255,255,255,.04) 0 30px, transparent 30px 78px);
@@ -107,7 +108,8 @@
   #modeRow .mbtn:nth-child(1){ --r:-1.5deg; background:var(--yel); }
   #modeRow .mbtn:nth-child(2){ --r:1deg;    background:var(--cy); animation-delay:-1.3s; }
   #modeRow .mbtn:nth-child(3){ --r:2deg;    background:var(--pk); animation-delay:-2.6s; }
-  .opt-row{ display:flex; gap:9px; justify-content:flex-end; flex-wrap:wrap; }
+  .opt-row{ display:flex; gap:9px; justify-content:flex-end; width:min(76vw,300px); margin-left:auto; }
+  .opt-row .obtn{ flex:1 1 0; min-width:0; }   /* 同じカテゴリ内のボタンは必ず同じ幅 */
   .obtn{ padding:10px 14px 11px; border:none; border-radius:12px; font-size:14px; font-weight:900; color:var(--pp-ink);
     background:#fff; box-shadow:0 4px 0 rgba(20,8,45,.3); outline:3px solid transparent;
     transition:box-shadow .12s, outline .12s; animation:mFloat 4.4s ease-in-out infinite; }
@@ -132,6 +134,13 @@
     .start-btn:hover{ --lift:-4px; --sc:1.04; box-shadow:0 11px 0 rgba(20,8,45,.4); }
     .help-btn:hover,.se-btn:hover{ transform:scale(1.07); }
     .txt-btn:hover{ background:rgba(255,255,255,.26); }
+  }
+
+  /* 横長(PC)ではロゴとメニューを横に並べて画面中央へ寄せる */
+  @media (min-width:900px) and (min-aspect-ratio:1/1){
+    #titleScene{ flex-direction:row; align-items:flex-start; justify-content:center; gap:min(7vw,90px); padding:30px 24px 60px; }
+    .t-wrap{ align-self:flex-start; margin-left:0; margin-top:clamp(14px,6vh,60px); }        /* ロゴは左上(すこし下げる) */
+    .menu{ align-self:flex-start; margin-right:0; margin-top:clamp(80px,19vh,200px); }       /* メニューは右下寄り。上端そろえなのでモードを選んでも動かない */
   }
 
   /* ===== ゲーム画面 ===== */
@@ -216,6 +225,21 @@
     animation:fallSpin .5s ease-in forwards; }
   @keyframes fallSpin{ 0%{ transform:scale(1) rotate(0deg); opacity:1; } 100%{ transform:scale(0) rotate(210deg); opacity:.5; } }
   .fallpc.slow{ animation-duration:1.2s; }   /* 王はゆっくり落ちる */
+  /* 王手ボタン(盤が王手の間はいつでも押せる) */
+  .check-btn{ display:none; padding:9px 22px; font-family:var(--fw); font-size:16px; letter-spacing:.16em; text-indent:.16em;
+    color:var(--pp-ink); background:var(--yel); border:none; border-radius:999px; box-shadow:0 4px 0 rgba(20,8,45,.4); }
+  .check-btn.on{ display:inline-block; animation:mFloat 2.6s ease-in-out infinite; }
+  .check-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(20,8,45,.4); }
+  /* 「王手」の宣言演出 */
+  #checkFx{ position:absolute; transform:translate(-50%,-50%); z-index:58; pointer-events:none;
+    font-family:var(--fw); font-size:clamp(66px,21vw,118px); color:var(--yel); letter-spacing:.1em; white-space:nowrap;
+    text-shadow:5px 6px 0 var(--pp-d), 0 0 22px rgba(255,210,62,.45);
+    animation:checkIn 1.25s cubic-bezier(.2,1.2,.3,1) forwards; }
+  @keyframes checkIn{ 0%{ opacity:0; transform:translate(-50%,-50%) scale(2.2); }
+    13%{ opacity:1; transform:translate(-50%,-50%) scale(1); }
+    18%{ transform:translate(-49%,-51%) scale(1.03); } 23%{ transform:translate(-51%,-49%) scale(1); }
+    80%{ opacity:1; } 100%{ opacity:0; transform:translate(-50%,-50%) scale(1); } }
+
   /* 王のマスが開いた時の特大リアクション */
   #kingFx{ position:absolute; transform:translate(-50%,-50%); z-index:58; pointer-events:none; display:flex; flex-direction:column; align-items:center; gap:4px;
     font-family:var(--fw); color:#ff4b3a; letter-spacing:.08em; white-space:nowrap;
@@ -342,6 +366,7 @@
 
   /* ===== 対局サブボタン ===== */
   .sub-btns{ display:flex; gap:16px; margin-top:14px; }
+  #gameScene > .sub-btns .txt-btn{ min-width:132px; text-align:center; }   /* 一手戻る/降参の幅をそろえる */
   .txt-btn{ padding:9px 24px; font-size:14px; font-weight:900; letter-spacing:.12em; color:#fff;
     background:rgba(255,255,255,.14); border:1.5px solid rgba(255,255,255,.5); border-radius:999px; transition:background .12s; }
   .txt-btn:active{ transform:translateY(1px); }
@@ -370,8 +395,22 @@
   .r-title{ font-size:32px; font-weight:900; animation:rPop .5s cubic-bezier(.2,1.4,.4,1); }
   @keyframes rPop{ 0%{ transform:scale(.3); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
   .r-reason{ font-size:14px; font-weight:700; opacity:.7; }
-  .help-body{ font-size:14px; font-weight:500; line-height:1.9; text-align:left; }
-  .help-body .h-sec{ font-size:13px; font-weight:900; color:var(--pk); margin:12px 0 2px; }
+  .help-body{ font-size:14px; font-weight:500; line-height:1.95; text-align:left; max-height:62vh; overflow-y:auto; }
+  /* 見出しは他ゲームと同じ「色の縦棒」方式 */
+  .help-body .h-sec{ display:flex; align-items:center; gap:8px; font-size:14.5px; font-weight:900;
+    letter-spacing:.08em; color:var(--pp-ink); margin:16px 0 2px; }
+  .help-body .h-sec::before{ content:""; width:5px; height:17px; border-radius:2px; background:var(--pp); flex:none; }
+  .help-body .h-sec.hl{ color:#c1271b; }
+  .help-body .h-sec.hl::before{ background:#c1271b; }
+  .help-body .h-sec:first-child{ margin-top:0; }
+  .help-body p{ margin:3px 0 0; }
+  /* ルール変更ダイアログ(白カードの中なので文字色を反転) */
+  .rule-box{ display:flex; flex-direction:column; gap:12px; width:100%; }
+  #ruleOv .sec-label{ color:var(--pp-ink); opacity:.7; text-align:left; margin-bottom:6px; }
+  #ruleOv .opt-row{ width:100%; margin-left:0; }
+  #ruleOv .obtn{ animation:none; box-shadow:0 3px 0 rgba(20,8,45,.22); }
+  .rule-note{ font-size:11.5px; font-weight:700; color:var(--pp-ink); opacity:.6; }
+
 
   /* ===== フッター ===== */
   #gameScene.on ~ .home-foot{ display:none; }   /* インゲーム中は非表示 */
@@ -415,6 +454,13 @@
         </div>
       </div>
       <div>
+        <div class="sec-label">王のマス</div>
+        <div class="opt-row ksRow">
+          <button class="obtn sel" data-ks="1">開かない<small>王のマスは安全</small></button>
+          <button class="obtn" data-ks="0">開く<small>究極の運ゲー</small></button>
+        </div>
+      </div>
+      <div>
         <div class="sec-label">演出</div>
         <div class="opt-row fxRow">
           <button class="obtn sel" data-fx="1">あり<small>じっくり抽選</small></button>
@@ -431,6 +477,13 @@
         <div class="opt-row sizeRow">
           <button class="obtn sel" data-n="5">ミニ<small>サクッと将棋</small></button>
           <button class="obtn" data-n="9">ノーマル<small>いつもの将棋</small></button>
+        </div>
+      </div>
+      <div>
+        <div class="sec-label">王のマス</div>
+        <div class="opt-row ksRow">
+          <button class="obtn sel" data-ks="1">開かない<small>王のマスは安全</small></button>
+          <button class="obtn" data-ks="0">開く<small>究極の運ゲー</small></button>
         </div>
       </div>
       <div>
@@ -455,6 +508,13 @@
         <div class="opt-row sizeRow">
           <button class="obtn sel" data-n="5">ミニ<small>サクッと将棋</small></button>
           <button class="obtn" data-n="9">ノーマル<small>いつもの将棋</small></button>
+        </div>
+      </div>
+      <div>
+        <div class="sec-label">王のマス</div>
+        <div class="opt-row ksRow">
+          <button class="obtn sel" data-ks="1">開かない<small>王のマスは安全</small></button>
+          <button class="obtn" data-ks="0">開く<small>究極の運ゲー</small></button>
         </div>
       </div>
       <div>
@@ -498,6 +558,7 @@
     <div id="board"></div>
   </div>
   <div class="sub-btns">
+    <button class="check-btn" id="checkBtn">王手</button>
     <button class="txt-btn" id="undoBtn">一手戻る</button>
     <button class="txt-btn" id="giveupBtn">降参</button>
   </div>
@@ -543,6 +604,52 @@
       <button class="txt-btn" id="againBtn">もう一回</button>
       <button class="txt-btn" id="homeBtn">タイトルへ</button>
     </div>
+    <div class="sub-btns" style="margin-top:-8px;">
+      <button class="txt-btn" id="ruleBtn">ルール変更</button>
+    </div>
+  </div>
+</div>
+
+<!-- ルール変更(タイトルに戻らずに変えられる。次の対局から反映) -->
+<div class="overlay" id="ruleOv">
+  <div class="r-card">
+    <div class="cf-msg">ルール変更</div>
+    <div class="rule-box">
+      <div>
+        <div class="sec-label">盤の広さ</div>
+        <div class="opt-row sizeRow">
+          <button class="obtn sel" data-n="5">ミニ<small>サクッと将棋</small></button>
+          <button class="obtn" data-n="9">ノーマル<small>いつもの将棋</small></button>
+        </div>
+      </div>
+      <div>
+        <div class="sec-label">王のマス</div>
+        <div class="opt-row ksRow">
+          <button class="obtn sel" data-ks="1">開かない<small>王のマスは安全</small></button>
+          <button class="obtn" data-ks="0">開く<small>究極の運ゲー</small></button>
+        </div>
+      </div>
+      <div>
+        <div class="sec-label">演出</div>
+        <div class="opt-row fxRow">
+          <button class="obtn sel" data-fx="1">あり<small>じっくり抽選</small></button>
+          <button class="obtn" data-fx="0">なし<small>すぐ結果</small></button>
+        </div>
+      </div>
+    </div>
+    <div class="rule-note" id="ruleNote">※次の「もう一回」から反映されます</div>
+    <div class="sub-btns"><button class="txt-btn" id="ruleClose">とじる</button></div>
+  </div>
+</div>
+
+<!-- 待った(オンライン: あいてに確認) -->
+<div class="overlay" id="undoOv">
+  <div class="r-card">
+    <div class="cf-msg">あいてが一手戻したいそうです</div>
+    <div class="sub-btns">
+      <button class="txt-btn" id="undoNo">だめ</button>
+      <button class="txt-btn" id="undoYes">いいよ</button>
+    </div>
   </div>
 </div>
 
@@ -584,6 +691,7 @@ function ensureAudio(){
     }catch(e){}
   }
   if(actx&&actx.state==="suspended"){ try{ actx.resume(); }catch(e){} }
+  warmTTS();
 }
 function note(f,t,dur,vol,type){ if(!actx)return; const o=actx.createOscillator(),g=actx.createGain();
   o.type=type||"sine"; o.frequency.setValueAtTime(f,t);
@@ -620,6 +728,29 @@ function playKingDoom(){ if(!actx)return; const t=actx.currentTime;   // 王の�
   g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.3,t+0.02); g.gain.exponentialRampToValueAtTime(0.0008,t+1.1);
   o.connect(g); g.connect(seBus); o.start(t); o.stop(t+1.2);
   note(110,t+0.15,0.3,0.2,"triangle"); note(104,t+0.5,0.5,0.16,"triangle"); }
+let ttsVoice=null, ttsWarm=false;
+function warmTTS(){   // 初回発話のもたつきを消すため、無音で一度だけ温めておく
+  if(ttsWarm||!window.speechSynthesis) return; ttsWarm=true;
+  try{
+    const vs=speechSynthesis.getVoices()||[]; ttsVoice=vs.find(v=>/ja/i.test(v.lang))||null;
+    const u=new SpeechSynthesisUtterance("　"); u.volume=0; u.lang="ja-JP"; if(ttsVoice) u.voice=ttsVoice;
+    speechSynthesis.speak(u);
+    speechSynthesis.onvoiceschanged=()=>{ const v2=speechSynthesis.getVoices()||[]; ttsVoice=v2.find(v=>/ja/i.test(v.lang))||ttsVoice; };
+  }catch(e){}
+}
+function playCheck(){   // 王手の宣言: 拍子木のような打ち音+低い響き
+  if(actx){ const t=actx.currentTime;
+    noiseHit(t,2600,900,1.2,0.45,0.05); note(320,t,0.1,0.2,"triangle");
+    noiseHit(t+0.13,2400,800,1.2,0.4,0.05); note(240,t+0.13,0.16,0.2,"triangle"); note(120,t+0.15,0.4,0.18,"sine"); }
+  try{   // 端末に日本語音声があれば「王手」と読み上げる(なければ効果音だけ)
+    if(window.speechSynthesis){
+      const u=new SpeechSynthesisUtterance("王手"); u.lang="ja-JP"; u.rate=1; u.pitch=0.9; u.volume=1;
+      if(ttsVoice) u.voice=ttsVoice;
+      if(speechSynthesis.speaking||speechSynthesis.pending) speechSynthesis.cancel();   // 連打は上書き(初回はcancelを通らないのでラグなし)
+      speechSynthesis.speak(u);
+    }
+  }catch(e){}
+}
 function playWin(){ if(!actx)return; const t=actx.currentTime;
   [523,659,784,1047].forEach((f,i)=>note(f,t+i*0.09,0.28,0.14,"triangle"));
   note(1319,t+0.4,0.4,0.1,"triangle"); }
@@ -632,7 +763,7 @@ const PC_NAME={P:["歩兵","ふひょう"],L:["香車","きょうしゃ"],N:["�
 const PC_NAME_PR={P:["と金","ときん"],L:["成香","なりきょう"],N:["成桂","なりけい"],S:["成銀","なりぎん"],B:["竜馬","りゅうま"],R:["竜王","りゅうおう"]};
 const COL_HUES=[6,26,44,88,140,168,205,246,285];
 let board, holes, hands, turn, phase, sel, legalCells, pool, numAt, cellOfNum, moveCount, lastMoveCell, hist, slideFrom=null, dropPop=false, dropChip=null;
-let mode="local", cpuLv=1, humanSide=0, freeTmr=0, N=5, sizeSel=5, pureShogi=false, fxOn=true;   // fxOn=ビンゴの抽選演出を出すか   // 盤の広さ(5=ミニ将棋が既定)
+let mode="local", cpuLv=1, humanSide=0, freeTmr=0, N=5, sizeSel=5, pureShogi=false, fxOn=true, kingSafe=true;   // fxOn=抽選演出 / kingSafe=王のマスは抽選で選ばれない   // 盤の広さ(5=ミニ将棋が既定)
 /* オンライン対局(Supabase Realtime。碁石系列のseq+ack+再送方式を流用) */
 const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co";
 const SB_KEY="sb_publishable_cak3-W9Mmgahnwawreoa1Q_CVuhmkKL";
@@ -642,7 +773,8 @@ function genCode(){ let t=""; for(let i=0;i<5;i++) t+=CODE_CHARS[Math.floor(Math
 let sbc=null, ch=null, online=false, isHost=false, startSent=false, mySide=0, peerGone=false;
 let mySeq=0, pendingSeq=-1, lastRecvSeq=-1, moveResendTimer=0, joinWatch=0;
 let myRematch=false, peerRematch=false, queuedMove=null, lastNetMove=null;
-function bottomSide(){ if(mode==="cpu") return humanSide; if(online) return mySide; return 0; }
+let undoPending=false, undoIdx=-1, peerUndoIdx=-1;   // オンラインの待った(あいての同意を待っている間)
+function bottomSide(){ if(mode==="cpu") return humanSide; return 0; }   /* オンラインは盤を反転しない=左上が必ず1(後手は自分の駒が上側になる) */
 function cpuSide(){ return 1-humanSide; }
 
 function initGame(){
@@ -739,6 +871,20 @@ function hasAnyMove(o){
   for(const t of HAND_ORDER){ if((hands[o][t]|0)>0 && genDrops(t,o).length) return true; }
   return false;
 }
+/* 王手判定(王手・詰みでゲームは終わらないが、宣言ボタンのために盤を調べる) */
+function kingPos(o){
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){ const p=board[r][c]; if(p&&p.o===o&&p.t==="K"&&!holes[r][c]) return [r,c]; }
+  return null;
+}
+function inCheck(o){
+  const kp=kingPos(o); if(!kp) return false;
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const p=board[r][c]; if(!p||p.o===o||holes[r][c]) continue;
+    const ms=genMoves(r,c);
+    for(let i=0;i<ms.length;i++){ if(ms[i][0]===kp[0]&&ms[i][1]===kp[1]) return true; }
+  }
+  return false;
+}
 function inZone(o,r){ const z=N===9?3:1; return o===0? r<z : r>=N-z; }   /* 敵陣=9路は3段・5路は1段(ミニ将棋準拠) */
 function canProm(p,fr,tr){ return !p.pr && "PLNSBR".includes(p.t) && (inZone(p.o,fr)||inZone(p.o,tr)); }
 function mustProm(p,tr){
@@ -766,18 +912,20 @@ function restoreState(s){
   render();
   if(mode==="cpu"&&turn===cpuSide()) setTimeout(cpuThink,600);
 }
+function undoTargetIdx(me){   // 「meの手番だった最後の局面」まで戻す
+  let i=hist.length-1;
+  while(i>=0 && hist[i].turn!==me) i--;
+  return i;
+}
+function undoTo(i){
+  if(i<0||i>=hist.length) return;
+  const st=hist[i]; hist.length=i; restoreState(st);
+}
 function doUndo(){
   if(!hist.length) return;
-  if(mode==="cpu"){
-    let i=hist.length-1;
-    while(i>=0 && hist[i].turn!==humanSide) i--;
-    if(i<0) return;
-    const s=hist[i]; hist.length=i;
-    restoreState(s);
-  }else{
-    const s=hist.pop();
-    restoreState(s);
-  }
+  if(mode==="cpu"){ undoTo(undoTargetIdx(humanSide)); return; }
+  const s=hist.pop();
+  restoreState(s);
 }
 
 /* ================= 描画 ================= */
@@ -804,8 +952,8 @@ function render(){
       const rot = p.o!==bottomSide();
       const isLast = lastMoveCell&&lastMoveCell[0]===r&&lastMoveCell[1]===c;
       let extra="", style="";
-      // 選べない駒をグレーアウト(1台=相手の駒)
-      if(mode==="local"&&phase==="idle"&&p.o!==turn) extra+=" dim";
+      // 手番でない側の駒はグレーアウト(1台・オンライン・ロボット共通)
+      if(phase==="idle"&&p.o!==turn) extra+=" dim";
       if(isLast && slideFrom){   // A地点→B地点をつなぐ移動アニメ(dimを上書きしない=+=)
         const cs=boardEl.clientWidth/N;
         const dx=(flip? (slideFrom[1]-c)*-1 : (slideFrom[1]-c))*cs;
@@ -840,8 +988,10 @@ function renderCaps(){
 }
 function updateBtns(){
   const busy = phase!=="idle" || (mode==="cpu"&&turn!==humanSide);
-  $("undoBtn").disabled = busy || !hist.length || phase==="over" || online;   // オンラインは待ったなし
+  $("undoBtn").disabled = busy || !hist.length || phase==="over" || undoPending;
   $("giveupBtn").disabled = phase!=="idle";
+  const ck = phase==="idle" && !!board && (inCheck(0)||inCheck(1));   // 盤が王手の間はいつでも宣言できる
+  $("checkBtn").classList.toggle("on", ck);
 }
 let toastTmr=0;
 function toast(msg,ms){ const t=$("toast"); t.textContent=msg; t.classList.add("on"); clearTimeout(toastTmr); toastTmr=setTimeout(()=>t.classList.remove("on"), ms||1800); }
@@ -945,7 +1095,7 @@ function doMove(fr,fc,tr,tc,autoProm){
   if(cap&&cap.t==="K"){
     board[tr][tc]=p; board[fr][fc]=null; lastMoveCell=[tr,tc]; sel=null; legalCells=[]; render();
     if(online&&turn===mySide) sendMyMove(0);   // 決着の一手も相手へ届ける
-    playCap(); gameOver(turn, nameOf(turn)+"が玉を取った"); return;
+    playCap(); gameOver(turn, nameOf(turn)+"が王を取った"); return;
   }
   if(cap){ hands[turn][cap.t]=(hands[turn][cap.t]|0)+1; playCap(); } else playPlace();
   board[tr][tc]=p; board[fr][fc]=null; lastMoveCell=[tr,tc]; slideFrom=[fr,fc];   // 移動アニメ用の出発地点
@@ -1006,7 +1156,13 @@ function bingoRoll(forced){
     pool.splice(fi,1); num=forced;
   }else{
     if(!pool.length){ switchTurn(); return; }
-    num=pool.splice(Math.floor(Math.random()*pool.length),1)[0];
+    let cands=pool;
+    if(kingSafe){   // 王のマスは選ばれない(初期ルール)
+      const safe=pool.filter(n2=>{ const rc=cellOfNum[n2]; const q=board[rc[0]][rc[1]]; return !(q&&q.t==="K"); });
+      if(safe.length) cands=safe;
+    }
+    num=cands[Math.floor(Math.random()*cands.length)];
+    pool.splice(pool.indexOf(num),1);
   }
   if(!fxOn){ openSquare(num); return; }   // 演出なし=動かした瞬間に穴が開く
   setTimeout(()=>boardEl.classList.add("rolling"),20);   // 抽選中は数字をしっかり見せる(★1フレーム遅らせる=直前のrenderで作り直したDOMだと初期値が濃い色になりtransitionが効かない)
@@ -1195,7 +1351,7 @@ function kingDoom(num,r,c,victim,fell){   // fell=true: 自分から穴へ動か
     }
     $("vig").classList.remove("on");
   },1700);
-  setTimeout(()=>{ gameOver(1-victim.o, fell? nameOf(victim.o)+"の玉が穴に落ちた" : nameOf(victim.o)+"の玉のマスが開いた"); },3100);
+  setTimeout(()=>{ gameOver(1-victim.o, fell? nameOf(victim.o)+"の王が穴に落ちた" : nameOf(victim.o)+"の王のマスが開いた"); },3100);
 }
 function switchTurn(){
   if(phase==="over") return;
@@ -1249,7 +1405,7 @@ function applyNetMove(payload){
     const cap=board[m.tr][m.tc];
     if(cap&&cap.t==="K"){
       board[m.tr][m.tc]=p; board[m.fr][m.fc]=null; lastMoveCell=[m.tr,m.tc]; sel=null; legalCells=[]; render();
-      playCap(); gameOver(turn, nameOf(turn)+"が玉を取った"); return;
+      playCap(); gameOver(turn, nameOf(turn)+"が王を取った"); return;
     }
     if(cap){ hands[turn][cap.t]=(hands[turn][cap.t]|0)+1; playCap(); } else playPlace();
     board[m.tr][m.tc]=p; board[m.fr][m.fc]=null; lastMoveCell=[m.tr,m.tc]; slideFrom=[m.fr,m.fc];
@@ -1278,15 +1434,15 @@ function openChannel(code, asHost){
     if(isHost&&!startSent&&presenceCount()>=2){
       startSent=true;
       const hs=Math.random()<0.5?0:1;   // 先手後手はランダム
-      ch.send({ type:"broadcast", event:"start", payload:{ hs:hs, n:sizeSel, pure:pureShogi?1:0, fx:fxOn?1:0 } });
-      startOnline(hs, sizeSel, pureShogi, fxOn);
+      ch.send({ type:"broadcast", event:"start", payload:{ hs:hs, n:sizeSel, pure:pureShogi?1:0, fx:fxOn?1:0, ks:kingSafe?1:0 } });
+      startOnline(hs, sizeSel, pureShogi, fxOn, kingSafe);
     }
   });
   ch.on("presence",{event:"leave"},()=>{ if(!online||presenceCount()>=2) return; opponentLeft(); });
   ch.on("broadcast",{event:"bye"},()=>{ if(online) opponentLeft(); });
   ch.on("broadcast",{event:"start"},({payload})=>{
     if(isHost||!payload) return;
-    startOnline(payload.hs===0?1:0, payload.n===9?9:5, !!payload.pure, payload.fx!==0);
+    startOnline(payload.hs===0?1:0, payload.n===9?9:5, !!payload.pure, payload.fx!==0, payload.ks!==0);
   });
   ch.on("broadcast",{event:"move"},({payload})=>{
     if(!payload) return;
@@ -1305,6 +1461,22 @@ function openChannel(code, asHost){
     gameOver(mySide, "あいてが降参した");
   });
   ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) spawnStamp(payload.i|0, "あいて"); });
+  ch.on("broadcast",{event:"check"},()=>{ if(online) showCheckFx(); });   // あいての王手宣言
+  ch.on("broadcast",{event:"undoreq"},({payload})=>{   // あいてが一手戻したい
+    if(!online||phase!=="idle"||!hist.length) return;
+    peerUndoIdx = (payload&&typeof payload.i==="number")? payload.i : undoTargetIdx(1-mySide);
+    $("undoOv").classList.add("on");
+  });
+  ch.on("broadcast",{event:"undoyes"},()=>{
+    if(!online||!undoPending) return;
+    undoPending=false; undoTo(undoIdx); undoIdx=-1;
+    toast("「一手戻る」が受け入れられました");
+  });
+  ch.on("broadcast",{event:"undono"},()=>{
+    if(!online||!undoPending) return;
+    undoPending=false; undoIdx=-1; updateBtns();
+    toast("「一手戻る」は断られました");
+  });
   ch.on("broadcast",{event:"rematch"},()=>{
     peerRematch=true;
     if(myRematch){ if(isHost) hostRestart(); }
@@ -1312,19 +1484,21 @@ function openChannel(code, asHost){
   });
   ch.on("broadcast",{event:"restart"},({payload})=>{
     if(isHost||!payload) return;
-    startOnline(payload.hs===0?1:0, payload.n===9?9:5, !!payload.pure, payload.fx!==0);
+    startOnline(payload.hs===0?1:0, payload.n===9?9:5, !!payload.pure, payload.fx!==0, payload.ks!==0);
   });
   ch.subscribe(async(status)=>{
     if(status==="SUBSCRIBED"){ try{ await ch.track({}); }catch(e){} }
     else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){ roomStatus('<div class="room-note err">通信に失敗しました。電波を確認してもう一度</div>'); }
   });
 }
-function startOnline(side, n, pure, fx){
+function startOnline(side, n, pure, fx, ks){
   clearTimeout(joinWatch);
   online=true; mode="online"; mySide=side; sizeSel=n; pureShogi=pure; peerGone=false;
   if(typeof fx==="boolean"){ fxOn=fx; document.querySelectorAll(".fxRow .obtn").forEach(x=>x.classList.toggle("sel",(x.dataset.fx==="1")===fxOn)); }
+  if(typeof ks==="boolean"){ kingSafe=ks; document.querySelectorAll(".ksRow .obtn").forEach(x=>x.classList.toggle("sel",(x.dataset.ks==="1")===kingSafe)); }
   $("pureBtn").classList.toggle("on", pureShogi);
   myRematch=false; peerRematch=false; queuedMove=null; lastNetMove=null;
+  undoPending=false; undoIdx=-1; peerUndoIdx=-1; $("undoOv").classList.remove("on");
   mySeq=0; pendingSeq=-1; lastRecvSeq=-1;
   $("resultOv").classList.remove("on");
   toGame(); initGame();
@@ -1332,8 +1506,8 @@ function startOnline(side, n, pure, fx){
 }
 function hostRestart(){   // 部屋主: 先手後手を引き直して再戦
   const hs=Math.random()<0.5?0:1;
-  if(ch) ch.send({ type:"broadcast", event:"restart", payload:{ hs:hs, n:sizeSel, pure:pureShogi?1:0, fx:fxOn?1:0 } });
-  startOnline(hs, sizeSel, pureShogi, fxOn);
+  if(ch) ch.send({ type:"broadcast", event:"restart", payload:{ hs:hs, n:sizeSel, pure:pureShogi?1:0, fx:fxOn?1:0, ks:kingSafe?1:0 } });
+  startOnline(hs, sizeSel, pureShogi, fxOn, kingSafe);
 }
 function opponentLeft(){
   online=false; leaveChannel(); peerGone=true;
@@ -1407,8 +1581,41 @@ function cpuThink(){
 /* ================= 一手戻る・降参 ================= */
 $("undoBtn").addEventListener("click",()=>{
   ensureAudio(); playSelect();
-  if(inputLocked()||!hist.length) return;
-  doUndo();   // 確認ダイアログなし(1台・ロボットとも即戻す。2026-07-31)
+  if(phase!=="idle"||!hist.length||undoPending) return;
+  if(online){   // オンラインはあいての同意をもらってから双方で戻す
+    const i=undoTargetIdx(mySide);
+    if(i<0){ toast("まだ戻せる手がありません"); return; }
+    undoIdx=i; undoPending=true; updateBtns();
+    if(ch){ try{ ch.send({ type:"broadcast", event:"undoreq", payload:{ i:i } }); }catch(e){} }
+    toast("あいてに「一手戻したい」と伝えました");
+    return;
+  }
+  if(inputLocked()) return;
+  doUndo();   // 1台・ロボットは確認ダイアログなしで即戻す
+});
+$("undoYes").addEventListener("click",()=>{
+  ensureAudio(); playSelect(); $("undoOv").classList.remove("on");
+  if(ch){ try{ ch.send({ type:"broadcast", event:"undoyes", payload:{} }); }catch(e){} }
+  undoTo(peerUndoIdx); peerUndoIdx=-1;
+  toast("一手戻しました");
+});
+$("undoNo").addEventListener("click",()=>{
+  ensureAudio(); playSelect(); $("undoOv").classList.remove("on");
+  if(ch){ try{ ch.send({ type:"broadcast", event:"undono", payload:{} }); }catch(e){} }
+  peerUndoIdx=-1;
+});
+function showCheckFx(){
+  const old=$("checkFx"); if(old) old.remove();
+  const fx=document.createElement("div"); fx.id="checkFx"; fx.textContent="王手";
+  const bc=localCenter();
+  fx.style.left=bc.x+"px"; fx.style.top=bc.y+"px";
+  $("gameScene").appendChild(fx); setTimeout(()=>{ if(fx.isConnected) fx.remove(); },1300);
+  if(seOn) playCheck();
+}
+$("checkBtn").addEventListener("click",()=>{
+  ensureAudio();
+  showCheckFx();
+  if(online&&ch){ try{ ch.send({ type:"broadcast", event:"check", payload:{} }); }catch(e){} }   // あいての画面にも出す
 });
 $("giveupBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); if(phase!=="idle") return; $("cfOv").classList.add("on"); });
 $("cfYes").addEventListener("click",()=>{
@@ -1436,6 +1643,10 @@ document.querySelectorAll("#lvRow .obtn").forEach(b=>{
 document.querySelectorAll("#orderRow .obtn").forEach(b=>{
   b.addEventListener("click",()=>{ ensureAudio(); playSelect();
     document.querySelectorAll("#orderRow .obtn").forEach(x=>x.classList.remove("sel")); b.classList.add("sel"); });
+});
+document.querySelectorAll(".ksRow .obtn").forEach(b=>{
+  b.addEventListener("click",()=>{ ensureAudio(); playSelect(); kingSafe=(b.dataset.ks==="1");
+    document.querySelectorAll(".ksRow .obtn").forEach(x=>x.classList.toggle("sel", (x.dataset.ks==="1")===kingSafe)); });
 });
 document.querySelectorAll(".fxRow .obtn").forEach(b=>{
   b.addEventListener("click",()=>{ ensureAudio(); playSelect(); fxOn=(b.dataset.fx==="1");
@@ -1515,6 +1726,14 @@ $("startBtn").addEventListener("click",()=>{
   humanSide = f==="r" ? (Math.random()<0.5?0:1) : (f==="1"?0:1);
   toGame(); initGame();
 });
+$("ruleBtn").addEventListener("click",()=>{
+  ensureAudio(); playSelect();
+  if(online && !isHost){ toast("ルールは部屋を作った側が決めます"); return; }
+  $("ruleNote").textContent = online? "※部屋主の設定です。次の「もう一回」から反映されます" : "※次の「もう一回」から反映されます";
+  $("ruleOv").classList.add("on");
+});
+$("ruleClose").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("ruleOv").classList.remove("on"); });
+$("ruleOv").addEventListener("click",e=>{ if(e.target===$("ruleOv")) $("ruleOv").classList.remove("on"); });
 $("againBtn").addEventListener("click",()=>{
   ensureAudio(); playSelect();
   if(online){   // 両者が「もう一回」で部屋主が再開の合図を送る
@@ -1571,13 +1790,11 @@ document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{
 /* ================= あそびかた ================= */
 function buildHelp(){
   $("helpBody").innerHTML='<div class="h-sec">基本ルール</div>'
-   +'<p>ルールは将棋。ただし盤がビンゴカードになっている。盤の広さはミニ(5×5)とノーマル(9×9)から選べる(ミニは「ミニ将棋」の配置で、成れるのは相手の1段目だけ)</p>'
-   +'<div class="h-sec">ビンゴ</div>'
-   +'<p>一手打つたびにビンゴが回り、出た数字のマスが開く。開いたマスの駒は落ちて、相手の持ち駒になる。穴の上へ駒を動かすこともできる(飛車や角は穴を越えて進める)が、動かした駒はそのまま落ちて相手のものになる。縦・横・ななめの1列が全部開いたらビンゴ=カードが新品に交換される(穴が全部ふさがる)</p>'
-   +'<div class="h-sec">勝ち負け</div>'
-   +'<p>相手の玉を取ったら勝ち(王手・詰みの判定はなし)。自分の玉のマスの数字が出たら、その時点で負け(玉が穴に落ちたら終わり)</p>'
-   +'<div class="h-sec">そのほか</div>'
-   +'<p>成り・持ち駒を打つのは将棋と同じ(二歩などの禁じ手も同じ)。駒の動きが分からなくても、'+TAPW+'すれば動ける場所が出るので大丈夫。タイトル左下の「通常将棋モード」をONにすると、ビンゴなしの普通の将棋も遊べる</p>';
+   +'<p>将棋です。それぞれ決まった向きに動かせる駒を使い、相手の王を取ったら勝ち。王以外の取った駒は持ち駒となり、自分の味方として活用できます。また、相手の陣地まで進んだ駒は裏返って強くなります(成り)</p>'
+   +'<div class="h-sec hl">onビンゴ</div>'
+   +'<p>盤がビンゴカードです。一手打つたびに数字が1つ指定され、そのマスに穴が開きます。穴の上の駒は、相手の持ち駒になります</p>'
+   +'<div class="h-sec">小ばなし</div>'
+   +'<p>BINGOしたらカードが新品になるかも...</p>';
 }
 $("helpBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); buildHelp(); $("helpOv").classList.add("on"); });
 $("helpClose").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("helpOv").classList.remove("on"); });
@@ -1594,6 +1811,7 @@ seBtn.addEventListener("click",()=>{
   if(seOn) playSelect();
 });
 window.addEventListener("pointerdown",ensureAudio,{passive:true});
+try{ if(window.speechSynthesis) speechSynthesis.getVoices(); }catch(e){}
 
 
 /* 入力欄は、内容があればタッチで全選択(全入力欄共通) */

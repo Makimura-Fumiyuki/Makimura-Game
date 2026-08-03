@@ -901,11 +901,11 @@ const DEFAULT_NAMES=["1","2"];
 let playersSetup=DEFAULT_NAMES.slice();
 let players=[];                              // [{id,n,s,c}]
 let timeLimit=30, dobonOn=true, topicTmr=0;
-const ERASE_OPTS=[{k:"なし",v:0},{k:"ちょっと",v:32.5},{k:"普通",v:65},{k:"たくさん",v:130}];   // 消せる総量(残量の最大)。2026-07-16: 半分(25/50/100)は減りが早すぎ→1.3倍に
+const ERASE_OPTS=[{k:"なし",v:0},{k:"ちょっと",v:16.25},{k:"普通",v:32.5},{k:"たくさん",v:65}];   // 消せる総量(残量の最大)。2026-08-01にさらに1/2
 let eraserAmt=2;              // 消しゴム量の設定(0なし/1ちょっと/2普通/3たくさん・初期=普通)
 let eraseMax=100, eraseLeft=0;
 let roundNo=1, drawerId=null, nextDrawerId=null;
-const ANSWER_MS=8000;
+const ANSWER_MS=16000;   // 回答の持ち時間(2026-08-01に2倍)
 let haltedIds=new Set(), oAns=null, answerEnd=0, ansTmr=0, drawPausedEl=0;
 let myHalted=false, curAns=null, ansEnd=0, ansIv=0, lastLights=5, mateCooldownUntil=0, ansJudgedSeen=false;
 let topic="", phase="title";
@@ -2001,8 +2001,8 @@ function renderAnswerArea(){
   if(meAns && !judging) setTimeout(()=>{ const i=$("ansInput"); if(i) i.focus(); },50);
 }
 function playAnsTick(){ if(!actx) return; const t=actx.currentTime; note(740,t,0.07,0.16,"triangle"); note(1108,t+0.02,0.05,0.09,"sine"); }
-function playMate(){ if(!actx) return; const t=actx.currentTime;   // 「異議あり!」風=低めのパンチ(高音を避ける)
-  note(196,t,0.11,0.42,"sawtooth"); note(262,t+0.03,0.15,0.34,"square"); note(110,t+0.02,0.34,0.42,"sine"); note(330,t+0.14,0.14,0.2,"triangle"); }
+function playMate(){ if(!actx) return; const t=actx.currentTime;   // 「異議あり!」風=低く重いパンチ(2026-08-01にさらに1オクターブ近く下げた=高音の刺さりを消す)
+  note(98,t,0.13,0.45,"sawtooth"); note(147,t+0.03,0.17,0.3,"square"); note(65,t+0.02,0.4,0.42,"sine"); note(175,t+0.15,0.16,0.16,"triangle"); }
 function playAnsSend(){ if(!actx) return; const t=actx.currentTime;   // 回答を送った
   note(587,t,0.08,0.2,"triangle"); note(880,t+0.06,0.13,0.18,"triangle"); }
 function playAnsRecv(){ if(!actx) return; const t=actx.currentTime;   // 回答が届いた
