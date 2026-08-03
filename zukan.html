@@ -7,9 +7,9 @@
 <meta name="apple-mobile-web-app-title" content="みんなで生き物図鑑">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#2f7d4f">
-<meta name="description" content="牧村が毎日へんてこな生き物の名前を出題。その生態を、みんなで自由に想像して図鑑に書き込もう。世界にひとつの、みんなで作る生き物図鑑">
+<meta name="description" content="牧村が定期的にへんてこな生き物の名前を出題。その生態を、みんなで自由に想像して図鑑に書き込もう。世界にひとつの、みんなで作る生き物図鑑">
 <meta property="og:title" content="みんなで生き物図鑑">
-<meta property="og:description" content="牧村が毎日へんてこな生き物の名前を出題。その生態を、みんなで自由に想像して図鑑に書き込もう。世界にひとつの、みんなで作る生き物図鑑">
+<meta property="og:description" content="牧村が定期的にへんてこな生き物の名前を出題。その生態を、みんなで自由に想像して図鑑に書き込もう。世界にひとつの、みんなで作る生き物図鑑">
 <!-- Google AdSense -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8539036056022595" crossorigin="anonymous"></script>
 <style>
@@ -33,7 +33,7 @@
   .logo-txt .k{ font-size:12px; font-weight:900; letter-spacing:.22em; color:rgba(255,255,255,.82); margin-bottom:4px; margin-left:2px; }
   .logo-txt .m{ font-size:clamp(27px,7.4vw,36px); font-weight:900; letter-spacing:.02em; color:#fff; text-shadow:0 2px 4px rgba(20,60,38,.3); }
   .logo-txt .m b{ color:#ffe08a; }
-  header p{ margin:0; font-size:12px; font-weight:500; opacity:.92; }   /* 13px→12px: スマホで1文字だけ折り返すのを防ぐ */
+  header p{ margin:0; font-size:11.2px; font-weight:500; opacity:.92; }   /* スマホで1文字だけ折り返すのを防ぐ。13px→12px→11.2px(「毎日」→「定期的に」で2文字増えたぶん) */
   header .yaku{ position:fixed; top:10px; right:10px; z-index:50; background:rgba(31,92,57,.55); border:none; color:#fff;
     font-size:12px; font-weight:800; padding:7px 14px; border-radius:999px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,.18); }
   .name-pill{ position:fixed; top:10px; left:10px; z-index:50; display:flex; align-items:center; gap:6px; max-width:44vw;
@@ -191,7 +191,7 @@
         </svg></span>
         <span class="logo-txt"><span class="k">みんなで</span><span class="m">生き物<b>図鑑</b></span></span>
       </h1>
-      <p>牧村が毎日生き物をつれてくるから、生態をみんなで考えよう</p>
+      <p>牧村が定期的に生き物をつれてくるから、生態をみんなで考えよう</p>
     </div>
   </header>
 
@@ -428,7 +428,7 @@
     const wireAdm=()=>{ if($("admNew")) $("admNew").addEventListener("click",()=>{ crEditId=null; $("crTitle").textContent="新しい生き物を出す"; $("crPost").textContent="出題する"; $("crName").value=""; $("crNote").value=""; $("crOv").classList.add("on"); setTimeout(()=>$("crName").focus(),50); }); };
     if(!creatures.length){ b.innerHTML=admBtn+'<div class="empty">まだ生き物がいません<br>牧村が連れてくるのを待ってね</div>'; wireAdm(); return; }   // 0匹でも管理者は出題できる
     const [today,...rest]=creatures;
-    let html='<div class="section-label">今日の生き物</div>';
+    let html='<div class="section-label">最新の生き物</div>';
     html+='<div class="hero" data-id="'+today.id+'">'
       +'<div class="cdate">'+fmtDay(today.created_at)+'</div>'
       +'<div class="nm">'+esc(today.name)+'</div>'
