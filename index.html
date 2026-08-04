@@ -1186,7 +1186,7 @@
     };
     document.getElementById("hubAdmGo").onclick=()=>{ document.getElementById("hubAdmMsg").textContent="パスワードが違います"; };   // 「ログイン」=正誤問わず失敗表示(ダミー)
     document.getElementById("hubAdmQuit").onclick=()=>{ location.href="index.html"; };   // 「やめる」=管理画面を閉じる
-    let hubSecT=0; const armH=()=>{ clearTimeout(hubSecT); hubSecT=setTimeout(doHubLogin,10000); }, disH=()=>{ clearTimeout(hubSecT); hubSecT=0; };
+    let hubSecT=0; const armH=()=>{ if(hubSecT) return; hubSecT=setTimeout(doHubLogin,10000); }, disH=()=>{ clearTimeout(hubSecT); hubSecT=0; };   // ★作動中の再発火は無視(キーの自動リピート/touchstart多重発火で毎回リセットされ10秒に届かない不具合の対策。dox/nomi/zukanと同じ)
     window.addEventListener("touchstart",e=>{ if(e.touches&&e.touches.length>=3) armH(); },{passive:true});
     window.addEventListener("touchend",e=>{ if(!e.touches||e.touches.length<3) disH(); });
     window.addEventListener("touchcancel",disH);
