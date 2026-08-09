@@ -424,7 +424,7 @@
   @keyframes ddFly{ 0%{ left:12%; opacity:0; transform:translateY(0); } 15%{ opacity:1; } 85%{ opacity:1; } 100%{ left:82%; opacity:0; transform:translateY(-3px); } }
 
   /* ===== オーバーレイ(交代/結果/確認/あそびかた) ===== */
-  #handoffOverlay, #resultOverlay, #confirmOverlay, #helpOverlay, #champOverlay, #chipsOverlay, #begOverlay{
+  #handoffOverlay, #resultOverlay, #confirmOverlay, #helpOverlay, #champOverlay, #chipsOverlay, #begOverlay, #nameOverlay{
     position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center;
     background:rgba(24,26,22,.5); opacity:0; pointer-events:none; transition:opacity .3s linear;
   }
@@ -446,7 +446,9 @@
   #declineBtn.declined{ background:linear-gradient(160deg,#f0603f,var(--red) 55%,#b93117); color:#fff; border-color:#8f2510; }
   #declineBtn:active{ transform:translateX(-50%) translateY(2px); }
   #begOverlay{ z-index:78; }
-  #handoffOverlay.on, #resultOverlay.on, #confirmOverlay.on, #helpOverlay.on, #champOverlay.on, #chipsOverlay.on, #begOverlay.on{ opacity:1; pointer-events:auto; }
+  #nameOverlay{ z-index:86; }
+  .lobby-row .lr-nm.undef{ opacity:.42; font-weight:700; }   /* 名前がまだ未定の人=薄く出して決定済みの人と区別 */
+  #handoffOverlay.on, #resultOverlay.on, #confirmOverlay.on, #helpOverlay.on, #champOverlay.on, #chipsOverlay.on, #begOverlay.on, #nameOverlay.on{ opacity:1; pointer-events:auto; }
   .nego-retire{ color:var(--red); }
   #chipsOverlay.on .r-card{ transform:scale(1); opacity:1; }
   /* 結果ダイアログは上に見切れないよう、下寄せ＋スクロール */
@@ -462,7 +464,7 @@
     padding:28px 24px 24px; width:min(90vw, 440px); text-align:center;
     transform:scale(.6); opacity:0; transition:transform .3s cubic-bezier(.3,1.4,.5,1), opacity .25s linear;
   }
-  #handoffOverlay.on .r-card, #resultOverlay.on .r-card, #confirmOverlay.on .r-card, #helpOverlay.on .r-card, #champOverlay.on .r-card, #begOverlay.on .r-card{ transform:scale(1); opacity:1; }
+  #handoffOverlay.on .r-card, #resultOverlay.on .r-card, #confirmOverlay.on .r-card, #helpOverlay.on .r-card, #champOverlay.on .r-card, #begOverlay.on .r-card, #nameOverlay.on .r-card{ transform:scale(1); opacity:1; }
   .r-title{ font-size:clamp(22px,6vw,32px); font-weight:900; letter-spacing:.08em; }
   .r-title.win{ color:var(--red); }
   .r-title.res-hit{ color:var(--gold-dark); }
@@ -733,10 +735,6 @@
     </div>
 
     <div class="setup-block" id="onlineSetup">
-      <div class="name-block">
-        <div class="sec-label">あなたの名前</div>
-        <input class="p-input online-name" id="onlineName" maxlength="8" placeholder="なまえ" value="なまえ" autocomplete="off">
-      </div>
       <div class="room-btns">
         <button class="mode-btn sm" id="makeRoom">部屋を作る<small>合言葉を発行</small></button>
         <button class="mode-btn sm" id="joinRoom">部屋に入る<small>合言葉で入室</small></button>
@@ -907,6 +905,15 @@
   </div>
 
   <!-- チップをねだられた側の返事 -->
+  <div id="nameOverlay">
+    <div class="r-card">
+      <div class="r-title">名前を考えよう</div>
+      <input class="p-input" id="nameInput" maxlength="8" placeholder="なまえ" autocomplete="off" style="width:min(70vw,240px); text-align:center;">
+      <div class="hint" id="nameErr" style="display:none; color:var(--red); font-weight:900;"></div>
+      <button class="btn-main" id="nameGo">決定</button>
+    </div>
+  </div>
+
   <div id="begOverlay">
     <div class="r-card">
       <div class="r-title" id="begTitle">申請が来ました</div>
@@ -2184,7 +2191,8 @@
     stopTimer(); stopHostTimer();
     document.getElementById("backFixed").style.display="none";
     mode="local"; setDirBadge(false);
-    ["handoffOverlay","resultOverlay","confirmOverlay","champOverlay","helpOverlay","chipsOverlay"].forEach(id=>document.getElementById(id).classList.remove("on"));
+    ["handoffOverlay","resultOverlay","confirmOverlay","champOverlay","helpOverlay","chipsOverlay","nameOverlay"].forEach(id=>document.getElementById(id).classList.remove("on"));
+    nameAsked=false;
     gameScene.classList.remove("on"); titleScene.classList.add("on");
     // タイトルは「1台で遊ぶ」を自動選択して開いておく
     document.querySelectorAll("#modeSelect .mode-btn").forEach(b=>b.classList.toggle("sel", b.dataset.mode==="local"));
@@ -2203,6 +2211,8 @@
   let sb=null, ch=null, code="", isHost=false;
   const myId=Math.random().toString(36).slice(2,10);
   let myName="";
+  try{ myName=(localStorage.getItem("drb.name")||"").slice(0,8); }catch(e){}   // 前回の名前(招待リンクで来た人もロビーで決められる)
+  let nameAsked=false;
   let myNum=null, myBetDone=false, myNumDone=false;
   let ver=0, lastVer=-1, hbTimer=0, presTimer=0, lastNoticeShown=0, lastLobby=[], lastDealShown=0, negoBegSeen=null, lastBks=[], lastBkShown=0;
   let pendingActs={}, actSeq=0;                 // guest: aid -> {payload, timer}
@@ -2239,8 +2249,6 @@
   // ---- 部屋を作る / 入る ----
   document.getElementById("makeRoom").addEventListener("click",()=>{
     ensureAudio(); playSelect();
-    myName=(document.getElementById("onlineName").value||"").trim();
-    if(!myName){ showToast("名前を入れてね"); return; }
     code=genCode(); isHost=true;
     // 合言葉はここでは出さず、出走メンバーを待つ画面でのみ表示する
     document.getElementById("roomArea").innerHTML='<div class="room-note room-wait">部屋を作成中…</div>';
@@ -2248,8 +2256,6 @@
   });
   document.getElementById("joinRoom").addEventListener("click",()=>{
     ensureAudio(); playSelect();
-    myName=(document.getElementById("onlineName").value||"").trim();
-    if(!myName){ showToast("名前を入れてね"); return; }
     if(document.getElementById("codeInput")){ showToast("下の入室ボタンを"+(window.__TAPW||"タップ")); return; }   // 再タップで合言葉を消さない
     const area=document.getElementById("roomArea");
     area.innerHTML='<div class="code-row">'
@@ -2332,6 +2338,27 @@
 
   // ---- ホスト: 状態管理 ----
   function presentIds(){ return Object.keys(members); }
+  function setMyName(n){   // なまえを決める(部屋に入ったあとに変えられる)
+    myName=String(n||"").slice(0,8);
+    try{ localStorage.setItem("drb.name", myName); }catch(e){}
+    if(members[myId]) members[myId].name=myName;
+    if(ch){ try{ ch.track({ id:myId, name:myName, t:(members[myId]&&members[myId].t)||Date.now(), host:isHost }); }catch(e){} }   // presenceを更新=全員のロビーに反映
+    const p=players.find(x=>x.id===myId); if(p) p.name=myName;
+    if(isHost && oPhase==="lobby") broadcastSnap();
+  }
+  function openNameOv(){
+    const i=document.getElementById("nameInput");
+    i.value=myName||"なまえ"; document.getElementById("nameErr").style.display="none";   // 初期状態は「なまえ」を入れておく
+    document.getElementById("nameOverlay").classList.add("on");
+    setTimeout(()=>{ i.focus(); i.select(); },60);
+  }
+  document.getElementById("nameGo").addEventListener("click",()=>{
+    ensureAudio();
+    const v=(document.getElementById("nameInput").value||"").trim();
+    if(!v){ const e=document.getElementById("nameErr"); e.textContent="空欄はご遠慮ください"; e.style.display="block"; return; }
+    playSelect(); setMyName(v); document.getElementById("nameOverlay").classList.remove("on");
+  });
+  document.getElementById("nameInput").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing) document.getElementById("nameGo").click(); });
   function orderedMembers(){   // 入室順(t)で並べたid配列
     return presentIds().sort((a,b)=>(members[a].t||0)-(members[b].t||0));
   }
@@ -2703,13 +2730,14 @@
   }
   function renderLobby(s){
     showPanel("lobby");
+    if(!nameAsked){ nameAsked=true; openNameOv(); }   // 部屋に入るたび名前を決める(前回の名前を入れた状態で開く)
     renderLobbyCode();
     const roster=(s.lobby||[]);
     const list=document.getElementById("lobbyList"); list.innerHTML="";
     roster.forEach((m,i)=>{
       const row=document.createElement("div"); row.className="lobby-row";
       const col=COLORS[i%COLORS.length];
-      row.innerHTML='<span class="p-dot" style="'+dotStyle(col)+'"></span><span class="lr-nm">'+esc(m.name)+'</span>'+(m.host?'<span class="lr-host">部屋主</span>':'')+(m.id===myId?'<span class="lr-you">じぶん</span>':'')
+      row.innerHTML='<span class="p-dot" style="'+dotStyle(col)+'"></span><span class="lr-nm'+(m.name?"":" undef")+'">'+esc(m.name||"（名前を考え中）")+'</span>'+(m.host?'<span class="lr-host">部屋主</span>':'')+(m.id===myId?'<span class="lr-you">じぶん</span>':'')
         +((isHost&&m.id!==myId)?'<button class="kick-btn" data-kick="'+esc(m.id)+'">追放</button>':'');
       list.appendChild(row);
     });
@@ -2731,7 +2759,7 @@
   }
 
   document.getElementById("lobbyStart").addEventListener("click",()=>{ ensureAudio(); playConfirm(); if(isHost) oStartGame(); });
-  function showLobbyWaiting(){ showPanel("lobby"); renderLobbyCode(); renderLobbyRounds(0); document.getElementById("lobbyHint").textContent="部屋に入りました。ホストの開始を待っています…"; document.getElementById("lobbyStart").style.display="none"; document.getElementById("lobbyList").innerHTML=""; }
+  function showLobbyWaiting(){ showPanel("lobby"); if(!nameAsked){ nameAsked=true; openNameOv(); } renderLobbyCode(); renderLobbyRounds(0); document.getElementById("lobbyHint").textContent="部屋に入りました。ホストの開始を待っています…"; document.getElementById("lobbyStart").style.display="none"; document.getElementById("lobbyList").innerHTML=""; }
   document.getElementById("lobbyBack").addEventListener("click",()=>{ ensureAudio(); playSelect(); goTitle(); });
 
   // 待機画面

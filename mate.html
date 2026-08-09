@@ -197,9 +197,10 @@
   #lobbyBox{ display:flex; flex-direction:column; align-items:center; gap:16px; width:100%; }
   .lobby-title{ font-size:19px; font-weight:900; letter-spacing:.06em; color:var(--brown-dark); }
   #lobbyBox{ display:flex; flex-direction:column; align-items:center; gap:14px; width:min(94vw,420px); }
+  .nm.undef, .lr-nm.undef{ opacity:.42; font-weight:700; }   /* 名前がまだ未定の人=薄く出して決定済みの人と区別 */
 
   /* ===== ゲーム画面 ===== */
-  .info-col{ flex:none; display:flex; flex-direction:column; align-items:center; gap:7px; }
+  .info-col{ flex:none; display:flex; flex-direction:column; align-items:center; gap:7px; pointer-events:none; }   /* 表示専用=取っ手が上に来た時も掴める(当たり判定は取っ手優先) */
   .info-pill{
     background:#fff; border:2px solid rgba(138,90,46,.55); border-radius:999px;
     padding:6px 16px 7px; font-size:14px; font-weight:800; letter-spacing:.06em; white-space:nowrap;
@@ -378,8 +379,8 @@
   .ch-row.armed{ background:#ffd9c9; border:1.6px solid var(--red); }
   .ch-row .pickmark{ font-size:11px; font-weight:900; color:var(--red); margin-left:auto; white-space:nowrap; flex:none; }
   .ch-row.ansrow{ border:1.6px solid rgba(226,71,46,.55); background:rgba(255,240,234,.65); }   /* 回答だったチャット */
-  .ch-row .ans-mark{ margin-left:auto; flex:none; font-size:10.5px; font-weight:900; color:#fff; background:var(--red); border-radius:999px; padding:1px 9px 2px; }
-  .ch-row .ans-mark.ok{ background:#2f9e55; }
+  .ch-row .ans-mark{ margin-left:auto; flex:none; font-size:11px; font-weight:900; letter-spacing:.04em; color:var(--red); }
+  .ch-row .ans-mark.ok{ color:#2f9e55; }
   .ch-row.ansrow.okrow{ border-color:rgba(47,158,85,.55); background:rgba(238,250,242,.75); }   /* 正解の回答=緑 */
   .ch-row.chdiv{ justify-content:center; color:rgba(90,60,25,.5); font-size:11px; font-weight:900; background:none; border:none; }
   .chat-form{ display:flex; gap:8px; }
@@ -647,10 +648,6 @@
 
     <!-- オンラインで遊ぶ(ルールはロビーで) -->
     <div class="setup-block" id="onlineSetup">
-      <div class="name-block">
-        <div class="sec-label">あなたの名前</div>
-        <input class="p-input online-name" id="onlineName" maxlength="8" placeholder="なまえ" value="なまえ" autocomplete="off">
-      </div>
       <div class="room-btns">
         <button class="mode-btn sm" id="makeRoomBtn">部屋を作る<small>合言葉を発行</small></button>
         <button class="mode-btn sm" id="joinRoomBtn">部屋に入る<small>合言葉で入室</small></button>
@@ -718,20 +715,21 @@
         </button>
       </div>
       <button id="mateBtn"><b>待て！</b><small id="mateSmall">当てた人が出てきたらタップ</small></button>
+      <!-- 待て！/回答UIはチャットより上(チャットは優先度が一番低いので下段) -->
+      <button id="mateOnlineBtn"><b>待て！</b><small>何かわかったらクリック</small></button>
+      <div id="answerBox">
+        <div class="ans-dots" id="ansDots"><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="ans-self" id="ansSelf"><input id="ansInput" maxlength="20" placeholder="こたえを入力" autocomplete="off"><button id="ansSend">送信</button></div>
+        <div class="ans-wait" id="ansWait"></div>
+        <div class="ans-judge" id="ansJudge"><div class="aj-tx" id="ansJudgeTx"></div><div class="aj-btns"><button id="ansOk">正解</button><button id="ansNg">ちがう</button></div></div>
+      </div>
+      <div id="haltedLine"></div>
     </div>
     <div id="chatBox">
       <div class="chat-log" id="chatLog"></div>
       <div class="chat-form">
         <input id="chatInput" maxlength="20" placeholder="おしゃべりを入力" autocomplete="off">
         <button id="chatSend">送信</button>
-      </div>
-      <button id="mateOnlineBtn"><b>待て！</b><small>何かわかったらクリック</small></button>
-      <div id="haltedLine"></div>
-      <div id="answerBox">
-        <div class="ans-dots" id="ansDots"><i></i><i></i><i></i><i></i><i></i></div>
-        <div class="ans-self" id="ansSelf"><input id="ansInput" maxlength="20" placeholder="こたえを入力" autocomplete="off"><button id="ansSend">送信</button></div>
-        <div class="ans-wait" id="ansWait"></div>
-        <div class="ans-judge" id="ansJudge"><div class="aj-tx" id="ansJudgeTx"></div><div class="aj-btns"><button id="ansOk">正解</button><button id="ansNg">ちがう</button></div></div>
       </div>
     </div>
   </div>
@@ -750,6 +748,16 @@
     <button class="snd-btn" id="seBtn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wave" d="M16 9c1.2.9 1.2 5.1 0 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="wave" d="M18.5 7c2.2 1.7 2.2 8.3 0 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>効果音</button>
   </div>
   <button class="score-btn" id="scoreBtn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 20V10h3.4v10zM10.3 20V4h3.4v16zM15.6 20v-7h3.4v7z"/></svg>得点確認</button>
+
+  <!-- ===== なまえを決める(ロビーで) ===== -->
+  <div class="overlay" id="nameOv">
+    <div class="r-card">
+      <div class="r-title" style="font-size:22px;">名前を考えよう</div>
+      <input class="p-input" id="nameInput" maxlength="8" placeholder="なまえ" autocomplete="off" style="width:min(70vw,240px); text-align:center;">
+      <div class="r-sub" id="nameErr" style="display:none; color:var(--red); font-weight:900;"></div>
+      <button class="main-btn red" id="nameGo">決定</button>
+    </div>
+  </div>
 
   <!-- ===== 待機(オンライン) ===== -->
   <div class="overlay" id="waitOverlay">
@@ -895,8 +903,8 @@ function playCorrect(){ if(!actx) return; const t=actx.currentTime;
   [523,659,784,1047].forEach((f,i)=>note(f,t+i*0.09,0.32,0.22,"triangle"));
   note(1568,t+0.4,0.4,0.12,"sine"); note(2093,t+0.48,0.5,0.1,"sine"); }
 function playChat(){ if(!actx) return; note(1319,actx.currentTime,0.07,0.09,"sine"); }
-function playDecide(){ if(!actx) return; const t=actx.currentTime;
-  note(740,t,0.12,0.18,"triangle"); note(1109,t+0.09,0.24,0.16,"triangle"); }
+function playDecide(){ if(!actx) return; const t=actx.currentTime;   // 決定=短い音を順に3つ(同時に鳴らさない=不気味なうなりが出ない)
+  note(523,t,0.08,0.16,"triangle"); note(784,t+0.1,0.08,0.15,"triangle"); note(1047,t+0.2,0.22,0.13,"sine"); }
 function playTierDown(){ if(!actx) return; const t=actx.currentTime;   // 加点ダウン=軽いコトッ(終了音と差別化)
   note(520,t,0.07,0.11,"triangle"); note(392,t+0.07,0.1,0.09,"triangle"); }
 function playDobon(){ if(!actx) return; const t=actx.currentTime;   // 終了音: 悲しすぎない、やさしい残念
@@ -927,6 +935,7 @@ let eraserAmt=2;              // 消しゴム量の設定(0なし/1ちょっと/
 let eraseMax=100, eraseLeft=0;
 let roundNo=1, drawerId=null, nextDrawerId=null;
 const ANSWER_MS=16000;   // 回答の持ち時間(2026-08-01に2倍)
+const JUDGE_MS=ANSWER_MS/2;   // 正誤判定の持ち時間=回答の半分(2026-08-10)
 let haltedIds=new Set(), oAns=null, answerEnd=0, ansTmr=0, drawPausedEl=0;
 let spectating=false;   // 観戦モード(対局中に入室した人。チャット/スタンプは「(観戦)」名義)
 let myHalted=false, curAns=null, ansEnd=0, ansIv=0, lastLights=5, mateCooldownUntil=0, ansJudgedSeen=false;
@@ -937,6 +946,8 @@ let penIdx=2;
 const PEN_W=[0.002,0.0035,0.006,0.0105,0.018];   // SIZE比。3(0.006)を中心に変化率一定の等比×1.75=5が3のちょうど3倍
 let online=false, isHost=false, sb=null, ch=null, myId=Math.random().toString(36).slice(2,10);
 let myName="", code="", hostId=null, joinWatch=0, hbIv=0, snapAt=0, snapEl=0, lastPh="";
+try{ myName=(localStorage.getItem("mate.name")||"").slice(0,8); }catch(e){}   // 前回の名前を復元(招待リンクで来た人もロビーで決められる)
+let nameAsked=false;   // ロビーに入った時に一度だけ自動で名前を聞く
 let drawBuf=[], drawFlushIv=0, armedRow=null, armedTmr=0, celebTmr=0, lastCele=null, dobonId=null;
 
 const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co";
@@ -966,7 +977,7 @@ function goTitle(){
   stopTimer(); stopErase(true); pourStop(); stopDrawFlush(); clearTimeout(celebTmr); clearTimeout(topicTmr);
   leaveChannel();
   spectating=false;
-  phase="title"; gameScene.classList.remove("online");
+  phase="title"; nameAsked=false; gameScene.classList.remove("online");
   document.querySelectorAll(".overlay").forEach(o=>o.classList.remove("on","peek"));
   resetTable();
   $("chatLog").innerHTML="";   // チャットは部屋を出る時だけ消す
@@ -1348,7 +1359,7 @@ function updateInfo(){
   $("infoRound").textContent="お題"+roundNo+"個目";
   const d=byId(drawerId);
   $("drawerDot").setAttribute("style", dotStyle(d?d.c:"#999"));
-  $("drawerName").textContent=(d?d.n:"ー")+(online&&drawerId===myId?"（あなた）":"");
+  $("drawerName").textContent=(d?nmOf(d):"ー")+(online&&drawerId===myId?"（あなた）":"");
   const dt=$("drawerTopic");   // 描き手には描画中も自分のお題を表示
   if(dt){ const showT = online && drawerId===myId && phase==="draw" && !!topic; dt.textContent = showT?("お題："+topic):""; dt.style.display = showT?"":"none"; }
 }
@@ -1419,7 +1430,7 @@ $("mateBtn").addEventListener("click",()=>{
     if(p.id===drawerId) return;
     const b=document.createElement("button");
     b.innerHTML='<span class="p-dot" style="'+dotStyle(p.c)+'"></span><span class="nm"></span>';
-    b.querySelector(".nm").textContent=p.n;
+    b.querySelector(".nm").textContent=nmOf(p);
     b.addEventListener("click",()=>{ localCorrect(p.id); });
     list.appendChild(b);
   });
@@ -1514,7 +1525,7 @@ function showResult(st, showAgain){
         +(s.dobon?'<span class="dobon-tag">ドボン</span>':"")
         +'<span class="pt">'+s.p+'点</span>';
     }
-    row.querySelector(".nm").textContent=s.n;
+    row.querySelector(".nm").textContent=s.n||UNDEF_NM;
     list.appendChild(row);
   });
   if(co){ $("rCount").style.display="none"; }
@@ -1560,7 +1571,7 @@ $("scoreBtn").addEventListener("click",()=>{
   standings().forEach(s=>{
     const row=document.createElement("div"); row.className="rank-row";
     row.innerHTML='<span class="p-dot" style="'+dotStyle(s.c)+'"></span><span class="nm"></span><span class="pt">'+s.p+'点</span>';
-    row.querySelector(".nm").textContent=s.n;
+    row.querySelector(".nm").textContent=s.n||UNDEF_NM;
     list.appendChild(row);
   });
   $("scoreOverlay").classList.add("on");
@@ -1608,7 +1619,7 @@ const roomArea=$("roomArea");
 function roomStatus(html){ roomArea.innerHTML=html; }
 function sbClient(){ if(!sb) sb=window.supabase.createClient(SB_URL, SB_KEY); return sb; }
 function leaveChannel(){
-  clearTimeout(joinWatch); clearInterval(hbIv); hbIv=0; stopDrawFlush(); clearTimeout(celebTmr);
+  clearTimeout(joinWatch); clearInterval(hbIv); hbIv=0; stopDrawFlush(); clearTimeout(celebTmr); clearGone();
   if(ch){ const c0=ch; ch=null;
     try{ c0.send({type:"broadcast",event:"bye",payload:{id:myId}}); }catch(e){}
     try{ c0.untrack(); }catch(e){}   // ★presenceを確実に抜く=「抜けたのにロビーに名前が残る」バグの対策
@@ -1616,23 +1627,35 @@ function leaveChannel(){
   }
   online=false; isHost=false; hostId=null; roomStatus("");
 }
-function getMyName(){
-  myName=$("onlineName").value.trim();
-  if(!myName){ showToast("名前を入れてね"); return false; }
-  return true;
+function setMyName(n){   // なまえを決める(部屋に入ったあとに変えられる)
+  myName=String(n||"").slice(0,8);
+  try{ localStorage.setItem("mate.name", myName); }catch(e){}
+  if(!online) return;
+  if(isHost){ const me=byId(myId); if(me){ me.n=myName; renderLobby(); sendSnap(); } }
+  else{ try{ ch.send({type:"broadcast",event:"act",payload:{t:"rename",from:myId,n:myName}}); }catch(e){} }
 }
+function openNameOv(){
+  const i=$("nameInput"); i.value=myName||"なまえ";   // 初期状態は「なまえ」を入れておく
+  $("nameErr").style.display="none";
+  $("nameOv").classList.add("on");
+  setTimeout(()=>{ i.focus(); i.select(); },60);
+}
+$("nameGo").addEventListener("click",()=>{
+  ensureAudio(); const v=$("nameInput").value.trim();
+  if(!v){ $("nameErr").textContent="空欄はご遠慮ください"; $("nameErr").style.display="block"; return; }
+  playSelect(); setMyName(v); $("nameOv").classList.remove("on");
+});
+$("nameInput").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing) $("nameGo").click(); });
 $("makeRoomBtn").addEventListener("click",()=>{
   ensureAudio(); playSelect();
-  if(!getMyName()) return;
   leaveChannel();
   code=genCode(); isHost=true; hostId=myId; online=true;
-  players=[{id:myId,n:myName,s:0,c:COLORS[0]}];
+  players=[{id:myId,n:myName||"",s:0,c:COLORS[0]}];
   roundNo=1; dobonId=null;
   openChannel(code, ()=>{ phase="lobby"; showScene(lobbyScene); renderLobby(); sendSnap(); startHb(); });
 });
 $("joinRoomBtn").addEventListener("click",()=>{
   ensureAudio(); playSelect();
-  if(!getMyName()) return;
   leaveChannel();
   roomStatus('<div class="code-row">'
     +'<button class="paste-btn" id="pasteBtn" aria-label="合言葉を貼り付け"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3.4c0-.8.6-1.4 1.4-1.4h3.2c.8 0 1.4.6 1.4 1.4v1.1"/><path d="M9 10.5h6M9 14.5h6"/></svg></button>'
@@ -1672,11 +1695,13 @@ function openChannel(c, onReady){
   ch.on("broadcast",{event:"hello"},({payload})=>{
     if(!isHost||!payload) return;
     if(players.length>=MAXP){ try{ ch.send({type:"broadcast",event:"locked",payload:{to:payload.id}}); }catch(e){} return; }
+    cancelGone(payload.id);
+    if(byId(payload.id)){ sendSnap(); return; }   // すでにメンバー(再接続)=観戦者にしない
     if(phase!=="lobby"){   // 対局中の入室=観戦者として受け入れる(2026-08-05)
       try{ ch.send({type:"broadcast",event:"spec",payload:{to:payload.id}}); }catch(e){}
       sendSnap(); return;
     }
-    if(!byId(payload.id)) players.push({id:payload.id, n:String(payload.n||"？").slice(0,8), s:0, c:nextColor()});
+    if(!byId(payload.id)) players.push({id:payload.id, n:String(payload.n||"").slice(0,8), s:0, c:nextColor()});   // 空=まだ名前を考え中
     renderLobby(); sendSnap();
   });
   ch.on("broadcast",{event:"locked"},({payload})=>{
@@ -1690,6 +1715,7 @@ function openChannel(c, onReady){
     showScene(gameScene);
     showToast("とちゅうから観戦しています");
     addSys("観戦モードで入室（絵はここからの続きだけ見えます）");
+    if(!nameAsked){ nameAsked=true; openNameOv(); }   // 観戦者もロビーを通らないのでここで名前を決める
   });
   ch.on("broadcast",{event:"snap"},({payload})=>{ if(!isHost && payload) applySnap(payload); });
   ch.on("broadcast",{event:"act"},({payload})=>{ if(isHost && payload) hostAct(payload); });
@@ -1703,19 +1729,38 @@ function openChannel(c, onReady){
   });
   ch.on("broadcast",{event:"reset"},()=>{ if(!isHost){ clearArt(); drawCrema(); drawSwirl(); resetTable(); } });
   ch.on("broadcast",{event:"bye"},({payload})=>{ if(payload) onLeave(payload.id); });
-  ch.on("broadcast",{event:"kick"},({payload})=>{ if(payload && payload.to===myId){ showToast("部屋主にロビーから退出させられました"); goTitle(); } });
+  ch.on("broadcast",{event:"kick"},({payload})=>{ if(payload && payload.to===myId && !isHost){ showToast("部屋主にロビーから退出させられました"); goTitle(); } });
   ch.on("presence",{event:"leave"},({leftPresences})=>{
-    (leftPresences||[]).forEach(p=>{ if(p && p.id) onLeave(p.id); });
+    (leftPresences||[]).forEach(p=>{ if(p && p.id) markGone(p.id); });   // すぐには抜けたと決めない(猶予20秒)
   });
+  ch.on("presence",{event:"join"},({newPresences})=>{
+    (newPresences||[]).forEach(p=>{ if(p && p.id) cancelGone(p.id); });   // 戻ってきたら退出扱いを取り消す
+  });
+  let readyDone=false;
   ch.subscribe(async status=>{
-    if(status==="SUBSCRIBED"){ try{ await ch.track({id:myId}); }catch(e){} if(onReady) onReady(); }
+    if(status==="SUBSCRIBED"){
+      try{ await ch.track({id:myId}); }catch(e){}
+      if(readyDone){ if(isHost) sendSnap(); else { try{ ch.send({type:"broadcast",event:"hello",payload:{id:myId,n:myName}}); }catch(e){} } return; }   // 再接続=進行中の状態は壊さない
+      readyDone=true; if(onReady) onReady();
+    }
     else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){
       roomStatus('<div class="room-note err">通信失敗。通信環境を見直そう</div>');
     }
   });
 }
+const GONE_GRACE=20000;   // presenceが一瞬落ちただけで退出扱いしない猶予(スマホのバックグラウンド復帰対策)
+let goneTmr={};
+function presentIds(){ try{ return Object.keys(ch.presenceState()||{}); }catch(e){ return []; } }
+function cancelGone(id){ if(goneTmr[id]){ clearTimeout(goneTmr[id]); delete goneTmr[id]; } }
+function markGone(id){
+  if(id===myId) return;
+  cancelGone(id);
+  goneTmr[id]=setTimeout(()=>{ delete goneTmr[id]; if(!ch||!online) return; if(presentIds().indexOf(id)>=0) return; onLeave(id); }, GONE_GRACE);
+}
+function clearGone(){ Object.keys(goneTmr).forEach(cancelGone); }
 function onLeave(id){
   if(id===myId) return;
+  cancelGone(id);
   if(id===hostId && !isHost){ showToast("部屋主が退出しました"); goTitle(); return; }
   if(!isHost) return;
   const gone=byId(id); if(!gone) return;
@@ -1740,7 +1785,7 @@ function renderLobby(){
   const co=players.length===2;
   let html='<div class="lobby-list">';
   players.forEach(p=>{
-    html+='<div class="lobby-row"><span class="p-dot" style="'+dotStyle(p.c)+'"></span><span class="nm">'+esc(p.n)+'</span>'
+    html+='<div class="lobby-row"><span class="p-dot" style="'+dotStyle(p.c)+'"></span><span class="nm'+(p.n?"":" undef")+'">'+esc(nmOf(p))+'</span>'
       +(p.id===hostId?'<span class="hostmark">部屋主</span>':"")
       +(p.id===myId?'<span class="you">じぶん</span>':"")
       +((isHost&&p.id!==myId)?'<button class="kick-btn" data-kick="'+esc(p.id)+'">追放</button>':"")+'</div>';
@@ -1765,6 +1810,7 @@ function renderLobby(){
   html+='<div class="room-note room-wait">'+(players.length<2?"2人以上集まれば開始できます":"いつでもはじめれるよ")+'</div>';
   if(isHost) html+='<button class="start-btn" id="lobbyStart"'+(players.length<2?" disabled":"")+'>スタート</button>';
   $("lobbyBox").innerHTML=html;
+  if(!nameAsked){ nameAsked=true; openNameOv(); }   // 部屋に入るたび名前を決める(前回の名前を入れた状態で開く=そのまま決定でもOK)
   $("codeShow").addEventListener("click", async ()=>{
     ensureAudio(); playSelect();
     try{ await navigator.clipboard.writeText(inviteText(code)); showToast("招待メッセージをコピーした"); }
@@ -1828,6 +1874,12 @@ function hostAct(a){
     phase="celebrate"; stopTimer(); enterCelebrateAll(); sendSnap();
     clearTimeout(celebTmr);   // 自動では進めない(部屋主の「次へ」で進行)
   }
+  if(a.t==="rename"){   // ロビー/ゲーム中に名前を決めた(部屋に入ったあとに決める方式)
+    const pp=byId(a.from); if(!pp) return;
+    pp.n=String(a.n||"").slice(0,8);
+    if(phase==="lobby") renderLobby();
+    sendSnap(); return;
+  }
   if(a.t==="halt" && phase==="draw" && a.from!==drawerId && !haltedIds.has(a.from)){
     const pp=byId(a.from); if(!pp) return;
     haltedIds.add(a.from);
@@ -1842,10 +1894,10 @@ function hostAct(a){
   }
   if(a.t==="answer" && phase==="answer" && oAns && a.from===oAns.by && !oAns.judging){
     oAns.text=String(a.tx||"").slice(0,20); oAns.judging=true;
-    answerEnd=Date.now()+ANSWER_MS;   // 判定にも同じ持ち時間(切れたらミス扱いで再開)
+    answerEnd=Date.now()+JUDGE_MS;   // 判定は回答の半分(切れたらミス扱いで再開)
     curAns={by:oAns.by, byName:oAns.byName, text:oAns.text, judging:true}; ansEnd=answerEnd;   // ホスト自身の表示用
     clearTimeout(ansTmr);
-    ansTmr=setTimeout(()=>{ if(phase==="answer" && oAns && oAns.judging){ broadcastChat(oAns.by, oAns.byName, oAns.text, false); hostResumeDraw(); } }, ANSWER_MS+250);
+    ansTmr=setTimeout(()=>{ if(phase==="answer" && oAns && oAns.judging){ broadcastChat(oAns.by, oAns.byName, oAns.text, false); hostResumeDraw(); } }, JUDGE_MS+250);
     renderAnswerArea(); startAnsTicker(); sendSnap();
   }
   if(a.t==="ansresult" && phase==="answer" && oAns && oAns.judging && a.from===drawerId){
@@ -2032,6 +2084,8 @@ function renderChatSend(){
   $("chatInput").placeholder="おしゃべりを入力";
   renderAnswerArea();
 }
+const UNDEF_NM="（名前を考え中）";
+function nmOf(x){ return (x&&x.n)?x.n:UNDEF_NM; }   // 名前が未定の人の表示
 function iHalted(){ return myHalted || [...haltedIds].includes(myId); }
 let mateCoolIv=0;
 function startMateCool(){ clearInterval(mateCoolIv); renderAnswerArea();
@@ -2047,9 +2101,10 @@ function renderAnswerArea(){
       else if(rem>0){ mb.classList.add("cooling"); mb.innerHTML='<b>待て！</b><small>あと'+rem+'秒</small>'; }
       else{ mb.classList.remove("cooling"); mb.innerHTML='<b>待て！</b><small>何かわかったらクリック</small>'; }
     } else mb.style.display="none"; }
-  { const hl=$("haltedLine");   // 誰が回答済みかをチャット欄の下に
-    const names=[...haltedIds].map(id=>{ const q=byId(id); return q?q.n:null; }).filter(Boolean);
-    if(online && (phase==="draw"||phase==="answer") && names.length){ hl.textContent="回答済み："+names.join("・"); hl.style.display="block"; }   // 回答中/判定中も出し続ける
+  { const hl=$("haltedLine");   // 誰が回答済みか(「◯◯の回答を待っています」UIの下)
+    const nowAns=(phase==="answer"&&curAns)?curAns.by:null;   // いま回答/判定中の人は、判定が終わってから載せる
+    const names=[...haltedIds].filter(id=>id!==nowAns).map(id=>{ const q=byId(id); return q?q.n:null; }).filter(Boolean);
+    if(online && (phase==="draw"||phase==="answer") && names.length){ hl.textContent="回答済み："+names.join("・"); hl.style.display="block"; }
     else hl.style.display="none"; }
   if(!on) return;
   const a=curAns, meAns=a&&a.by===myId, meDrawer=drawerId===myId, judging=a&&a.judging;
@@ -2059,7 +2114,7 @@ function renderAnswerArea(){
   $("ansJudge").style.display = (meDrawer && judging) ? "block" : "none";
   const waitShow = !((meAns&&!judging)||(meDrawer&&judging));
   $("ansWait").style.display = waitShow ? "block" : "none";
-  if(waitShow) $("ansWait").textContent = judging ? ((a?a.byName:"だれか")+" の回答が合っているか判定中…") : ((a?a.byName:"だれか")+" の回答を待っています…");
+  if(waitShow) $("ansWait").textContent = ((a&&a.byName)?a.byName:"だれか") + (judging ? " の回答が合っているか判定中…" : " の回答を待っています…");
   if(meDrawer && judging) $("ansJudgeTx").textContent="「"+(a.text||"")+"」";
   if(meAns && !judging) setTimeout(()=>{ const i=$("ansInput"); if(i) i.focus(); },50);
 }
@@ -2070,6 +2125,7 @@ function playAnsSend(){ if(!actx) return; const t=actx.currentTime;   // 回答�
   note(587,t,0.08,0.2,"triangle"); note(880,t+0.06,0.13,0.18,"triangle"); }
 function playAnsRecv(){ if(!actx) return; const t=actx.currentTime;   // 回答が届いた
   note(659,t,0.1,0.2,"sine"); note(988,t+0.08,0.17,0.2,"sine"); }
+const DOT_MIN=0.72;   // 減っていく点の最小サイズ(16px→約11.5px=数px小さいだけ。0まで縮めない)
 function paintDots(lights, frac){
   const cols={5:"#2f9e55",4:"#7ab53a",3:"#f39a1f",2:"#e07028",1:"#e3452f",0:"#e3452f"};
   const c=cols[Math.max(0,Math.min(5,lights))];
@@ -2078,17 +2134,19 @@ function paintDots(lights, frac){
     const off=i>=lights;
     d[i].classList.toggle("off", off);
     d[i].style.background = off ? "" : c;
-    d[i].style.transform = (!off && i===lights-1 && frac!=null) ? "scale("+(0.2+0.8*Math.max(0,Math.min(1,frac))).toFixed(3)+")" : "";   // いま減っている点は徐々に小さく=残りが見える
+    d[i].style.transform = (!off && i===lights-1 && frac!=null) ? "scale("+(DOT_MIN+(1-DOT_MIN)*Math.max(0,Math.min(1,frac))).toFixed(3)+")" : "";   // いま減っている点は徐々に小さく(0にはせずDOT_MINで止める)
   }
 }
 function stopAnsTicker(){ clearInterval(ansIv); ansIv=0; }
 function startAnsTicker(){
   stopAnsTicker();
   if(!curAns) return;
-  const seg=ANSWER_MS/5;
+  const segOf=()=>((curAns&&curAns.judging)?JUDGE_MS:ANSWER_MS)/5;   // 判定中は持ち時間が半分=1目盛りも半分
+  let seg=segOf();
   lastLights=Math.max(0, Math.ceil(Math.max(0,ansEnd-Date.now())/seg));   // 途中参加(snap再開)でも音を鳴らし直さない
   ansIv=setInterval(()=>{
     if(phase!=="answer" || !curAns){ stopAnsTicker(); return; }
+    seg=segOf();
     const remain=Math.max(0, ansEnd-Date.now());
     const lights=Math.max(0, Math.ceil(remain/seg));
     if(lights<lastLights){ for(let k=0;k<(lastLights-lights);k++) playAnsTick(); lastLights=lights; }
@@ -2159,7 +2217,8 @@ function armPick(row, id){
 function sendChat(){
   const tx=$("chatInput").value.trim(); if(!tx||!online) return;
   $("chatInput").value="";
-  const label=spectating? myName+"（観戦）" : myName;   // 観戦者の発言は必ず分かるように
+  const nm0=myName||UNDEF_NM;
+  const label=spectating? nm0+"（観戦）" : nm0;   // 観戦者の発言は必ず分かるように
   addChat(myId, label+"（じぶん）", tx);
   if(ch){ try{ ch.send({type:"broadcast",event:"chat",payload:{id:myId,n:label,tx:tx}}); }catch(e){} }
 }
@@ -2197,7 +2256,7 @@ function spawnStamp(i, name, color){
 function sendStamp(i){
   if(online){
     const me=byId(myId);
-    const nm=me?me.n:((myName||"")+(spectating?"（観戦）":""));
+    const nm=(me&&me.n)?me.n:((myName||UNDEF_NM)+(spectating?"（観戦）":""));
     const col=me?me.c:"#bbb";
     spawnStamp(i, nm, col);
     if(ch){ try{ ch.send({type:"broadcast",event:"stamp",payload:{i,name:nm,color:col}}); }catch(e){} }
