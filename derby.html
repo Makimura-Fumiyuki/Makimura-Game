@@ -137,6 +137,9 @@
   .lobby-row .p-dot{ width:24px; height:24px; }
   .lobby-row .lr-nm{ flex:1 1 0; font-weight:900; text-align:left; }
   #lobbyStart:disabled{ opacity:.4; cursor:default; }
+  .lobby-row .kick-btn{ flex:none; font-size:11px; font-weight:900; color:var(--red,#d23b30); background:none;
+    border:1.5px solid rgba(210,59,48,.5); border-radius:999px; padding:3px 10px; cursor:pointer; }
+  .lobby-row .kick-btn:active{ transform:translateY(1px); }
   .lobby-row .lr-host{ font-size:11px; font-weight:700; color:var(--gold-dark); background:rgba(242,176,53,.16); border-radius:999px; padding:2px 9px 3px; }
   .lr-you{ flex:none; font-size:11px; font-weight:900; color:#fff; background:#8a6a3f; border-radius:999px; padding:2px 10px 3px; margin-left:6px; }
   .wait-prog{ font-family:"Noto Sans JP","Hiragino Sans",sans-serif; font-weight:900; font-size:20px; color:var(--turf-dark); }
@@ -628,6 +631,12 @@
   .stamp-mute{ width:34px; height:34px; padding:0; border:none; border-radius:50%; cursor:pointer;
     position:absolute; left:100%; top:7px; margin-left:9px; background:rgba(255,255,255,.9); box-shadow:0 2px 7px rgba(30,40,70,.32);
     display:flex; align-items:center; justify-content:center; color:#555; }
+  .stamp-min{ width:34px; height:34px; padding:0; border:none; border-radius:50%; cursor:pointer;
+    position:absolute; right:100%; top:7px; margin-right:9px; background:rgba(255,255,255,.9); box-shadow:0 2px 7px rgba(30,40,70,.32);
+    display:flex; align-items:center; justify-content:center; color:#555; }
+  .stamp-min svg{ width:15px; height:15px; }
+  .stamp-min:active{ transform:translateY(1px) scale(.93); }
+  #stampBar.mini .stamp-btn, #stampBar.mini .stamp-mute{ visibility:hidden; }   /* 最小化中も幅は保つ=＋ボタンが−と同じ位置に残る */
   .stamp-mute svg{ width:19px; height:19px; transform:translateY(1px); }   /* ベルを1px下げる */
   .stamp-mute .mute-slash{ display:none; }
   .stamp-mute.muted{ color:#d23b30; }
@@ -952,6 +961,7 @@
 
   <!-- スタンプ(気持ちを送る。対局中つねに表示。結果/総合ダイアログ表示中は隠す=中断ボタンと重ならないように) -->
   <div id="stampBar">
+    <button id="stampMin" class="stamp-min" aria-label="スタンプを最小化"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="12" x2="18" y2="12"/></svg></button>
     <button class="stamp-btn" data-i="0" aria-label="泣き"></button>
     <button class="stamp-btn" data-i="1" aria-label="うっとり"></button>
     <button class="stamp-btn" data-i="2" aria-label="爆笑"></button>
@@ -1966,6 +1976,19 @@
   (function(){ const mb=document.getElementById("stampMute"); if(!mb) return;
     const rndr=()=>mb.classList.toggle("muted", stampMuted); rndr();
     mb.addEventListener("click",()=>{ stampMuted=!stampMuted; try{ localStorage.setItem("drb.smute", stampMuted?"1":"0"); }catch(e){} rndr(); });
+
+/* スタンプ最小化(2026-08-05・全対戦ゲーム共通): 泣きスタンプの左の−で畳む/＋で開く */
+(function(){
+  var sb=document.getElementById("stampBar"), mb=document.getElementById("stampMin");
+  if(!sb||!mb) return;
+  var MINSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="12" x2="18" y2="12"/></svg>';
+  var PLUSSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="12" x2="18" y2="12"/><line x1="12" y1="6" x2="12" y2="18"/></svg>';
+  mb.addEventListener("click",function(){
+    var mini=sb.classList.toggle("mini");
+    mb.innerHTML=mini?PLUSSVG:MINSVG;
+    mb.setAttribute("aria-label", mini?"スタンプを表示":"スタンプを最小化");
+  });
+})();
   })();
   document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{
     const i=+b.dataset.i; b.textContent=STAMP_SVGS[i];
@@ -2197,6 +2220,9 @@
     if(ch){ try{ sbClient().removeChannel(ch); }catch(e){} ch=null; }
   }
   function genCode(){ let s=""; for(let i=0;i<5;i++) s+=CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)]; return s; }
+  function inviteText(c){   // 招待メッセージ(2026-08-05共通テンプレ。リンク=?join=合言葉で自動入室)
+    return "牧村が作った『俺たちダービー』を一緒に遊ぼう！\n"+location.origin+location.pathname+"?join="+c+"\n\n合言葉："+c+"\n※リンクから参加できない時に使ってね";
+  }
 
   // ---- モード選択 ----
   document.querySelectorAll("#modeSelect .mode-btn").forEach(b=>{
@@ -2232,6 +2258,7 @@
       +'</div>'
       +'<button class="txt-btn" id="codeGo">入室</button><div class="room-note" id="joinNote"></div>';
     const inp=document.getElementById("codeInput"), note=document.getElementById("joinNote");
+    if(window.__pendingJoin){ inp.value=window.__pendingJoin; }   // 招待リンク経由なら合言葉を自動記入
     document.getElementById("pasteBtn").addEventListener("click", async ()=>{
       ensureAudio(); playSelect();
       try{
@@ -2271,6 +2298,7 @@
     ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) spawnStamp(payload.i|0, payload.name||"", payload.color||"#fff"); });   // 送信者の名前+色で表示(ロストしても実害なし)
     ch.on("broadcast",{event:"cheer"},({payload})=>{ if(payload&&payload.by) remoteCheer(payload.by); });   // 応援の共有
     ch.on("broadcast",{event:"hello"},()=>{ if(isHost){ broadcastSnap(); setTimeout(()=>{ if(isHost) hostPresenceChanged(); },700); } });   // 入室直後の取りこぼし保険
+    ch.on("broadcast",{event:"kick"},({payload})=>{ if(payload && payload.to===myId && !isHost){ showToast("部屋主にロビーから退出させられました"); goTitle(); } });   // 追放された側は退室(presenceが抜けてロビーからも消える)
     ch.on("presence",{event:"sync"},()=>{
       const st=ch.presenceState(); members={};
       Object.keys(st).forEach(k=>{ const m=st[k][0]; if(m) members[m.id]={name:m.name, t:m.t, host:!!m.host}; });   // hostフラグを落とさない(部屋主表示用)
@@ -2649,7 +2677,7 @@
     box.innerHTML='<div class="room-note">合言葉（'+(window.__TAPW||"タップ")+'でコピー）</div>'
       +'<div class="code-show" id="lobbyCodeShow"><svg class="cs-copy" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg><span class="cs-code">'+code+'</span></div>';
     document.getElementById("lobbyCodeShow").addEventListener("click", async ()=>{
-      try{ await navigator.clipboard.writeText(code); showToast("合言葉をコピーした"); }catch(e){}
+      try{ await navigator.clipboard.writeText(inviteText(code)); showToast("招待メッセージをコピーした"); }catch(e){}
     });
   }
   function renderLobbyRounds(cnt){
@@ -2681,9 +2709,16 @@
     roster.forEach((m,i)=>{
       const row=document.createElement("div"); row.className="lobby-row";
       const col=COLORS[i%COLORS.length];
-      row.innerHTML='<span class="p-dot" style="'+dotStyle(col)+'"></span><span class="lr-nm">'+esc(m.name)+'</span>'+(m.host?'<span class="lr-host">部屋主</span>':'')+(m.id===myId?'<span class="lr-you">じぶん</span>':'');
+      row.innerHTML='<span class="p-dot" style="'+dotStyle(col)+'"></span><span class="lr-nm">'+esc(m.name)+'</span>'+(m.host?'<span class="lr-host">部屋主</span>':'')+(m.id===myId?'<span class="lr-you">じぶん</span>':'')
+        +((isHost&&m.id!==myId)?'<button class="kick-btn" data-kick="'+esc(m.id)+'">追放</button>':'');
       list.appendChild(row);
     });
+    if(isHost){
+      list.querySelectorAll("[data-kick]").forEach(b=>b.addEventListener("click",()=>{   // ロビーからの追放(部屋主のみ)
+        ensureAudio(); playSelect();
+        try{ ch.send({type:"broadcast",event:"kick",payload:{to:b.dataset.kick}}); }catch(e){}
+      }));
+    }
     const cnt=roster.length;
     renderLobbyRounds(cnt);
     if(isHost){
@@ -2764,5 +2799,17 @@
 })();
 </script>
 <script>document.addEventListener("focusin",function(e){var t=e.target;if(t&&t.tagName==="INPUT"&&t.value){setTimeout(function(){try{t.select();}catch(_){}},0);}});(function(){var tap=(window.matchMedia&&matchMedia("(pointer:coarse)").matches)?"タップ":"クリック";window.__TAPW=tap;function run(){var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);var n;while(n=w.nextNode()){var v=n.nodeValue;if(v&&(v.indexOf("タップ")>=0||v.indexOf("タッチ")>=0))n.nodeValue=v.split("タッチ").join(tap).split("タップ").join(tap);}}if(document.readyState!=="loading")run();else document.addEventListener("DOMContentLoaded",run);})();</script>
+<script>/* 招待リンク(?join=合言葉)で来た人を自動で入室させる(2026-08-05) */
+(function(){
+  var m=/[?&]join=([A-Za-z0-9]{4,6})/.exec(location.search); if(!m) return;
+  var jc=m[1].toUpperCase(); window.__pendingJoin=jc;
+  setTimeout(function(){ try{
+    var mb=document.querySelector('.mode-btn[data-mode="online"]'); if(mb) mb.click();
+    var jb=document.getElementById("joinRoom"); if(jb) jb.click();
+    var inp=document.getElementById("codeInput");
+    if(inp){ inp.value=jc; var go=document.getElementById("codeGo"); if(go) go.click(); }
+  }catch(e){} },450);
+})();
+</script>
 </body>
 </html>

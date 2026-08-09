@@ -425,7 +425,8 @@ function updateNoGo(){
 }
 setInterval(updateNoGo,2000); window.addEventListener("resize",updateNoGo); setTimeout(updateNoGo,300);
 
-const SPAWN_MS=3000;      // 3秒に1匹
+const SPAWN_MS=3000;      // 3秒に1匹(閉じている間=留守分の計算はこの速度のまま)
+const LIVE_SPAWN_MS=SPAWN_MS/2;   // 画面を開いている間は2倍の速さで湧く=1.5秒に1匹(2026-08-05)
 const FLEA_CAP=28800;     // 上限=24時間ぶん(86400秒÷SPAWN_MS3秒=28800匹)。描画=点1個スタンプなので大量でも軽い(2026-07-16に20000→28800=ちょうど24hでMAX)
 const fleas=[], parts=[], splats=[], ripples=[];
 /* サーバー時刻(端末の時計と無関係)=Supabase応答のDateヘッダーから取得。閉じている間の経過はこれで測る=時計を進めても稼げない。
@@ -529,8 +530,8 @@ setInterval(()=>{
   flushBacklog();   // 裏タブ起動で保留になっていた場合の保険(表に出た瞬間に一括)
   // スマホ保護: 描画が重くなってきたら(約25fps未満)それ以上は増やさない(端末が軽くなれば再開)
   const heavy = avgFrameMs>40 && fleas.length>1500;
-  let n=Math.floor((nowP-lastSpawn)/SPAWN_MS);   // 経過はperformance.now(単調増加)=時計変更で稼げない・裏タブでタイマー間引きでも実時間で追いつく
-  if(n>0){ lastSpawn+=n*SPAWN_MS;
+  let n=Math.floor((nowP-lastSpawn)/LIVE_SPAWN_MS);   // 経過はperformance.now(単調増加)=時計変更で稼げない・裏タブでタイマー間引きでも実時間で追いつく
+  if(n>0){ lastSpawn+=n*LIVE_SPAWN_MS;
     if(!heavy){ const scatter=n>=3; while(n-->0) spawnFlea(scatter, nijiBaseP()*2); } }   // まとめて追いつく時(裏タブ放置後)は画面全体に散らばせる。ふだん(1匹ずつ)は左右の画面外から。ライブ湧き=ベース×2
 },1000);
 // 初回訪問のときだけ数匹出す(最初の空画面を避ける)。前回の残り(carryOver)や生存記録があるリロード/再訪では出さない=リロードのたびに5匹増えるのを防ぐ(2026-07-18修正)

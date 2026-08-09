@@ -184,6 +184,7 @@
     border:1.6px solid rgba(34,36,31,.35); border-radius:8px;
   }
   .txt-btn:active{ transform:translateY(1px); }
+  #gameScene .sub-btns .txt-btn{ min-width:132px; text-align:center; }   /* 一手戻る/投了の幅をそろえる(2026-08-01・全対戦ゲーム共通) */
   .txt-btn:disabled{ opacity:.35; cursor:default; pointer-events:none; }
 
   /* ===== 対局画面 ===== */
@@ -420,6 +421,12 @@
   .stamp-mute{ width:34px; height:34px; padding:0; border:none; border-radius:50%; cursor:pointer;
     position:absolute; left:100%; top:7px; margin-left:9px; background:rgba(255,255,255,.85); box-shadow:0 2px 7px rgba(40,30,10,.3);
     display:flex; align-items:center; justify-content:center; color:#555; }
+  .stamp-min{ width:34px; height:34px; padding:0; border:none; border-radius:50%; cursor:pointer;
+    position:absolute; right:100%; top:7px; margin-right:9px; background:rgba(255,255,255,.85); box-shadow:0 2px 7px rgba(40,30,10,.3);
+    display:flex; align-items:center; justify-content:center; color:#555; }
+  .stamp-min svg{ width:15px; height:15px; }
+  .stamp-min:active{ transform:translateY(1px) scale(.93); }
+  #stampBar.mini .stamp-btn, #stampBar.mini .stamp-mute{ visibility:hidden; }   /* 最小化中も幅は保つ=＋ボタンが−と同じ位置に残る */
   .stamp-mute svg{ width:19px; height:19px; transform:translateY(1px); }   /* ベルを1px下げる */
   .stamp-mute .mute-slash{ display:none; }
   .stamp-mute.muted{ color:#d23b30; }
@@ -599,6 +606,7 @@
 
   <!-- オンライン中のスタンプ(気持ちを送る。押すと画面下から浮き上がる) -->
   <div id="stampBar">
+    <button id="stampMin" class="stamp-min" aria-label="スタンプを最小化"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="12" x2="18" y2="12"/></svg></button>
     <button class="stamp-btn" data-i="0" aria-label="泣き"></button>
     <button class="stamp-btn" data-i="1" aria-label="うっとり"></button>
     <button class="stamp-btn" data-i="2" aria-label="爆笑"></button>
@@ -1287,6 +1295,9 @@
   /* ---------- オンライン対戦 (Supabase Realtime / 合言葉方式) ---------- */
   const CODE_CHARS="ABCDEFGHJKMNPRSTUVWXYZ23456789";   // 紛らわしい文字は除外(Qは9と聞き間違えるので抜く。I/O/L/1/0も除外済み)
   function genCode(){ let s=""; for(let i=0;i<5;i++) s+=CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)]; return s; }
+  function inviteText(c){   // 招待メッセージ(2026-08-05共通テンプレ。リンク=?join=合言葉で自動入室)
+    return "牧村が作った『バミリバーシ』を一緒に遊ぼう！\n"+location.origin+location.pathname+"?join="+c+"\n\n合言葉："+c+"\n※リンクから参加できない時に使ってね";
+  }
   function sbClient(){ if(!sb) sb=window.supabase.createClient(SB_URL, SB_KEY); return sb; }
   function leaveChannel(){
     clearTimeout(joinWatch); clearTimeout(moveResendTimer); moveResendTimer=0;
@@ -1454,8 +1465,8 @@
       +'<div class="room-note room-wait" id="hostNote">友だちに伝えて待とう</div>');
     document.getElementById("codeShow").addEventListener("click", async ()=>{
       let ok=true;
-      try{ await navigator.clipboard.writeText(code); }
-      catch(e){ try{ const ta=document.createElement("textarea"); ta.value=code; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); }catch(_){ ok=false; } }
+      try{ await navigator.clipboard.writeText(inviteText(code)); }
+      catch(e){ try{ const ta=document.createElement("textarea"); ta.value=inviteText(code); document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); }catch(_){ ok=false; } }
       const n=document.getElementById("hostNote");
       if(n){ n.textContent=ok?"コピー完了、友だちに伝えよう":"コピー失敗、手入力で頼む";
         setTimeout(()=>{ if(n.isConnected && !online) n.textContent="友だちに伝えて待とう"; }, 2200); }
@@ -1793,6 +1804,19 @@
   (function(){ const mb=document.getElementById("stampMute"); if(!mb) return;
     const rndr=()=>mb.classList.toggle("muted", stampMuted); rndr();
     mb.addEventListener("click",()=>{ stampMuted=!stampMuted; try{ localStorage.setItem("bmr.smute", stampMuted?"1":"0"); }catch(e){} rndr(); });
+
+/* スタンプ最小化(2026-08-05・全対戦ゲーム共通): 泣きスタンプの左の−で畳む/＋で開く */
+(function(){
+  var sb=document.getElementById("stampBar"), mb=document.getElementById("stampMin");
+  if(!sb||!mb) return;
+  var MINSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="12" x2="18" y2="12"/></svg>';
+  var PLUSSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="12" x2="18" y2="12"/><line x1="12" y1="6" x2="12" y2="18"/></svg>';
+  mb.addEventListener("click",function(){
+    var mini=sb.classList.toggle("mini");
+    mb.innerHTML=mini?PLUSSVG:MINSVG;
+    mb.setAttribute("aria-label", mini?"スタンプを表示":"スタンプを最小化");
+  });
+})();
   })();
   document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{
     const i=+b.dataset.i; b.innerHTML=STAMP_SVGS[i];
@@ -1815,5 +1839,17 @@
 })();
 </script>
 <script>document.addEventListener("focusin",function(e){var t=e.target;if(t&&t.tagName==="INPUT"&&t.value){setTimeout(function(){try{t.select();}catch(_){}},0);}});(function(){var tap=(window.matchMedia&&matchMedia("(pointer:coarse)").matches)?"タップ":"クリック";window.__TAPW=tap;function run(){var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);var n;while(n=w.nextNode()){var v=n.nodeValue;if(v&&(v.indexOf("タップ")>=0||v.indexOf("タッチ")>=0))n.nodeValue=v.split("タッチ").join(tap).split("タップ").join(tap);}}if(document.readyState!=="loading")run();else document.addEventListener("DOMContentLoaded",run);})();</script>
+<script>/* 招待リンク(?join=合言葉)で来た人を自動で入室させる(2026-08-05) */
+(function(){
+  var m=/[?&]join=([A-Za-z0-9]{4,6})/.exec(location.search); if(!m) return;
+  var jc=m[1].toUpperCase(); window.__pendingJoin=jc;
+  setTimeout(function(){ try{
+    var mb=document.querySelector('.fuda[data-mode="friend"]'); if(mb) mb.click();
+    var jb=document.getElementById("joinRoomBtn"); if(jb) jb.click();
+    var inp=document.getElementById("codeInput");
+    if(inp){ inp.value=jc; var go=document.getElementById("codeGo"); if(go) go.click(); }
+  }catch(e){} },450);
+})();
+</script>
 </body>
 </html>

@@ -346,6 +346,12 @@
   .stamp-mute{ width:34px; height:34px; padding:0; border:none; border-radius:50%; cursor:pointer;
     position:absolute; left:100%; top:7px; margin-left:9px; background:rgba(255,255,255,.9); box-shadow:0 3px 0 rgba(20,8,45,.4);
     display:flex; align-items:center; justify-content:center; color:#555; }
+  .stamp-min{ width:34px; height:34px; padding:0; border:none; border-radius:50%; cursor:pointer;
+    position:absolute; right:100%; top:7px; margin-right:9px; background:rgba(255,255,255,.9); box-shadow:0 3px 0 rgba(20,8,45,.4);
+    display:flex; align-items:center; justify-content:center; color:#555; }
+  .stamp-min svg{ width:15px; height:15px; }
+  .stamp-min:active{ transform:translateY(1px) scale(.93); }
+  #stampBar.mini .stamp-btn, #stampBar.mini .stamp-mute{ visibility:hidden; }   /* 最小化中も幅は保つ=＋ボタンが−と同じ位置に残る */
   .stamp-mute svg{ width:19px; height:19px; transform:translateY(1px); }
   .stamp-mute .mute-slash{ display:none; }
   .stamp-mute.muted{ color:#d23b30; }
@@ -663,6 +669,7 @@
 </div>
 
 <div id="stampBar">
+    <button id="stampMin" class="stamp-min" aria-label="スタンプを最小化"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="12" x2="18" y2="12"/></svg></button>
   <button class="stamp-btn" data-i="0" aria-label="泣き"></button>
   <button class="stamp-btn" data-i="1" aria-label="うっとり"></button>
   <button class="stamp-btn" data-i="2" aria-label="爆笑"></button>
@@ -770,10 +777,14 @@ const SB_KEY="sb_publishable_cak3-W9Mmgahnwawreoa1Q_CVuhmkKL";
 const myId=Math.random().toString(36).slice(2,10);
 const CODE_CHARS="ABCDEFGHJKMNPRSTUVWXYZ23456789";   // Qは9と聞き間違えるので除外(共通ルール)
 function genCode(){ let t=""; for(let i=0;i<5;i++) t+=CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)]; return t; }
+function inviteText(c){   // 招待メッセージ(2026-08-05共通テンプレ。リンク=?join=合言葉で自動入室)
+  return "牧村が作った『将棋onビンゴ』を一緒に遊ぼう！\n"+location.origin+location.pathname+"?join="+c+"\n\n合言葉："+c+"\n※リンクから参加できない時に使ってね";
+}
 let sbc=null, ch=null, online=false, isHost=false, startSent=false, mySide=0, peerGone=false;
 let mySeq=0, pendingSeq=-1, lastRecvSeq=-1, moveResendTimer=0, joinWatch=0;
 let myRematch=false, peerRematch=false, queuedMove=null, lastNetMove=null;
 let undoPending=false, undoIdx=-1, peerUndoIdx=-1;   // オンラインの待った(あいての同意を待っている間)
+let spectating=false, specKnown=new Set(), specPlayers=[], lastSeqFrom={}, oppId=null;   // 観戦モード(対局中に入室した人)
 function bottomSide(){ if(mode==="cpu") return humanSide; return 0; }   /* オンラインは盤を反転しない=左上が必ず1(後手は自分の駒が上側になる) */
 function cpuSide(){ return 1-humanSide; }
 
@@ -815,8 +826,8 @@ function initGame(){
   render();
   if(mode==="cpu"&&turn===cpuSide()) freeTmr=setTimeout(cpuThink,650);
 }
-function nameOf(o){ if(mode==="cpu") return o===humanSide?"あなた":"ロボット"; if(online) return o===mySide?"あなた":"あいて"; return o===0?"先手":"後手"; }
-function capLabel(o){ if(mode==="cpu") return o===humanSide?"自分":"ロボット"; if(online) return o===mySide?"自分":"あいて"; return o===0?"先手":"後手"; }
+function nameOf(o){ if(mode==="cpu") return o===humanSide?"あなた":"ロボット"; if(online) return spectating?(o===0?"先手":"後手"):(o===mySide?"あなた":"あいて"); return o===0?"先手":"後手"; }
+function capLabel(o){ if(mode==="cpu") return o===humanSide?"自分":"ロボット"; if(online) return spectating?(o===0?"先手":"後手"):(o===mySide?"自分":"あいて"); return o===0?"先手":"後手"; }
 
 /* ================= 駒の動き ================= */
 const GOLDM=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]];
@@ -989,8 +1000,8 @@ function renderCaps(){
 function updateBtns(){
   const busy = phase!=="idle" || (mode==="cpu"&&turn!==humanSide);
   $("undoBtn").disabled = busy || !hist.length || phase==="over" || undoPending;
-  $("giveupBtn").disabled = phase!=="idle";
-  const ck = phase==="idle" && !!board && (inCheck(0)||inCheck(1));   // 盤が王手の間はいつでも宣言できる
+  $("giveupBtn").disabled = phase!=="idle" || spectating;
+  const ck = phase==="idle" && !!board && (inCheck(0)||inCheck(1)) && !spectating;   // 盤が王手の間はいつでも宣言できる(観戦者は宣言しない)
   $("checkBtn").classList.toggle("on", ck);
 }
 let toastTmr=0;
@@ -1046,7 +1057,7 @@ function renderGuide(){
 }
 
 /* ================= 入力 ================= */
-function inputLocked(){ return phase!=="idle" || (mode==="cpu"&&turn!==humanSide) || (online&&turn!==mySide); }
+function inputLocked(){ return phase!=="idle" || (mode==="cpu"&&turn!==humanSide) || (online&&turn!==mySide) || spectating; }
 boardEl.addEventListener("click",e=>{
   ensureAudio();
   const cell=e.target.closest(".cell"); if(!cell) return;
@@ -1393,12 +1404,12 @@ function sendMyMove(num){
   if(!online||!ch||!lastNetMove) return;
   if(lastNetMove.k==="m"&&lastMoveCell){ const lm=board[lastMoveCell[0]][lastMoveCell[1]]; lastNetMove.prom=!!(lm&&lm.pr); }
   mySeq++; pendingSeq=mySeq;
-  sendMove({ seq:mySeq, mv:lastNetMove, num:num });
+  sendMove({ seq:mySeq, mv:lastNetMove, num:num, from:myId });
 }
 /* 相手の一手を自分の盤で再生(numも同送されるので抽選まで完全一致) */
 function applyNetMove(payload){
   const m=payload.mv; if(!m) return;
-  if(turn===mySide) turn=1-mySide;   // 手番ズレの自己修復(届いた手を信頼)
+  if(!spectating && turn===mySide) turn=1-mySide;   // 手番ズレの自己修復(届いた手を信頼)。観戦者は両者の手を順に適用するので不要
   if(m.k==="m"){
     const p=board[m.fr]&&board[m.fr][m.fc]; if(!p) return;
     hist.push(snapState());
@@ -1433,22 +1444,59 @@ function openChannel(code, asHost){
   ch.on("presence",{event:"sync"},()=>{
     if(isHost&&!startSent&&presenceCount()>=2){
       startSent=true;
+      try{ specPlayers=Object.keys(ch.presenceState()); specPlayers.forEach(k=>specKnown.add(k)); }catch(e){}   // この2人が対局者
       const hs=Math.random()<0.5?0:1;   // 先手後手はランダム
       ch.send({ type:"broadcast", event:"start", payload:{ hs:hs, n:sizeSel, pure:pureShogi?1:0, fx:fxOn?1:0, ks:kingSafe?1:0 } });
       startOnline(hs, sizeSel, pureShogi, fxOn, kingSafe);
     }
+    if(isHost&&startSent){   // 対局中に入ってきた人=観戦者。今の盤面を渡す(2026-08-05)
+      try{
+        Object.keys(ch.presenceState()).forEach(k=>{
+          if(k===myId||specKnown.has(k)) return;
+          specKnown.add(k);
+          const st={ b:board.map(r=>r.map(q=>q?{t:q.t,o:q.o,pr:q.pr?1:0}:0)), h:holes.map(r=>r.map(x=>x?1:0)),
+            hd:[hands[0],hands[1]], tn:turn, pl:pool.slice(), n:N, pure:pureShogi?1:0, ks:kingSafe?1:0, fx:fxOn?1:0, mc:moveCount, ps:specPlayers };
+          ch.send({ type:"broadcast", event:"spec", payload:{ to:k, st:st } });
+        });
+      }catch(e){}
+    }
   });
-  ch.on("presence",{event:"leave"},()=>{ if(!online||presenceCount()>=2) return; opponentLeft(); });
+  ch.on("presence",{event:"leave"},({key})=>{
+    if(!online) return;
+    if(spectating){ if(key && specPlayers.indexOf(key)>=0){ opponentLeft(); } return; }   // 観戦中はプレイヤーの退出だけで終了
+    if(oppId){ if(key===oppId) opponentLeft(); return; }   // 相手idが分かっていれば正確に判定(観戦者がいてもOK)
+    if(presenceCount()>=2) return;
+    opponentLeft();
+  });
   ch.on("broadcast",{event:"bye"},()=>{ if(online) opponentLeft(); });
+  ch.on("broadcast",{event:"spec"},({payload})=>{
+    if(!payload || payload.to!==myId || online) return;
+    const st=payload.st; if(!st) return;
+    clearTimeout(joinWatch);
+    spectating=true; online=true; mode="online"; mySide=0; lastSeqFrom={}; specPlayers=st.ps||[];
+    sizeSel=(st.n===9)?9:5; pureShogi=!!st.pure; kingSafe=st.ks!==0; fxOn=st.fx!==0;
+    toGame(); initGame(); clearTimeout(freeTmr);
+    board=st.b.map(r=>r.map(x=>x?{t:x.t,o:x.o,pr:!!x.pr}:null));
+    holes=st.h.map(r=>r.map(x=>!!x));
+    hands=[st.hd&&st.hd[0]||{}, st.hd&&st.hd[1]||{}];
+    turn=st.tn|0; pool=(st.pl||[]).slice(); moveCount=st.mc|0; hist=[];
+    phase="idle"; render();
+    toast("とちゅうから観戦しています");
+  });
   ch.on("broadcast",{event:"start"},({payload})=>{
     if(isHost||!payload) return;
+    if(spectating){ specFollow(payload); return; }   // 観戦のまま新しいゲームを見る
     startOnline(payload.hs===0?1:0, payload.n===9?9:5, !!payload.pure, payload.fx!==0, payload.ks!==0);
   });
   ch.on("broadcast",{event:"move"},({payload})=>{
     if(!payload) return;
-    if(ch) ch.send({ type:"broadcast", event:"moveack", payload:{ seq:payload.seq } });   // 届いたことを必ず伝える
+    if(!spectating && ch) ch.send({ type:"broadcast", event:"moveack", payload:{ seq:payload.seq } });   // 届いたことを必ず伝える(観戦者はackしない=相手の再送を誤って止めない)
     if(!online||phase==="over") return;
-    if(typeof payload.seq==="number"){ if(payload.seq<=lastRecvSeq) return; lastRecvSeq=payload.seq; }   // 再送の重複は無視
+    if(payload.from) oppId=oppId||((payload.from!==myId)?payload.from:null);   // 相手のidを学習(退出検知用)
+    if(spectating){   // 観戦者は両プレイヤーの手を受けるので送信者ごとに重複を弾く
+      const f=payload.from||"x";
+      if(typeof payload.seq==="number"){ if(payload.seq<=(lastSeqFrom[f]||0)) return; lastSeqFrom[f]=payload.seq; }
+    }else if(typeof payload.seq==="number"){ if(payload.seq<=lastRecvSeq) return; lastRecvSeq=payload.seq; }   // 再送の重複は無視
     if(phase!=="idle"){ queuedMove=payload; return; }   // 自分側の演出が終わってから適用
     applyNetMove(payload);
   });
@@ -1460,7 +1508,7 @@ function openChannel(code, asHost){
     $("cfOv").classList.remove("on");
     gameOver(mySide, "あいてが降参した");
   });
-  ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) spawnStamp(payload.i|0, "あいて"); });
+  ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) spawnStamp(payload.i|0, payload.w||(spectating?"プレイヤー":"あいて")); });
   ch.on("broadcast",{event:"check"},()=>{ if(online) showCheckFx(); });   // あいての王手宣言
   ch.on("broadcast",{event:"undoreq"},({payload})=>{   // あいてが一手戻したい
     if(!online||phase!=="idle"||!hist.length) return;
@@ -1484,12 +1532,20 @@ function openChannel(code, asHost){
   });
   ch.on("broadcast",{event:"restart"},({payload})=>{
     if(isHost||!payload) return;
+    if(spectating){ specFollow(payload); return; }   // 観戦のまま次のゲームへ
     startOnline(payload.hs===0?1:0, payload.n===9?9:5, !!payload.pure, payload.fx!==0, payload.ks!==0);
   });
   ch.subscribe(async(status)=>{
     if(status==="SUBSCRIBED"){ try{ await ch.track({}); }catch(e){} }
     else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){ roomStatus('<div class="room-note err">通信に失敗しました。電波を確認してもう一度</div>'); }
   });
+}
+function specFollow(payload){   // 観戦者: 再戦を最初から観る(初期盤面なのでスナップショット不要)
+  sizeSel=(payload.n===9)?9:5; pureShogi=!!payload.pure; kingSafe=payload.ks!==0; fxOn=payload.fx!==0;
+  lastSeqFrom={}; queuedMove=null;
+  $("resultOv").classList.remove("on");
+  initGame(); clearTimeout(freeTmr); phase="idle"; render();
+  toast("次のゲームがはじまりました(観戦中)");
 }
 function startOnline(side, n, pure, fx, ks){
   clearTimeout(joinWatch);
@@ -1672,8 +1728,8 @@ $("makeRoomBtn").addEventListener("click",()=>{
   $("codeShow").addEventListener("click", async ()=>{
     ensureAudio(); playSelect();
     let okc=true;
-    try{ await navigator.clipboard.writeText(code); }
-    catch(e){ try{ const ta=document.createElement("textarea"); ta.value=code; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); }catch(_){ okc=false; } }
+    try{ await navigator.clipboard.writeText(inviteText(code)); }
+    catch(e){ try{ const ta=document.createElement("textarea"); ta.value=inviteText(code); document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); }catch(_){ okc=false; } }
     const nEl=$("hostNote");
     if(nEl){ nEl.textContent=okc? "コピーした。友だちに送ろう" : "コピーできなかった。手入力でお願いします";
       setTimeout(()=>{ if(nEl.isConnected&&!online) nEl.textContent="友だちに伝えて待とう"; },2200); }
@@ -1713,7 +1769,7 @@ function toGame(){ $("titleScene").classList.remove("on"); $("gameScene").classL
 function toTitle(){
   clearTimeout(freeTmr);
   if(ch){ try{ ch.send({ type:"broadcast", event:"bye", payload:{} }); }catch(e){} }   // 明示の退出通知(presenceより確実)
-  leaveChannel(); peerGone=false; if(mode==="online") mode="local";
+  leaveChannel(); peerGone=false; spectating=false; oppId=null; specKnown=new Set(); if(mode==="online") mode="local";
   $("stampBar").classList.remove("on"); $("mvGuide").classList.remove("on");
   $("gameScene").classList.remove("on"); $("titleScene").classList.add("on");
 }
@@ -1736,6 +1792,7 @@ $("ruleClose").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("ru
 $("ruleOv").addEventListener("click",e=>{ if(e.target===$("ruleOv")) $("ruleOv").classList.remove("on"); });
 $("againBtn").addEventListener("click",()=>{
   ensureAudio(); playSelect();
+  if(online&&spectating){ toast("観戦中です。次のゲームもこのまま観戦できます"); return; }
   if(online){   // 両者が「もう一回」で部屋主が再開の合図を送る
     myRematch=true;
     if(ch){ try{ ch.send({ type:"broadcast", event:"rematch", payload:{} }); }catch(e){} }
@@ -1774,13 +1831,26 @@ function spawnStamp(i, who){
   setTimeout(()=>el.remove(), 2350);
 }
 function sendStamp(i){
-  spawnStamp(i, "自分");
-  if(online&&ch){ try{ ch.send({ type:"broadcast", event:"stamp", payload:{ i:i } }); }catch(e){} }   // ロストしても実害なし
+  spawnStamp(i, spectating?"観戦":"自分");
+  if(online&&ch){ try{ ch.send({ type:"broadcast", event:"stamp", payload:{ i:i, w:spectating?"観戦":null } }); }catch(e){} }   // ロストしても実害なし
 }
 (function(){
   const mb=$("stampMute");
   const rndr=()=>mb.classList.toggle("muted", stampMuted); rndr();
   mb.addEventListener("click",()=>{ stampMuted=!stampMuted; try{ localStorage.setItem("sgb.smute", stampMuted?"1":"0"); }catch(e){} rndr(); });
+
+/* スタンプ最小化(2026-08-05・全対戦ゲーム共通): 泣きスタンプの左の−で畳む/＋で開く */
+(function(){
+  var sb=document.getElementById("stampBar"), mb=document.getElementById("stampMin");
+  if(!sb||!mb) return;
+  var MINSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="12" x2="18" y2="12"/></svg>';
+  var PLUSSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="12" x2="18" y2="12"/><line x1="12" y1="6" x2="12" y2="18"/></svg>';
+  mb.addEventListener("click",function(){
+    var mini=sb.classList.toggle("mini");
+    mb.innerHTML=mini?PLUSSVG:MINSVG;
+    mb.setAttribute("aria-label", mini?"スタンプを表示":"スタンプを最小化");
+  });
+})();
 })();
 document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{
   const i=+b.dataset.i; b.innerHTML=STAMP_SVGS[i];
@@ -1821,6 +1891,18 @@ document.addEventListener("focusin",e=>{
 });
 
 renderSnd();
+})();
+</script>
+<script>/* 招待リンク(?join=合言葉)で来た人を自動で入室させる(2026-08-05) */
+(function(){
+  var m=/[?&]join=([A-Za-z0-9]{4,6})/.exec(location.search); if(!m) return;
+  var jc=m[1].toUpperCase(); window.__pendingJoin=jc;
+  setTimeout(function(){ try{
+    var mb=document.querySelector('.mbtn[data-mode="friend"]'); if(mb) mb.click();
+    var jb=document.getElementById("joinRoomBtn"); if(jb) jb.click();
+    var inp=document.getElementById("codeInput");
+    if(inp){ inp.value=jc; var go=document.getElementById("codeGo"); if(go) go.click(); }
+  }catch(e){} },450);
 })();
 </script>
 </body>
