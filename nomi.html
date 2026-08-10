@@ -44,6 +44,15 @@
   #count.pop{ animation:cpop .22s cubic-bezier(.2,1.6,.4,1); }
   @keyframes cpop{ 0%{ transform:scale(1.18); } 100%{ transform:scale(1); } }
   #count.gold{ color:var(--gold); text-shadow:0 0 14px rgba(242,176,53,.45); transition:color .15s, text-shadow .15s; }
+  /* 音ミュート(地球儀の左隣・アイコンのみ・細く淡く=世界観を壊さない) */
+  #seBtn{ position:absolute; right:62px; top:6px; width:40px; height:40px; pointer-events:auto; opacity:.32;
+    display:flex; align-items:center; justify-content:center; background:none; border:none; padding:0; cursor:pointer; }
+  #seBtn:active{ opacity:.7; transform:scale(.94); }
+  #seBtn svg{ width:24px; height:24px; display:block; }
+  #seBtn .se-wave{ display:block; }
+  #seBtn .se-slash{ display:none; }
+  #seBtn.off .se-wave{ display:none; }
+  #seBtn.off .se-slash{ display:block; }
   /* 世界ボタン(右上・地球アイコンのみ・細く淡く=フォントの雰囲気に合わせる) */
   #worldBtn{ position:absolute; right:14px; top:6px; width:40px; height:40px; pointer-events:auto; opacity:.32;
     display:flex; align-items:center; justify-content:center; }
@@ -150,6 +159,15 @@
       <span id="myName"></span>
     </div>
     <div id="countWrap"><div id="count">0</div></div>
+    <button id="seBtn" aria-label="音を消す">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#1b1b1b" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 9.5v5h3.4l4.6 3.8V5.7L8.4 9.5z"/>
+        <path class="se-wave" d="M16.2 9.4c1.5 1.3 1.5 3.9 0 5.2"/>
+        <path class="se-wave" d="M18.4 7.2c2.6 2.4 2.6 7.2 0 9.6"/>
+        <line class="se-slash" x1="16" y1="9.4" x2="21" y2="14.6"/>
+        <line class="se-slash" x1="21" y1="9.4" x2="16" y2="14.6"/>
+      </svg>
+    </button>
     <button id="worldBtn" aria-label="世界のつぶし数">
       <svg viewBox="0 0 24 24" fill="none" stroke="#1b1b1b" stroke-width="1" stroke-linecap="round">
         <circle cx="12" cy="12" r="9"/>
@@ -204,8 +222,9 @@ function ensureAudio(){
   }
   if(actx && actx.state==="suspended"){ try{ actx.resume(); }catch(e){} }
 }
+let seOn=true; try{ seOn=localStorage.getItem("nomi.se")!=="0"; }catch(e){}
 function note(f,t,dur,vol,type){
-  if(!actx) return null;
+  if(!actx||!seOn) return null;
   const o=actx.createOscillator(), g=actx.createGain();
   o.type=type||"sine"; o.frequency.setValueAtTime(f,t);
   g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+0.005); g.gain.exponentialRampToValueAtTime(0.0008,t+dur);
@@ -215,18 +234,21 @@ function note(f,t,dur,vol,type){
 /* つぶす音: プチッが主役(プチプチの気泡系の短い弾け)。今作の肝。
    4パターンを用意し、クリックするたびに変わる(同じのが2連続しないランダム)+毎回ピッチゆらぎ */
 function popNoise(t,f1,f2,q,vol,dur){   // バンドパスノイズの弾け
+  if(!actx||!seOn) return;
   const n=actx.createBufferSource(); n.buffer=noiseBuf;
   const b=actx.createBiquadFilter(); b.type="bandpass"; b.frequency.setValueAtTime(f1,t); b.frequency.exponentialRampToValueAtTime(f2,t+dur*0.8); b.Q.value=q;
   const g=actx.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+0.0015); g.gain.exponentialRampToValueAtTime(0.0008,t+dur);
   n.connect(b); b.connect(g); g.connect(actx.destination); n.start(t); n.stop(t+dur+0.02);
 }
 function popBody(t,f1,f2,vol,dur){   // 丸みの支え(sineの落ち)
+  if(!actx||!seOn) return;
   const o=actx.createOscillator(), g=actx.createGain();
   o.type="sine"; o.frequency.setValueAtTime(f1,t); o.frequency.exponentialRampToValueAtTime(f2,t+dur*0.7);
   g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+0.004); g.gain.exponentialRampToValueAtTime(0.0008,t+dur);
   o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+dur+0.02);
 }
 function popCrisp(t,hpf,vol,dur){   // ごく短い高域のパリッ
+  if(!actx||!seOn) return;
   const n=actx.createBufferSource(); n.buffer=noiseBuf;
   const h=actx.createBiquadFilter(); h.type="highpass"; h.frequency.setValueAtTime(hpf,t);
   const g=actx.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+0.001); g.gain.exponentialRampToValueAtTime(0.0008,t+dur);
@@ -417,7 +439,7 @@ const NIJI_SPRITES=[];
 let bandTop=70, bandBottom=1e9;
 function updateNoGo(){
   let t=0, b=vh||1e9;
-  ["namePill","worldBtn"].forEach(id=>{ const el=$(id); if(!el) return;
+  ["namePill","worldBtn","seBtn"].forEach(id=>{ const el=$(id); if(!el) return;
     const r=el.getBoundingClientRect(); if(r.width>0) t=Math.max(t,r.bottom); });
   const hf=document.querySelector(".home-foot");
   if(hf){ const r=hf.getBoundingClientRect(); if(r.width>0 && r.top>0) b=Math.min(b,r.top); }
@@ -813,6 +835,10 @@ async function loadWorld(){
 }
 function escHtml(s){ return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
 function closeWorld(){ worldOverlay.classList.remove("on"); document.body.classList.remove("veil"); }
+{ const b=$("seBtn");
+  const rndrSe=()=>{ b.classList.toggle("off", !seOn); b.setAttribute("aria-label", seOn?"音を消す":"音を出す"); };
+  rndrSe();
+  b.addEventListener("click",()=>{ ensureAudio(); seOn=!seOn; try{ localStorage.setItem("nomi.se", seOn?"1":"0"); }catch(e){} rndrSe(); if(seOn) playSelect(); }); }   // ONに戻した時だけ確認音
 $("worldBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); worldOverlay.classList.add("on"); document.body.classList.add("veil"); loadWorld(); });
 // 閉じるのは右上の×だけ(下部のとじるは廃止・枠外タップでも閉じない)
 $("worldX").addEventListener("click",()=>{ playSelect(); closeWorld(); });

@@ -478,6 +478,7 @@
   .cf-msg{ font-size:clamp(20px,5.4vw,28px); letter-spacing:.1em; }
   .r-card .sub-btns{ width:100%; }
   .r-card .txt-btn{ flex:1 1 0; min-width:120px; }
+  .r-card .txt-btn.deny{ color:#fff; background:var(--shu); border-color:var(--shu); }   /* 「断る」は右+赤で強調(2026-08-10・全対戦ゲーム共通) */
   .r-card{
     background:var(--washi); border:3px solid var(--sumi); border-radius:12px;
     width:min(84vw, 56svh); padding:26px 22px 24px; text-align:center;
@@ -690,7 +691,7 @@
       <div class="cf-msg" id="undoMsg">「待った」を許すか？</div>
       <div class="sub-btns">
         <button class="txt-btn" id="undoYes">許す</button>
-        <button class="txt-btn" id="undoNo">断る</button>
+        <button class="txt-btn deny" id="undoNo">断る</button>
       </div>
     </div>
   </div>

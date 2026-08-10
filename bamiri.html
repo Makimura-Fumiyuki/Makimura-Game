@@ -339,6 +339,7 @@
   .cf-msg{ font-size:clamp(19px,5.2vw,26px); font-weight:900; letter-spacing:.08em; }
   .r-card .sub-btns{ width:100%; }
   .r-card .txt-btn{ flex:1 1 0; min-width:120px; }
+  .r-card .txt-btn.deny{ color:#fff; background:var(--red); border-color:var(--red); }   /* 「断る」は右+赤で強調(2026-08-10・全対戦ゲーム共通) */
   /* 部屋を抜けずにルール変更するダイアログ(結果画面の上に出す) */
   #ruleOverlay{ position:fixed; inset:0; z-index:80; display:flex; align-items:center; justify-content:center;
     background:rgba(24,26,22,.55); opacity:0; pointer-events:none; transition:opacity .3s linear; }
@@ -565,7 +566,7 @@
       <div class="cf-msg" id="undoMsg">「待った」を許すか？</div>
       <div class="sub-btns">
         <button class="txt-btn" id="undoYes">許す</button>
-        <button class="txt-btn" id="undoNo">断る</button>
+        <button class="txt-btn deny" id="undoNo">断る</button>
       </div>
     </div>
   </div>

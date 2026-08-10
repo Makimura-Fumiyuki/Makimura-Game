@@ -226,10 +226,9 @@
   @keyframes fallSpin{ 0%{ transform:scale(1) rotate(0deg); opacity:1; } 100%{ transform:scale(0) rotate(210deg); opacity:.5; } }
   .fallpc.slow{ animation-duration:1.2s; }   /* 王はゆっくり落ちる */
   /* 王手ボタン(盤が王手の間はいつでも押せる) */
-  .check-btn{ display:none; padding:9px 22px; font-family:var(--fw); font-size:16px; letter-spacing:.16em; text-indent:.16em;
-    color:var(--pp-ink); background:var(--yel); border:none; border-radius:999px; box-shadow:0 4px 0 rgba(20,8,45,.4); }
-  .check-btn.on{ display:inline-block; animation:mFloat 2.6s ease-in-out infinite; }
-  .check-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(20,8,45,.4); }
+  /* 王手ボタン(スタンプ列の右端・黄色丸に「王手」。王手している側だけ使える) */
+  .stamp-btn.stamp-check{ background:var(--yel); color:var(--pp-ink); font-family:var(--fw); font-size:14.5px; letter-spacing:.04em; }   /* .stamp-btnより後勝ちになるよう2クラスで上書き */
+  .stamp-btn.stamp-check.dim{ filter:grayscale(.75); opacity:.4; pointer-events:none; }
   /* 「王手」の宣言演出 */
   #checkFx{ position:absolute; transform:translate(-50%,-50%); z-index:58; pointer-events:none;
     font-family:var(--fw); font-size:clamp(66px,21vw,118px); color:var(--yel); letter-spacing:.1em; white-space:nowrap;
@@ -397,6 +396,7 @@
   .cf-msg{ font-size:clamp(19px,5vw,25px); font-weight:900; letter-spacing:.06em; }
   .r-card .sub-btns{ width:100%; margin-top:0; }
   .r-card .txt-btn{ flex:1 1 0; min-width:110px; color:var(--pp-ink); background:#f1edf8; border:none; box-shadow:0 4px 0 rgba(20,8,45,.25); }
+  .r-card .txt-btn.deny{ color:#fff; background:#e3452f; box-shadow:0 4px 0 #9c2716; }   /* 「だめ」は右+赤で強調(2026-08-10・全対戦ゲーム共通) */
   .r-card .txt-btn:active{ transform:translateY(3px); box-shadow:0 1px 0 rgba(20,8,45,.25); }
   .r-title{ font-size:32px; font-weight:900; animation:rPop .5s cubic-bezier(.2,1.4,.4,1); }
   @keyframes rPop{ 0%{ transform:scale(.3); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
@@ -564,7 +564,6 @@
     <div id="board"></div>
   </div>
   <div class="sub-btns">
-    <button class="check-btn" id="checkBtn">王手</button>
     <button class="txt-btn" id="undoBtn">一手戻る</button>
     <button class="txt-btn" id="giveupBtn">降参</button>
   </div>
@@ -653,8 +652,8 @@
   <div class="r-card">
     <div class="cf-msg">あいてが一手戻したいそうです</div>
     <div class="sub-btns">
-      <button class="txt-btn" id="undoNo">だめ</button>
       <button class="txt-btn" id="undoYes">いいよ</button>
+      <button class="txt-btn deny" id="undoNo">だめ</button>
     </div>
   </div>
 </div>
@@ -672,7 +671,7 @@
     <button id="stampMin" class="stamp-min" aria-label="スタンプを最小化"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="12" x2="18" y2="12"/></svg></button>
   <button class="stamp-btn" data-i="0" aria-label="泣き"></button>
   <button class="stamp-btn" data-i="1" aria-label="うっとり"></button>
-  <button class="stamp-btn" data-i="2" aria-label="爆笑"></button>
+  <button class="stamp-btn stamp-check dim" id="stampCheck" aria-label="王手">王手</button>
   <button id="stampMute" class="stamp-mute" aria-label="スタンプをミュート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10.5 16.2a1.7 1.7 0 0 0 3 0"/><line class="mute-slash" x1="3.2" y1="3.2" x2="20.8" y2="20.8"/></svg></button>
 </div>
 
@@ -785,7 +784,7 @@ let mySeq=0, pendingSeq=-1, lastRecvSeq=-1, moveResendTimer=0, joinWatch=0;
 let myRematch=false, peerRematch=false, queuedMove=null, lastNetMove=null;
 let undoPending=false, undoIdx=-1, peerUndoIdx=-1;   // オンラインの待った(あいての同意を待っている間)
 let spectating=false, specKnown=new Set(), specPlayers=[], lastSeqFrom={}, oppId=null;   // 観戦モード(対局中に入室した人)
-function bottomSide(){ if(mode==="cpu") return humanSide; return 0; }   /* オンラインは盤を反転しない=左上が必ず1(後手は自分の駒が上側になる) */
+function bottomSide(){ if(mode==="cpu") return humanSide; if(online) return mySide; return 0; }   /* 全員が自分の駒を下側(上向き)で見る(2026-08-10に反転を復活。観戦者はmySide=0で先手視点) */
 function cpuSide(){ return 1-humanSide; }
 
 function initGame(){
@@ -1001,15 +1000,19 @@ function updateBtns(){
   const busy = phase!=="idle" || (mode==="cpu"&&turn!==humanSide);
   $("undoBtn").disabled = busy || !hist.length || phase==="over" || undoPending;
   $("giveupBtn").disabled = phase!=="idle" || spectating;
-  const ck = phase==="idle" && !!board && (inCheck(0)||inCheck(1)) && !spectating;   // 盤が王手の間はいつでも宣言できる(観戦者は宣言しない)
-  $("checkBtn").classList.toggle("on", ck);
+  $("stampCheck").classList.toggle("dim", !canCallCheck());
+}
+function canCallCheck(){   // 王手を宣言できるのは「王手している側」だけ(2026-08-10。される側も送れたバグの修正)
+  if(phase!=="idle"||!board||spectating) return false;
+  const defender = online? (1-mySide) : (mode==="cpu"? (1-humanSide) : turn);   // 1台=手番側(=王手されている側)の相手が押す想定
+  return inCheck(defender);
 }
 let toastTmr=0;
 function toast(msg,ms){ const t=$("toast"); t.textContent=msg; t.classList.add("on"); clearTimeout(toastTmr); toastTmr=setTimeout(()=>t.classList.remove("on"), ms||1800); }
 function ballBg(num){ const h=COL_HUES[Math.floor((num-1)/N)*(N===9?1:2)]; return "hsl("+h+",72%,50%)"; }   /* 列の色(縦連番=列はfloor((num-1)/N)) */
 
 /* ================= 駒の動きガイド(左上のパネル) ================= */
-function guideSVG(p,kj){
+function guideSVG(p,kj,flip){
   const mv=movesFor(p), U=22, S=5*U, cx=2.5*U, cy=2.5*U;
   let g="";
   for(let i=1;i<5;i++){
@@ -1031,6 +1034,7 @@ function guideSVG(p,kj){
   // 中央の駒はゲームと同じ見た目(本物の駒のシルエット+Yuji Syuku)
   g+='<polygon points="'+(cx)+','+(cy-8.4)+' '+(cx+6.2)+','+(cy-5)+' '+(cx+7.2)+','+(cy+8.4)+' '+(cx-7.2)+','+(cy+8.4)+' '+(cx-6.2)+','+(cy-5)+'" fill="#d0a055"/>'
     +'<text x="'+cx+'" y="'+(cy+1.6)+'" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#241a0c" font-family="Yuji Syuku,serif">'+kj+'</text>';
+  if(flip) g='<g transform="rotate(180 '+(S/2)+' '+(S/2)+')">'+g+'</g>';   // 下向きの駒(相手側)はガイドも上下逆(2026-08-10)
   return '<svg viewBox="0 0 '+S+' '+S+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>';
 }
 let guideFold=false; try{ guideFold=localStorage.getItem("sgb.gfold")==="1"; }catch(e){}
@@ -1043,7 +1047,7 @@ function renderGuide(){
   const kj = p.pr? KJP[p.t] : (p.t==="K"&&p.o===1? "玉" : KJ[p.t]);
   const nm = p.pr? PC_NAME_PR[p.t] : (p.t==="K"&&p.o===1? ["玉将","ぎょくしょう"] : PC_NAME[p.t]);
   gl.innerHTML='<button class="g-fold" id="gFold" aria-label="動きガイドを畳む">'+(guideFold?"＋":"−")+'</button>'
-    +'<div class="g-name"><span class="g-ruby">'+nm[1]+'</span>'+nm[0]+'</div>'+guideSVG(p,kj);
+    +'<div class="g-name"><span class="g-ruby">'+nm[1]+'</span>'+nm[0]+'</div>'+guideSVG(p,kj,p.o!==bottomSide());   // 相手の駒/持ち駒=上下逆
   gl.classList.toggle("folded", guideFold);
   gl.classList.add("on");
   $("gFold").addEventListener("click",e=>{   // 畳む/開く(次からも同じ状態で出る)
@@ -1175,7 +1179,7 @@ function bingoRoll(forced){
     num=cands[Math.floor(Math.random()*cands.length)];
     pool.splice(pool.indexOf(num),1);
   }
-  if(!fxOn){ openSquare(num); return; }   // 演出なし=動かした瞬間に穴が開く
+  if(!fxOn){ flashVig(num); openSquare(num); return; }   // 演出なし=即開ける(ビネットだけ一瞬見せる。操作は止めない)
   setTimeout(()=>boardEl.classList.add("rolling"),20);   // 抽選中は数字をしっかり見せる(★1フレーム遅らせる=直前のrenderで作り直したDOMだと初期値が濃い色になりtransitionが効かない)
   const flow=$("flow");
   const bc=localCenter();   // #gameScene基準の盤中心=スクロールしても座標は変わらない(ページに固定)
@@ -1264,6 +1268,14 @@ function bingoRoll(forced){
       openSquare(num);
     }
   },16);
+}
+function flashVig(num){   // 演出なし用: 開くマスにビネットを一瞬当てる(pointer-events:none=操作はできる)
+  const cell=cellOfNum[num]; if(!cell) return;
+  const el=boardEl.querySelector('.cell[data-r="'+cell[0]+'"][data-c="'+cell[1]+'"]'); if(!el) return;
+  const cr=el.getBoundingClientRect(), vg=$("vig");
+  vg.style.background="radial-gradient(circle at "+(cr.left+cr.width/2)+"px "+(cr.top+cr.height/2)+"px, rgba(20,8,45,0) "+(cr.width*1.1)+"px, rgba(20,8,45,.8) "+(cr.width*3.2)+"px)";
+  vg.classList.add("on");
+  setTimeout(()=>vg.classList.remove("on"), 700);
 }
 function openSquare(num){
   const cell=cellOfNum[num], r=cell[0], c=cell[1];
@@ -1509,7 +1521,7 @@ function openChannel(code, asHost){
     gameOver(mySide, "あいてが降参した");
   });
   ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) spawnStamp(payload.i|0, payload.w||(spectating?"プレイヤー":"あいて")); });
-  ch.on("broadcast",{event:"check"},()=>{ if(online) showCheckFx(); });   // あいての王手宣言
+  ch.on("broadcast",{event:"check"},()=>{ if(online && !stampMuted) showCheckFx(); });   // あいての王手宣言(スタンプ扱い=ミュート中は流れない)
   ch.on("broadcast",{event:"undoreq"},({payload})=>{   // あいてが一手戻したい
     if(!online||phase!=="idle"||!hist.length) return;
     peerUndoIdx = (payload&&typeof payload.i==="number")? payload.i : undoTargetIdx(1-mySide);
@@ -1668,7 +1680,8 @@ function showCheckFx(){
   $("gameScene").appendChild(fx); setTimeout(()=>{ if(fx.isConnected) fx.remove(); },1300);
   if(seOn) playCheck();
 }
-$("checkBtn").addEventListener("click",()=>{
+$("stampCheck").addEventListener("click",()=>{
+  if(!canCallCheck()) return;
   ensureAudio();
   showCheckFx();
   if(online&&ch){ try{ ch.send({ type:"broadcast", event:"check", payload:{} }); }catch(e){} }   // あいての画面にも出す
@@ -1852,7 +1865,7 @@ function sendStamp(i){
   });
 })();
 })();
-document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{
+document.querySelectorAll("#stampBar .stamp-btn[data-i]").forEach(b=>{
   const i=+b.dataset.i; b.innerHTML=STAMP_SVGS[i];
   b.addEventListener("click",()=>{ ensureAudio(); sendStamp(i); });
 });

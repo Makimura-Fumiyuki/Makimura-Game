@@ -361,7 +361,7 @@
   #chatBox{ display:none; flex-direction:column; gap:8px; width:min(94vw,480px); }
   #gameScene.online #chatBox{ display:flex; }
   .chat-log{
-    height:118px; overflow-y:auto; background:rgba(255,255,255,.72);
+    height:118px; min-height:64px; max-height:60vh; resize:vertical; overflow-y:auto; background:rgba(255,255,255,.72);   /* 右下をつかんで縦幅を変えられる(生き物図鑑の記入欄と同じ) */
     border:1.6px solid rgba(58,42,28,.22); border-radius:12px; padding:8px 10px;
     display:flex; flex-direction:column; gap:4px;
   }
@@ -379,7 +379,7 @@
   .ch-row.armed{ background:#ffd9c9; border:1.6px solid var(--red); }
   .ch-row .pickmark{ font-size:11px; font-weight:900; color:var(--red); margin-left:auto; white-space:nowrap; flex:none; }
   .ch-row.ansrow{ border:1.6px solid rgba(226,71,46,.55); background:rgba(255,240,234,.65); }   /* 回答だったチャット */
-  .ch-row .ans-mark{ margin-left:auto; flex:none; font-size:11px; font-weight:900; letter-spacing:.04em; color:var(--red); }
+  .ch-row .ans-mark{ margin-left:auto; flex:none; align-self:center; font-size:11px; font-weight:900; letter-spacing:.04em; color:var(--red); }   /* 行と上下中央揃え */
   .ch-row .ans-mark.ok{ color:#2f9e55; }
   .ch-row.ansrow.okrow{ border-color:rgba(47,158,85,.55); background:rgba(238,250,242,.75); }   /* 正解の回答=緑 */
   .ch-row.chdiv{ justify-content:center; color:rgba(90,60,25,.5); font-size:11px; font-weight:900; background:none; border:none; }
@@ -399,24 +399,22 @@
 
   #chatSend.plain:active{ box-shadow:0 1px 0 #4c2f14; }
   .c-rank{ font-size:11px; font-weight:800; color:var(--brown-dark); opacity:.7; margin:0 3px; }
-  #mateOnlineBtn{ display:none; width:min(72%,280px); margin:2px auto 0; padding:12px; border:none; border-radius:16px; cursor:pointer;
-    background:linear-gradient(160deg,#f0603f,var(--red) 55%,#b93117); box-shadow:0 4px 0 #8f2510; color:#fff;
-    font-weight:900; font-style:italic; font-size:20px; letter-spacing:.04em; }
-  #mateOnlineBtn small{ display:block; font-size:11px; font-weight:700; font-style:normal; opacity:.9; }
-  #mateOnlineBtn:active{ transform:translateY(2px); box-shadow:0 2px 0 #8f2510; }
-  #mateOnlineBtn.cooling{ filter:grayscale(.85); opacity:.55; pointer-events:none; }
+  #mateAnsRow{ display:none; gap:8px; width:min(94vw,440px); margin:2px auto 0; }
+  #mateAnsInput{ flex:1; min-width:0; padding:11px 14px; border:2px solid rgba(138,90,46,.4); border-radius:12px; font-size:15px; font-weight:700; background:#fff; }
+  #mateAnsInput:focus{ border-color:var(--brown); outline:none; }
+  #mateAnsGo{ flex:none; padding:10px 20px; border:none; border-radius:12px; cursor:pointer; color:#fff;
+    background:linear-gradient(160deg,#f0603f,var(--red) 55%,#b93117); box-shadow:0 3px 0 #8f2510;
+    font-weight:900; font-style:italic; font-size:18px; letter-spacing:.04em; }
+  #mateAnsGo:active{ transform:translateY(2px); box-shadow:0 1px 0 #8f2510; }
+  #mateAnsRow.cooling #mateAnsGo{ filter:grayscale(.85); opacity:.55; pointer-events:none; }
+  #mateAnsRow.cooling #mateAnsInput{ opacity:.55; pointer-events:none; }
+  #mateAnsNote{ display:none; font-size:12px; font-weight:700; letter-spacing:.03em; color:var(--brown-dark); opacity:.6; text-align:center; }
   #haltedLine{ display:none; font-size:12px; font-weight:700; letter-spacing:.03em; color:var(--brown-dark); opacity:.6; text-align:center; }
-  #answerBox{ display:none; flex-direction:column; gap:11px; align-items:center; width:100%;
-    background:rgba(255,255,255,.6); border:1px solid rgba(138,90,46,.3); border-radius:14px; padding:14px; }
+  #answerBox{ display:none; flex-direction:column; gap:11px; align-items:center; width:min(94vw,440px); margin:0 auto;
+    background:rgba(255,255,255,.6); border:1px solid rgba(138,90,46,.3); border-radius:14px; padding:14px; }   /* 幅は固定=画面サイズで横長にしない */
   .ans-dots{ display:flex; gap:9px; }
   .ans-dots i{ width:16px; height:16px; border-radius:50%; background:#e3452f; box-shadow:0 1px 3px rgba(140,40,15,.3); transition:opacity .2s, transform .2s; }
   .ans-dots i.off{ opacity:.16; transform:scale(.68); background:#b7aa99; box-shadow:none; }
-  .ans-self{ display:none; gap:8px; width:100%; }
-  #ansInput{ flex:1; min-width:0; padding:11px 14px; border:2px solid rgba(138,90,46,.4); border-radius:12px; font-size:15px; font-weight:700; }
-  #ansInput:focus{ border-color:var(--brown); outline:none; }
-  #ansSend{ flex:none; padding:11px 20px; border:none; border-radius:12px; cursor:pointer; color:#fff; font-weight:900;
-    background:linear-gradient(160deg,#f0603f,var(--red) 55%,#b93117); box-shadow:0 3px 0 #8f2510; }
-  #ansSend:active{ transform:translateY(2px); box-shadow:0 1px 0 #8f2510; }
   .ans-wait{ display:none; font-size:15px; font-weight:800; color:var(--brown-dark); padding:6px 2px; text-align:center; }
   .ans-judge{ display:none; width:100%; text-align:center; }
   .aj-tx{ font-size:22px; font-weight:900; color:var(--ink); margin-bottom:12px; }
@@ -715,11 +713,14 @@
         </button>
       </div>
       <button id="mateBtn"><b>待て！</b><small id="mateSmall">当てた人が出てきたらタップ</small></button>
-      <!-- 待て！/回答UIはチャットより上(チャットは優先度が一番低いので下段) -->
-      <button id="mateOnlineBtn"><b>待て！</b><small>何かわかったらクリック</small></button>
+      <!-- 回答UIはチャットより上(チャットは優先度が一番低いので下段)。回答を入れて「待て！」=即正誤判定(2026-08-10) -->
+      <div id="mateAnsRow">
+        <input id="mateAnsInput" maxlength="20" placeholder="こたえが分かったら入力" autocomplete="off">
+        <button id="mateAnsGo"><b>待て！</b></button>
+      </div>
+      <div id="mateAnsNote"></div>
       <div id="answerBox">
         <div class="ans-dots" id="ansDots"><i></i><i></i><i></i><i></i><i></i></div>
-        <div class="ans-self" id="ansSelf"><input id="ansInput" maxlength="20" placeholder="こたえを入力" autocomplete="off"><button id="ansSend">送信</button></div>
         <div class="ans-wait" id="ansWait"></div>
         <div class="ans-judge" id="ansJudge"><div class="aj-tx" id="ansJudgeTx"></div><div class="aj-btns"><button id="ansOk">正解</button><button id="ansNg">ちがう</button></div></div>
       </div>
@@ -931,7 +932,7 @@ let playersSetup=DEFAULT_NAMES.slice();
 let players=[];                              // [{id,n,s,c}]
 let timeLimit=30, dobonOn=true, topicTmr=0;
 const ERASE_OPTS=[{k:"なし",v:0},{k:"ちょっと",v:16.25},{k:"普通",v:32.5},{k:"たくさん",v:65}];   // 消せる総量(残量の最大)。2026-08-01にさらに1/2
-let eraserAmt=2;              // 消しゴム量の設定(0なし/1ちょっと/2普通/3たくさん・初期=普通)
+let eraserAmt=0;              // 消しゴム量の設定(0なし/1ちょっと/2普通/3たくさん・初期=なし。2026-08-10)
 let eraseMax=100, eraseLeft=0;
 let roundNo=1, drawerId=null, nextDrawerId=null;
 const ANSWER_MS=16000;   // 回答の持ち時間(2026-08-01に2倍)
@@ -1054,7 +1055,7 @@ document.querySelectorAll('.rc-btn[data-er]').forEach(b=>{
   b.addEventListener("click",()=>{ ensureAudio(); const d=+b.dataset.er; const nv=Math.max(0,Math.min(ERASE_OPTS.length-1,eraserAmt+d));
     if(nv!==eraserAmt){ eraserAmt=nv; playTick(); renderRules(); } });
 });
-$("ruleReset").addEventListener("click",()=>{ ensureAudio(); playSelect(); timeLimit=30; dobonOn=true; eraserAmt=2; renderRules(); });
+$("ruleReset").addEventListener("click",()=>{ ensureAudio(); playSelect(); timeLimit=30; dobonOn=true; eraserAmt=0; renderRules(); });
 
 /* ================= カップ ================= */
 const SIZE=720;
@@ -1884,21 +1885,13 @@ function hostAct(a){
     const pp=byId(a.from); if(!pp) return;
     haltedIds.add(a.from);
     drawPausedEl=Date.now()-tStart;               // 描画クロックを一時停止
-    oAns={by:a.from, byName:pp.n, text:null, judging:false};
-    answerEnd=Date.now()+ANSWER_MS;
-    curAns={by:oAns.by, byName:oAns.byName, text:null, judging:false}; ansEnd=answerEnd;   // ホスト自身の表示用(snapは自分に届かない)
+    oAns={by:a.from, byName:pp.n, text:String(a.tx||"").slice(0,20), judging:true};   // 回答つき待て！=最初から判定(2026-08-10)
+    answerEnd=Date.now()+JUDGE_MS;
+    curAns={by:oAns.by, byName:oAns.byName, text:oAns.text, judging:true}; ansEnd=answerEnd;   // ホスト自身の表示用(snapは自分に届かない)
     phase="answer"; stopTimer();
     enterAnswerAll(); sendSnap();
     clearTimeout(ansTmr);
-    ansTmr=setTimeout(()=>{ if(phase==="answer" && oAns && !oAns.judging){ hostResumeDraw(); } }, ANSWER_MS+250);
-  }
-  if(a.t==="answer" && phase==="answer" && oAns && a.from===oAns.by && !oAns.judging){
-    oAns.text=String(a.tx||"").slice(0,20); oAns.judging=true;
-    answerEnd=Date.now()+JUDGE_MS;   // 判定は回答の半分(切れたらミス扱いで再開)
-    curAns={by:oAns.by, byName:oAns.byName, text:oAns.text, judging:true}; ansEnd=answerEnd;   // ホスト自身の表示用
-    clearTimeout(ansTmr);
-    ansTmr=setTimeout(()=>{ if(phase==="answer" && oAns && oAns.judging){ broadcastChat(oAns.by, oAns.byName, oAns.text, false); hostResumeDraw(); } }, JUDGE_MS+250);
-    renderAnswerArea(); startAnsTicker(); sendSnap();
+    ansTmr=setTimeout(()=>{ if(phase==="answer" && oAns && oAns.judging){ broadcastChat(oAns.by, oAns.byName, oAns.text, false); hostResumeDraw(); } }, JUDGE_MS+250);   // 時間切れ=ミス扱いで再開
   }
   if(a.t==="ansresult" && phase==="answer" && oAns && oAns.judging && a.from===drawerId){
     if(a.ok){
@@ -1955,7 +1948,7 @@ function closeGameOverlays(){
   $("topicPanel").classList.remove("on"); $("topicPeek").style.display="none";
   clearTimeout(topicTmr);
   stopAnsTicker();
-  $("answerBox").style.display="none"; $("mateOnlineBtn").style.display="none"; $("chatLog").style.display="";
+  $("answerBox").style.display="none"; $("mateAnsRow").style.display="none"; $("mateAnsNote").style.display="none"; $("chatLog").style.display="";
   { const cf=document.querySelector("#chatBox .chat-form"); if(cf) cf.style.display="flex"; }
 }
 function enterTopicAll(){
@@ -2047,7 +2040,7 @@ function applySnap(p){
   hostId=p.hostId;
   players=p.players||[];
   roundNo=p.round||1; drawerId=p.drawerId||null;
-  timeLimit=p.tl||45; dobonOn=p.db===1; eraserAmt=(p.er!=null?p.er:2);
+  timeLimit=p.tl||45; dobonOn=p.db===1; eraserAmt=(p.er!=null?p.er:0);
   haltedIds=new Set(p.halted||[]);
   if(p.ph==="draw" && !haltedIds.has(myId)) myHalted=false;   // 全員復活のリセットを自分にも反映
   if(p.ph==="answer" && p.ans){ curAns={by:p.ans.by,byName:p.ans.byName,text:p.ans.text,judging:p.ans.judging===1}; ansEnd=Date.now()+(p.ans.left||0); }
@@ -2093,30 +2086,30 @@ function startMateCool(){ clearInterval(mateCoolIv); renderAnswerArea();
 function renderAnswerArea(){
   const on=(online && phase==="answer");
   $("answerBox").style.display = on ? "flex" : "none";   // 回答中もチャットは見える・送れる(2026-08-05に非表示をやめた)
-  { const mb=$("mateOnlineBtn");
+  { const row=$("mateAnsRow"), noteEl=$("mateAnsNote");
     if(online && phase==="draw" && drawerId!==myId && !spectating){
-      mb.style.display="block";
+      row.style.display="flex";
       const rem=Math.ceil((mateCooldownUntil-Date.now())/1000);
-      if(iHalted()){ mb.classList.add("cooling"); mb.innerHTML='<b>待て！</b><small>全員誤答で解答権復活</small>'; }   // 使用済み=グレーアウトで待機(2026-08-05)
-      else if(rem>0){ mb.classList.add("cooling"); mb.innerHTML='<b>待て！</b><small>あと'+rem+'秒</small>'; }
-      else{ mb.classList.remove("cooling"); mb.innerHTML='<b>待て！</b><small>何かわかったらクリック</small>'; }
-    } else mb.style.display="none"; }
+      let note="";
+      if(iHalted()) note="全員誤答で解答権復活";
+      else if(rem>0) note="あと"+rem+"秒";
+      row.classList.toggle("cooling", !!note);
+      noteEl.textContent=note; noteEl.style.display=note?"block":"none";
+    } else { row.style.display="none"; noteEl.style.display="none"; } }
   { const hl=$("haltedLine");   // 誰が回答済みか(「◯◯の回答を待っています」UIの下)
     const nowAns=(phase==="answer"&&curAns)?curAns.by:null;   // いま回答/判定中の人は、判定が終わってから載せる
     const names=[...haltedIds].filter(id=>id!==nowAns).map(id=>{ const q=byId(id); return q?q.n:null; }).filter(Boolean);
     if(online && (phase==="draw"||phase==="answer") && names.length){ hl.textContent="回答済み："+names.join("・"); hl.style.display="block"; }
     else hl.style.display="none"; }
   if(!on) return;
-  const a=curAns, meAns=a&&a.by===myId, meDrawer=drawerId===myId, judging=a&&a.judging;
+  const a=curAns, meDrawer=drawerId===myId, judging=a&&a.judging;
   if(judging && !ansJudgedSeen){ ansJudgedSeen=true; if(a.by!==myId && seOn) playAnsRecv(); }   // 回答が届いた音(提出者以外)
-  $("ansDots").style.display = "flex";   // 判定中もタイマーを出す(時間切れ=ミス扱い)
-  $("ansSelf").style.display = (meAns && !judging) ? "flex" : "none";
+  $("ansDots").style.display = "flex";   // 判定タイマー(時間切れ=ミス扱い)
   $("ansJudge").style.display = (meDrawer && judging) ? "block" : "none";
-  const waitShow = !((meAns&&!judging)||(meDrawer&&judging));
+  const waitShow = !(meDrawer&&judging);
   $("ansWait").style.display = waitShow ? "block" : "none";
   if(waitShow) $("ansWait").textContent = ((a&&a.byName)?a.byName:"だれか") + (judging ? " の回答が合っているか判定中…" : " の回答を待っています…");
   if(meDrawer && judging) $("ansJudgeTx").textContent="「"+(a.text||"")+"」";
-  if(meAns && !judging) setTimeout(()=>{ const i=$("ansInput"); if(i) i.focus(); },50);
 }
 function playAnsTick(){ if(!actx) return; const t=actx.currentTime; note(740,t,0.07,0.16,"triangle"); note(1108,t+0.02,0.05,0.09,"sine"); }
 function playMate(){ if(!actx) return; const t=actx.currentTime;   // 「異議あり!」風=低く重いパンチ(2026-08-01にさらに1オクターブ近く下げた=高音の刺さりを消す)
@@ -2154,18 +2147,20 @@ function startAnsTicker(){
     if(lights<=0) stopAnsTicker();
   },60);
 }
-$("mateOnlineBtn").addEventListener("click",()=>{
-  if(!online||phase!=="draw"||drawerId===myId||iHalted()||Date.now()<mateCooldownUntil) return;
-  ensureAudio(); playSelect();
+function submitMateAns(){   // 回答を入れて「待て！」=そのまま正誤判定へ(余計な待ち時間なし。2026-08-10)
+  if(!online||phase!=="draw"||drawerId===myId||iHalted()||Date.now()<mateCooldownUntil||spectating) return;
+  const tx=$("mateAnsInput").value.trim();
+  if(!tx){ showToast("こたえを入れてから待て！"); return; }
+  ensureAudio(); if(seOn) playAnsSend();
+  $("mateAnsInput").value="";
   myHalted=true; renderAnswerArea();
-  sendAct({t:"halt"});
-});
+  sendAct({t:"halt", tx:tx});
+}
 let ansComposing=false;
-function submitAnswer(){ const tx=$("ansInput").value.trim(); if(!tx) return; $("ansInput").value=""; if(seOn) playAnsSend(); sendAct({t:"answer", tx:tx}); }
-$("ansSend").addEventListener("click",()=>{ ensureAudio(); submitAnswer(); });
-$("ansInput").addEventListener("compositionstart",()=>{ ansComposing=true; });
-$("ansInput").addEventListener("compositionend",()=>{ ansComposing=false; });
-$("ansInput").addEventListener("keydown",e=>{ if(e.key==="Enter"){ if(ansComposing||e.isComposing||e.keyCode===229) return; e.preventDefault(); submitAnswer(); } });
+$("mateAnsGo").addEventListener("click",()=>{ submitMateAns(); });
+$("mateAnsInput").addEventListener("compositionstart",()=>{ ansComposing=true; });
+$("mateAnsInput").addEventListener("compositionend",()=>{ ansComposing=false; });
+$("mateAnsInput").addEventListener("keydown",e=>{ if(e.key==="Enter"){ if(ansComposing||e.isComposing||e.keyCode===229) return; e.preventDefault(); submitMateAns(); } });
 $("ansOk").addEventListener("click",()=>{ ensureAudio(); playSelect(); sendAct({t:"ansresult",ok:1}); });
 $("ansNg").addEventListener("click",()=>{ ensureAudio(); playSelect(); sendAct({t:"ansresult",ok:0}); });
 function addSys(tx){
@@ -2291,7 +2286,7 @@ function buildHelp(){
   $("helpBody").innerHTML='<div class="h-sec">基本ルール</div>'
    +'<p>遊べば絶対に分かる！とりあえず遊んでみよう</p>'
    +'<div class="h-sec">ながれ</div>'
-   +'<p>① 描き手がお題をこっそり決める<br>② 決めたお題のラテアートを描く<br>③ わかった人は「待て！」といって回答<br>④ 当てた人が次のお題を決める<br>以降②に戻り、時間切れになるまで繰り返し</p>'
+   +'<p>① 描き手がお題をこっそり決める<br>② 決めたお題のラテアートを描く<br>③ わかった人はこたえを入れて「待て！」<br>④ 当てた人が次のお題を決める<br>以降②に戻り、時間切れになるまで繰り返し</p>'
    +'<div class="h-sec hl">とくてん</div>'
    +'<p>はやく当てたり、当ててもらうほど高得点</p>'
    +'<div class="h-sec">小ばなし</div>'
