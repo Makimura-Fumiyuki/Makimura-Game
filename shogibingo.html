@@ -749,6 +749,7 @@ function playCheck(){   // 王手の宣言: 拍子木のような打ち音+低�
     noiseHit(t+0.13,2400,800,1.2,0.4,0.05); note(240,t+0.13,0.16,0.2,"triangle"); note(120,t+0.15,0.4,0.18,"sine"); }
   try{   // 端末に日本語音声があれば「王手」と読み上げる(なければ効果音だけ)
     if(window.speechSynthesis){
+      if(!ttsVoice){ const vs=speechSynthesis.getVoices()||[]; ttsVoice=vs.find(v=>/ja/i.test(v.lang))||null; }   // iOSはgetVoicesが後から埋まるので発話時にも取り直す
       const u=new SpeechSynthesisUtterance("王手"); u.lang="ja-JP"; u.rate=1; u.pitch=0.9; u.volume=1;
       if(ttsVoice) u.voice=ttsVoice;
       if(speechSynthesis.speaking||speechSynthesis.pending) speechSynthesis.cancel();   // 連打は上書き(初回はcancelを通らないのでラグなし)
@@ -1009,7 +1010,8 @@ function updateBtns(){
 }
 function canCallCheck(){   // 王手を宣言できるのは「王手している側」だけ(2026-08-10。される側も送れたバグの修正)
   if(phase!=="idle"||!board||spectating) return false;
-  const defender = online? (1-mySide) : (mode==="cpu"? (1-humanSide) : turn);   // 1台=手番側(=王手されている側)の相手が押す想定
+  if(mode==="local") return inCheck(0)||inCheck(1);   // 1台=どちらかが王手なら手番に関係なく宣言できる(2026-08-10)
+  const defender = online? (1-mySide) : (1-humanSide);   // 王手を「している側」だけが押せる
   return inCheck(defender);
 }
 let toastTmr=0;

@@ -189,9 +189,10 @@
   }
   .lobby-row .p-dot{ width:20px; height:20px; }
   .lobby-row .nm{ flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .lobby-row .kick-btn{ margin-left:auto; flex:none; font-size:11px; font-weight:900; color:var(--red); background:none;
+  .lobby-row .kick-btn, .rank-row .kick-btn{ margin-left:auto; flex:none; font-size:11px; font-weight:900; color:var(--red); background:none;
     border:1.5px solid rgba(226,71,46,.5); border-radius:999px; padding:3px 10px; cursor:pointer; }
-  .lobby-row .kick-btn:active{ transform:translateY(1px); }
+  .lobby-row .kick-btn:active, .rank-row .kick-btn:active{ transform:translateY(1px); }
+  .rank-row .kick-btn{ margin-left:0; }   /* 得点確認では点数の右に置く */
   .lobby-row .you{ flex:none; font-size:11px; font-weight:900; color:#fff; background:var(--brown); border-radius:999px; padding:2px 10px 3px; }
   .lobby-row .hostmark{ flex:none; font-size:11px; font-weight:900; color:#fff; background:var(--red); border-radius:999px; padding:2px 10px 3px; }
   #lobbyBox{ display:flex; flex-direction:column; align-items:center; gap:16px; width:100%; }
@@ -370,6 +371,9 @@
   .chat-log::-webkit-scrollbar-track{ background:rgba(138,90,46,.1); border-radius:8px; margin:4px; }
   .chat-log::-webkit-scrollbar-thumb{ background:rgba(138,90,46,.42); border-radius:8px; border:2px solid transparent; background-clip:padding-box; }
   .chat-log::-webkit-scrollbar-thumb:hover{ background:rgba(138,90,46,.6); background-clip:padding-box; }
+  /* 右下の拡大グリップは自前で描く=スクロールバーの有無で見た目が変わらない(2026-08-10) */
+  .chat-log::-webkit-scrollbar-corner{ background:transparent; }
+  .chat-log::-webkit-resizer{ background:transparent url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><g stroke='rgba(138,90,46,.55)' stroke-width='1.4' stroke-linecap='round'><line x1='13' y1='5' x2='5' y2='13'/><line x1='13' y1='9.5' x2='9.5' y2='13'/></g></svg>") no-repeat right bottom; }
   .ch-row{ display:flex; align-items:baseline; gap:6px; font-size:13.5px; font-weight:700; line-height:1.55; text-align:left; border-radius:8px; padding:2px 6px; }
   .ch-row .c-dot{ width:11px; height:11px; border-radius:50%; flex:none; align-self:center; }
   .ch-row b{ color:var(--brown-dark); font-weight:900; flex:none; }
@@ -403,9 +407,9 @@
   #mateAnsRow{ display:none; gap:8px; width:var(--uiw); margin:2px auto 0; }
   #mateAnsInput{ flex:1; min-width:0; padding:11px 14px; border:2px solid rgba(138,90,46,.4); border-radius:12px; font-size:15px; font-weight:700; background:#fff; }
   #mateAnsInput:focus{ border-color:var(--brown); outline:none; }
-  #mateAnsGo{ flex:none; padding:10px 20px; border:none; border-radius:12px; cursor:pointer; color:#fff;
+  #mateAnsGo{ flex:none; min-width:96px; padding:10px 20px; border:none; border-radius:12px; cursor:pointer; color:#fff;
     background:linear-gradient(160deg,#f0603f,var(--red) 55%,#b93117); box-shadow:0 3px 0 #8f2510;
-    font-weight:900; font-style:italic; font-size:18px; letter-spacing:.04em; }
+    font-weight:900; font-style:normal; font-size:17px; letter-spacing:.04em; white-space:nowrap; }   /* 送信ボタンと同じ字面(斜体は「待て！」時代の名残) */
   #mateAnsGo:active{ transform:translateY(2px); box-shadow:0 1px 0 #8f2510; }
   #mateAnsRow.cooling #mateAnsGo{ filter:grayscale(.85); opacity:.55; pointer-events:none; }
   #mateAnsRow.cooling #mateAnsInput{ opacity:.55; pointer-events:none; }
@@ -1572,10 +1576,23 @@ $("scoreBtn").addEventListener("click",()=>{
   const list=$("scoreList"); list.innerHTML="";
   standings().forEach(s=>{
     const row=document.createElement("div"); row.className="rank-row";
-    row.innerHTML='<span class="p-dot" style="'+dotStyle(s.c)+'"></span><span class="nm"></span><span class="pt">'+s.p+'点</span>';
+    const canKick = online && isHost && s.id!==myId;   // 部屋主はここからも追放できる(2026-08-10)
+    row.innerHTML='<span class="p-dot" style="'+dotStyle(s.c)+'"></span><span class="nm"></span><span class="pt">'+s.p+'点</span>'
+      +(canKick?'<button class="kick-btn" data-kick="'+esc(s.id)+'">追放</button>':"");
     row.querySelector(".nm").textContent=s.n||UNDEF_NM;
     list.appendChild(row);
   });
+  list.querySelectorAll("[data-kick]").forEach(b=>b.addEventListener("click",()=>{
+    ensureAudio(); playSelect();
+    const id=b.dataset.kick, gone=byId(id); if(!gone) return;
+    players=players.filter(p=>p.id!==id);
+    try{ ch.send({type:"broadcast",event:"kick",payload:{to:id}}); }catch(e){}
+    addSys(nmOf(gone)+" を追放しました");
+    $("scoreOverlay").classList.remove("on");
+    if(phase==="lobby") renderLobby();
+    if(players.length<2){ showToast("メンバーが足りなくなりました"); hostEndToLobby(); return; }
+    sendSnap();
+  }));
   $("scoreOverlay").classList.add("on");
 });
 $("scoreClose").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("scoreOverlay").classList.remove("on"); });
@@ -1731,7 +1748,7 @@ function openChannel(c, onReady){
   });
   ch.on("broadcast",{event:"reset"},()=>{ if(!isHost){ clearArt(); drawCrema(); drawSwirl(); resetTable(); } });
   ch.on("broadcast",{event:"bye"},({payload})=>{ if(payload) onLeave(payload.id); });
-  ch.on("broadcast",{event:"kick"},({payload})=>{ if(payload && payload.to===myId && !isHost){ showToast("部屋主にロビーから退出させられました"); goTitle(); } });
+  ch.on("broadcast",{event:"kick"},({payload})=>{ if(payload && payload.to===myId && !isHost){ showToast("部屋主に退出させられました"); goTitle(); } });
   ch.on("presence",{event:"leave"},({leftPresences})=>{
     (leftPresences||[]).forEach(p=>{ if(p && p.id) markGone(p.id); });   // すぐには抜けたと決めない(猶予20秒)
   });
