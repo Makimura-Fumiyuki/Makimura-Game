@@ -227,8 +227,7 @@
   .fallpc.slow{ animation-duration:1.2s; }   /* 王はゆっくり落ちる */
   /* 王手ボタン(盤が王手の間はいつでも押せる) */
   /* 王手ボタン(スタンプ列の右端・黄色丸に「王手」。王手している側だけ使える) */
-  .stamp-btn.stamp-check{ background:var(--yel); color:var(--pp-ink); font-family:var(--fw); font-size:14.5px; letter-spacing:.04em; }   /* .stamp-btnより後勝ちになるよう2クラスで上書き */
-  .stamp-btn.stamp-check.dim{ filter:grayscale(.75); opacity:.4; pointer-events:none; }
+  .stamp-btn.stamp-check{ background:var(--yel); color:var(--pp-ink); font-family:var(--fw); font-size:14.5px; letter-spacing:.04em; }   /* 王手している時だけ🤣からこの姿に変わる(.stamp-btnより後勝ちになるよう2クラス) */
   /* 「王手」の宣言演出 */
   #checkFx{ position:absolute; transform:translate(-50%,-50%); z-index:58; pointer-events:none;
     font-family:var(--fw); font-size:clamp(66px,21vw,118px); color:var(--yel); letter-spacing:.1em; white-space:nowrap;
@@ -671,7 +670,7 @@
     <button id="stampMin" class="stamp-min" aria-label="スタンプを最小化"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="12" x2="18" y2="12"/></svg></button>
   <button class="stamp-btn" data-i="0" aria-label="泣き"></button>
   <button class="stamp-btn" data-i="1" aria-label="うっとり"></button>
-  <button class="stamp-btn stamp-check dim" id="stampCheck" aria-label="王手">王手</button>
+  <button class="stamp-btn" id="stampCheck" data-i="2" aria-label="爆笑"></button>
   <button id="stampMute" class="stamp-mute" aria-label="スタンプをミュート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10.5 16.2a1.7 1.7 0 0 0 3 0"/><line class="mute-slash" x1="3.2" y1="3.2" x2="20.8" y2="20.8"/></svg></button>
 </div>
 
@@ -1000,7 +999,13 @@ function updateBtns(){
   const busy = phase!=="idle" || (mode==="cpu"&&turn!==humanSide);
   $("undoBtn").disabled = busy || !hist.length || phase==="over" || undoPending;
   $("giveupBtn").disabled = phase!=="idle" || spectating;
-  $("stampCheck").classList.toggle("dim", !canCallCheck());
+  { const b=$("stampCheck"), ck=canCallCheck();   // 王手している側だけ、そのスタンプ枠が「王手」ボタンに変わる(ふだんは🤣)
+    if(ck!==(b.dataset.ck==="1")){
+      b.dataset.ck=ck?"1":"0";
+      b.classList.toggle("stamp-check", ck);
+      b.innerHTML=ck?"王手":STAMP_SVGS[2];
+      b.setAttribute("aria-label", ck?"王手":"爆笑");
+    } }
 }
 function canCallCheck(){   // 王手を宣言できるのは「王手している側」だけ(2026-08-10。される側も送れたバグの修正)
   if(phase!=="idle"||!board||spectating) return false;
@@ -1082,12 +1087,12 @@ boardEl.addEventListener("click",e=>{
   if(sel){ sel=null; legalCells=[]; render(); }
 });
 document.addEventListener("click",e=>{
-  const chip=e.target.closest(".chip"); if(!chip||inputLocked()) return;
+  const chip=e.target.closest(".chip"); if(!chip) return;
   ensureAudio();
   const o=+chip.dataset.o, t=chip.dataset.t;
-  if(o!==turn) return;
-  if(sel&&sel.type==="hand"&&sel.t===t){ sel=null; legalCells=[]; }
-  else{ sel={type:"hand",o:o,t:t}; legalCells=genDrops(t,o); playSelect(); }
+  const canDrop = (o===turn) && !inputLocked();   // 自分の持ち駒=打てる / 相手の持ち駒=ガイドだけ見る(view)
+  if(sel&&sel.type==="hand"&&sel.o===o&&sel.t===t){ sel=null; legalCells=[]; }
+  else{ sel={type:"hand",o:o,t:t,view:!canDrop}; legalCells=canDrop?genDrops(t,o):[]; playSelect(); }
   render();
 });
 
@@ -1179,7 +1184,7 @@ function bingoRoll(forced){
     num=cands[Math.floor(Math.random()*cands.length)];
     pool.splice(pool.indexOf(num),1);
   }
-  if(!fxOn){ flashVig(num); openSquare(num); return; }   // 演出なし=即開ける(ビネットだけ一瞬見せる。操作は止めない)
+  if(!fxOn){ openSquare(num); return; }   // 演出なし=動かした瞬間に穴が開く(ビネットも出さない)
   setTimeout(()=>boardEl.classList.add("rolling"),20);   // 抽選中は数字をしっかり見せる(★1フレーム遅らせる=直前のrenderで作り直したDOMだと初期値が濃い色になりtransitionが効かない)
   const flow=$("flow");
   const bc=localCenter();   // #gameScene基準の盤中心=スクロールしても座標は変わらない(ページに固定)
@@ -1268,14 +1273,6 @@ function bingoRoll(forced){
       openSquare(num);
     }
   },16);
-}
-function flashVig(num){   // 演出なし用: 開くマスにビネットを一瞬当てる(pointer-events:none=操作はできる)
-  const cell=cellOfNum[num]; if(!cell) return;
-  const el=boardEl.querySelector('.cell[data-r="'+cell[0]+'"][data-c="'+cell[1]+'"]'); if(!el) return;
-  const cr=el.getBoundingClientRect(), vg=$("vig");
-  vg.style.background="radial-gradient(circle at "+(cr.left+cr.width/2)+"px "+(cr.top+cr.height/2)+"px, rgba(20,8,45,0) "+(cr.width*1.1)+"px, rgba(20,8,45,.8) "+(cr.width*3.2)+"px)";
-  vg.classList.add("on");
-  setTimeout(()=>vg.classList.remove("on"), 700);
 }
 function openSquare(num){
   const cell=cellOfNum[num], r=cell[0], c=cell[1];
@@ -1681,8 +1678,8 @@ function showCheckFx(){
   if(seOn) playCheck();
 }
 $("stampCheck").addEventListener("click",()=>{
-  if(!canCallCheck()) return;
   ensureAudio();
+  if(!canCallCheck()){ sendStamp(2); return; }   // 王手でない時はふつうの爆笑スタンプ
   showCheckFx();
   if(online&&ch){ try{ ch.send({ type:"broadcast", event:"check", payload:{} }); }catch(e){} }   // あいての画面にも出す
 });
@@ -1867,6 +1864,7 @@ function sendStamp(i){
 })();
 document.querySelectorAll("#stampBar .stamp-btn[data-i]").forEach(b=>{
   const i=+b.dataset.i; b.innerHTML=STAMP_SVGS[i];
+  if(b.id==="stampCheck") return;   // 王手枠は専用の配線(王手中だけ宣言になる)
   b.addEventListener("click",()=>{ ensureAudio(); sendStamp(i); });
 });
 

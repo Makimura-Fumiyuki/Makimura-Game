@@ -286,6 +286,7 @@
   .tier-label.gone{ display:none; }   /* すぎた加点は消す */
 
   .ctrl-row{ display:flex; flex-direction:column; align-items:center; gap:12px; width:100%; margin-top:14px; }
+  :root{ --uiw:min(94vw,480px); }   /* ゲーム画面のUI幅はチャット欄に統一(2026-08-10) */
   .sub-ctrl{ display:flex; flex-direction:column; align-items:center; gap:10px; justify-content:center; }
   #mateBtn{ margin-top:10px; }
   #mateBtn{
@@ -327,7 +328,7 @@
 
   /* お題を考える(インライン: ボタン群の場所に出す) */
   #topicPanel{
-    display:none; flex-direction:column; align-items:center; gap:10px; width:min(94vw,430px);
+    display:none; flex-direction:column; align-items:center; gap:10px; width:var(--uiw);
     background:var(--card); border:1.8px solid rgba(138,90,46,.4); border-radius:16px;
     padding:14px 16px 14px; box-shadow:0 4px 14px rgba(90,55,20,.15);
   }
@@ -358,7 +359,7 @@
   .main-btn.red:active{ box-shadow:0 1px 0 #8f2510; }
 
   /* チャット(オンライン) */
-  #chatBox{ display:none; flex-direction:column; gap:8px; width:min(94vw,480px); }
+  #chatBox{ display:none; flex-direction:column; gap:8px; width:var(--uiw); }
   #gameScene.online #chatBox{ display:flex; }
   .chat-log{
     height:118px; min-height:64px; max-height:60vh; resize:vertical; overflow-y:auto; background:rgba(255,255,255,.72);   /* 右下をつかんで縦幅を変えられる(生き物図鑑の記入欄と同じ) */
@@ -399,7 +400,7 @@
 
   #chatSend.plain:active{ box-shadow:0 1px 0 #4c2f14; }
   .c-rank{ font-size:11px; font-weight:800; color:var(--brown-dark); opacity:.7; margin:0 3px; }
-  #mateAnsRow{ display:none; gap:8px; width:min(94vw,440px); margin:2px auto 0; }
+  #mateAnsRow{ display:none; gap:8px; width:var(--uiw); margin:2px auto 0; }
   #mateAnsInput{ flex:1; min-width:0; padding:11px 14px; border:2px solid rgba(138,90,46,.4); border-radius:12px; font-size:15px; font-weight:700; background:#fff; }
   #mateAnsInput:focus{ border-color:var(--brown); outline:none; }
   #mateAnsGo{ flex:none; padding:10px 20px; border:none; border-radius:12px; cursor:pointer; color:#fff;
@@ -408,10 +409,10 @@
   #mateAnsGo:active{ transform:translateY(2px); box-shadow:0 1px 0 #8f2510; }
   #mateAnsRow.cooling #mateAnsGo{ filter:grayscale(.85); opacity:.55; pointer-events:none; }
   #mateAnsRow.cooling #mateAnsInput{ opacity:.55; pointer-events:none; }
-  #mateAnsNote{ display:none; font-size:12px; font-weight:700; letter-spacing:.03em; color:var(--brown-dark); opacity:.6; text-align:center; }
+  #mateAnsNote{ display:none; font-size:11px; font-weight:700; letter-spacing:.03em; color:var(--brown-dark); opacity:.6; text-align:center; }
   #haltedLine{ display:none; font-size:12px; font-weight:700; letter-spacing:.03em; color:var(--brown-dark); opacity:.6; text-align:center; }
-  #answerBox{ display:none; flex-direction:column; gap:11px; align-items:center; width:min(94vw,440px); margin:0 auto;
-    background:rgba(255,255,255,.6); border:1px solid rgba(138,90,46,.3); border-radius:14px; padding:14px; }   /* 幅は固定=画面サイズで横長にしない */
+  #answerBox{ display:none; flex-direction:column; gap:11px; align-items:center; width:var(--uiw); margin:0 auto;
+    background:rgba(255,255,255,.6); border:1px solid rgba(138,90,46,.3); border-radius:14px; padding:14px; }   /* 幅はチャット欄と統一 */
   .ans-dots{ display:flex; gap:9px; }
   .ans-dots i{ width:16px; height:16px; border-radius:50%; background:#e3452f; box-shadow:0 1px 3px rgba(140,40,15,.3); transition:opacity .2s, transform .2s; }
   .ans-dots i.off{ opacity:.16; transform:scale(.68); background:#b7aa99; box-shadow:none; }
@@ -714,11 +715,11 @@
       </div>
       <button id="mateBtn"><b>待て！</b><small id="mateSmall">当てた人が出てきたらタップ</small></button>
       <!-- 回答UIはチャットより上(チャットは優先度が一番低いので下段)。回答を入れて「待て！」=即正誤判定(2026-08-10) -->
+      <div id="mateAnsNote"></div>
       <div id="mateAnsRow">
         <input id="mateAnsInput" maxlength="20" placeholder="こたえが分かったら入力" autocomplete="off">
-        <button id="mateAnsGo"><b>待て！</b></button>
+        <button id="mateAnsGo"><b>回答</b></button>
       </div>
-      <div id="mateAnsNote"></div>
       <div id="answerBox">
         <div class="ans-dots" id="ansDots"><i></i><i></i><i></i><i></i><i></i></div>
         <div class="ans-wait" id="ansWait"></div>
@@ -783,8 +784,8 @@
       <div class="r-title win" id="celebTitle">大正解</div>
       <div class="topic-show" id="celebTopic">くるま</div>
       <div class="gain-rows">
-        <div class="gain-row"><span class="p-dot" id="celebD1"></span><span class="gr-t" id="celebG1n">◯◯</span><span class="role-tag">回答者</span><b id="celebG1p">+3</b></div>
-        <div class="gain-row"><span class="p-dot" id="celebD2"></span><span class="gr-t" id="celebG2n">◯◯</span><span class="role-tag">描き手</span><b id="celebG2p">+3</b></div>
+        <div class="gain-row"><span class="p-dot" id="celebD1"></span><span class="gr-t" id="celebG1n">◯◯</span><span class="role-tag">描き手</span><b id="celebG1p">+3</b></div>
+        <div class="gain-row"><span class="p-dot" id="celebD2"></span><span class="gr-t" id="celebG2n">◯◯</span><span class="role-tag">回答者</span><b id="celebG2p">+3</b></div>
       </div>
       <button class="main-btn red" id="celebOk">バトンタッチ</button>
       <button class="main-btn red" id="celebNext" style="display:none;">次へ</button>
@@ -1446,10 +1447,10 @@ function showCelebrate(winId, tier, tpc){
   const w=byId(winId), d=byId(drawerId), co=isCoop();
   $("celebTitle").textContent = co ? ("お題"+roundNo+"個目 大成功") : "大正解";
   $("celebTopic").textContent=tpc;
-  if(w) $("celebD1").setAttribute("style", dotStyle(w.c));
-  if(d) $("celebD2").setAttribute("style", dotStyle(d.c));
-  $("celebG1n").textContent=(w?w.n:"？");  $("celebG1p").textContent="+"+tier; $("celebG1p").style.display=co?"none":"";
-  $("celebG2n").textContent=(d?d.n:"？");  $("celebG2p").textContent="+"+tier; $("celebG2p").style.display=co?"none":"";
+  if(d) $("celebD1").setAttribute("style", dotStyle(d.c));   // 上=描き手・下=回答者に固定(2026-08-10)
+  if(w) $("celebD2").setAttribute("style", dotStyle(w.c));
+  $("celebG1n").textContent=(d?nmOf(d):UNDEF_NM);  $("celebG1p").textContent="+"+tier; $("celebG1p").style.display=co?"none":"";
+  $("celebG2n").textContent=(w?nmOf(w):UNDEF_NM);  $("celebG2p").textContent="+"+tier; $("celebG2p").style.display=co?"none":"";
   $("celebOk").style.display = online ? "none" : "";
   $("celebNext").style.display = (online && isHost) ? "" : "none";   // オンラインは部屋主の「次へ」で進行
   $("celebOverlay").classList.add("on");
@@ -2082,19 +2083,24 @@ function nmOf(x){ return (x&&x.n)?x.n:UNDEF_NM; }   // 名前が未定の人の�
 function iHalted(){ return myHalted || [...haltedIds].includes(myId); }
 let mateCoolIv=0;
 function startMateCool(){ clearInterval(mateCoolIv); renderAnswerArea();
-  mateCoolIv=setInterval(()=>{ if(phase!=="draw"||Date.now()>=mateCooldownUntil){ clearInterval(mateCoolIv); mateCoolIv=0; } renderAnswerArea(); },250); }
+  mateCoolIv=setInterval(()=>{ if(phase!=="draw"||Date.now()>=mateCooldownUntil){ clearInterval(mateCoolIv); mateCoolIv=0; } renderAnswerArea(); }, isCoop()?80:250); }   // 2人は0.1秒刻みの表示なので細かく回す
 function renderAnswerArea(){
   const on=(online && phase==="answer");
   $("answerBox").style.display = on ? "flex" : "none";   // 回答中もチャットは見える・送れる(2026-08-05に非表示をやめた)
-  { const row=$("mateAnsRow"), noteEl=$("mateAnsNote");
+  { const ps=$("penSizes"); if(ps) ps.style.display = on ? "none" : ""; }   // 正誤判定中はペンの太さ変更を隠す(2026-08-10)
+  { const row=$("mateAnsRow"), noteEl=$("mateAnsNote"), go=$("mateAnsGo");
     if(online && phase==="draw" && drawerId!==myId && !spectating){
       row.style.display="flex";
-      const rem=Math.ceil((mateCooldownUntil-Date.now())/1000);
-      let note="";
-      if(iHalted()) note="全員誤答で解答権復活";
-      else if(rem>0) note="あと"+rem+"秒";
-      row.classList.toggle("cooling", !!note);
-      noteEl.textContent=note; noteEl.style.display=note?"block":"none";
+      const remMs=mateCooldownUntil-Date.now(), cooling=iHalted()||remMs>0;
+      row.classList.toggle("cooling", cooling);
+      if(isCoop()){   // 2人=待つのは復活までの数秒だけ→ボタンに残り時間をリアルタイム表示
+        go.innerHTML = remMs>0 ? '<b>'+(remMs/1000).toFixed(1)+'秒</b>' : '<b>回答</b>';
+        noteEl.style.display="none";
+      }else{
+        go.innerHTML='<b>回答</b>';
+        const note = iHalted()? "全員誤答で回答権復活" : (remMs>0? "あと"+Math.ceil(remMs/1000)+"秒" : "");
+        noteEl.textContent=note; noteEl.style.display=note?"block":"none";   // 3人以上=ボタンの上に出す
+      }
     } else { row.style.display="none"; noteEl.style.display="none"; } }
   { const hl=$("haltedLine");   // 誰が回答済みか(「◯◯の回答を待っています」UIの下)
     const nowAns=(phase==="answer"&&curAns)?curAns.by:null;   // いま回答/判定中の人は、判定が終わってから載せる
