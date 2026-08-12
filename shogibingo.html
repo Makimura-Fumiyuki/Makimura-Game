@@ -1054,7 +1054,9 @@ function renderGuide(){
   const kj = p.pr? KJP[p.t] : (p.t==="K"&&p.o===1? "玉" : KJ[p.t]);
   const nm = p.pr? PC_NAME_PR[p.t] : (p.t==="K"&&p.o===1? ["玉将","ぎょくしょう"] : PC_NAME[p.t]);
   gl.innerHTML='<button class="g-fold" id="gFold" aria-label="動きガイドを畳む">'+(guideFold?"＋":"−")+'</button>'
-    +'<div class="g-name"><span class="g-ruby">'+nm[1]+'</span>'+nm[0]+'</div>'+guideSVG(p,kj,p.o!==bottomSide());   // 相手の駒/持ち駒=上下逆
+    +'<div class="g-name"><span class="g-ruby">'+nm[1]+'</span>'+nm[0]+'</div>'
+    // ガイドの向き: 盤上の駒は駒の向きに連動。**持ち駒は常に上向き**(2026-08-11牧村指示。打つ前の駒なので向きを統一)
+    +guideSVG(p,kj, (sel&&sel.type==="hand") ? false : (p.o!==bottomSide()));
   gl.classList.toggle("folded", guideFold);
   gl.classList.add("on");
   $("gFold").addEventListener("click",e=>{   // 畳む/開く(次からも同じ状態で出る)
@@ -1102,7 +1104,11 @@ document.addEventListener("click",e=>{
 /* ================= 手の実行 ================= */
 /* 穴の上に動かした駒は、そのまま落ちて相手の持ち駒になる */
 function fellIntoHole(tr,tc,p,then){
-  if(p.t==="K"){ kingDoom(numAt[tr][tc], tr, tc, p, true); return; }   // 王(玉)が自分から落ちたらその時点で負け
+  if(p.t==="K"){   // 王(玉)が自分から落ちたらその時点で負け
+    // ★自分の手で落ちた時は、afterMoveを通らないので手が相手に届かない=相手側で試合が続いてしまう(2026-08-11修正)
+    if(online && turn===mySide) sendMyMove(0);
+    kingDoom(numAt[tr][tc], tr, tc, p, true); return;
+  }
   board[tr][tc]=null; lastMoveCell=null; slideFrom=null;
   sel=null; legalCells=[]; phase="anim";
   render(); updateBtns();
@@ -1158,10 +1164,17 @@ function cellLocal(cell){
 }
 
 /* ================= ビンゴ抽選(球がカードの周りを回り続け、その中から1つをピックアップ) ================= */
+function rollCands(){   // 抽選候補(kingSafe=王のいるマスの数字を除く)。オンライン送信側でも必ず通す
+  if(!pool.length) return [];
+  if(!kingSafe) return pool;
+  const safe=pool.filter(n2=>{ const rc=cellOfNum[n2]; if(!rc) return false; const q=board[rc[0]][rc[1]]; return !(q&&q.t==="K"); });
+  return safe.length? safe : pool;   // 候補が無い時だけ通常抽選
+}
 function afterMove(){
   moveCount++;
   if(online&&turn===mySide){   // オンラインの自分の手: 抽選数字を先に決めて手と一緒に送る=両者で同じ抽選を再生
-    const num = pool.length? pool[Math.floor(Math.random()*pool.length)] : 0;
+    const cs=rollCands();   // ★kingSafeを必ず適用(2026-08-11修正: ここでpoolから直接選んでいて王のマスが開くバグ)
+    const num = cs.length? cs[Math.floor(Math.random()*cs.length)] : 0;
     sendMyMove(num);
     if(pureShogi){ phase="anim"; updateBtns(); setTimeout(switchTurn,300); return; }
     if(!num){ switchTurn(); return; }
@@ -1177,12 +1190,8 @@ function bingoRoll(forced){
     const fi=pool.indexOf(forced); if(fi<0){ switchTurn(); return; }
     pool.splice(fi,1); num=forced;
   }else{
-    if(!pool.length){ switchTurn(); return; }
-    let cands=pool;
-    if(kingSafe){   // 王のマスは選ばれない(初期ルール)
-      const safe=pool.filter(n2=>{ const rc=cellOfNum[n2]; const q=board[rc[0]][rc[1]]; return !(q&&q.t==="K"); });
-      if(safe.length) cands=safe;
-    }
+    const cands=rollCands();   // 王のマスは選ばれない(kingSafe)。判定はrollCandsに一本化
+    if(!cands.length){ switchTurn(); return; }
     num=cands[Math.floor(Math.random()*cands.length)];
     pool.splice(pool.indexOf(num),1);
   }
@@ -1873,7 +1882,7 @@ document.querySelectorAll("#stampBar .stamp-btn[data-i]").forEach(b=>{
 /* ================= あそびかた ================= */
 function buildHelp(){
   $("helpBody").innerHTML='<div class="h-sec">基本ルール</div>'
-   +'<p>将棋です。それぞれ決まった向きに動かせる駒を使い、相手の王を取ったら勝ち。王以外の取った駒は持ち駒となり、自分の味方として活用できます。また、相手の陣地まで進んだ駒は裏返って強くなります(成り)</p>'
+   +'<p>ほぼ将棋。それぞれ決まった向きに動かせる駒を使い、相手の王を取ったら勝ち<br>王以外の駒を取った場合は持ち駒となり、自分の味方として活用できます。また、相手の陣地まで進んだ駒は強化されます<br>駒ごとの性能は遊んでいれば自然と覚えられます</p>'
    +'<div class="h-sec hl">onビンゴ</div>'
    +'<p>盤がビンゴカードです。一手打つたびに数字が1つ指定され、そのマスに穴が開きます。穴の上の駒は、相手の持ち駒になります</p>'
    +'<div class="h-sec">小ばなし</div>'
