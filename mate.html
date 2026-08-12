@@ -412,7 +412,8 @@
     font-weight:900; font-style:normal; font-size:17px; letter-spacing:.04em; white-space:nowrap; }   /* 送信ボタンと同じ字面(斜体は「待て！」時代の名残) */
   #mateAnsGo:active{ transform:translateY(2px); box-shadow:0 1px 0 #8f2510; }
   #mateAnsRow.cooling #mateAnsGo{ filter:grayscale(.85); opacity:.55; pointer-events:none; }
-  #mateAnsRow.cooling #mateAnsInput{ opacity:.55; pointer-events:none; }
+  /* クールタイム中も入力欄だけは使える=復活の瞬間に押せるよう先に書いておける(2026-08-11)。押せないのはボタンだけ */
+  #mateAnsRow.cooling #mateAnsInput{ opacity:1; pointer-events:auto; }
   #mateAnsNote{ display:none; font-size:11px; font-weight:700; letter-spacing:.03em; color:var(--brown-dark); opacity:.6; text-align:center; }
   #haltedLine{ display:none; font-size:12px; font-weight:700; letter-spacing:.03em; color:var(--brown-dark); opacity:.6; text-align:center; }
   #answerBox{ display:none; flex-direction:column; gap:11px; align-items:center; width:var(--uiw); margin:0 auto;
