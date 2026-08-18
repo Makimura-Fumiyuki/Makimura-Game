@@ -611,7 +611,7 @@ let penSize=7, carving=false, devMode=false;
 let timeLimit=60, tIdx=0, tEnd=0, tIv=0, clockMs=0, clockRunning=false, danger30=false;
 const TIMES=[60,90,120,150,180,210,240,270,300,330,360,420,480,540,600];
 const BOMB_PENALTY=20;
-const myId="me";
+const myId=Math.random().toString(36).slice(2,10);   // ★端末ごとに違うID(固定値にすると全員が同じ人だと判定される)
 let regions=1;
 let online=false, ch=null, myName="";   // オンライン用(次の実装で使う)
 function instructors(){ return players.filter((p,i)=>i!==carverIdx); }
@@ -1021,6 +1021,7 @@ function startRound(){        // 鍵を作るのはホスト(または試作モ�
 }
 function enterCarveUI(){
   phase="carve";
+  showScene("gameScene");        // ★ホストが「はじめる」を押した時もここでゲーム画面に切り替える
   $("judgeWrap").classList.remove("on");
   $("nextBtn").style.display="none";
   $("judgeBig").textContent="";
@@ -1245,7 +1246,7 @@ function wireRule(){   // ロビーのルール枠(部屋主だけ)
 /* ================= 試作用(完成時に消す) ================= */
 function startDev(){          // 食べる人と指示する人を1枚ごとに交代でためせる
   ensureAudio(); playSelect(); devMode=true;
-  players=[{id:"me",n:"あなた"},{id:"p1",n:"たろう"}];
+  players=[{id:myId,n:"あなた"},{id:"p1",n:"たろう"}];
   online=false; isHost=false;
   carverIdx=0;
   roundNo=1; clockMs=timeLimit*1000; danger30=false; madeKeys=[]; madeAt=-1;
