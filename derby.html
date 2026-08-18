@@ -1948,8 +1948,8 @@
     else if(i===1){ note(523,t,0.34,0.22,"sine"); note(784,t+0.11,0.38,0.24,"sine"); note(1047,t+0.24,0.62,0.2,"sine"); note(1568,t+0.34,0.55,0.1,"triangle"); note(2349,t+0.46,0.5,0.06,"sine"); }
     else{ const seq=[900,680,850,640,800,600,760,560]; seq.forEach((f,k)=>note(f, t+k*0.072, 0.07, 0.26, "triangle")); note(400, t+seq.length*0.072, 0.16, 0.24, "triangle"); }
   }
-  function spawnStamp(i, name, color){
-    if(stampMuted) return;
+  function spawnStamp(i, name, color, self){
+    if(stampMuted && !self) return;   // ミュート中でも自分が押したスタンプは自分の画面に出す(押した手ごたえ用・音は鳴らさない)
     i=Math.max(0, Math.min(2, i|0));
     const el=document.createElement("div"); el.className="stamp-fly";
     const hx=0.06+Math.random()*0.88;                        // 横位置: 画面全幅(両端も含む)
@@ -1959,7 +1959,7 @@
     el.style.setProperty("--dx", (Math.random()*24-12).toFixed(0)+"px");
     const nameHtml = name ? ('<span class="s-name" style="color:'+(color||"#fff")+'">'+esc(name)+'</span>') : '';
     el.innerHTML='<span class="s-emoji">'+STAMP_SVGS[i]+'</span>'+nameHtml;   // 名前はアイコンと同じ色
-    if(seOn) playStamp(i);   // スタンプ別の効果音
+    if(seOn && !stampMuted) playStamp(i);   // スタンプ別の効果音
     // 結果ダイアログ等の表示中は前面に出して見えるようにする
     const overlayOpen=document.querySelector("#resultOverlay.on,#chipsOverlay.on,#confirmOverlay.on,#champOverlay.on,#helpOverlay.on,#handoffOverlay.on");
     if(overlayOpen) el.classList.add("over-dialog");
@@ -1973,10 +1973,10 @@
       // 色: ゲーム中は自分のアイコン色 / ロビー中は入室順から同じ色を割り出す(黄色統一をやめる)
       let col=me?me.color:null;
       if(!col){ const li=lastLobby.findIndex(m=>m.id===myId); col=(li>=0)?COLORS[li%COLORS.length]:"var(--gold)"; }
-      spawnStamp(i, nm, col);
+      spawnStamp(i, nm, col, true);
       if(ch){ try{ ch.send({ type:"broadcast", event:"stamp", payload:{ i, name:nm, color:col } }); }catch(e){} }
     }else{
-      spawnStamp(i);   // 1台回しは押した人が特定できないので名前は出さない
+      spawnStamp(i, "", "", true);   // 1台回しは押した人が特定できないので名前は出さない
     }
   }
   let stampMuted=false; try{ stampMuted=localStorage.getItem("drb.smute")==="1"; }catch(e){}

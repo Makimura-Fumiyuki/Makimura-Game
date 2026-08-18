@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>クッKey</title>
 <meta name="apple-mobile-web-app-title" content="クッKey">
-<meta name="description" content="クッキーを削って鍵を作ろう。ただし、食べる人は鍵の完成形を知らず、他の友達は知っている。みんなで協力して精巧な鍵を作り出そう">
+<meta name="description" content="クッキーを食べて鍵を作ろう。ただし、食べる人は鍵の完成形を知らず、他の友達は知っている。みんなで協力して精巧な鍵を作り出そう">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="牧村が作ったゲーム集">
 <meta property="og:title" content="クッKey">
-<meta property="og:description" content="クッキーを削って鍵を作ろう。ただし、食べる人は鍵の完成形を知らず、他の友達は知っている。みんなで協力して精巧な鍵を作り出そう">
+<meta property="og:description" content="クッキーを食べて鍵を作ろう。ただし、食べる人は鍵の完成形を知らず、他の友達は知っている。みんなで協力して精巧な鍵を作り出そう">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjMTI0MDNjIi8+PHRleHQgeD0iMTYiIHk9IjE2LjUiIGZvbnQtc2l6ZT0iMTYiIGZvbnQtd2VpZ2h0PSI3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIiBmaWxsPSIjZmZmIiBmb250LWZhbWlseT0iJ0hpcmFnaW5vIFNhbnMnLCdOb3RvIFNhbnMgSlAnLHNhbnMtc2VyaWYiPuOCrzwvdGV4dD48L3N2Zz4=">
 <meta property="og:image" content="https://makimura-gamehub.com/icon.png">
@@ -202,6 +202,9 @@
     background:rgba(6,26,24,.7); opacity:0; pointer-events:none; transition:opacity .24s;
   }
   .overlay.on{ opacity:1; pointer-events:auto; }
+  .r-card::-webkit-scrollbar{ width:7px; }                      /* バーだけ。うしろの溝は出さない */
+  .r-card::-webkit-scrollbar-track{ background:transparent; }
+  .r-card::-webkit-scrollbar-thumb{ background:rgba(34,36,31,.26); border-radius:99px; }
   .r-card{ width:min(92vw,430px); max-height:82svh; overflow-y:auto; background:var(--card); color:var(--ink);
     border-radius:18px; border-top:9px solid var(--gold); padding:24px 20px 20px; text-align:center; }
   .r-title{ font-size:24px; font-weight:900; letter-spacing:.1em; margin-bottom:14px; }
@@ -316,7 +319,7 @@
     <button id="joinRoomBtn">部屋に入る<small>合言葉で入室</small></button>
   </div>
   <div class="room-area" id="roomArea" style="margin-top:12px;"></div>
-  <div class="note">会話ができる状態で遊んでね</div>
+  <div class="note">遊ぶ人と会話ができる状態で遊んでね</div>
 
   <button class="btn-sub" id="soloBtn">1人で遊んでみる（試作）</button>
 </div>
@@ -613,6 +616,8 @@ let regions=1;
 let online=false, ch=null, myName="";   // オンライン用(次の実装で使う)
 function instructors(){ return players.filter((p,i)=>i!==carverIdx); }
 function iAmCarver(){ return !!players[carverIdx] && players[carverIdx].id===myId; }
+/* 試作モード(1人で遊んでみる)のときだけ、指示側でもクッキーを食べられる。本編では絶対に通さない */
+function canCarve(){ return iAmCarver() || (devMode && !online); }
 function myRegion(){
   const ins=instructors(), k=ins.findIndex(p=>p.id===myId);
   return k<0? -1 : (regions===1? 0 : k%regions);
@@ -922,13 +927,13 @@ function showGhost(px,py){
 function hideGhost(){ ghost.style.display="none"; }
 
 cv.addEventListener("pointerdown",e=>{
-  if(phase!=="carve"||!iAmCarver()) return;
+  if(phase!=="carve"||!canCarve()) return;
   ensureAudio(); carving=true; lastCell=null;
   try{ cv.setPointerCapture(e.pointerId); }catch(_){}
   carveAt(e.clientX,e.clientY); e.preventDefault();
 });
 cv.addEventListener("pointermove",e=>{
-  if(phase!=="carve"||!iAmCarver()) return;   // 削れる範囲の枠は食べる人だけに見せる
+  if(phase!=="carve"||!canCarve()) return;   // 食べられる範囲の枠は食べる人だけに見せる
   if(carving) carveAt(e.clientX,e.clientY);
   if(e.pointerType!=="touch") showGhost(e.clientX,e.clientY);
 });
@@ -1023,7 +1028,7 @@ function enterCarveUI(){
   $("roleRow").style.display="";
   $("roleTx").textContent= iAmCarver()? "友達を信じてクッキーを食べよう" : ("食べる人："+nmOf(players[carverIdx]));
   $("penRow").style.display=(iAmCarver()||devMode)?"flex":"none";   // 試作は指示側でも操作できる
-  $("sizeRow").style.display=iAmCarver()?"flex":"none";
+  $("sizeRow").style.display=canCarve()?"flex":"none";
   $("devBar").classList.toggle("on", devMode);
   hideGhost(); layoutCookie();
   if(isHost||devMode) startClock(); else startTimerFollowClock();
@@ -1176,6 +1181,13 @@ function gameOverUI(){
   document.body.classList.remove("danger");
   $("stampBar").classList.remove("on");
   $("warn15").classList.remove("on");         // 「のこり30秒」と重ならないように先に消す
+  $("penRow").style.display="none";           // 「鍵作り終了」の間はまわりのUIを隠す
+  $("roleRow").style.display="none";
+  $("devBar").classList.remove("on");
+  $("judgeWrap").classList.remove("on");
+  $("nextBtn").style.display="none";
+  $("judgeBig").textContent="";
+  $("addFloat").className="";
   const fx=$("endFx");                        // 「鍵作り終了」を出してから結果画面へ
   fx.classList.remove("on"); void fx.offsetWidth; fxOnCookie(fx); fx.classList.add("on");
   playOver();
@@ -1426,11 +1438,11 @@ function renderLobby(){
   html+='<div class="room-note">合言葉（'+TAPW+'でコピー）</div>'
     +'<div class="code-show" id="codeShow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>'+esc(code)+'</div>';
   if(isHost){
-    html+='<div class="rule-frame"><div class="rule-col"><div class="rc-name">制限時間</div>'
+    html+='<div class="rule-frame"><div class="rule-col"><div class="rc-name">初期制限時間</div>'
       +'<div class="rc-row"><button class="stp" id="tlM">−</button><span class="rc-val" id="tlVal">'+fmtTime(timeLimit)+'</span><button class="stp" id="tlP">＋</button></div>'
       +'</div></div>';
   }else{
-    html+='<div class="room-note">制限時間 '+fmtTime(timeLimit)+'</div>';
+    html+='<div class="room-note">初期制限時間 '+fmtTime(timeLimit)+'</div>';
   }
   html+='<div class="room-note">'+(players.length<2?"2人以上集まれば始められます":"いつでも始められるよ")+'</div>';
   if(isHost) html+='<button class="btn-main" id="lobbyStart"'+(players.length<2?" disabled":"")+' style="margin-top:4px;">はじめる</button>';
@@ -1559,8 +1571,8 @@ function playStamp(i){
     note(400, t+sq.length*0.072, 0.16, 0.24, "triangle"); }
 }
 let stampMuted=false; try{ stampMuted=localStorage.getItem("ck.smute")==="1"; }catch(e){}
-function spawnStamp(i, who){
-  if(stampMuted) return;   // ミュート中は表示も音も止める(送信は別行なので相手には届く)
+function spawnStamp(i, who, self){
+  if(stampMuted && !self) return;   // ミュート中でも自分が押したスタンプは自分の画面に出す(押した手ごたえ用・音は鳴らさない)
   i=Math.max(0,Math.min(2,i|0));
   const el=document.createElement("div"); el.className="stamp-fly";
   const hx=0.06+Math.random()*0.88;
@@ -1569,14 +1581,14 @@ function spawnStamp(i, who){
   el.style.setProperty("--rise", "-"+(24+(1-central)*16).toFixed(0)+"vh");
   el.style.setProperty("--dx", (Math.random()*24-12).toFixed(0)+"px");
   el.innerHTML='<span class="s-emoji">'+STAMP_SVGS[i]+'</span><span class="s-name">'+esc(who||"自分")+'</span>';
-  if(seOn) playStamp(i);
+  if(seOn && !stampMuted) playStamp(i);
   const overlayOpen=["helpOv","nameOv"].some(id=>$(id).classList.contains("on"));
   if(overlayOpen) el.classList.add("over-dialog");
   document.body.appendChild(el);
   setTimeout(()=>el.remove(), 2350);
 }
 function sendStamp(i){
-  spawnStamp(i, "自分");
+  spawnStamp(i, "自分", true);
   if(online&&ch){ try{ ch.send({ type:"broadcast", event:"stamp", payload:{ i:i, n:myName } }); }catch(e){} }   // ロストしても実害なし
 }
 document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{
@@ -1600,15 +1612,13 @@ document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{
 /* ================= あそびかた ================= */
 function buildHelp(){
   $("helpBody").innerHTML='<div class="h-sec">基本ルール</div>'
-   +'<p>ひとりが「食べる人」、のこり全員が「指示する人」。みんなで声を掛け合って、クッキーを鍵の形に削ります</p>'
-   +'<div class="h-sec hl">見えているものが違う</div>'
-   +'<p>指示する人には、鍵のお手本が担当した区画の分しか見えません。全員の話をつながないと、鍵の全体像は分かりません<br>さらに、自分にしか見えない<b>ドクロ</b>があります</p>'
-   +'<div class="h-sec">ドクロ</div>'
-   +'<p><b>ドクロ</b>は食べられません。刃が当たるとその場所がまるごと弾けて'+BOMB_PENALTY+'秒減り、そのドクロが食べる人にも見えてしまいます<br>最後まで残っているのが正解なので、まわりを丁寧に食べましょう</p>'
+   +'<p>ひとりが「食べる人」で、他全員が「指示する人」<br>みんなで声を掛け合って、クッキーを鍵の形になるように食べ進めよう</p>'
+   +'<div class="h-sec">食べる人</div>'
+   +'<p>指示する人のことを信じてひたすら食べ進める</p>'
+   +'<div class="h-sec">指示する人</div>'
+   +'<p>鍵の形が見えるので、食べる人に指示を出す<br>ただし指示する人が2人以上いると、見えている場所は人によってバラバラ<br>さらに食べてはいけない<b>ドクロ</b>もある。自分にしか見えないので、しっかり伝えよう</p>'
    +'<div class="h-sec">制限時間</div>'
-   +'<p>時間はクッキーをまたいで通しで減ります。1枚仕上げると出来ばえに応じて時間がもらえます<br>ただし出来ばえが悪いと鍵にならず、逆に時間が減ります<br>時間が尽きるまで続けて、鍵を何本作れたかを競います</p>'
-   +'<div class="h-sec">小ばなし</div>'
-   +'<p>食べたクッキーは、元に戻りません</p>';
+   +'<p>時間が許すかぎり、クッKeyを作り続ける<br>鍵の出来ばえ次第で、時間は伸びたり縮んだり<br>ドクロを間違えて食べても時間が減るので要注意</p>';
 }
 $("helpBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); buildHelp(); $("helpOv").classList.add("on"); });
 $("helpClose").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("helpOv").classList.remove("on"); });

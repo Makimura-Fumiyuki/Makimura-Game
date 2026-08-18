@@ -1835,8 +1835,8 @@ function playStamp(i){   // スタンプ別の音(0泣く / 1うっとり / 2爆
   else{ const sq=[900,680,850,640,800,600,760,560]; sq.forEach((f,k)=>note(f, t+k*0.072, 0.07, 0.26, "triangle")); note(400, t+sq.length*0.072, 0.16, 0.24, "triangle"); }
 }
 let stampMuted=false; try{ stampMuted=localStorage.getItem("sgb.smute")==="1"; }catch(e){}
-function spawnStamp(i, who){
-  if(stampMuted) return;   // ミュート中は表示も音も止める(送信はsendStamp側なので相手には届く)
+function spawnStamp(i, who, self){
+  if(stampMuted && !self) return;   // ミュート中でも自分が押したスタンプは自分の画面に出す(押した手ごたえ用・音は鳴らさない)
   i=Math.max(0, Math.min(2, i|0));
   const el=document.createElement("div"); el.className="stamp-fly";
   const hx=0.06+Math.random()*0.88;
@@ -1845,14 +1845,14 @@ function spawnStamp(i, who){
   el.style.setProperty("--rise", "-"+(24+(1-central)*16).toFixed(0)+"vh");
   el.style.setProperty("--dx", (Math.random()*24-12).toFixed(0)+"px");
   el.innerHTML='<span class="s-emoji">'+STAMP_SVGS[i]+'</span><span class="s-name">'+(who||"自分")+'</span>';
-  if(seOn) playStamp(i);
+  if(seOn && !stampMuted) playStamp(i);
   const overlayOpen=["resultOv","cfOv","promOv","helpOv"].some(id=>$(id).classList.contains("on"));
   if(overlayOpen) el.classList.add("over-dialog");
   document.body.appendChild(el);
   setTimeout(()=>el.remove(), 2350);
 }
 function sendStamp(i){
-  spawnStamp(i, spectating?"観戦":"自分");
+  spawnStamp(i, spectating?"観戦":"自分", true);
   if(online&&ch){ try{ ch.send({ type:"broadcast", event:"stamp", payload:{ i:i, w:spectating?"観戦":null } }); }catch(e){} }   // ロストしても実害なし
 }
 (function(){

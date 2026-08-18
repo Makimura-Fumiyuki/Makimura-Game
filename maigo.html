@@ -2007,8 +2007,8 @@
     '😍',
     '🤣'
   ];
-  function spawnStamp(i, who){
-    if(stampMuted) return;
+  function spawnStamp(i, who, self){
+    if(stampMuted && !self) return;   // ミュート中でも自分が押したスタンプは自分の画面に出す(押した手ごたえ用・音は鳴らさない)
     i=Math.max(0, Math.min(2, i|0));
     const el=document.createElement("div"); el.className="stamp-fly";
     const hx=0.06+Math.random()*0.88;                        // 横位置: 画面全幅(両端も含む)
@@ -2017,14 +2017,14 @@
     el.style.setProperty("--rise", "-"+(24+(1-central)*16).toFixed(0)+"vh");   // 中央は低め(盤の下側に少しかぶる程度)・両端は高め(従来通り)
     el.style.setProperty("--dx", (Math.random()*24-12).toFixed(0)+"px");
     el.innerHTML='<span class="s-emoji">'+STAMP_SVGS[i]+'</span><span class="s-name">'+(who||"自分")+'</span>';
-    if(seOn) playStamp(i);   // スタンプ別の効果音
+    if(seOn && !stampMuted) playStamp(i);   // スタンプ別の効果音
     const overlayOpen=document.getElementById("resultOverlay").classList.contains("on")||document.getElementById("confirmOverlay").classList.contains("on");
     if(overlayOpen){ el.classList.add("over-dialog"); document.body.appendChild(el); }
     else{ (document.getElementById("gameScene")||document.body).appendChild(el); }   // 碁笥/駒と同じ重なり文脈に入れる(盤より前・碁石入れより後ろ)
     setTimeout(()=>el.remove(), 2350);
   }
   function sendStamp(i){
-    spawnStamp(i, "自分");
+    spawnStamp(i, "自分", true);
     if(online && ch){ try{ ch.send({ type:"broadcast", event:"stamp", payload:{ i } }); }catch(e){} }   // 相手にも届ける(ロストしても実害なし)
   }
   let stampMuted=false; try{ stampMuted=localStorage.getItem("maigo.smute")==="1"; }catch(e){}
