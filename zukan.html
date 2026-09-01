@@ -115,6 +115,10 @@
   .entry.mine{ background:#fbfef9; }   /* 左線は他カードと同じ金色のまま */
   .entry .eh{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
   .entry .au{ font-weight:900; font-size:14px; color:var(--brown-d); }
+  .wrote-tag{ display:inline-block; font-size:10.5px; font-weight:900; color:#fff; background:var(--grn); border-radius:999px;
+    padding:1px 8px 2px; vertical-align:middle; white-space:nowrap; }   /* 自分が図鑑を書いた生き物の印 */
+  .hero-foot .wrote-tag{ margin-right:auto; position:relative; top:15px; }      /* 最新の生き物=左下(ボタンの反対側)。15px下げる=牧村指示 */
+  .crow .cday .wrote-tag{ margin-left:8px; }       /* これまでの生き物=日付の右 */
   .entry .me-tag{ font-size:10.5px; font-weight:900; color:#fff; background:var(--grn); border-radius:999px; padding:1px 8px 2px; }
   .entry .dt{ font-size:11px; font-weight:600; color:rgba(51,41,31,.4); margin-left:auto; }
   .entry .bd{ font-size:14.5px; font-weight:500; white-space:pre-wrap; word-break:break-word; color:var(--ink); }
@@ -312,7 +316,7 @@
   const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co";
   const SB_KEY="sb_publishable_cak3-W9Mmgahnwawreoa1Q_CVuhmkKL";
   const MAXBODY=800;
-  let sb=null, myUid=null, myName=null;   // myName=登録済みペンネーム(左上のピルでいつでも変更可・名前被りは不可)
+  let sb=null, myUid=null, myName=null, written=new Set();   // written=自分が図鑑を書いた生き物のid   // myName=登録済みペンネーム(左上のピルでいつでも変更可・名前被りは不可)
   let isAdmin=false;   // 管理モード(牧村専用)。?admin=1でログイン→メールがADMIN_EMAILならtrue
   const ADMIN_EMAIL="zentyu721wood@gmail.com";
   const WANT_ADMIN=/[?&]admin=1/.test(location.search);
@@ -334,6 +338,7 @@
     const now=Date.now();
     creatures=DEMO_NAMES.map((n,i)=>({ id:"demo"+i, name:n, note:i===0?"ヒント：川で目をつけられたら最後":"", created_at:new Date(now-i*86400000-i*3600000).toISOString() }));
     counts={}; creatures.forEach((c,i)=>{ counts[c.id]=(i*7+3)%12; });
+    written=new Set(creatures[1]?[creatures[1].id]:[]);   // デモ=2体目に自分の投稿がある想定
   }
   function demoEntries(cid){
     const now=Date.now(); const arr=[];
@@ -415,10 +420,12 @@
     if(cr.error){ $("listBody").innerHTML='<div class="empty">よみこみに失敗しました。開き直してみてください。</div>'; return; }
     creatures=cr.data||[];
     // 図鑑の件数(全件のcreature_idだけ取得して集計)
-    counts={};
+    counts={}; written=new Set();
     try{ await loadBans(); }catch(e){}
     const ec=await sb.from("zukan_entry").select("creature_id,user_id");
-    if(!ec.error && ec.data){ ec.data.forEach(r=>{ if(DYN_BAN_UIDS.has(r.user_id)) return; counts[r.creature_id]=(counts[r.creature_id]||0)+1; }); }
+    if(!ec.error && ec.data){ ec.data.forEach(r=>{
+      if(myUid && r.user_id===myUid) written.add(r.creature_id);        // 自分が書いた生き物
+      if(DYN_BAN_UIDS.has(r.user_id)) return; counts[r.creature_id]=(counts[r.creature_id]||0)+1; }); }
     renderList();
   }
 
@@ -434,11 +441,11 @@
       +'<div class="nm">'+esc(today.name)+'</div>'
       +'<div class="cnt">図鑑 '+(counts[today.id]||0)+'件</div>'
       +(today.note?'<div class="note">'+esc(today.note)+'</div>':'')
-      +'<div class="hero-foot"><span class="write-btn">図鑑をかいてみる</span></div></div>';
+      +'<div class="hero-foot">'+(written.has(today.id)?'<span class="wrote-tag">記入済み</span>':'')+'<span class="write-btn">図鑑をかいてみる</span></div></div>';
     if(rest.length){
       html+='<div class="section-label">これまでの生き物</div><div class="clist">';
       const triSvg='<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2 L9 6 L4 10 Z" fill="currentColor"/></svg>';
-      rest.forEach(c=>{ html+='<div class="crow" data-id="'+c.id+'"><span class="cmain"><span class="cn">'+esc(c.name)+'</span><span class="cday">'+fmtDay(c.created_at)+'</span></span><span class="cc">図鑑'+(counts[c.id]||0)+'件</span><span class="arw">'+triSvg+'</span></div>'; });
+      rest.forEach(c=>{ html+='<div class="crow" data-id="'+c.id+'"><span class="cmain"><span class="cn">'+esc(c.name)+'</span><span class="cday">'+fmtDay(c.created_at)+(written.has(c.id)?'<span class="wrote-tag">記入済み</span>':'')+'</span></span><span class="cc">図鑑'+(counts[c.id]||0)+'件</span><span class="arw">'+triSvg+'</span></div>'; });
       html+='</div>';
     }
     b.innerHTML=admBtn+html;
@@ -596,6 +603,7 @@
     editing=false;
     try{ if(cur) localStorage.removeItem("zukan.draft."+cur.id); }catch(e){}   // 投稿できたら下書きを消す
     toast(myEntry?"更新しました":"投稿しました");
+    if(cur) written.add(cur.id);                      // 一覧の「書いた」印にも反映
     await openDetail(cur.id);
   }
 
@@ -608,7 +616,7 @@
     busy=true; const r=await sb.from("zukan_entry").delete().eq("id",myEntry.id); busy=false;
     $("delOv").classList.remove("on");
     if(r.error){ toast("削除に失敗しました"); return; }
-    toast("削除しました"); editing=false; await openDetail(cur.id);
+    toast("削除しました"); editing=false; if(cur) written.delete(cur.id); await openDetail(cur.id);
   });
 
   /* 管理モード(牧村専用): ログインと出題 */

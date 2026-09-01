@@ -769,6 +769,7 @@ const PC_NAME={P:["歩兵","ふひょう"],L:["香車","きょうしゃ"],N:["�
 const PC_NAME_PR={P:["と金","ときん"],L:["成香","なりきょう"],N:["成桂","なりけい"],S:["成銀","なりぎん"],B:["竜馬","りゅうま"],R:["竜王","りゅうおう"]};
 const COL_HUES=[6,26,44,88,140,168,205,246,285];
 let board, holes, hands, turn, phase, sel, legalCells, pool, numAt, cellOfNum, moveCount, lastMoveCell, hist, slideFrom=null, dropPop=false, dropChip=null;
+let pendingSwitch=false;   // 穴が開いて手番交代を待っている間(駒の落下/ビンゴ)=見た目だけ先に交代
 let mode="local", cpuLv=1, humanSide=0, freeTmr=0, N=5, sizeSel=5, pureShogi=false, fxOn=true, kingSafe=true;   // fxOn=抽選演出 / kingSafe=王のマスは抽選で選ばれない   // 盤の広さ(5=ミニ将棋が既定)
 /* オンライン対局(Supabase Realtime。碁石系列のseq+ack+再送方式を流用) */
 const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co";
@@ -963,7 +964,9 @@ function render(){
       const isLast = lastMoveCell&&lastMoveCell[0]===r&&lastMoveCell[1]===c;
       let extra="", style="";
       // 手番でない側の駒はグレーアウト(1台・オンライン・ロボット共通)
-      if(phase==="idle"&&p.o!==turn) extra+=" dim";
+      /* グレーアウト=「次に動く側でない駒」。穴が開いたあと交代待ち(駒が落ちる/ビンゴ)の間も、動かし終えた側を先にグレーにする
+         (以前はphase!=="idle"の間どちらもグレーにならず、駒が落ちた時だけ切替が遅れて見えた=2026-08-19修正) */
+      { const inactive=(phase==="idle")? (1-turn) : (pendingSwitch? turn : -1); if(p.o===inactive) extra+=" dim"; }
       if(isLast && slideFrom){   // A地点→B地点をつなぐ移動アニメ(dimを上書きしない=+=)
         const cs=boardEl.clientWidth/N;
         const dx=(flip? (slideFrom[1]-c)*-1 : (slideFrom[1]-c))*cs;
@@ -1195,9 +1198,12 @@ function bingoRoll(forced){
     num=cands[Math.floor(Math.random()*cands.length)];
     pool.splice(pool.indexOf(num),1);
   }
-  if(!fxOn){ openSquare(num); return; }   // 演出なし=動かした瞬間に穴が開く(ビネットも出さない)
+  if(!fxOn){ openSquare(num); quickVig(num); return; }   // 演出なし=動かした瞬間に穴が開く。どこが開いたか分かるようにビネットだけ短く流す(操作は止めない)
   setTimeout(()=>boardEl.classList.add("rolling"),20);   // 抽選中は数字をしっかり見せる(★1フレーム遅らせる=直前のrenderで作り直したDOMだと初期値が濃い色になりtransitionが効かない)
   const flow=$("flow");
+  let skip=false;                                                   // 演出中にクリック=中央発表まで飛ばす
+  const onSkip=()=>{ skip=true; };
+  document.addEventListener("pointerdown", onSkip, {capture:true});
   const bc=localCenter();   // #gameScene基準の盤中心=スクロールしても座標は変わらない(ページに固定)
   const cx=bc.x, cy=bc.y, RB=bc.w/2;
   const outR=Math.max(window.innerWidth||0, window.innerHeight||0, document.documentElement.clientWidth||0, 900)*0.9+240;   // 画面の外(避ける距離・出現位置の基準)
@@ -1231,7 +1237,7 @@ function bingoRoll(forced){
   flow.style.display="block";
   const CONV=4070;   // 中央に集まりきるまで(0.08秒だけ速く)   // 出てから中央に集まりきるまで(渦を巻きながらじわじわ寄る)
   const t0=performance.now();
-  let prev=t0, st=1, stT=t0, vigCell=null;
+  let prev=t0, st=1, stT=t0, vigSel=null;
   const rattleIv=setInterval(playRattle,110);
   const iv=setInterval(()=>{
     const t=performance.now(), dt=Math.min(0.05,(t-prev)/1000); prev=t;
@@ -1255,11 +1261,13 @@ function bingoRoll(forced){
       b.y=cy2+rad*Math.sin(b.ang)-b.half;
       b.el.style.transform="translate("+b.x+"px,"+b.y+"px) rotate("+rv+"deg) scale("+sc+")";
     });
-    if(vigCell){   // ビネットは画面全体の暗幕なのでビューポート座標。スクロールしても中心がマスに合うよう毎フレーム更新
+    const vigCell=vigSel? boardEl.querySelector(vigSel):null;
+    if(vigCell){   // ビネットは画面全体の暗幕なのでビューポート座標。スクロールしても中心がマスに合うよう毎フレーム更新(要素は毎回引き直す)
+      if(!vigCell.classList.contains("target")) vigCell.classList.add("target");
       const cr=vigCell.getBoundingClientRect();
       $("vig").style.background="radial-gradient(circle at "+(cr.left+cr.width/2)+"px "+(cr.top+cr.height/2)+"px, rgba(20,8,45,0) "+(cr.width*1.1)+"px, rgba(20,8,45,.8) "+(cr.width*3.2)+"px)";
     }
-    if(st===1 && t-stT>CONV*0.88){   // 完全な中央の少し手前でバッと発表
+    if(st===1 && (t-stT>CONV*0.88 || skip)){   // 完全な中央の少し手前でバッと発表(クリックで即ここへ)
       st=2; stT=t; clearInterval(rattleIv);
       winner.el.textContent=num; winner.el.style.background=ballBg(num);   // 残る数字はここで確定(完全ランダム)
       playBallOut();
@@ -1270,20 +1278,41 @@ function bingoRoll(forced){
       const cellEl=boardEl.querySelector('.cell[data-r="'+cellPos[0]+'"][data-c="'+cellPos[1]+'"]');
       if(cellEl){
         cellEl.classList.add("target");
-        vigCell=cellEl;
+        vigSel='.cell[data-r="'+cellPos[0]+'"][data-c="'+cellPos[1]+'"]';   // ★要素でなくセレクタで持つ(手番交代のrenderで盤DOMが作り直されるため)
         $("vig").classList.add("on");
       }
       balls.forEach(b=>{ b.el.style.transition="opacity .22s"; b.el.style.opacity=0; });   // 当たりも含めてその場で消える(マスへ飛ぶ演出は2026-08-01に廃止)
       playTarget();
+      boardEl.classList.remove("rolling");
+      openSquare(num);            // ★ビネットが出た瞬間に穴を開けて手番交代(グレーアウトも同時・ビネット中から操作できる)
     }
     else if(st===3 && t-stT>700){
-      clearInterval(iv);
-      flow.innerHTML=""; flow.style.display="none";   // 球が消えるのと同時に穴が開く
+      clearInterval(iv); document.removeEventListener("pointerdown", onSkip, {capture:true});
+      flow.innerHTML=""; flow.style.display="none";
       $("vig").classList.remove("on");
-      boardEl.classList.remove("rolling");
-      openSquare(num);
+      const tc=vigSel? boardEl.querySelector(vigSel):null; if(tc) tc.classList.remove("target");
     }
   },16);
+}
+/* 演出なし用の短いビネット。phaseは触らないので操作はそのまま受け付ける。次の手が来たら即やり直す */
+let qvTok=0, qvCell=null;
+function quickVig(num){
+  const tok=++qvTok;
+  const pos=cellOfNum[num]; if(!pos) return;
+  if(qvCell){ qvCell.classList.remove("target"); qvCell=null; }
+  const sel='.cell[data-r="'+pos[0]+'"][data-c="'+pos[1]+'"]';
+  const vg=$("vig");
+  /* ★switchTurnのrender()で盤のDOMが作り直されるので、要素を持たずに毎回引き直す(持つと途中で位置が0,0に飛んで途切れて見えた) */
+  const upd=()=>{ if(tok!==qvTok) return; const el=boardEl.querySelector(sel); if(!el) return;
+    if(qvCell!==el){ if(qvCell) qvCell.classList.remove("target"); qvCell=el; }
+    el.classList.add("target");
+    const cr=el.getBoundingClientRect();
+    vg.style.background="radial-gradient(circle at "+(cr.left+cr.width/2)+"px "+(cr.top+cr.height/2)+"px, rgba(20,8,45,0) "+(cr.width*1.1)+"px, rgba(20,8,45,.8) "+(cr.width*3.2)+"px)"; };
+  upd();
+  vg.classList.remove("on"); void vg.offsetWidth; vg.classList.add("on");
+  const iv=setInterval(()=>{ if(tok!==qvTok){ clearInterval(iv); return; } upd(); }, 40);
+  setTimeout(()=>{ clearInterval(iv); if(tok!==qvTok) return;
+    vg.classList.remove("on"); if(qvCell){ qvCell.classList.remove("target"); qvCell=null; } }, 760);
 }
 function openSquare(num){
   const cell=cellOfNum[num], r=cell[0], c=cell[1];
@@ -1294,13 +1323,16 @@ function openSquare(num){
   }
   holes[r][c]=true; board[r][c]=null;
   playOpen();
-  render();
+  const bingo=checkBingo();
+  const immediate=!victim && !bingo;
+  /* ★穴が開いた瞬間(=ビネットが出る瞬間)に手番を交代する=駒のグレーアウトもここで切り替わり、ビネット中から次の手が打てる。
+     演出あり/なし共通(2026-08-19)。punchは交代後のDOMに付ける(先に付けるとrenderで消える) */
+  if(immediate) switchTurn(); else { pendingSwitch=true; render(); }   // 交代待ちの間も見た目(グレーアウト)は先に切り替える
   const el=boardEl.querySelector('.cell[data-r="'+r+'"][data-c="'+c+'"]');
   if(el){ const pu=document.createElement("span"); pu.className="punch"; pu.textContent=num; el.appendChild(pu); setTimeout(()=>pu.remove(),600); }
   const bw=$("boardWrap"); bw.classList.remove("shake"); void bw.offsetWidth; bw.classList.add("shake");
   if(victim && el) fallThenDrop(el, victim, 1-victim.o);
-  const bingo=checkBingo();
-  setTimeout(bingo? doBingoSwap : switchTurn, victim?1400:(bingo?650:250));
+  if(!immediate) setTimeout(bingo? doBingoSwap : switchTurn, victim?560:650);   // 駒が落ちた時は持ち駒に入った直後(0.56秒)に交代
 }
 /* 落下演出: 駒が縮小+右回転で穴に落ち(0.5秒)、完全に消えてから獲得エリアにチップが降ってくる */
 function fallThenDrop(el, p, taker){
@@ -1385,6 +1417,7 @@ function kingDoom(num,r,c,victim,fell){   // fell=true: 自分から穴へ動か
   setTimeout(()=>{ gameOver(1-victim.o, fell? nameOf(victim.o)+"の王が穴に落ちた" : nameOf(victim.o)+"の王のマスが開いた"); },3100);
 }
 function switchTurn(){
+  pendingSwitch=false;
   if(phase==="over") return;
   turn=1-turn; phase="idle";
   if(!hasAnyMove(turn)){ gameOver(1-turn, nameOf(turn)+"は動ける駒がなくなった"); return; }
