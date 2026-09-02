@@ -60,6 +60,10 @@
     background:rgba(255,255,255,.14); border:1.5px solid rgba(255,255,255,.5); border-radius:999px;
     font-size:13px; font-weight:900; padding:8px 14px; color:#fff; backdrop-filter:blur(2px); transition:transform .12s; }
   .help-btn{ left:10px; }
+  /* 観戦者の人数(目のアイコン+人数)。あそびかたの真下・固定位置=今後の全ゲーム共通の置き場所 */
+  .spec-badge{ position:fixed; left:10px; top:52px; z-index:40; display:flex; align-items:center; gap:5px;
+    padding:4px 10px 4px 8px; border-radius:999px; background:rgba(255,255,255,.14); color:#fff; font-size:13px; font-weight:900; }
+  .spec-badge svg{ width:16px; height:16px; }
   .help-btn span{ display:inline-flex; width:18px; height:18px; border-radius:50%; background:var(--yel); color:var(--pp-ink); align-items:center; justify-content:center; font-size:12px; }
   .se-btn{ right:10px; }
   .se-btn svg{ width:15px; height:15px; }
@@ -429,6 +433,7 @@
 <div class="bgfx" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><s></s><s></s><s></s></div>
 
 <button class="help-btn" id="helpBtn"><span>?</span>あそびかた</button>
+<div class="spec-badge" id="specBadge" aria-label="観戦者" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span id="specNum">0</span></div>
 <button class="se-btn" id="seBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>効果音</button>
 
 <!-- ===== タイトル(ロゴ=左上・メニュー=右下) ===== -->
@@ -784,7 +789,7 @@ let sbc=null, ch=null, online=false, isHost=false, startSent=false, mySide=0, pe
 let mySeq=0, pendingSeq=-1, lastRecvSeq=-1, moveResendTimer=0, joinWatch=0;
 let myRematch=false, peerRematch=false, queuedMove=null, lastNetMove=null;
 let undoPending=false, undoIdx=-1, peerUndoIdx=-1;   // オンラインの待った(あいての同意を待っている間)
-let spectating=false, specKnown=new Set(), specPlayers=[], lastSeqFrom={}, oppId=null;   // 観戦モード(対局中に入室した人)
+let spectating=false, specKnown=new Set(), specPlayers=[], lastSeqFrom={}, oppId=null, specUndoIdx=-1;   // 観戦モード(対局中に入室した人)
 function bottomSide(){ if(mode==="cpu") return humanSide; if(online) return mySide; return 0; }   /* 全員が自分の駒を下側(上向き)で見る(2026-08-10に反転を復活。観戦者はmySide=0で先手視点) */
 function cpuSide(){ return 1-humanSide; }
 
@@ -1181,12 +1186,13 @@ function afterMove(){
     sendMyMove(num);
     if(pureShogi){ phase="anim"; updateBtns(); setTimeout(switchTurn,300); return; }
     if(!num){ switchTurn(); return; }
-    bingoRoll(num); return;
+    bingoRoll(num, true); return;
   }
   if(pureShogi){ phase="anim"; updateBtns(); setTimeout(switchTurn,300); return; }   // 移動アニメ(0.26s)を見せてから手番交代
-  bingoRoll();
+  bingoRoll(undefined, true);
 }
-function bingoRoll(forced){
+let curSkipFn=null;   // いま流れている抽選演出をスキップする関数(あいてのskipfx受信用)
+function bingoRoll(forced, mine){
   phase="anim"; updateBtns(); renderCaps();
   let num;
   if(typeof forced==="number"){   // オンライン: 送り手が決めた数字で同じ抽選を再生
@@ -1202,7 +1208,11 @@ function bingoRoll(forced){
   setTimeout(()=>boardEl.classList.add("rolling"),20);   // 抽選中は数字をしっかり見せる(★1フレーム遅らせる=直前のrenderで作り直したDOMだと初期値が濃い色になりtransitionが効かない)
   const flow=$("flow");
   let skip=false;                                                   // 演出中にクリック=中央発表まで飛ばす
-  const onSkip=()=>{ skip=true; };
+  /* スキップできるのは「自分の操作で始まった演出」だけ(1台・ロボットは全部自分の操作あつかい)。
+     スキップしたら skipfx を配って、あいて・観戦者の画面も同じところまで飛ばす */
+  const canSkip = !online || mine===true;
+  const onSkip=()=>{ if(!canSkip||skip) return; skip=true; if(online&&ch){ try{ ch.send({type:"broadcast",event:"skipfx",payload:{}}); }catch(e){} } };
+  curSkipFn=()=>{ skip=true; };
   document.addEventListener("pointerdown", onSkip, {capture:true});
   const bc=localCenter();   // #gameScene基準の盤中心=スクロールしても座標は変わらない(ページに固定)
   const cx=bc.x, cy=bc.y, RB=bc.w/2;
@@ -1287,7 +1297,7 @@ function bingoRoll(forced){
       openSquare(num);            // ★ビネットが出た瞬間に穴を開けて手番交代(グレーアウトも同時・ビネット中から操作できる)
     }
     else if(st===3 && t-stT>700){
-      clearInterval(iv); document.removeEventListener("pointerdown", onSkip, {capture:true});
+      clearInterval(iv); document.removeEventListener("pointerdown", onSkip, {capture:true}); curSkipFn=null;
       flow.innerHTML=""; flow.style.display="none";
       $("vig").classList.remove("on");
       const tc=vigSel? boardEl.querySelector(vigSel):null; if(tc) tc.classList.remove("target");
@@ -1442,6 +1452,13 @@ function leaveChannel(){
 }
 function roomStatus(html){ $("roomArea").innerHTML=html; }
 function presenceCount(){ try{ return Object.keys(ch.presenceState()).length; }catch(e){ return 0; } }
+function updateSpecBadge(){   // 観戦者の人数=在室数−対局者2人(対局中のオンラインだけ表示)
+  const b=$("specBadge"); if(!b) return;
+  const show = online && !!ch && $("gameScene").classList.contains("on");
+  if(!show){ b.style.display="none"; return; }
+  const n=Math.max(0, presenceCount()-2);
+  $("specNum").textContent=n; b.style.display="flex";
+}
 /* 一手を送り、ack(moveack)が届くまで送り直す(broadcastは配送保証がないため=碁石系列と同じ仕組み) */
 function sendMove(payload){
   if(!ch) return;
@@ -1488,13 +1505,14 @@ function netAfter(payload){
   moveCount++;
   if(pureShogi){ phase="anim"; updateBtns(); setTimeout(switchTurn,300); return; }
   if(!payload.num){ switchTurn(); return; }
-  bingoRoll(payload.num);
+  bingoRoll(payload.num, false);   // あいての手の演出=自分ではスキップできない(あいてがスキップしたら追従)
 }
 function openChannel(code, asHost){
   leaveChannel();
   isHost=asHost;
   ch=sbClient().channel("sgb_"+code, { config:{ presence:{ key:myId }, broadcast:{ self:false } } });
   ch.on("presence",{event:"sync"},()=>{
+    setTimeout(updateSpecBadge,50);
     if(isHost&&!startSent&&presenceCount()>=2){
       startSent=true;
       try{ specPlayers=Object.keys(ch.presenceState()); specPlayers.forEach(k=>specKnown.add(k)); }catch(e){}   // この2人が対局者
@@ -1515,13 +1533,14 @@ function openChannel(code, asHost){
     }
   });
   ch.on("presence",{event:"leave"},({key})=>{
+    setTimeout(updateSpecBadge,50);
     if(!online) return;
     if(spectating){ if(key && specPlayers.indexOf(key)>=0){ opponentLeft(); } return; }   // 観戦中はプレイヤーの退出だけで終了
     if(oppId){ if(key===oppId) opponentLeft(); return; }   // 相手idが分かっていれば正確に判定(観戦者がいてもOK)
     if(presenceCount()>=2) return;
     opponentLeft();
   });
-  ch.on("broadcast",{event:"bye"},()=>{ if(online) opponentLeft(); });
+  ch.on("broadcast",{event:"bye"},({payload})=>{ if(!online) return; if(payload&&payload.spec){ setTimeout(updateSpecBadge,300); return; } opponentLeft(); });   // ★観戦者が抜けても対局は続く
   ch.on("broadcast",{event:"spec"},({payload})=>{
     if(!payload || payload.to!==myId || online) return;
     const st=payload.st; if(!st) return;
@@ -1562,19 +1581,27 @@ function openChannel(code, asHost){
     gameOver(mySide, "あいてが降参した");
   });
   ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) spawnStamp(payload.i|0, payload.w||(spectating?"プレイヤー":"あいて")); });
-  ch.on("broadcast",{event:"check"},()=>{ if(online && !stampMuted) showCheckFx(); });   // あいての王手宣言(スタンプ扱い=ミュート中は流れない)
+  ch.on("broadcast",{event:"check"},()=>{ if(online && !stampMuted) showCheckFx(); });
+  ch.on("broadcast",{event:"skipfx"},()=>{ if(online && curSkipFn) curSkipFn(); });   // 動かした本人がスキップ=全員の演出を同じところまで飛ばす   // あいての王手宣言(スタンプ扱い=ミュート中は流れない)
   ch.on("broadcast",{event:"undoreq"},({payload})=>{   // あいてが一手戻したい
-    if(!online||phase!=="idle"||!hist.length) return;
-    peerUndoIdx = (payload&&typeof payload.i==="number")? payload.i : undoTargetIdx(1-mySide);
+    if(!online||!hist.length) return;
+    const ti=(payload&&typeof payload.i==="number")? payload.i : -1;
+    if(spectating){ specUndoIdx=ti; return; }          // ★観戦者はダイアログを出さない(いいよ/だめを押せた=介入バグの修正)。成立したら盤だけ追従する
+    if(phase!=="idle") return;
+    peerUndoIdx = ti>=0? ti : undoTargetIdx(1-mySide);
     $("undoOv").classList.add("on");
   });
   ch.on("broadcast",{event:"undoyes"},()=>{
-    if(!online||!undoPending) return;
+    if(!online) return;
+    if(spectating){ if(specUndoIdx>=0){ undoTo(specUndoIdx); specUndoIdx=-1; toast("一手戻りました"); } return; }   // 観戦者は両者と同じ局面へ
+    if(!undoPending) return;
     undoPending=false; undoTo(undoIdx); undoIdx=-1;
     toast("「一手戻る」が受け入れられました");
   });
   ch.on("broadcast",{event:"undono"},()=>{
-    if(!online||!undoPending) return;
+    if(!online) return;
+    if(spectating){ specUndoIdx=-1; return; }
+    if(!undoPending) return;
     undoPending=false; undoIdx=-1; updateBtns();
     toast("「一手戻る」は断られました");
   });
@@ -1690,6 +1717,7 @@ function cpuThink(){
 /* ================= 一手戻る・降参 ================= */
 $("undoBtn").addEventListener("click",()=>{
   ensureAudio(); playSelect();
+  if(spectating){ toast("観戦中は操作できません"); return; }   // ★観戦者は介入できない
   if(phase!=="idle"||!hist.length||undoPending) return;
   if(online){   // オンラインはあいての同意をもらってから双方で戻す
     const i=undoTargetIdx(mySide);
@@ -1704,12 +1732,14 @@ $("undoBtn").addEventListener("click",()=>{
 });
 $("undoYes").addEventListener("click",()=>{
   ensureAudio(); playSelect(); $("undoOv").classList.remove("on");
+  if(spectating) return;
   if(ch){ try{ ch.send({ type:"broadcast", event:"undoyes", payload:{} }); }catch(e){} }
   undoTo(peerUndoIdx); peerUndoIdx=-1;
   toast("一手戻しました");
 });
 $("undoNo").addEventListener("click",()=>{
   ensureAudio(); playSelect(); $("undoOv").classList.remove("on");
+  if(spectating) return;
   if(ch){ try{ ch.send({ type:"broadcast", event:"undono", payload:{} }); }catch(e){} }
   peerUndoIdx=-1;
 });
@@ -1727,7 +1757,7 @@ $("stampCheck").addEventListener("click",()=>{
   showCheckFx();
   if(online&&ch){ try{ ch.send({ type:"broadcast", event:"check", payload:{} }); }catch(e){} }   // あいての画面にも出す
 });
-$("giveupBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); if(phase!=="idle") return; $("cfOv").classList.add("on"); });
+$("giveupBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); if(phase!=="idle"||spectating) return; $("cfOv").classList.add("on"); });
 $("cfYes").addEventListener("click",()=>{
   ensureAudio(); playSelect(); $("cfOv").classList.remove("on");
   const loser = mode==="cpu"? humanSide : (online? mySide : turn);
@@ -1819,12 +1849,12 @@ $("joinRoomBtn").addEventListener("click",()=>{
   });
   inp.focus();
 });
-function toGame(){ $("titleScene").classList.remove("on"); $("gameScene").classList.add("on"); $("stampBar").classList.add("on"); }
+function toGame(){ $("titleScene").classList.remove("on"); $("gameScene").classList.add("on"); $("stampBar").classList.add("on"); setTimeout(updateSpecBadge,60); }
 function toTitle(){
   clearTimeout(freeTmr);
-  if(ch){ try{ ch.send({ type:"broadcast", event:"bye", payload:{} }); }catch(e){} }   // 明示の退出通知(presenceより確実)
+  if(ch){ try{ ch.send({ type:"broadcast", event:"bye", payload:{ spec:spectating?1:0 } }); }catch(e){} }   // 明示の退出通知(presenceより確実)。観戦者の退出はspec=1で区別
   leaveChannel(); peerGone=false; spectating=false; oppId=null; specKnown=new Set(); if(mode==="online") mode="local";
-  $("stampBar").classList.remove("on"); $("mvGuide").classList.remove("on");
+  $("stampBar").classList.remove("on"); $("mvGuide").classList.remove("on"); $("specBadge").style.display="none";
   $("gameScene").classList.remove("on"); $("titleScene").classList.add("on");
 }
 $("startLocalBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); mode="local"; humanSide=0; toGame(); initGame(); });

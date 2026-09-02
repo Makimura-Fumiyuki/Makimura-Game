@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>クッKey</title>
 <meta name="apple-mobile-web-app-title" content="クッKey">
-<meta name="description" content="クッキーを食べて鍵を作ろう。ただし、食べる人は鍵の完成形を知らず、他の友達は知っている。みんなで協力して精巧な鍵を作り出そう">
+<meta name="description" content="みんなで同時にクッキーを食べて、お手本の形を作ろう。うすく見えるシルエットにどこまで近づけるか、協力して精巧に食べ進めよう">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="牧村が作ったゲーム集">
 <meta property="og:title" content="クッKey">
-<meta property="og:description" content="クッキーを食べて鍵を作ろう。ただし、食べる人は鍵の完成形を知らず、他の友達は知っている。みんなで協力して精巧な鍵を作り出そう">
+<meta property="og:description" content="みんなで同時にクッキーを食べて、お手本の形を作ろう。うすく見えるシルエットにどこまで近づけるか、協力して精巧に食べ進めよう">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjMTI0MDNjIi8+PHRleHQgeD0iMTYiIHk9IjE2LjUiIGZvbnQtc2l6ZT0iMTYiIGZvbnQtd2VpZ2h0PSI3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIiBmaWxsPSIjZmZmIiBmb250LWZhbWlseT0iJ0hpcmFnaW5vIFNhbnMnLCdOb3RvIFNhbnMgSlAnLHNhbnMtc2VyaWYiPuOCrzwvdGV4dD48L3N2Zz4=">
 <meta property="og:image" content="https://makimura-gamehub.com/icon.png">
@@ -68,7 +68,12 @@
   .rule-col{ display:flex; flex-direction:column; align-items:center; gap:7px; min-width:170px; }
   .rc-name{ font-size:12px; font-weight:800; letter-spacing:.1em; opacity:.7; }
   .rc-row{ display:flex; align-items:center; gap:10px; }
+  .rule-frame.v{ flex-direction:column; align-items:center; gap:14px; }          /* 上段=協力/対戦・下段=数値 */
+  .rule-frame.v .mode-row{ gap:12px; }
+  .rule-frame.v .rule-cols{ display:flex; flex-wrap:wrap; gap:14px 22px; justify-content:center; width:100%; }
   .rc-val{ min-width:92px; text-align:center; font-size:19px; font-weight:900; color:var(--gold); }
+  .mode-opt{ padding:7px 16px; border:1.5px solid rgba(253,246,231,.35); border-radius:999px; background:transparent; color:var(--card); font-size:14px; font-weight:900; cursor:pointer; }
+  .mode-opt.sel{ background:var(--gold); border-color:var(--gold); color:#3a2a06; }
   .stp{
     width:36px; height:36px; border:none; border-radius:10px; cursor:pointer;
     background:rgba(253,246,231,.14); color:var(--card); font-size:19px; font-weight:900; line-height:1;
@@ -94,6 +99,13 @@
   }
   .room-row button small{ display:block; margin-top:4px; font-size:11px; font-weight:700; opacity:.72; letter-spacing:.02em; }
   .room-row button:active{ transform:translateY(2px); }
+  /* モード選択(ひとり/オンライン)は横幅を均等に、部屋を作る/入るより大きく */
+  #modeRow{ width:var(--uiw); max-width:420px; }
+  #modeRow button{ flex:1 1 0; min-width:0; padding:18px 10px; font-size:18px; border-radius:16px; }
+  #modeRow button small{ font-size:12px; margin-top:6px; }
+  #onlineRow{ justify-content:center; }
+  #soloSetup{ display:none; flex-direction:column; align-items:center; width:var(--uiw); }   /* はじめるを左右中央に */
+  #soloSetup.on{ display:flex; }
 
   /* ===== ゲーム ===== */
   /* 左・中央・右を3等分にして、中央のものが画面のど真ん中に来るようにする */
@@ -120,6 +132,10 @@
   /* のこり30秒の赤は「一番後ろのレイヤー」= クッキーやUIより後ろ(z-index:-1) */
   #dangerVeil{ position:fixed; inset:0; z-index:-1; background:#ff2410; opacity:0; pointer-events:none; }
   body.danger #dangerVeil{ animation:dangerPulse 1.7s ease-in-out infinite; }
+  /* のこり5秒の大きなカウント=画面の左右・最下層(クッキーやUIの後ろ)。とても大きく、残り時間の少なさを見た目で伝える */
+  #bigCount{ position:fixed; inset:0; z-index:-1; display:none; justify-content:space-between; align-items:center; padding:0 calc(9vw - 20px); pointer-events:none; }
+  #bigCount.on{ display:flex; }
+  #bigCount .bc{ font-size:min(46vh,44vw); font-weight:900; line-height:1; color:#ff5a3c; opacity:.22; letter-spacing:-.04em; }
   @keyframes dangerPulse{ 0%,100%{ opacity:.10; } 50%{ opacity:.30; } }
   #warn15{ position:fixed; left:0; right:0; top:0; height:100svh; z-index:72; display:none; align-items:center; justify-content:center; pointer-events:none; }
   #warn15.on{ display:flex; animation:w15 1.6s ease-out forwards; }   /* forwards=終わった形のまま(消える瞬間の一瞬の再表示を防ぐ) */
@@ -136,8 +152,15 @@
   #penGhost{ position:absolute; display:none; pointer-events:none; border:2px dashed rgba(253,246,231,.9);
     background:rgba(253,246,231,.12); border-radius:2px; }
 
-  .pen-row{ width:var(--uiw); margin-top:10px; display:flex; flex-direction:column; align-items:center; gap:9px; }
-  .pen-sizes{ display:flex; gap:10px; align-items:flex-end; }
+  .pen-row{ width:var(--uiw); margin-top:35px; display:flex; flex-direction:column; align-items:center; gap:9px; }
+  .pen-sizes{ display:flex; gap:8px; align-items:flex-end; }
+  .score-btn{ top:54px; }   /* 効果音ボタンの下 */
+  .sc-row{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; background:rgba(34,36,31,.06); margin-top:6px; font-weight:800; text-align:left; }
+  .sc-sw{ width:14px; height:14px; border-radius:4px; flex:none; }
+  .sc-nm{ flex:1; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sc-pt{ font-size:15px; font-weight:900; min-width:56px; text-align:right; }
+  .sc-kick{ padding:4px 10px; border-radius:999px; border:1.5px solid rgba(215,71,63,.6); background:#fff; color:#d7473f; font-size:12px; font-weight:900; cursor:pointer; }
+  .done-list{ font-size:12.5px; font-weight:700; opacity:.75; text-align:center; min-height:16px; letter-spacing:.03em; }
   .size-btn{
     width:56px; height:56px; border:2px solid rgba(253,246,231,.28); border-radius:13px; cursor:pointer;
     background:rgba(253,246,231,.08); display:flex; align-items:center; justify-content:center;
@@ -228,6 +251,24 @@
   .res-rate{ font-size:14px; font-weight:900; letter-spacing:.02em; color:var(--gold); }
   .res-rate.ng{ color:#ff9b8b; }
   .res-btns{ display:flex; flex-direction:column; align-items:center; gap:10px; margin-top:20px; }
+  /* 判定の得点表 */
+  #ptList{ width:min(94vw,420px); margin:6px auto 0; }
+  .pt-note{ font-size:12px; font-weight:700; opacity:.7; text-align:center; margin-bottom:6px; }
+  .pt-row{ display:flex; align-items:center; gap:10px; padding:6px 10px; border-radius:10px; background:rgba(255,255,255,.07); margin-top:5px; font-weight:800; }
+  .pt-sw{ width:14px; height:14px; border-radius:4px; flex:none; }
+  .pt-nm{ flex:1; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pt-nm.me{ text-decoration:underline; text-decoration-color:rgba(255,255,255,.4); }
+  .pt-pt{ font-size:16px; font-weight:900; min-width:64px; text-align:right; }
+  .pt-pt.plus{ color:#78e88c; } .pt-pt.minus{ color:#ff8272; }
+  .pt-tot{ font-size:12px; opacity:.65; min-width:44px; text-align:right; }
+  /* 結果画面の順位 */
+  .res-rank{ width:min(94vw,420px); margin:0 auto 14px; }
+  .rk-row{ display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:12px; background:rgba(255,255,255,.08); margin-top:6px; font-weight:800; }
+  .rk-row.top{ background:rgba(232,182,71,.22); }
+  .rk-no{ width:28px; font-size:15px; font-weight:900; color:var(--gold); }
+  .rk-sw{ width:14px; height:14px; border-radius:4px; flex:none; }
+  .rk-nm{ flex:1; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rk-pt{ font-size:18px; font-weight:900; }
   .home-foot{
     margin-top:auto; padding:26px 0 16px; font-size:12px; font-weight:700; letter-spacing:.08em;
     color:rgba(253,246,231,.5); text-decoration:none;
@@ -295,12 +336,18 @@
   .code-show svg{ width:19px; height:19px; opacity:.7; }
   .room-note{ font-size:12.5px; font-weight:700; letter-spacing:.05em; opacity:.7; text-align:center; }
   .room-note.err{ color:#ff8f7d; opacity:1; }
+  /* 参加ボタン=他のロビーがあるゲーム(待てアート/俺たちダービー)と同じ、白地のしっかりしたボタン(サブボタン風の細枠はやめた) */
+  #roomArea{ display:flex; flex-direction:column; align-items:center; gap:6px; width:var(--uiw); }   /* 合言葉入力・参加ボタンを左右中央に */
   .txt-btn{ padding:9px 22px; border:1.5px solid rgba(253,246,231,.35); border-radius:999px;
     background:transparent; color:var(--card); font-size:14px; font-weight:800; letter-spacing:.08em; cursor:pointer; }
 
   /* 試作用(完成時に消す) */
-  .dev-bar{ display:none; gap:8px; margin-top:8px; }
-  .dev-bar.on{ display:flex; }
+  .dev-bar{ display:none !important; }
+  /* デバッグ(ひとりで遊ぶ)はクッキーの左側に縦並び。下部だとスタンプバーと重なって押せないことがあった */
+  .dev-side{ position:absolute; right:calc(100% + 10px); top:0; display:none; flex-direction:column; gap:8px; z-index:8; }
+  .dev-side.on{ display:flex; }
+  .dev-side button{ padding:7px 12px; border:1.5px dashed rgba(253,246,231,.45); border-radius:999px; white-space:nowrap;
+    background:rgba(0,0,0,.25); color:var(--card); font-size:12px; font-weight:800; cursor:pointer; opacity:.9; }
   .dev-bar button{ padding:6px 14px; border:1.5px dashed rgba(253,246,231,.4); border-radius:999px;
     background:transparent; color:var(--card); font-size:12px; font-weight:800; cursor:pointer; opacity:.75; }
 </style>
@@ -308,20 +355,26 @@
 <body>
 
 <button class="help-btn" id="helpBtn"><span>?</span>あそびかた</button>
+<button class="snd-btn score-btn" id="scoreBtn" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><rect x="5" y="10" width="3.5" height="8"/><rect x="10.25" y="5" width="3.5" height="13"/><rect x="15.5" y="13" width="3.5" height="5"/></svg>得点状況</button>
 <button class="snd-btn" id="seBtn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wave" d="M16 9c1.2.9 1.2 5.1 0 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="wave" d="M18.5 7c2.2 1.7 2.2 8.3 0 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><g class="slash" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="16" y1="9" x2="21" y2="15"/><line x1="21" y1="9" x2="16" y2="15"/></g></svg>効果音</button>
 
 <!-- ===== タイトル ===== -->
 <div class="scene on" id="titleScene">
   <div class="logo"><span class="ku">クッ</span><span class="key">Key</span></div>
 
-  <div class="room-row">
+  <div class="room-row" id="modeRow">
+    <button id="soloModeBtn">ひとりで遊ぶ<small>自分のペースで</small></button>
+    <button id="onlineModeBtn">オンラインで遊ぶ<small>遠くの友達と食べる</small></button>
+  </div>
+  <div class="room-row" id="onlineRow" style="display:none; margin-top:12px;">
     <button id="makeRoomBtn">部屋を作る<small>合言葉を発行</small></button>
     <button id="joinRoomBtn">部屋に入る<small>合言葉で入室</small></button>
   </div>
+  <div id="soloSetup" style="margin-top:14px;">
+    <div id="soloRule"></div>
+    <button class="btn-main" id="soloStart" style="margin-top:14px;">はじめる</button>
+  </div>
   <div class="room-area" id="roomArea" style="margin-top:12px;"></div>
-  <div class="note">遊ぶ人と会話ができる状態で遊んでね</div>
-
-  <button class="btn-sub" id="soloBtn">1人で遊んでみる（試作）</button>
 </div>
 
 <!-- ===== ロビー ===== -->
@@ -336,32 +389,36 @@
 <div class="scene" id="gameScene">
   <div class="top-bar">
     <span class="pill" id="roundPill">1回目</span>
-    <span class="timer" id="timer">02:00</span>
+    <span class="timer" id="timer">00:30</span>
     <span class="pill" style="visibility:hidden;"></span>
   </div>
   <div class="plate" id="cookiePlate">
     <canvas id="cookie"></canvas>
     <div id="penGhost"></div>
     <div id="addFloat"></div>
+    <div class="dev-side" id="devSide"></div>
   </div>
   <div class="pen-row" id="penRow">
     <div class="pen-sizes" id="sizeRow">
-      <button class="size-btn" data-size="3" aria-label="小"><i style="width:9px;height:9px;"></i></button>
-      <button class="size-btn sel" data-size="7" aria-label="中"><i style="width:18px;height:18px;"></i></button>
-      <button class="size-btn" data-size="11" aria-label="大"><i style="width:27px;height:27px;"></i></button>
+      <button class="size-btn" data-size="2" aria-label="小"><i style="width:6px;height:6px;"></i></button>
+      <button class="size-btn" data-size="3" aria-label="中"><i style="width:9px;height:9px;"></i></button>
+      <button class="size-btn sel" data-size="7" aria-label="大"><i style="width:18px;height:18px;"></i></button>
     </div>
     <button class="btn-main" id="doneBtn" style="margin-top:2px;">鍵完成</button>
+    <div class="done-list" id="doneList"></div>
   </div>
   <div class="top-bar one" id="roleRow" style="margin:10px 0 0;">
     <span class="role" id="roleTx">友達を信じてクッキーを食べよう</span>
   </div>
-  <div class="dev-bar" id="devBar">
+  <div class="dev-bar" id="devBar" style="display:none;">
+    <button id="devLv">シルエットLv1</button>
     <button id="devNewKey">鍵を作り直す</button>
-    <button id="devSolve">お手本どおりに削る</button>
+    <button id="devSolve">形どおりに削る</button>
   </div>
 
   <div class="judge-wrap" id="judgeWrap">
     <div class="judge-big" id="judgeBig"></div>
+    <div id="ptList" style="display:none;"></div>
     <button class="btn-main" id="nextBtn" style="display:none;">つぎのクッキーへ</button>
   </div>
 </div>
@@ -369,9 +426,11 @@
 <!-- ===== 結果 ===== -->
 <div class="scene" id="resultScene">
   <div class="res-head">
-    <div class="res-lead">作った鍵</div>
-    <div class="res-count" id="resCount">0本</div>
+    <div class="res-lead">結果</div>
+    <div class="res-count" id="resCount"></div>
   </div>
+  <div class="res-rank" id="resRank"></div>
+  <div class="res-lead" style="margin:15px 0 8px;">作ったクッキー</div>
   <div class="res-grid" id="resGrid"></div>
   <div class="res-btns">
     <button class="btn-main" id="resLobby" style="display:none;">ロビーにもどる</button>
@@ -390,11 +449,19 @@
 </div>
 
 <div id="dangerVeil"></div>
+<div id="bigCount" aria-hidden="true"><span class="bc" id="bcL"></span><span class="bc" id="bcR"></span></div>
 <div class="toast" id="toast"></div>
 <div id="boom"></div>
-<div id="warn15"><span>のこり30秒</span></div>
+<div id="warn15"><span>のこり15秒</span></div>
 <div id="endFx"><span>鍵作り終了</span></div>
 
+<div class="overlay" id="scoreOv">
+  <div class="r-card">
+    <div class="r-title" style="font-size:22px;">得点状況</div>
+    <div id="scoreList"></div>
+    <button class="close" id="scoreClose">とじる</button>
+  </div>
+</div>
 <div class="overlay" id="nameOv">
   <div class="r-card">
     <div class="r-title" style="font-size:22px;">名前を考えよう</div>
@@ -468,8 +535,11 @@ function playShut(){ if(!actx) return; const t=actx.currentTime;
 function playDone(){ if(!actx) return; const t=actx.currentTime; note(523,t,0.09,0.16,"triangle"); note(784,t+0.1,0.22,0.14,"triangle"); }
 function playWarn(){ if(!actx) return; const t=actx.currentTime;   // のこり15秒
   [880,660].forEach((f,i)=>{ note(f,t+i*0.16,0.14,0.2,"square"); }); note(440,t+0.34,0.3,0.16,"triangle"); }
-function playOver(){ if(!actx) return; const t=actx.currentTime;
-  [440,392,330,262].forEach((f,i)=>note(f,t+i*0.2,0.45,0.16,"triangle")); note(131,t+0.7,0.9,0.12,"sine"); }
+function playOver(){ if(!actx) return; const t=actx.currentTime;   // 全ラウンド終了=うれしいファンファーレ(上昇アルペジオ+きらめき+和音)
+  [523,659,784,1047].forEach((f,i)=>note(f,t+i*0.09,0.22,0.14,"triangle"));
+  [1319,1568].forEach((f,i)=>note(f,t+0.42+i*0.08,0.18,0.09,"triangle"));
+  [523,659,784,1047].forEach(f=>{ note(f,t+0.62,0.9,0.1,"triangle"); note(f*2,t+0.62,0.6,0.035,"sine"); });
+  note(262,t+0.62,0.9,0.1,"sine"); }
 function renderSnd(){ $("seBtn").classList.toggle("off", !seOn); }
 $("seBtn").addEventListener("click",()=>{
   ensureAudio(); seOn=!seOn; try{ localStorage.setItem("ck.se", seOn?"1":"0"); }catch(e){}
@@ -509,10 +579,10 @@ function randomKey(){
     bands.push({ y:first+i*per, h:Math.max(3,per-2), L:L, Rt:Rt });
   }
   return { kind:"key", cx:cx, R0:R0, hole:hole, htype:htype, wob:wob, sw:sw, x0:x0, x1:x1, cy:cy, top:top, bands:bands,
-           chipSeed:Math.floor(Math.random()*4294967296) };
+           seed:Math.floor(Math.random()*4294967296), chipSeed:Math.floor(Math.random()*4294967296) };
 }
 /* --- 2枚目以降のお手本: 鍵にこだわらず、いろんな形。どれも種(seed)から作るので全員が同じ形になる --- */
-const SHAPE_KINDS=["apple","grape","rabbit","fish","star","heart","house","mushroom"];
+const SHAPE_KINDS=["apple","grape","rabbit","fish","star","heart","house","mushroom","cat","car","cup","moon","umbrella","flower","cloud","bone"];
 function randomShapeMeta(){
   return { kind:SHAPE_KINDS[R(0,SHAPE_KINDS.length-1)], seed:Math.floor(Math.random()*4294967296),
            chipSeed:Math.floor(Math.random()*4294967296) };
@@ -521,8 +591,12 @@ function shapeCells(m){
   const rnd=seeded(m.seed||1), rf=(a,b)=>a+rnd()*(b-a), ri=(a,b)=>a+Math.floor(rnd()*(b-a+1));
   const s=new Uint8Array(W*H);
   const CX=W/2, CY=H/2;
-  const fill=fn=>{ for(let y=0;y<H;y++) for(let x=0;x<W;x++) if(fn(x+0.5,y+0.5)) s[idx(x,y)]=1; };
-  const cut =fn=>{ for(let y=0;y<H;y++) for(let x=0;x<W;x++) if(fn(x+0.5,y+0.5)) s[idx(x,y)]=0; };
+  /* ★3マス四方のブロック単位で塗る=角の数が減って角張った形になる(なめらかな楕円だと階段状の角が多すぎる) */
+  const B=2;   // 2=なめらか(1)と角張り(3)の中間
+  const blocks=(fn,v)=>{ for(let by=0;by*B<H;by++) for(let bx=0;bx*B<W;bx++){ if(!fn((bx+0.5)*B,(by+0.5)*B)) continue;
+    for(let dy=0;dy<B;dy++) for(let dx=0;dx<B;dx++){ const x=bx*B+dx, y=by*B+dy; if(x<W&&y<H) s[idx(x,y)]=v; } } };
+  const fill=fn=>blocks(fn,1);
+  const cut =fn=>blocks(fn,0);
   const ell=(cx,cy,rx,ry,rot)=>(x,y)=>{ let dx=x-cx, dy=y-cy; if(rot){ const c=Math.cos(rot), sn=Math.sin(rot); const u=dx*c-dy*sn, v=dx*sn+dy*c; dx=u; dy=v; } return (dx/rx)*(dx/rx)+(dy/ry)*(dy/ry)<=1; };
   const rect=(x0,y0,x1,y1)=>(x,y)=>x>=x0&&x<=x1&&y>=y0&&y<=y1;
   const poly=pts=>(x,y)=>{ let inside=false; for(let i=0,j=pts.length-1;i<pts.length;j=i++){ const xi=pts[i][0],yi=pts[i][1],xj=pts[j][0],yj=pts[j][1];
@@ -550,7 +624,7 @@ function shapeCells(m){
       const el_=rf(11,15), ew=rf(3.8,5), spread=rf(5,7.5), tilt=rf(0,0.35);
       [-1,1].forEach(sg=>fill(ell(CX+sg*spread, hy-hr-el_*0.55, ew, el_, sg*tilt)));   // 耳
       const br=rf(14,16); fill(ell(CX, hy+hr+br*0.75, br, br*0.85));      // 体
-      cut(ell(CX-hr*0.38, hy-hr*0.1, 1.8, 2.2)); cut(ell(CX+hr*0.38, hy-hr*0.1, 1.8, 2.2));   // 目
+      cut(ell(CX-hr*0.4, hy-hr*0.1, 3.2, 3.4)); cut(ell(CX+hr*0.4, hy-hr*0.1, 3.2, 3.4));   // 目(ブロック塗りでも消えない大きさ)
       break; }
     case "fish": {
       const rx=rf(15,18), ry=rf(10,13), cx=CX-rf(3,6), cy=CY+rf(-6,6);
@@ -558,7 +632,7 @@ function shapeCells(m){
       const tl=rf(9,12), th=rf(8,11);
       fill(poly([[cx+rx-3,cy],[cx+rx+tl,cy-th],[cx+rx+tl,cy+th]]));        // 尾
       fill(poly([[cx-rx*0.3,cy-ry+1],[cx+rx*0.35,cy-ry+1],[cx-rx*0.05,cy-ry-rf(5,8)]]));   // 背びれ
-      cut(ell(cx-rx*0.55, cy-ry*0.25, 2.2, 2.2));                         // 目
+      cut(ell(cx-rx*0.55, cy-ry*0.25, 3.3, 3.3));                         // 目
       break; }
     case "star": {
       const R1=rf(22,24), r1=R1*rf(0.42,0.52), rot=rf(0,6.28), pts=[];
@@ -579,12 +653,56 @@ function shapeCells(m){
       cut(rect(CX-hw+4, ry0+6, CX-hw+10, ry0+12));                        // 窓
       if(rnd()<0.6) cut(rect(CX+hw-10, ry0+6, CX+hw-4, ry0+12));
       break; }
+    case "cat": {   // ねこの顔: 丸+耳+目+鼻
+      const r=rf(16,18), cy=CY+2;
+      fill(ell(CX,cy,r*1.05,r));
+      [-1,1].forEach(sg=>fill(poly([[CX+sg*r*0.35,cy-r*0.8],[CX+sg*r*1.0,cy-r*0.55],[CX+sg*r*0.8,cy-r*1.35]])));
+      cut(ell(CX-r*0.38,cy-r*0.12,3,3.6)); cut(ell(CX+r*0.38,cy-r*0.12,3,3.6));
+      cut(poly([[CX-2.5,cy+r*0.22],[CX+2.5,cy+r*0.22],[CX,cy+r*0.42]]));
+      break; }
+    case "car": {   // くるま: 車体+屋根+窓+タイヤ
+      const hw=rf(20,23), cy=CY+2;
+      fill(rect(CX-hw,cy-2,CX+hw,cy+12)); fill(poly([[CX-13,cy-2],[CX+11,cy-2],[CX+7,cy-14],[CX-9,cy-14]]));
+      cut(rect(CX-8,cy-11,CX-1,cy-4)); cut(rect(CX+1,cy-11,CX+6,cy-4));
+      [-1,1].forEach(sg=>{ fill(ell(CX+sg*12,cy+13,6,6)); cut(ell(CX+sg*12,cy+13,2,2)); });
+      break; }
+    case "cup": {   // マグカップ: 本体+持ち手+湯気
+      const w=rf(12,14), top=CY-14, bot=CY+18;
+      fill(rect(CX-w,top,CX+w-4,bot)); fill(ell(CX-2,bot,w-2,3));
+      fill(ell(CX+w+2,CY+2,8,8)); cut(ell(CX+w+2,CY+2,4.5,4.5)); cut(rect(CX+w-8,CY-8,CX+w-4,CY+12));
+      fill(ell(CX-6,top-9,2.6,5,0.3)); fill(ell(CX+3,top-11,2.6,6,-0.3));
+      break; }
+    case "moon": {   // 三日月+星
+      const r=rf(19,21); fill(ell(CX-3,CY,r,r)); cut(ell(CX+7,CY-3,r*0.86,r*0.86));
+      const pts=[]; for(let i=0;i<10;i++){ const a=-1.57+i*Math.PI/5, rr=(i%2)?2.6:6; pts.push([CX+16+rr*Math.cos(a), CY-14+rr*Math.sin(a)]); } fill(poly(pts));
+      break; }
+    case "umbrella": {   // 傘: かさ(波型)+柄+持ち手
+      const rx=rf(22,24), ry=rf(16,18), cy=CY-6;
+      fill((x,y)=> y<=cy && ell(CX,cy,rx,ry)(x,y));
+      for(let k=-2;k<=2;k++) cut(ell(CX+k*rx*0.4, cy+1, rx*0.2, 3));
+      fill(rect(CX-1,cy-4,CX+1,cy+24)); fill(ell(CX+4,cy+25,5,4)); cut(ell(CX+4,cy+25,2.4,1.8)); cut(rect(CX-1,cy+21,CX+9,cy+25));
+      fill(rect(CX-1,cy-ry-5,CX+1,cy-ry));
+      break; }
+    case "flower": {   // 花: 花びら6枚+中心の穴+茎+葉
+      const R1=rf(10,12), pr=rf(7,8), cy=CY-8, rot=rf(0,1);
+      for(let i=0;i<6;i++){ const a=rot+i*Math.PI/3; fill(ell(CX+R1*Math.cos(a), cy+R1*Math.sin(a), pr, pr*0.75, a)); }
+      fill(ell(CX,cy,7,7)); cut(ell(CX,cy,2.6,2.6));
+      fill(rect(CX-1.2,cy+7,CX+1.2,cy+34)); fill(ell(CX+7,cy+24,6,3,-0.6));
+      break; }
+    case "cloud": {   // 雲+雨
+      const cy=CY-8; fill(ell(CX-11,cy+2,9,8)); fill(ell(CX+1,cy-5,11,10)); fill(ell(CX+12,cy+2,9,8)); fill(rect(CX-13,cy+2,CX+14,cy+9));
+      for(let k=-1;k<=1;k++) fill(ell(CX+k*9,cy+20+Math.abs(k)*4,2.6,4.2));
+      break; }
+    case "bone": {   // ほね
+      const hw=rf(13,15), cy=CY; fill(rect(CX-hw,cy-4,CX+hw,cy+4));
+      [-1,1].forEach(sg=>{ fill(ell(CX+sg*hw,cy-5,6,6)); fill(ell(CX+sg*hw,cy+5,6,6)); });
+      break; }
     default: {   // mushroom
       const rx=rf(19,23), ry=rf(13,16), cy=CY-rf(4,8), sw=rf(5,7), bot=cy+rf(24,30);
       fill((x,y)=> y<=cy+1 && ell(CX,cy,rx,ry)(x,y));                    // かさ
       fill(rect(CX-sw, cy, CX+sw, bot)); fill(ell(CX, bot, sw, 3));       // 軸
       const n=ri(2,3);
-      for(let i=0;i<n;i++){ const a=rf(0.35,2.8), d=rf(0.35,0.7); cut(ell(CX+rx*d*Math.cos(a), cy-ry*d*Math.sin(a), rf(2,3), rf(2,3))); }   // 斑点
+      for(let i=0;i<n;i++){ const a=rf(0.35,2.8), d=rf(0.35,0.7); cut(ell(CX+rx*d*Math.cos(a), cy-ry*d*Math.sin(a), rf(3.2,4.2), rf(3.2,4.2))); }   // 斑点
       break; }
   }
   return s;
@@ -598,8 +716,144 @@ function handleRadius(k, ang){
   else if(k.htype==="clover")f*= 1+0.055*Math.cos(3*ang);
   return k.R0*f;
 }
+/* お手本のレベル: 1=ふつう(鍵/りんご/星…) 2=同じモチーフを細かく 3=まったく別の大きな複雑モチーフ */
 function keyCells(k){
-  if(k.kind && k.kind!=="key") return shapeCells(k);   // 2枚目以降のいろんな形
+  if(k.lv>=2) return shape3Cells(k);                  // Lv2/Lv3は大きなモチーフ(kindで分岐)
+  return (k.kind && k.kind!=="key")? shapeCells(k) : keyCellsBase(k);
+}
+/* 形づくりの道具(2マスのブロック単位で塗る=角張ったクッキーの見た目) */
+function tools(s, rnd){
+  const B=2, rf=(a,b)=>a+rnd()*(b-a), ri=(a,b)=>a+Math.floor(rnd()*(b-a+1));
+  const blocks=(fn,v)=>{ for(let by=0;by*B<H;by++) for(let bx=0;bx*B<W;bx++){ if(!fn((bx+0.5)*B,(by+0.5)*B)) continue;
+    for(let dy=0;dy<B;dy++) for(let dx=0;dx<B;dx++){ const x=bx*B+dx, y=by*B+dy; if(x<W&&y<H) s[idx(x,y)]=v; } } };
+  const ell=(cx,cy,rx,ry,rot)=>(x,y)=>{ let dx=x-cx, dy=y-cy; if(rot){ const c=Math.cos(rot), sn=Math.sin(rot); const u=dx*c-dy*sn, v=dx*sn+dy*c; dx=u; dy=v; } return (dx/rx)*(dx/rx)+(dy/ry)*(dy/ry)<=1; };
+  const rect=(x0,y0,x1,y1)=>(x,y)=>x>=x0&&x<=x1&&y>=y0&&y<=y1;
+  const poly=pts=>(x,y)=>{ let inside=false; for(let i=0,j=pts.length-1;i<pts.length;j=i++){ const xi=pts[i][0],yi=pts[i][1],xj=pts[j][0],yj=pts[j][1];
+    if(((yi>y)!==(yj>y)) && (x < (xj-xi)*(y-yi)/(yj-yi)+xi)) inside=!inside; } return inside; };
+  const box=()=>{ let x0=W,y0=H,x1=-1,y1=-1; for(let y=0;y<H;y++) for(let x=0;x<W;x++) if(s[idx(x,y)]){ if(x<x0)x0=x; if(y<y0)y0=y; if(x>x1)x1=x; if(y>y1)y1=y; } return {x0,y0,x1,y1,cx:(x0+x1+1)/2,cy:(y0+y1+1)/2,w:x1-x0+1,h:y1-y0+1}; };
+  const star=(cx,cy,R1,r1,rot)=>{ const pts=[]; for(let i=0;i<10;i++){ const a=rot+i*Math.PI/5, rr=(i%2)?r1:R1; pts.push([cx+rr*Math.cos(a), cy+rr*Math.sin(a)]); } return poly(pts); };
+  return { fill:fn=>blocks(fn,1), cut:fn=>blocks(fn,0), ell, rect, poly, box, star, rf, ri };
+}
+/* レベル2: クッキーを大きく使う複雑なモチーフ／レベル3: さらに細かく難しいモチーフ(どちらも面積は4割以下=何も削らずに一致度が出ないように) */
+const SHAPE_LV2=["castle","butterfly","gear","snowflake","crab","tree","rocket","robot","web","city","ship","maze","dino","windmill"];   // 複雑モチーフ(2026-08-19に旧Lv2+旧Lv3を合併)
+function shape3Cells(m){
+  const s=new Uint8Array(W*H), T=tools(s, seeded(m.seed||1)), CX=W/2, CY=H/2, rf=T.rf, ri=T.ri, rnd=()=>T.rf(0,1);
+  switch(m.kind){
+    case "castle": {   // 城: 土台+3つの塔+門+窓+ぎざぎざ
+      const x0=6, x1=48, wy0=42, wy1=76;
+      T.fill(T.rect(x0,wy0,x1,wy1));
+      for(let x=x0;x<=x1;x+=6) T.cut(T.rect(x+3,wy0,x+5,wy0+3));                       // 壁のぎざぎざ
+      T.cut(T.rect(CX-5,wy1-15,CX+4,wy1)); T.cut(T.ell(CX-0.5,wy1-15,5,4));             // 門
+      [x0+7,x0+17,x1-17,x1-7].forEach(x=>T.cut(T.rect(x-1,wy0+9,x+1,wy0+14)));         // 窓
+      const th=ri(12,16); T.fill(T.rect(x0,wy0-th,x0+10,wy0)); T.fill(T.rect(x1-10,wy0-th,x1,wy0));   // 左右の塔
+      [x0,x1-10].forEach(x=>{ for(let k=0;k<3;k++) T.cut(T.rect(x+1+k*4,wy0-th,x+2+k*4,wy0-th+2)); T.cut(T.rect(x+4,wy0-th+6,x+6,wy0-th+10)); });
+      const ct=ri(20,26); T.fill(T.rect(CX-6,wy0-ct,CX+5,wy0)); T.cut(T.rect(CX-3,wy0-ct+6,CX+2,wy0-ct+11));   // 中央の塔
+      for(let k=0;k<3;k++) T.cut(T.rect(CX-6+1+k*4,wy0-ct,CX-6+2+k*4,wy0-ct+2));
+      T.fill(T.rect(CX-1,wy0-ct-10,CX,wy0-ct)); T.fill(T.poly([[CX,wy0-ct-10],[CX+8,wy0-ct-7.5],[CX,wy0-ct-5]]));   // 旗
+      break; }
+    case "butterfly": {   // 蝶: 4枚のはね(穴つき)+胴+触角
+      const uw=rf(11,13), uh=rf(13,15), lw=rf(8,10), lh=rf(10,12);
+      [-1,1].forEach(sg=>{ T.fill(T.ell(CX+sg*(uw+1),CY-10,uw,uh,sg*0.35)); T.fill(T.ell(CX+sg*(lw+2),CY+12,lw,lh,-sg*0.3));
+        T.cut(T.ell(CX+sg*(uw+2),CY-12,3.6,4.2)); T.cut(T.ell(CX+sg*(uw+7),CY-3,2.4,2.4)); T.cut(T.ell(CX+sg*(lw+3),CY+13,3,3)); });
+      T.fill(T.ell(CX,CY,2.6,22));
+      [-1,1].forEach(sg=>T.fill(T.poly([[CX,CY-22],[CX+sg*1.5,CY-22],[CX+sg*10,CY-34],[CX+sg*8,CY-34]])));
+      [-1,1].forEach(sg=>T.fill(T.ell(CX+sg*10,CY-34,2.2,2.2)));
+      break; }
+    case "gear": {   // 歯車: 輪+歯+中心の穴+スポークの穴
+      const R1=rf(20,22), n=ri(9,12), rot=rf(0,6.28);
+      T.fill(T.ell(CX,CY,R1,R1)); T.cut(T.ell(CX,CY,R1*0.36,R1*0.36));
+      for(let i=0;i<n;i++){ const a=rot+i*6.283/n, tx=CX+(R1+3)*Math.cos(a), ty=CY+(R1+3)*Math.sin(a); T.fill(T.ell(tx,ty,3.6,3.6)); }
+      for(let i=0;i<4;i++){ const a=rot+0.4+i*1.5708; T.cut(T.ell(CX+R1*0.66*Math.cos(a),CY+R1*0.66*Math.sin(a),3.4,3.4)); }
+      break; }
+    case "snowflake": {   // 雪の結晶: 6本の腕+枝
+      const L=rf(25,28), rot=rf(0,1), w=2.6;
+      for(let i=0;i<6;i++){ const a=rot+i*Math.PI/3, c=Math.cos(a), sn=Math.sin(a);
+        T.fill(T.poly([[CX-sn*w,CY+c*w],[CX+sn*w,CY-c*w],[CX+c*L+sn*w,CY+sn*L-c*w],[CX+c*L-sn*w,CY+sn*L+c*w]]));
+        const bx=CX+c*L*0.6, by=CY+sn*L*0.6, bl=L*0.32;                          // 枝は1対だけ(多いと読めない)
+        [-1,1].forEach(sg=>{ const a2=a+sg*1.0, c2=Math.cos(a2), s2=Math.sin(a2);
+          T.fill(T.poly([[bx-s2*1.8,by+c2*1.8],[bx+s2*1.8,by-c2*1.8],[bx+c2*bl+s2*1.8,by+s2*bl-c2*1.8],[bx+c2*bl-s2*1.8,by+s2*bl+c2*1.8]])); });
+        T.fill(T.ell(CX+c*L,CY+sn*L,3,3)); }                                      // 先端に丸
+      T.fill(T.ell(CX,CY,5,5)); T.cut(T.ell(CX,CY,2,2));
+      break; }
+    case "crab": {   // カニ: 甲羅+目+はさみ+足
+      const bw=rf(15,17), bh=rf(10,12);
+      T.fill(T.ell(CX,CY+4,bw,bh));
+      [-1,1].forEach(sg=>{ T.fill(T.rect(CX+sg*5-1,CY-12,CX+sg*5,CY-6)); T.fill(T.ell(CX+sg*5,CY-13,2.6,2.6));
+        T.fill(T.rect(CX+sg*bw-1,CY-2,CX+sg*(bw+6),CY));                                     // 腕
+        T.fill(T.ell(CX+sg*(bw+8),CY-8,6.5,6)); T.cut(T.poly([[CX+sg*(bw+8),CY-8],[CX+sg*(bw+16),CY-13],[CX+sg*(bw+16),CY-4]]));   // はさみ
+        for(let k=0;k<3;k++){ const y=CY+6+k*5; T.fill(T.poly([[CX+sg*(bw-2),y],[CX+sg*(bw-2),y+2.2],[CX+sg*(bw+9),y+7+k*1.5],[CX+sg*(bw+9),y+4.8+k*1.5]])); } });
+      T.cut(T.ell(CX,CY+6,bw*0.35,2.2));
+      break; }
+    case "tree": {   // 木: 幹+3段の葉+りんごの穴
+      const tw=rf(3,4); T.fill(T.rect(CX-tw,CY+14,CX+tw,CY+36));
+      [[CY-30,20,18],[CY-18,17,16],[CY-6,14,14]].forEach((t,i)=>{ const [ty,hw,hh]=t; T.fill(T.poly([[CX,ty],[CX+hw,ty+hh+i*2],[CX-hw,ty+hh+i*2]])); });
+      for(let k=0;k<5;k++) T.cut(T.ell(CX+rf(-13,13),CY+rf(-18,8),2.6,2.6));
+      T.fill(T.ell(CX,CY+38,12,3.4));
+      break; }
+    case "rocket": {   // ロケット: 先端+胴+窓+ひれ+炎
+      const hw=rf(6,8), top=CY-30, bot=CY+16;
+      T.fill(T.poly([[CX,top-8],[CX+hw,top+4],[CX-hw,top+4]])); T.fill(T.rect(CX-hw,top+4,CX+hw,bot));
+      T.cut(T.ell(CX,top+16,3.6,3.6)); T.cut(T.rect(CX-3,top+26,CX+2,top+27)); T.cut(T.rect(CX-3,top+31,CX+2,top+32));
+      [-1,1].forEach(sg=>T.fill(T.poly([[CX+sg*hw,bot-14],[CX+sg*(hw+8),bot+4],[CX+sg*hw,bot]])));
+      T.fill(T.poly([[CX-hw+2,bot+1],[CX+hw-2,bot+1],[CX,bot+14]])); T.cut(T.poly([[CX-2,bot+2],[CX+2,bot+2],[CX,bot+8]]));
+      break; }
+    case "web": {   // クモの巣: 同心の輪(4本)+放射の糸(8本)+クモ
+      const R1=rf(22,25), rot=rf(0,0.8);
+      for(let r=R1;r>4;r-=R1/4){ T.fill(T.ell(CX,CY,r,r)); T.cut(T.ell(CX,CY,r-2.2,r-2.2)); }
+      for(let i=0;i<8;i++){ const a=rot+i*Math.PI/4, c=Math.cos(a), sn=Math.sin(a); T.fill(T.poly([[CX-sn*1.2,CY+c*1.2],[CX+sn*1.2,CY-c*1.2],[CX+c*(R1+3)+sn*1.2,CY+sn*(R1+3)-c*1.2],[CX+c*(R1+3)-sn*1.2,CY+sn*(R1+3)+c*1.2]])); }
+      const sx=CX+R1*0.45, sy=CY-R1*0.35; T.fill(T.ell(sx,sy,4.5,5.5)); T.fill(T.ell(sx,sy-6,2.8,2.8));
+      for(let i=0;i<4;i++){ const a=-0.6+i*0.4; [-1,1].forEach(sg=>T.fill(T.poly([[sx,sy-1],[sx,sy+1],[sx+sg*9*Math.cos(a),sy+9*Math.sin(a)+1],[sx+sg*9*Math.cos(a),sy+9*Math.sin(a)-1]]))); }
+      break; }
+    case "city": {   // 街: 高さのちがうビル6棟+たくさんの窓+アンテナ
+      const n=6, bw=Math.floor((W-6)/n), base=CY+30; let x=3;
+      for(let i=0;i<n;i++){ const h=ri(20,52), x0=x, x1=x+bw-2; T.fill(T.rect(x0,base-h,x1,base));
+        for(let y=base-h+3;y<base-4;y+=5) for(let wx=x0+2;wx<x1-1;wx+=4) T.cut(T.rect(wx,y,wx+1,y+2));
+        if(rnd()<0.5) T.fill(T.rect((x0+x1)/2-0.5,base-h-8,(x0+x1)/2+0.5,base-h)); x+=bw; }
+      T.fill(T.rect(2,base,W-3,base+3));
+      break; }
+    case "ship": {   // 帆船: 船体+マスト2本+帆4枚(穴あき)+旗+波
+      const hy=CY+16; T.fill(T.poly([[CX-22,hy],[CX+22,hy],[CX+16,hy+10],[CX-16,hy+10]])); T.cut(T.rect(CX-14,hy+3,CX-11,hy+5)); T.cut(T.rect(CX-4,hy+3,CX-1,hy+5)); T.cut(T.rect(CX+8,hy+3,CX+11,hy+5));
+      [[CX-8,34],[CX+9,28]].forEach(m=>{ const [mx,mh]=m; T.fill(T.rect(mx-1,hy-mh,mx,hy));
+        T.fill(T.poly([[mx+1,hy-mh+2],[mx+13,hy-mh+2],[mx+1,hy-mh*0.45]])); T.fill(T.poly([[mx-1,hy-mh*0.4],[mx-12,hy-mh*0.4],[mx-1,hy-3]]));
+        T.cut(T.ell(mx+5,hy-mh*0.72,1.8,1.8)); T.cut(T.ell(mx-5,hy-mh*0.22,1.8,1.8));
+        T.fill(T.poly([[mx-1,hy-mh-6],[mx+6,hy-mh-4],[mx-1,hy-mh-2]])); });
+      for(let x=2;x<W-2;x+=8) T.fill(T.ell(x+3,hy+14,4,2));
+      break; }
+    case "maze": {   // 迷路: 大きな板に通路を刻む(縦横の溝が交互に)
+      const x0=9, x1=45, y0=CY-25, y1=CY+25; T.fill(T.rect(x0,y0,x1,y1));   // 板は少し小さめ(大きいと何も削らずに一致度が6割超えてしまう)
+      for(let y=y0+4;y<y1-3;y+=7){ const gap=ri(0,5); for(let k=0;k<6;k++){ if(k===gap) continue; const gx=x0+2+k*7; T.cut(T.rect(gx,y,gx+5,y+2)); } }   // 通路は2マス幅(1マスだと点線に見える)
+      for(let x=x0+4;x<x1-2;x+=7){ const gap=ri(0,7); for(let k=0;k<8;k++){ if(k===gap||rnd()<0.2) continue; const gy=y0+2+k*7; T.cut(T.rect(x,gy,x+2,gy+3)); } }
+      T.cut(T.rect(x0,y0+8,x0+3,y0+11)); T.cut(T.rect(x1-3,y1-11,x1,y1-8));
+      break; }
+    case "dino": {   // 恐竜(ティラノ): 体+首+頭(口)+しっぽ+足+背びれ
+      T.fill(T.ell(CX-2,CY+6,15,10,0.15)); T.fill(T.poly([[CX+8,CY],[CX+16,CY-22],[CX+22,CY-20],[CX+13,CY+4]]));
+      T.fill(T.ell(CX+21,CY-26,9,6.5,0.2)); T.cut(T.poly([[CX+26,CY-24],[CX+31,CY-23],[CX+26,CY-20]])); T.cut(T.ell(CX+19,CY-28,1.6,1.6));
+      T.fill(T.poly([[CX-14,CY+2],[CX-16,CY+10],[CX-27,CY-2],[CX-25,CY-6]]));
+      T.fill(T.rect(CX-6,CY+14,CX-1,CY+30)); T.fill(T.rect(CX+4,CY+14,CX+9,CY+30)); T.fill(T.rect(CX-7,CY+30,CX+2,CY+33)); T.fill(T.rect(CX+3,CY+30,CX+12,CY+33));
+      T.fill(T.rect(CX+9,CY-4,CX+11,CY+2)); T.fill(T.rect(CX+14,CY-9,CX+16,CY-3));
+      for(let k=0;k<5;k++){ const bx=CX-12+k*5; T.fill(T.poly([[bx,CY-3+k*0.5],[bx+4,CY-3+k*0.5],[bx+2,CY-8+k*0.5]])); }
+      break; }
+    default: {   // windmill: 風車=塔+屋根+羽根4枚(格子の穴)+窓
+      const ty=CY-4; T.fill(T.poly([[CX-9,CY+34],[CX+9,CY+34],[CX+6,ty],[CX-6,ty]])); T.fill(T.poly([[CX-8,ty],[CX+8,ty],[CX,ty-8]]));
+      T.cut(T.rect(CX-2,CY+10,CX+1,CY+13)); T.cut(T.rect(CX-2,CY+26,CX+1,CY+33));
+      const rot=rf(0,0.7); for(let i=0;i<4;i++){ const a=rot+i*Math.PI/2, c=Math.cos(a), sn=Math.sin(a), L=26, w=4;
+        T.fill(T.poly([[CX-sn*w,ty-6+c*w],[CX+sn*w,ty-6-c*w],[CX+c*L+sn*w,ty-6+sn*L-c*w],[CX+c*L-sn*w,ty-6+sn*L+c*w]]));
+        for(let f=0.3;f<0.95;f+=0.2){ T.cut(T.ell(CX+c*L*f,ty-6+sn*L*f,1.6,1.6)); } }
+      T.fill(T.ell(CX,ty-6,3.5,3.5)); T.fill(T.ell(CX,CY+36,16,3));
+      break; }
+    case "robot": {   // robot: 頭+目+胴+ボタン+腕+足+アンテナ
+      const hw=rf(8,10);
+      T.fill(T.rect(CX-hw,CY-34,CX+hw,CY-18)); T.cut(T.rect(CX-hw+3,CY-30,CX-hw+6,CY-27)); T.cut(T.rect(CX+hw-6,CY-30,CX+hw-3,CY-27)); T.cut(T.rect(CX-4,CY-23,CX+3,CY-22));
+      T.fill(T.rect(CX-1,CY-40,CX,CY-34)); T.fill(T.ell(CX-0.5,CY-41,2.4,2.4));
+      T.fill(T.rect(CX-3,CY-18,CX+2,CY-14)); T.fill(T.rect(CX-13,CY-14,CX+12,CY+14));
+      for(let k=0;k<3;k++) T.cut(T.rect(CX-5+k*4,CY-6,CX-4+k*4,CY-5)); T.cut(T.rect(CX-8,CY+2,CX+7,CY+8));
+      [-1,1].forEach(sg=>{ T.fill(T.rect(CX+sg*14-(sg<0?5:0),CY-12,CX+sg*14+(sg>0?5:0),CY+10)); T.fill(T.ell(CX+sg*17,CY+13,3.5,3)); });
+      T.fill(T.rect(CX-9,CY+14,CX-3,CY+32)); T.fill(T.rect(CX+2,CY+14,CX+8,CY+32)); T.fill(T.rect(CX-12,CY+32,CX-2,CY+35)); T.fill(T.rect(CX+1,CY+32,CX+11,CY+35));
+      break; }
+  }
+  return s;
+}
+function keyCellsBase(k){
   const s=new Uint8Array(W*H);
   const lim=Math.min(H, k.cy+Math.round(k.R0*1.45)+2);
   for(let y=0;y<lim;y++) for(let x=0;x<W;x++){
@@ -687,8 +941,24 @@ let cookie=null, keyMeta=null, key=null, hazards=[], target=null;
 let players=[], carverIdx=0, roundNo=1, phase="title";
 let penSize=7, carving=false, devMode=false;
 /* 通しのタイマー(全クッキー共通)。爆弾を削ると−30秒、1枚仕上げるごとに一致度ぶん増える */
-let timeLimit=120, tIdx=2, tEnd=0, tIv=0, clockMs=0, clockRunning=false, danger30=false;
-const TIMES=[60,90,120,150,180,210,240,270,300,330,360,420,480,540,600];
+let timeLimit=30, tIdx=2, tEnd=0, tIv=0, clockMs=0, clockRunning=false, danger30=false;
+const TIMES=Array.from({length:30},(_,i)=>(i+1)*10);   // 10秒刻み・10秒〜5分
+let rounds=5;                              // ラウンド数(ロビーで1〜10・対戦のみ)
+let gameMode="coop";                       // "coop"=協力(エンドレス・一致度がクリア基準を下回ったら終了・初期) / "vs"=対戦(ラウンド制)
+let clearThr=70, coopFailed=false;         // 協力のクリア基準(%)・このラウンドで基準を下回った
+const THR_MIN=50, THR_MAX=100, THR_STEP=5;
+const ROUNDS_MIN=1, ROUNDS_MAX=10;
+/* 得点: お手本の外側を食べた量で加点、お手本(残す所)を食べたら大きく減点。一致度はおまけ表示 */
+const GOOD_PER_PT=30, BAD_PT=1;   // 2026-08-19に全体を1/3(数字が大きすぎた)   // お手本を1マス食べると−3pt(=食べてよい所30マスぶん)。一致度はおまけ表示(得点には関係しない)
+const PCOL=["#ff6b6b","#4dabf7","#69db7c","#ffd43b","#da77f2","#ff922b","#38d9a9","#f783ac","#a9e34b"];
+let eater=null, totals={}, lastScores=null, scoreView=false;
+let doneSet=new Set();
+let lastKind=null;                         // 直前のお手本の種類(同じ形を続けない)
+let devLevel=0;                            // ひとりで遊ぶのデバッグ: シルエットレベル(0=自動)
+/* お手本のレベル: 協力=3ラウンドごとに1→2→3(以降3)。対戦=1。ひとりのデバッグで固定もできる */
+function shapeLevel(){ if(!online && devLevel) return devLevel; if(gameMode==="coop") return roundNo>=4? 2 : 1; return 1; }   // 協力は4ラウンド目から複雑モチーフ
+let devRegen=false;                        // デバッグの「作り直す」中(1枚目でも鍵以外を出す)                     // 「鍵完成」を押した人(全員そろったら判定へ)
+let pens={}, penSendAt=0;                  // ほかの人のペンの位置(食べていなくても見える)   // eater=マスごとに「誰が食べたか」(players index+1)
 const BOMB_PENALTY=20;
 const myId=Math.random().toString(36).slice(2,10);   // ★端末ごとに違うID(固定値にすると全員が同じ人だと判定される)
 let regions=1;
@@ -696,7 +966,7 @@ let online=false, ch=null, myName="";   // オンライン用(次の実装で使
 function instructors(){ return players.filter((p,i)=>i!==carverIdx); }
 function iAmCarver(){ return !!players[carverIdx] && players[carverIdx].id===myId; }
 /* 試作モード(1人で遊んでみる)のときだけ、指示側でもクッキーを食べられる。本編では絶対に通さない */
-function canCarve(){ return iAmCarver() || (devMode && !online); }
+function canCarve(){ return true; }   // 2026-08-19改修: 全員が同時に食べる(役割なし)
 function myRegion(){
   const ins=instructors(), k=ins.findIndex(p=>p.id===myId);
   return k<0? -1 : (regions===1? 0 : k%regions);
@@ -789,14 +1059,19 @@ function drawCookie(){
   ctx.clearRect(0,0,w,h);
   ctx.imageSmoothingEnabled=false;
   ctx.drawImage(off,0,0,w,h);
-  const r=myRegion();
-  if(r>=0){                                    // 指示する人: 自分の区画だけお手本が見える
-    const rc=regionRect(r);
-    ctx.save();
-    ctx.beginPath(); ctx.rect(rc.x0*cell, rc.y0*cell, (rc.x1-rc.x0+1)*cell, (rc.y1-rc.y0+1)*cell); ctx.clip();
-    strokeTarget(ctx, key, cell, 0, 0);
+  if(key && !rev) strokeTarget(ctx, key, cell, 0, 0);   // お手本のシルエットは全員に見える(みんなで同時に食べる)
+  if(phase==="carve"){                                     // ほかの人のペン(色つきの四角)
+    Object.keys(pens).forEach(id=>{ const pn=pens[id], k=players.findIndex(p=>p.id===id); if(k<0) return;
+      const h=penSpan(pn.s||1)[0], X=(pn.x-h)*cell, Y=(pn.y-h)*cell, S=pn.s*cell;
+      ctx.save(); ctx.strokeStyle=PCOL[k%PCOL.length]; ctx.lineWidth=2; ctx.setLineDash([5,4]); ctx.strokeRect(X,Y,S,S);
+      ctx.fillStyle=PCOL[k%PCOL.length]; ctx.globalAlpha=0.16; ctx.fillRect(X,Y,S,S); ctx.restore(); });
+  }
+  if(scoreView && eater){                                  // 判定の後半: 食べた所を「食べた人の色」で塗る
+    ctx.save(); ctx.globalAlpha=0.85;
+    for(let k=1;k<=players.length;k++){ const m=new Uint8Array(W*H); let any=false;
+      for(let i=0;i<W*H;i++){ if(eater[i]===k && !cookie[i]){ m[i]=1; any=true; } }
+      if(any) fillMask(ctx, m, cell, 0, 0, PCOL[(k-1)%PCOL.length]); }
     ctx.restore();
-    hazards.filter(h=>h.owner===myId).forEach(h=>drawHazard(ctx,h,cell,0,0));   // 自分の石と爆弾(区画の外にも出る)
   }
   hazards.filter(h=>h.exploded).forEach(h=>drawHazard(ctx,h,cell,0,0));   // 爆発した爆弾は食べる人にも見える
   fxRing.forEach(f=>{                        // 爆発(刃が当たった場所)
@@ -808,7 +1083,7 @@ function drawCookie(){
     ctx.beginPath(); ctx.arc(f.x*cell, f.y*cell, f.r*cell*(0.6+k*2.5), 0, 6.284); ctx.stroke();
     ctx.restore();
   });
-  if(!rev) drawRegionLines(ctx, cell);   // 判定中は区画の線を出さない
+
   if(rev){                                   // 判定中: 右からお手本が滑ってきて重なる
     const el=performance.now()-rev.t0;
     let dx, alpha;
@@ -911,11 +1186,13 @@ function buildStoneMask(){
   blockMask=new Uint8Array(W*H); blockShown=new Uint8Array(W*H);
   hazards.forEach((h,n)=>{ h.exploded=false; hazCells(h).forEach(i=>{ blockMask[i]=n+1; }); });   // 値=爆弾の番号
 }
+/* ペンの範囲(偶数サイズ=2マスにも対応。左上寄せ) */
+function penSpan(size){ const k0=Math.floor((size-1)/2); return [k0, size-1-k0]; }
 function penCells(cx,cy){
-  const k=(penSize-1)/2, out=[];
-  for(let dy=-k;dy<=k;dy++){
+  const [k0,k1]=penSpan(penSize), out=[];
+  for(let dy=-k0;dy<=k1;dy++){
     const y=cy+dy; if(y<0||y>=H) continue;
-    for(let dx=-k;dx<=k;dx++){
+    for(let dx=-k0;dx<=k1;dx++){
       const x=cx+dx; if(x<0||x>=W) continue;
       out.push(idx(x,y));
     }
@@ -959,7 +1236,7 @@ function carveAt(px,py){
       if(h && !h.exploded){ h.exploded=true; bang.push(h); }
       return;
     }
-    if(cookie[i]){ cookie[i]=0; clearPixel(i); hit=true; }
+    if(cookie[i]){ cookie[i]=0; clearPixel(i); hit=true; if(eater) eater[i]=ownerIdx(myId); }
   }));
   bang.forEach(h=>{                                      // その爆弾の範囲がまるごと吹き飛ぶ
     hazCells(h).forEach(i=>{ if(cookie[i]){ cookie[i]=0; clearPixel(i); } blockMask[i]=0; });
@@ -995,7 +1272,7 @@ function blowUp(h){            // 触れた爆弾の数だけライフが減る(
 const ghost=$("penGhost");
 function showGhost(px,py){
   const [cx,cy]=cellAt(px,py);
-  const k=(penSize-1)/2;
+  const k=penSpan(penSize)[0];
   const r=cv.getBoundingClientRect(), pr=cv.parentElement.getBoundingClientRect();
   const cw=r.width/W;
   ghost.style.display="block";
@@ -1012,11 +1289,24 @@ cv.addEventListener("pointerdown",e=>{
   carveAt(e.clientX,e.clientY); e.preventDefault();
 });
 cv.addEventListener("pointermove",e=>{
-  if(phase!=="carve"||!canCarve()) return;   // 食べられる範囲の枠は食べる人だけに見せる
+  if(phase!=="carve"||!canCarve()) return;
   if(carving) carveAt(e.clientX,e.clientY);
   if(e.pointerType!=="touch") showGhost(e.clientX,e.clientY);
+  sendPen(e.clientX,e.clientY);                            // ほかの人にもペンの位置を見せる(食べていなくても)
 });
-cv.addEventListener("pointerleave",hideGhost);
+cv.addEventListener("pointerleave",()=>{ hideGhost(); sendPenOff(); });
+function sendPen(px,py){
+  if(!online||!ch) return;
+  const now=Date.now(); if(now-penSendAt<90) return; penSendAt=now;
+  const [cx,cy]=cellAt(px,py);
+  try{ ch.send({type:"broadcast",event:"pen",payload:{from:myId,x:cx,y:cy,s:penSize}}); }catch(e){}
+}
+function sendPenOff(){ if(!online||!ch) return; try{ ch.send({type:"broadcast",event:"pen",payload:{from:myId,off:1}}); }catch(e){} }
+setInterval(()=>{                                          // 古いペン位置は消す
+  const now=Date.now(); let ch2=false;
+  Object.keys(pens).forEach(id=>{ if(now-pens[id].t>1600){ delete pens[id]; ch2=true; } });
+  if(ch2 && phase==="carve") drawCookie();
+},400);
 ["pointerup","pointercancel"].forEach(ev=>cv.addEventListener(ev,()=>{ carving=false; lastCell=null; }));
 document.querySelectorAll(".size-btn").forEach(b=>b.addEventListener("click",()=>{
   ensureAudio(); playSelect(); penSize=+b.dataset.size;
@@ -1032,7 +1322,7 @@ function playRevealAnim(carvedGrid, tgt, rate, done){
   rev={ t0:performance.now(), rate:rate, keyOnly:tgtKeyOnly, done:done, fin:false, tickAt:0 };
   playSlide();
   layoutCookie();
-  requestAnimationFrame(revFrame);
+  setTimeout(()=>revFrame(performance.now()), 30);   // ★rAFでなくタイマー駆動=タブが裏でも判定が最後まで進む(rAFは裏タブで止まり、得点表と「次へ」が出なくなる)
 }
 const REV_T0=760, REV_T1=620, REV_END=560;
 function revFrame(now){
@@ -1052,13 +1342,14 @@ function revFrame(now){
       if(ok) playOpen(); else playShut();
     }
   }
-  if(el < REV_T0+REV_T1+REV_END) requestAnimationFrame(revFrame);
+  if(el < REV_T0+REV_T1+REV_END) setTimeout(()=>revFrame(performance.now()), 30);
   else { const d=rev.done; rev.hold=true; drawCookie(); if(d) d(); }   // 重ねたお手本は次のクッキーまで残す
 }
 
 
 /* ================= 進行 ================= */
-function showScene(s){ ["titleScene","lobbyScene","gameScene","resultScene"].forEach(id=>$(id).classList.toggle("on", id===s)); }
+function showScene(s){ ["titleScene","lobbyScene","gameScene","resultScene"].forEach(id=>$(id).classList.toggle("on", id===s));
+  $("scoreBtn").style.display=(s==="gameScene")?"":"none"; $("scoreOv").classList.remove("on"); }
 let toastTmr=0;
 function toast(msg,ms){ const t=$("toast"); t.textContent=msg; t.classList.add("on");
   clearTimeout(toastTmr); toastTmr=setTimeout(()=>t.classList.remove("on"), ms||1900); }
@@ -1079,12 +1370,26 @@ function hazardTotal(){
 
 function newKey(){
   cookie=new Uint8Array(W*H).fill(1);
-  keyMeta=(roundNo===1)? randomKey() : randomShapeMeta();   // 最初の1枚は必ず鍵。2枚目以降は鍵に縛られない
+  /* レベル1/2: 1枚目=必ず鍵、2枚目=鍵以外、3枚目以降=鍵もふくめて何でも／レベル3=大きな複雑モチーフ。直前と同じ形は出さない */
+  const lv=shapeLevel();
+  if(lv>=2){
+    let pool=SHAPE_LV2.filter(k=>k!==lastKind); if(!pool.length) pool=SHAPE_LV2.slice();
+    keyMeta=Object.assign(randomShapeMeta(), {kind:pool[R(0,pool.length-1)], lv:2});
+  }else if(roundNo===1 && !devLevel && !devRegen){ keyMeta=randomKey(); keyMeta.lv=lv; }   // 1枚目は鍵(デバッグの作り直しは何でも出る)
+  else{
+    let pool=SHAPE_KINDS.slice(); if(roundNo>=3 || devLevel || devRegen) pool.push("key");
+    pool=pool.filter(k=>k!==lastKind); if(!pool.length) pool=SHAPE_KINDS.slice();
+    const kind=pool[R(0,pool.length-1)];
+    keyMeta=(kind==="key")? randomKey() : Object.assign(randomShapeMeta(), {kind:kind});
+    keyMeta.lv=lv;
+  }
+  lastKind=keyMeta.kind;
   key=keyCells(keyMeta);
   const ins=instructors();
   regions = (ins.length<=1)? 1 : (ins.length<=3? 2 : 4);
   hazards=[];                       // ドクロ(爆弾)の仕様は2026-08-19に廃止=お手本の形に合わせて食べるだけ
   target=targetCells(key, hazards);
+  eater=new Uint8Array(W*H); lastScores=null; scoreView=false; pens={};
   buildStoneMask();
   buildChips(keyMeta.chipSeed);
   buildImage();
@@ -1092,7 +1397,8 @@ function newKey(){
   crumbs=[]; if(crIv){ clearInterval(crIv); crIv=0; }
   popTx=[]; rev=null;
 }
-function startRound(){        // 鍵を作るのはホスト(または試作モード)だけ
+function startRound(){        // お手本を作るのはホスト(または試作モード)だけ
+  clockMs=timeLimit*1000; danger30=false; document.body.classList.remove("danger");   // ラウンドごとに持ち時間はリセット(30秒固定)
   newKey();
   phase="carve"; lastPh="carve";
   enterCarveUI();
@@ -1104,22 +1410,31 @@ function enterCarveUI(){
   $("judgeWrap").classList.remove("on");
   $("nextBtn").style.display="none";
   $("judgeBig").textContent="";
-  $("roundPill").textContent=roundNo+"回目";
-  $("roleRow").style.display="";
-  $("roleTx").textContent= iAmCarver()? "友達を信じてクッキーを食べよう" : ("食べる人："+nmOf(players[carverIdx]));
-  $("penRow").style.display=(iAmCarver()||devMode)?"flex":"none";   // 試作は指示側でも操作できる
+  $("roundPill").textContent=(gameMode==="coop")? ("ラウンド "+roundNo) : (roundNo+" / "+rounds);
+  $("timer").style.visibility="visible";
+  doneSet=new Set(); const db=$("doneBtn"); db.disabled=false; db.textContent="鍵完成"; renderDoneList();
+  $("roleRow").style.display="none";        // 役割テキストは廃止
+  $("penRow").style.display=canCarve()?"flex":"none";   // 全員が食べるので全員に出る
+  $("doneBtn").style.display="";                         // 鍵完成=全員が押すか時間切れで判定へ
+  $("ptList").style.display="none"; $("ptList").innerHTML="";
   $("sizeRow").style.display=canCarve()?"flex":"none";
-  $("devBar").classList.toggle("on", devMode);
+  $("devSide").classList.toggle("on", !online);  // ひとりで遊ぶ=デバッグ(シルエットLv/作り直す/形どおりに削る)あり
   hideGhost(); layoutCookie();
-  if(isHost||devMode) startClock(); else startTimerFollowClock();
+  if(isHost||!online) startClock(); else startTimerFollowClock();   // ひとりで遊ぶ(オンラインなし)も自分でタイマーを回す
   $("stampBar").classList.add("on");
 }
 
 function renderClock(){
-  if(clockAnim) return;                      // 増減を見せている間は上書きしない
   const ms=clockRunning? Math.max(0,tEnd-Date.now()) : clockMs;
   $("timer").textContent=fmtClock(ms);
-  $("timer").classList.toggle("warn", ms<=30000);   // classNameごと書き換えると.movingが消える
+  $("timer").classList.toggle("warn", ms<=5000);   // classNameごと書き換えると.movingが消える
+  updateBigCount(clockRunning? ms : -1);
+}
+function updateBigCount(ms){                // のこり5秒のカウントを画面の左右に(最下層)
+  const b=$("bigCount"); if(!b) return;
+  if(ms<0 || ms>5000 || phase!=="carve"){ b.classList.remove("on"); return; }
+  const n=Math.max(1, Math.ceil(ms/1000));
+  $("bcL").textContent=n; $("bcR").textContent=n; b.classList.add("on");
 }
 function startClock(){                     // 削っている間だけ進む
   clearInterval(tIv);
@@ -1127,14 +1442,11 @@ function startClock(){                     // 削っている間だけ進む
   const upd=()=>{
     const ms=Math.max(0, tEnd-Date.now());
     renderClock();
-    if(ms<=30000 && !danger30){            // のこり30秒: 背景をうっすら赤くして知らせる
-      danger30=true; document.body.classList.add("danger");
-      const wv=$("warn15"); wv.classList.remove("on"); void wv.offsetWidth; fxOnCookie(wv); wv.classList.add("on");
-      setTimeout(()=>wv.classList.remove("on"),1600);
-      playWarn();
+    if(ms<=5000 && !danger30){             // のこり5秒: 背景をうっすら赤く+左右に大きなカウント
+      danger30=true; document.body.classList.add("danger"); playWarn();
     }
-    if(ms<=0){ clockMs=0; clockRunning=false; clearInterval(tIv);
-      if(phase==="carve"){ phase="over"; lastPh="over"; if(online&&isHost) sendSnap(); gameOverUI(); } }
+    if(ms<=0){ clockMs=0; clockRunning=false; clearInterval(tIv); updateBigCount(0);
+      if(phase==="carve" && (!online||isHost)) finishCarving(); }   // 時間切れ=即、一致度チェックへ(ホスト/1人用が進める)
   };
   upd(); tIv=setInterval(upd,200);
 }
@@ -1145,7 +1457,7 @@ function pauseClock(){
 function addClock(sec){                    // 時間を足し引きする
   clockMs=Math.max(0, (clockRunning? Math.max(0,tEnd-Date.now()) : clockMs) + sec*1000);
   if(clockRunning) tEnd=Date.now()+clockMs;
-  if(clockMs>30000){ danger30=false; document.body.classList.remove("danger"); }
+  if(clockMs>5000){ danger30=false; document.body.classList.remove("danger"); }
   renderClock();
   if(clockRunning && clockMs<=0 && phase==="carve"){
     clockRunning=false; clearInterval(tIv);
@@ -1164,82 +1476,86 @@ function fxOnCookie(el){        // クッキーの上下左右中央に出す(�
   if(b.height<20){ el.style.top="0px"; el.style.height="100svh"; return; }
   el.style.top=b.top+"px"; el.style.height=b.height+"px";
 }
-function timerFly(toCenter){
-  const t=$("timer"), pl=$("cookiePlate");
-  if(!toCenter){ t.style.transform="";
-    setTimeout(()=>{ t.classList.remove("moving"); }, 460); return; }
-  t.classList.add("moving");
-  t.style.transform="";
-  const b=pl.getBoundingClientRect(), a=t.getBoundingClientRect();
-  const cx=b.left+b.width/2, cy=b.top+b.height/2;
-  t.style.transform="translate("+(cx-(a.left+a.width/2))+"px,"+(cy-(a.top+a.height/2))+"px) scale(1.9)";
-}
-function animateClock(from, to, done){       // 数字がリアルタイムに増減する
-  const t0=performance.now(), D=900;
-  clockAnim=true;
-  (function step(now){
-    const k=Math.min(1,(now-t0)/D), e=1-Math.pow(1-k,3);
-    $("timer").textContent=fmtClock(from+(to-from)*e);
-    if(k<1) requestAnimationFrame(step);
-    else{ $("timer").textContent=fmtClock(to); clockAnim=false; if(done) done(); }
-  })(performance.now());
-}
-function judgeClockShow(bonus, done){
-  const af=$("addFloat");
-  af.textContent=(bonus>=0?"＋":"−")+Math.abs(bonus);
-  af.className="";
-  timerFly(true);
-  const from=clockMs, to=Math.max(0, clockMs+bonus*1000);
-  setTimeout(()=>{
-    af.className="on "+(bonus<0?"minus":"plus");   // タイマーが動き出すのと同時に出す
-    animateClock(from, to, ()=>{
-      addClock(bonus);                       // 数字が動き終わってから実際の時間に反映する
-      setTimeout(()=>{ timerFly(false); af.className=""; if(done) done(); }, 640);
-    });
-  }, 520);
-}
-/* 一致度に応じた時間: 69%以下は失敗あつかいで1分減る */
-function timeBonus(pct){
-  if(pct>=100) return 60;
-  if(pct>=90) return 30;
-  if(pct>=80) return 20;
-  if(pct>=70) return 10;
-  return -60;
-}
 function finishCarving(){
   if(phase!=="carve") return;
-  if(online && !isHost){ try{ ch.send({type:"broadcast",event:"act",payload:{t:"done",from:myId}}); }catch(e){} return; }
-  pauseClock();                 // 時間の増減は判定の演出のなかで反映する(先に数字を変えない)
+  if(online && !isHost) return;                  // 判定に進めるのはホストだけ(ゲストはpressDoneでactを送る)
+  pauseClock();
+  lastScores=calcScores();                       // ホストが得点を確定して配る
+  coopFailed = (gameMode==="coop") && (Math.round(shapeRate(cookie,target)*100) < clearThr);   // 協力: 基準を下回ったらこのラウンドで終了
+  lastScores.forEach(sc=>{ totals[sc.id]=(totals[sc.id]||0)+sc.pt; });
   phase="judge"; lastPh="judge"; sendSnap();
   enterJudgeUI();
+}
+/* 得点計算: 食べた人ごとに「お手本の外(食べてよい所)」と「お手本の中(残す所)」を数える */
+function calcScores(){
+  const rows=players.map((p,k)=>{ let good=0, bad=0;
+    for(let i=0;i<W*H;i++){ if(eater[i]!==k+1) continue; if(target[i]) bad++; else good++; }
+    return { id:p.id, n:p.n, good:good, bad:bad, pt:0 }; });
+  rows.forEach(r=>{ r.pt=Math.round(r.good/GOOD_PER_PT)-r.bad*BAD_PT; });
+  return rows;
 }
 function enterJudgeUI(){
   phase="judge"; pauseClock();
   if(madeAt!==roundNo){          // この回の出来上がりを結果画面ぶんだけ残す
     madeAt=roundNo;
-    madeKeys.push({ grid:Uint8Array.from(cookie), rate:shapeRate(cookie, target) });
+    madeKeys.push({ grid:Uint8Array.from(cookie), tgt:Uint8Array.from(target), rate:shapeRate(cookie, target) });
   }
   document.body.classList.remove("danger");
   $("penRow").style.display="none";
-  $("devBar").classList.remove("on");
+  $("devSide").classList.remove("on");
   $("roleRow").style.display="none";
+  $("timer").style.visibility="hidden";      // 判定中の「00:00」は意味がないので隠す
   $("judgeWrap").classList.add("on");
   playDone();
   const rate=shapeRate(cookie, target);
   playRevealAnim(cookie, target, rate, ()=>{
-    judgeClockShow(timeBonus(Math.round(rate*100)), ()=>{
-      if(clockMs<=0){ gameOverUI(); return; }   // 時間が尽きたらその場で結果へ
+    showScoreBoard(rate);                        // 一致度のあとに「誰がどれだけ食べたか」と得点
+    setTimeout(()=>{
       $("nextBtn").style.display=(online&&!isHost)?"none":"";
-      $("nextBtn").textContent="つぎのクッキーへ";
-    });
+      $("nextBtn").textContent=isFinalRound()? "結果へ" : "つぎのクッキーへ";
+    }, 900);
   });
 }
-$("doneBtn").addEventListener("click",()=>{ ensureAudio(); finishCarving(); });
+/* 判定の後半: 食べた所をプレイヤーごとの色で塗り、全員の得点を表示 */
+function showScoreBoard(rate){
+  if(!lastScores) lastScores=calcScores();
+  scoreView=true; drawCookie();
+  let html='';
+  lastScores.forEach(sc=>{ const k=players.findIndex(p=>p.id===sc.id); const col=PCOL[(k>=0?k:0)%PCOL.length];
+    html+='<div class="pt-row"><span class="pt-sw" style="background:'+col+'"></span><span class="pt-nm'+(sc.id===myId?" me":"")+'">'+esc(nmOf(sc))+'</span>'
+      +'<span class="pt-pt '+(sc.pt>0?"plus":(sc.pt<0?"minus":""))+'">'+(sc.pt>0?"＋":"")+sc.pt+'pt</span>'
+      +'<span class="pt-tot">計 '+((totals[sc.id])||0)+'</span></div>'; });
+  $("ptList").innerHTML=html; $("ptList").style.display="block";
+  playScore();
+}
+function playScore(){ if(!actx) return; const t=actx.currentTime; note(660,t,0.08,0.06,"triangle"); note(880,t+0.09,0.08,0.06,"triangle"); note(1100,t+0.18,0.14,0.07,"triangle"); }
+$("doneBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); pressDone(); });
+function pressDone(){                      // 自分は「鍵完成」。全員が押したら(または時間切れで)判定へ
+  if(phase!=="carve" || doneSet.has(myId)) return;
+  doneSet.add(myId);
+  const db=$("doneBtn"); db.disabled=true; db.textContent= (online && players.length>1)? "みんなを待っています…" : "鍵完成";
+  renderDoneList();
+  if(online && !isHost){ try{ ch.send({type:"broadcast",event:"act",payload:{t:"done",from:myId}}); }catch(e){} return; }
+  checkAllDone();
+}
+function checkAllDone(){
+  if(phase!=="carve") return;
+  renderDoneList();
+  const all=players.every(p=>doneSet.has(p.id));
+  if(all) finishCarving(); else sendSnap();
+}
+function renderDoneList(){                 // 「鍵完成」を押した人を並べる
+  const el=$("doneList"); if(!el) return;
+  const names=players.filter(p=>doneSet.has(p.id)).map(p=>esc(nmOf(p)));
+  el.innerHTML = names.length? "鍵完成："+names.join("・") : "";
+}
 $("nextBtn").addEventListener("click",()=>{
   ensureAudio(); playSelect();
   if(online && !isHost) return;
+  if(isFinalRound()){ phase="over"; lastPh="over"; if(online) sendSnap(); gameOverUI(); return; }   // 最終ラウンド(協力=基準を下回った)→結果
   nextRound();
 });
+function isFinalRound(){ return (gameMode==="coop")? coopFailed : (roundNo>=rounds); }
 /* 食べる人の順番。ゲーム開始時にシャッフルし、1周(全員1回ずつ)したらまたシャッフル=均等かつランダム */
 let turnOrder=[], turnPos=0;
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
@@ -1258,28 +1574,32 @@ function nextRound(){
 }
 function gameOverUI(){
   phase="over"; pauseClock(); rev=null;
-  const made=madeKeys.filter(m=>timeBonus(Math.round(m.rate*100))>=0);   // 70%以上=鍵になったもの
-  $("resCount").textContent=made.length+"本";
+  const rank=players.map((p,k)=>({id:p.id,n:p.n,k:k,pt:totals[p.id]||0})).sort((a,b)=>b.pt-a.pt);
+  const solo=!online && players.length<=1;
+  $("resCount").textContent= (gameMode==="coop")? ((roundNo-1)+"ラウンド達成") : (solo? ((totals[myId]||0)+"pt") : (rank.length? (esc(nmOf(rank[0]))+" の勝ち") : ""));
+  $("resRank").style.display= solo? "none" : "";          // ひとりのときは順位表を出さず、スコアを大きく見せる
+  let rh=""; rank.forEach((r,i)=>{ const no=(i>0&&r.pt===rank[i-1].pt)? "" : (i+1)+"位";
+    rh+='<div class="rk-row'+(i===0?" top":"")+'"><span class="rk-no">'+no+'</span><span class="rk-sw" style="background:'+PCOL[r.k%PCOL.length]+'"></span><span class="rk-nm">'+esc(nmOf(r))+(r.id===myId?"（じぶん）":"")+'</span><span class="rk-pt">'+r.pt+'pt</span></div>'; });
+  $("resRank").innerHTML=rh;
   const g=$("resGrid"); g.innerHTML="";
   madeKeys.forEach((m,n)=>{                        // 作った順に左上から並べる
     const it=document.createElement("div"); it.className="res-item";
-    it.appendChild(miniKey(m.grid));
+    it.appendChild(miniKey(m.grid, m.tgt));
     const pct=Math.round(m.rate*100);
     const r=document.createElement("div");
-    r.className="res-rate"+(timeBonus(pct)<0?" ng":""); r.textContent=pct+"%";
+    r.className="res-rate"+(pct<70?" ng":""); r.textContent=pct+"%";
     it.appendChild(r); g.appendChild(it);
   });
   $("resLobby").style.display=online?"":"none";       // オンラインなら誰でもロビーへ戻れる
   document.body.classList.remove("danger");
   $("stampBar").classList.remove("on");
-  $("warn15").classList.remove("on");         // 「のこり30秒」と重ならないように先に消す
+  $("bigCount").classList.remove("on");
   $("penRow").style.display="none";           // 「鍵作り終了」の間はまわりのUIを隠す
   $("roleRow").style.display="none";
-  $("devBar").classList.remove("on");
+  $("devSide").classList.remove("on");
   $("judgeWrap").classList.remove("on");
   $("nextBtn").style.display="none";
   $("judgeBig").textContent="";
-  $("addFloat").className="";
   const fx=$("endFx");                        // 「鍵作り終了」を出してから結果画面へ
   fx.classList.remove("on"); void fx.offsetWidth; fxOnCookie(fx); fx.classList.add("on");
   playOver();
@@ -1290,7 +1610,7 @@ function gameOverUI(){
   }, 1250);
 }
 let overTmr=0;
-function miniKey(grid){            // 削り上がったクッキーを小さく描く
+function miniKey(grid, tgt){       // 削り上がったクッキーを小さく描く(お手本のシルエットも重ねる)
   const MW=84, c=document.createElement("canvas");
   const sc=Math.max(1, Math.floor(MW/W)), d=dprv();
   c.width=W*sc*d; c.height=H*sc*d;
@@ -1306,6 +1626,15 @@ function miniKey(grid){            // 削り上がったクッキーを小さく
   oc.putImageData(im,0,0);
   g.imageSmoothingEnabled=false;
   g.drawImage(o, 0, 0, W*sc*d, H*sc*d);
+  if(tgt){                                   // お手本の形のアウトライン(ふちのマス)を金色で重ねる
+    const o2=document.createElement("canvas"); o2.width=W; o2.height=H;
+    const c2=o2.getContext("2d"), im2=c2.createImageData(W,H);
+    for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const i=idx(x,y); if(!tgt[i]) continue;
+      const edge = x===0||y===0||x===W-1||y===H-1 || !tgt[idx(x-1,y)] || !tgt[idx(x+1,y)] || !tgt[idx(x,y-1)] || !tgt[idx(x,y+1)];
+      if(!edge) continue; const q=i*4; im2.data[q]=255; im2.data[q+1]=214; im2.data[q+2]=110; im2.data[q+3]=235; }
+    c2.putImageData(im2,0,0);
+    g.drawImage(o2, 0, 0, W*sc*d, H*sc*d);
+  }
   return c;
 }
 $("resLobby").addEventListener("click",()=>{      // 部屋主=全員でロビーへ / ゲスト=自分だけ先にロビー画面へ(部屋主が戻れば同期する)
@@ -1324,30 +1653,77 @@ function fmtTime(s){ return String(Math.floor(s/60)).padStart(2,"0")+":"+String(
 /* 表示は切り捨て=最後の1秒がちゃんと「00:00」になる(切り上げだと00:01で止まって見える) */
 function fmtClock(ms){ const t=Math.max(0,Math.floor(ms/1000+0.001));
   return String(Math.floor(t/60)).padStart(2,"0")+":"+String(t%60).padStart(2,"0"); }
+/* ルール枠(ロビー=接頭辞""・ひとりで遊ぶ=接頭辞"s")。対戦=ラウンド数+制限時間／協力=クリア基準+制限時間 */
+function ruleFrameHTML(px){
+  return '<div class="rule-frame v">'
+    +'<div class="rc-row mode-row"><button class="mode-opt" id="'+px+'RmCo">協力</button><button class="mode-opt" id="'+px+'RmVs">対戦</button></div>'
+    +'<div class="rule-cols">'
+    +'<div class="rule-col" id="'+px+'RdCol"><div class="rc-name">ラウンド数</div><div class="rc-row"><button class="stp" id="'+px+'RdM">−</button><span class="rc-val" id="'+px+'RdVal">'+rounds+'</span><button class="stp" id="'+px+'RdP">＋</button></div></div>'
+    +'<div class="rule-col" id="'+px+'ClrCol"><div class="rc-name">クリア基準</div><div class="rc-row"><button class="stp" id="'+px+'ThrM">−</button><span class="rc-val" id="'+px+'ThrVal">'+clearThr+'%</span><button class="stp" id="'+px+'ThrP">＋</button></div></div>'
+    +'<div class="rule-col"><div class="rc-name">制限時間</div><div class="rc-row"><button class="stp" id="'+px+'TlM">−</button><span class="rc-val" id="'+px+'TlVal">'+fmtTime(timeLimit)+'</span><button class="stp" id="'+px+'TlP">＋</button></div></div>'
+    +'</div></div>';
+}
+function ruleSummary(){ return (gameMode==="coop")? ('協力・クリア基準 '+clearThr+'%・制限時間 '+fmtTime(timeLimit)) : ('対戦・'+rounds+'ラウンド・制限時間 '+fmtTime(timeLimit)); }
+function wireRuleFrame(px, after){       // 枠のボタン配線(after=変更後に呼ぶ。ロビーはsendSnap)
+  const g=id=>$(px+id); const fin=()=>{ renderTime(); if(after) after(); };
+  if(!g("TlM")) return;
+  g("TlM").addEventListener("click",()=>{ ensureAudio(); playSelect(); tIdx=Math.max(0,tIdx-1); fin(); });
+  g("TlP").addEventListener("click",()=>{ ensureAudio(); playSelect(); tIdx=Math.min(TIMES.length-1,tIdx+1); fin(); });
+  g("RdM").addEventListener("click",()=>{ ensureAudio(); playSelect(); rounds=Math.max(ROUNDS_MIN,rounds-1); fin(); });
+  g("RdP").addEventListener("click",()=>{ ensureAudio(); playSelect(); rounds=Math.min(ROUNDS_MAX,rounds+1); fin(); });
+  g("ThrM").addEventListener("click",()=>{ ensureAudio(); playSelect(); clearThr=Math.max(THR_MIN,clearThr-THR_STEP); fin(); });
+  g("ThrP").addEventListener("click",()=>{ ensureAudio(); playSelect(); clearThr=Math.min(THR_MAX,clearThr+THR_STEP); fin(); });
+  g("RmVs").addEventListener("click",()=>{ ensureAudio(); playSelect(); gameMode="vs"; fin(); });
+  g("RmCo").addEventListener("click",()=>{ ensureAudio(); playSelect(); gameMode="coop"; fin(); });
+}
 function renderTime(){ timeLimit=TIMES[tIdx];
-  const v=$("tlVal"); if(v) v.textContent=fmtTime(timeLimit);
-  const m=$("tlM"), pl=$("tlP");
-  if(m) m.disabled=(tIdx<=0); if(pl) pl.disabled=(tIdx>=TIMES.length-1);
+  ["","s"].forEach(px=>{ const g=id=>$(px+id); if(!g("TlVal")) return;
+    g("TlVal").textContent=fmtTime(timeLimit); g("TlM").disabled=(tIdx<=0); g("TlP").disabled=(tIdx>=TIMES.length-1);
+    g("RdVal").textContent=rounds; g("RdM").disabled=(rounds<=ROUNDS_MIN); g("RdP").disabled=(rounds>=ROUNDS_MAX);
+    g("ThrVal").textContent=clearThr+"%"; g("ThrM").disabled=(clearThr<=THR_MIN); g("ThrP").disabled=(clearThr>=THR_MAX);
+    g("RmVs").classList.toggle("sel", gameMode==="vs"); g("RmCo").classList.toggle("sel", gameMode==="coop");
+    g("RdCol").style.display=(gameMode==="vs")?"":"none"; g("ClrCol").style.display=(gameMode==="coop")?"":"none";
+  });
 }
-function wireRule(){   // ロビーのルール枠(部屋主だけ)
-  const m=$("tlM"), pl=$("tlP"); if(!m||!pl) return;
-  m.addEventListener("click",()=>{ ensureAudio(); playSelect(); tIdx=Math.max(0,tIdx-1); renderTime(); sendSnap(); });
-  pl.addEventListener("click",()=>{ ensureAudio(); playSelect(); tIdx=Math.min(TIMES.length-1,tIdx+1); renderTime(); sendSnap(); });
-  renderTime();
-}
+function wireRule(){ wireRuleFrame("", ()=>sendSnap()); renderTime(); }   // ロビー(部屋主だけ)
 
 /* ================= 試作用(完成時に消す) ================= */
-function startDev(){          // 食べる人と指示する人を1枚ごとに交代でためせる
-  ensureAudio(); playSelect(); devMode=true;
-  players=[{id:myId,n:"あなた"},{id:"p1",n:"たろう"}];
-  online=false; isHost=false;
-  roundNo=1; clockMs=timeLimit*1000; danger30=false; madeKeys=[]; madeAt=-1;
+/* ひとりで遊ぶ(オンラインなし) */
+function startSolo(){
+  ensureAudio(); playSelect(); devMode=false;
+  players=[{id:myId,n:"あなた"}];
+  online=false; isHost=false; leaveChannel();
+  roundNo=1; clockMs=timeLimit*1000; danger30=false; madeKeys=[]; madeAt=-1; totals={}; coopFailed=false;
   newTurnOrder(null); applyTurn();
   showScene("gameScene"); startRound();
-  toast("試作：1枚ごとに食べる人と指示する人が交代します", 2600);
 }
-$("soloBtn").addEventListener("click",()=>startDev());
-$("devNewKey").addEventListener("click",()=>{ ensureAudio(); playSelect(); newKey(); layoutCookie(); toast("鍵を作り直した",1100); });
+$("soloModeBtn").addEventListener("click",()=>{ ensureAudio(); playSelect();
+  $("soloSetup").classList.add("on"); $("onlineRow").style.display="none"; roomStatus(""); renderTime(); });
+$("onlineModeBtn").addEventListener("click",()=>{ ensureAudio(); playSelect();
+  $("onlineRow").style.display="flex"; $("soloSetup").classList.remove("on"); });
+$("soloStart").addEventListener("click",()=>startSolo());
+/* 得点状況(参加者の一覧+合計pt。部屋主はここから追放もできる) */
+function renderScoreOv(){
+  const rows=players.map((p,k)=>({p:p,k:k,pt:totals[p.id]||0})).sort((a,b)=>b.pt-a.pt);
+  $("scoreList").innerHTML=rows.map(r=>'<div class="sc-row"><span class="sc-sw" style="background:'+PCOL[r.k%PCOL.length]+'"></span>'
+    +'<span class="sc-nm">'+esc(nmOf(r.p))+(r.p.id===myId?"（じぶん）":"")+(r.p.id===hostId&&online?" <small>部屋主</small>":"")+'</span>'
+    +'<span class="sc-pt">'+r.pt+'pt</span>'
+    +((online&&isHost&&r.p.id!==myId)?'<button class="sc-kick" data-skick="'+esc(r.p.id)+'">追放</button>':'')+'</div>').join("");
+  $("scoreList").querySelectorAll("[data-skick]").forEach(b=>b.addEventListener("click",()=>{
+    ensureAudio(); playSelect(); const id=b.dataset.skick;
+    players=players.filter(p=>p.id!==id); turnOrder=turnOrder.filter(x=>x!==id); doneSet.delete(id);
+    try{ ch.send({type:"broadcast",event:"kick",payload:{to:id}}); }catch(e){}
+    sendSnap(); renderScoreOv(); toast("追放しました");
+    if(phase==="carve") checkAllDone();
+  }));
+}
+$("scoreBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); renderScoreOv(); $("scoreOv").classList.add("on"); });
+$("scoreClose").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("scoreOv").classList.remove("on"); });
+$("scoreOv").addEventListener("click",e=>{ if(e.target===$("scoreOv")) $("scoreOv").classList.remove("on"); });
+$("soloRule").innerHTML=ruleFrameHTML("s"); wireRuleFrame("s", null); renderTime();
+(function(){ const sd=$("devSide"); ["devLv","devNewKey","devSolve"].forEach(id=>sd.appendChild($(id))); })();   // デバッグボタンをクッキー左へ
+$("devLv").addEventListener("click",()=>{ ensureAudio(); playSelect(); devLevel=(devLevel%2)+1; $("devLv").textContent="シルエットLv"+devLevel; });
+$("devNewKey").addEventListener("click",()=>{ ensureAudio(); playSelect(); devRegen=true; newKey(); devRegen=false; layoutCookie(); toast("作り直した",1100); });
 $("devSolve").addEventListener("click",()=>{ ensureAudio(); playSelect(); cookie=Uint8Array.from(target); buildImage(); drawCookie(); toast("お手本どおりに削った",1100); });
 
 /* ================= オンライン(ホスト権威+スナップショット) ================= */
@@ -1503,6 +1879,9 @@ function openChannel(c, onReady){
   ch.on("broadcast",{event:"snap"},({payload})=>{ if(!isHost && payload) applySnap(payload); });
   ch.on("broadcast",{event:"act"},({payload})=>{ if(isHost && payload) hostAct(payload); });
   ch.on("broadcast",{event:"carve"},({payload})=>{ if(payload && payload.from!==myId) applyCarve(payload); });
+  ch.on("broadcast",{event:"pen"},({payload})=>{ if(!payload||payload.from===myId) return;
+    if(payload.off) delete pens[payload.from]; else pens[payload.from]={x:payload.x,y:payload.y,s:payload.s,t:Date.now()};
+    if(phase==="carve") drawCookie(); });
   ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) spawnStamp(payload.i|0, payload.n||"あいて"); });
   ch.on("broadcast",{event:"bye"},({payload})=>{ if(payload) onLeave(payload.id); });
   ch.on("broadcast",{event:"kick"},({payload})=>{ if(payload && payload.to===myId && !isHost){ toast("部屋主に退出させられました"); goTitle(); } });
@@ -1542,11 +1921,9 @@ function renderLobby(){
   html+='<div class="room-note">合言葉（'+TAPW+'でコピー）</div>'
     +'<div class="code-show" id="codeShow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>'+esc(code)+'</div>';
   if(isHost){
-    html+='<div class="rule-frame"><div class="rule-col"><div class="rc-name">初期制限時間</div>'
-      +'<div class="rc-row"><button class="stp" id="tlM">−</button><span class="rc-val" id="tlVal">'+fmtTime(timeLimit)+'</span><button class="stp" id="tlP">＋</button></div>'
-      +'</div></div>';
+    html+=ruleFrameHTML("");
   }else{
-    html+='<div class="room-note">初期制限時間 '+fmtTime(timeLimit)+'</div>';
+    html+='<div class="room-note">'+ruleSummary()+'</div>';
   }
   html+='<div class="room-note">'+(players.length<2?"2人以上集まれば始められます":"いつでも始められるよ")+'</div>';
   if(isHost) html+='<button class="btn-main" id="lobbyStart"'+(players.length<2?" disabled":"")+' style="margin-top:4px;">はじめる</button>';
@@ -1571,7 +1948,7 @@ function renderLobby(){
     if(ls) ls.addEventListener("click",()=>{
       ensureAudio(); playSelect();
       if(players.length<2) return;
-      roundNo=1; clockMs=timeLimit*1000; danger30=false; madeKeys=[]; madeAt=-1;
+      roundNo=1; clockMs=timeLimit*1000; danger30=false; madeKeys=[]; madeAt=-1; totals={}; coopFailed=false;
       newTurnOrder(null); applyTurn();
       startRound();
     });
@@ -1593,6 +1970,16 @@ function mergeCookie(b64){
     if(changed) drawCookie();
   }catch(e){}
 }
+function packEater(){   // 1マス4ビット(0〜15)=2マスで1バイト
+  const n=W*H, bytes=new Uint8Array(Math.ceil(n/2));
+  for(let i=0;i<n;i++){ const v=Math.min(15, eater[i]|0); if(i&1) bytes[i>>1]|=(v<<4); else bytes[i>>1]|=v; }
+  let str=""; for(let i=0;i<bytes.length;i++) str+=String.fromCharCode(bytes[i]);
+  return btoa(str);
+}
+function unpackEater(b64){
+  try{ const str=atob(b64); if(!eater) eater=new Uint8Array(W*H);
+    for(let i=0;i<W*H;i++){ const b=str.charCodeAt(i>>1); eater[i]=(i&1)? (b>>4)&15 : b&15; } }catch(e){}
+}
 function packHaz(){ return hazards.map(h=>[h.x, h.y, h.s, h.owner, h.revealed?1:0]); }
 function unpackHaz(a){ return a.map(v=>({ type:"bomb", x:v[0], y:v[1], s:v[2], owner:v[3], revealed:!!v[4] })); }
 function sendSnap(){
@@ -1603,7 +1990,9 @@ function sendSnap(){
   if(phase!=="lobby"){
     p.km=keyMeta;
     if(cookie && (phase==="carve"||phase==="judge")) p.ck=packCookie();   // 食べた所(578バイト)=誰かの削りが届かなくても2.2秒で追いつく
+    if(phase==="judge" && eater){ p.et=packEater(); p.sc=lastScores; }   // 判定中は「誰が食べたか」と得点も配る(全員同じ表を見る)
   }
+  p.rds=rounds; p.tot=totals; p.md=gameMode; p.thr=clearThr; p.cf=coopFailed?1:0; if(phase==="carve") p.dn=[...doneSet];
   try{ ch.send({type:"broadcast",event:"snap",payload:p}); }catch(e){}
 }
 function applySnap(p){
@@ -1612,6 +2001,10 @@ function applySnap(p){
   clockMs=p.clk||0; clockRunning=(p.run===1); if(clockRunning) tEnd=Date.now()+clockMs; renderClock();
   carverIdx=p.carver||0; regions=p.regions||1;
   if(p.tl!==timeLimit){ timeLimit=p.tl||0; tIdx=Math.max(0,TIMES.indexOf(timeLimit)); }
+  if(p.rds) rounds=p.rds;
+  if(p.md) gameMode=p.md; if(p.thr) clearThr=p.thr; coopFailed=(p.cf===1);
+  if(p.tot) totals=p.tot;
+  if(p.dn){ doneSet=new Set(p.dn); renderDoneList(); if(doneSet.has(myId)){ const db=$("doneBtn"); db.disabled=true; db.textContent="みんなを待っています…"; } }
   const ph=p.ph;
   if(ph!=="lobby" && p.km){
     const fresh = !keyMeta || JSON.stringify(keyMeta)!==JSON.stringify(p.km);
@@ -1621,10 +2014,12 @@ function applySnap(p){
       target=targetCells(key, hazards);
       buildStoneMask(); buildChips(keyMeta.chipSeed);
       cookie=new Uint8Array(W*H).fill(1); buildImage();
+      eater=new Uint8Array(W*H); lastScores=null; scoreView=false; pens={};
       rev=null; popTx=[]; crumbs=[];                       // ★前のお手本のシルエットを残さない(ゲスト側で残っていたバグ)
     }
   }
   if(p.ck && (ph==="carve"||ph==="judge")) mergeCookie(p.ck);   // ホストの「食べた所」を取り込む(取りこぼした削りを補正)
+  if(ph==="judge"){ if(p.et) unpackEater(p.et); if(p.sc) lastScores=p.sc; }   // 判定中はホストの「誰が食べたか」と得点で上書き(全員同じ)
   if(ph===lastPh){
     if(ph==="lobby") renderLobby();
     else drawCookie();
@@ -1638,12 +2033,12 @@ function applySnap(p){
 }
 function hostAct(a){
   if(a.t==="rename"){ const p=byId(a.from); if(p){ p.n=String(a.n||"").slice(0,8); if(phase==="lobby") renderLobby(); sendSnap(); } return; }
-  if(a.t==="carve" && phase==="carve" && players[carverIdx] && players[carverIdx].id===a.from){
+  if(a.t==="carve" && phase==="carve" && byId(a.from)){                       // 誰の削りでも受ける(全員が食べる)
     applyCarve(a);                                         // 食べる人からの削り(ホストも同じ形にする)
     try{ ch.send({type:"broadcast",event:"carve",payload:{from:a.from, pts:a.pts}}); }catch(e){}   // ★ほかのゲストにも配る(以前はホストで止まっていた)
     return;
   }
-  if(a.t==="done" && phase==="carve" && players[carverIdx] && players[carverIdx].id===a.from){ finishCarving(); return; }
+  if(a.t==="done" && phase==="carve" && byId(a.from)){ doneSet.add(a.from); checkAllDone(); return; }   // 全員そろったら判定
   if(a.t==="next" && phase==="judge" && a.from===hostId){ nextRound(); return; }
 }
 /* 削りは「ペンの位置と太さ」を送って各自が同じ形にする(画像は送らない) */
@@ -1661,10 +2056,12 @@ function flushCarve(){
     else ch.send({type:"broadcast",event:"act",payload:{t:"carve", from:myId, pts:pk.pts}});
   }catch(e){}
 }
+function ownerIdx(id){ const k=players.findIndex(p=>p.id===id); return k>=0? k+1 : 0; }   // eaterに入れる番号(0=不明)
 function applyCarve(pk){
+  const own=ownerIdx(pk.from);
   (pk.pts||[]).forEach(q=>{
-    const cx=q[0], cy=q[1], k=(q[2]-1)/2;
-    for(let dy=-k;dy<=k;dy++) for(let dx=-k;dx<=k;dx++){
+    const cx=q[0], cy=q[1], [k0,k1]=penSpan(q[2]||1);
+    for(let dy=-k0;dy<=k1;dy++) for(let dx=-k0;dx<=k1;dx++){
       const x=cx+dx, y=cy+dy;
       if(x<0||x>=W||y<0||y>=H) continue;
       const i=idx(x,y);
@@ -1674,7 +2071,7 @@ function applyCarve(pk){
           hazCells(h).forEach(j=>{ if(cookie[j]){ cookie[j]=0; clearPixel(j); } blockMask[j]=0; }); }
         continue;
       }
-      if(cookie[i]){ cookie[i]=0; clearPixel(i); }
+      if(cookie[i]){ cookie[i]=0; clearPixel(i); if(eater) eater[i]=own; }
     }
   });
   drawCookie();
@@ -1702,7 +2099,7 @@ function spawnStamp(i, who, self){
   el.style.setProperty("--dx", (Math.random()*24-12).toFixed(0)+"px");
   el.innerHTML='<span class="s-emoji">'+STAMP_SVGS[i]+'</span><span class="s-name">'+esc(who||"自分")+'</span>';
   if(seOn && !stampMuted) playStamp(i);
-  const overlayOpen=["helpOv","nameOv"].some(id=>$(id).classList.contains("on"));
+  const overlayOpen=["helpOv","nameOv","scoreOv"].some(id=>$(id).classList.contains("on"));
   if(overlayOpen) el.classList.add("over-dialog");
   document.body.appendChild(el);
   setTimeout(()=>el.remove(), 2350);
@@ -1732,13 +2129,13 @@ document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{
 /* ================= あそびかた ================= */
 function buildHelp(){
   $("helpBody").innerHTML='<div class="h-sec">基本ルール</div>'
-   +'<p>ひとりが「食べる人」で、他全員が「指示する人」<br>みんなで声を掛け合って、クッキーをお手本の形になるように食べ進めよう</p>'
-   +'<div class="h-sec">食べる人</div>'
-   +'<p>指示する人のことを信じてひたすら食べ進める</p>'
-   +'<div class="h-sec">指示する人</div>'
-   +'<p>お手本の形が見えるので、食べる人に指示を出す<br>ただし指示する人が2人以上いると、見えている場所は人によってバラバラ</p>'
-   +'<div class="h-sec">制限時間</div>'
-   +'<p>時間が許すかぎり、クッKeyを作り続ける<br>出来ばえ次第で、時間は伸びたり縮んだり</p>';
+   +'<p>クッキーにうすく見えているお手本の形になるように、みんなで同時に食べ進めよう<br>だれかが食べた所は、全員のクッキーにすぐ反映される<br>全員が「鍵完成」を押すか、制限時間(初期30秒)が来たら判定。これを決めたラウンド数だけくり返す</p>'
+   +'<div class="h-sec">得点</div>'
+   +'<p>お手本の外側をたくさん食べた人ほど高得点('+GOOD_PER_PT+'マスで＋1pt)<br>ただし、お手本(残す所)を食べてしまうと1マスごとに−'+BAD_PT+'pt。あせって削らないこと</p>'
+   +'<div class="h-sec">協力ルール</div>'
+   +'<p>ルールで「協力」を選ぶと、ラウンド数のかわりに<b>クリア基準</b>(初期70%)を決める<br>一致度が基準を下回ったらそこで終了。ラウンドが進むほどお手本が複雑になっていく。何ラウンド続けられるかに挑戦</p>'
+   +'<div class="h-sec">判定</div>'
+   +'<p>一致度(おまけ)のあとに、だれがどこを食べたかが色で出る<br>ぜんぶのラウンドが終わったら合計ptで順位が決まる</p>';
 }
 $("helpBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); buildHelp(); $("helpOv").classList.add("on"); });
 $("helpClose").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("helpOv").classList.remove("on"); });
@@ -1758,7 +2155,10 @@ window.__ckDev={ get W(){return W;}, get H(){return H;}, get key(){return key;},
   rate:()=>shapeRate(cookie,target), newKey:()=>{ newKey(); layoutCookie(); },
   solve:()=>{ cookie=Uint8Array.from(target); buildImage(); drawCookie(); },
   over:()=>{ clockMs=0; gameOverUI(); },
-  setRound:(n)=>{ roundNo=n; } };
+  setRound:(n)=>{ roundNo=n; },
+  scores:()=>calcScores(), board:()=>{ lastScores=calcScores(); showScoreBoard(shapeRate(cookie,target)); },
+  eaten:(k)=>{ let c=0; for(let i=0;i<W*H;i++) if(eater&&eater[i]===k) c++; return c; },
+  get pens(){ return pens; }, get done(){ return [...doneSet]; }, get kind(){ return keyMeta&&keyMeta.kind; } };
 
 function drawLogo(){   // ロゴの「Key」に、ゲーム中とまったく同じクッキーの柄を敷く
   const el=document.querySelector(".logo .key"); if(!el) return;
