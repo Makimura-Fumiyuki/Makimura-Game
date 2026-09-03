@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>誰も打てなくなった日 | 牧村たちのつぶやき</title>
+<meta name="apple-mobile-web-app-title" content="牧村たちのつぶやき">
+<meta name="description" content="オンライン対戦で、ふたりとも「相手の番」のまま止まってしまった。たった一手が届かなかっただけで起きた進行不能と、そのあとに入れた仕組みの話">
+<meta property="og:title" content="誰も打てなくなった日">
+<meta property="og:description" content="オンライン対戦で、ふたりとも「相手の番」のまま止まってしまった。たった一手が届かなかっただけで起きた進行不能と、そのあとに入れた仕組みの話">
+<meta name="theme-color" content="#ffffff">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap');
+  /* 牧村たちのつぶやき: 白黒のエディトリアル調(2026-09-03牧村指示「白黒メインでスタイリッシュに・図鑑に引っ張られない」)。装飾は罫線と余白だけ */
+  :root{ --ink:#111; --sub:#7a7a7a; --line:#e6e6e6; }
+  *{ box-sizing:border-box; font-family:"Noto Sans JP","Hiragino Sans",sans-serif; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; }
+  body{ background:#fff; color:var(--ink); line-height:1.7; -webkit-font-smoothing:antialiased; }
+  .wrap{ max-width:640px; margin:0 auto; padding:52px 22px 64px; }
+  .brand{ display:flex; flex-direction:column; align-items:flex-start; text-decoration:none; color:var(--ink); }
+  .brand .k{ font-size:11px; font-weight:700; letter-spacing:.34em; }
+  .rule{ border:0; border-top:1px solid var(--ink); margin:0; }
+  .sec{ display:flex; align-items:baseline; gap:12px; margin:44px 0 6px; }
+  .sec .no{ font-size:11px; font-weight:400; letter-spacing:.18em; color:var(--sub); font-variant-numeric:tabular-nums; }
+  .sec .lb{ font-size:12px; font-weight:700; letter-spacing:.2em; }
+  .meta{ display:flex; flex-wrap:wrap; gap:14px; font-size:12.5px; color:var(--sub); font-variant-numeric:tabular-nums; }
+  .pill{ display:inline-flex; align-items:center; gap:8px; text-decoration:none; border-radius:999px; font-size:13px; font-weight:700; letter-spacing:.06em; white-space:nowrap; cursor:pointer; }
+  .pill.solid{ background:var(--ink); color:#fff; padding:11px 20px 12px; }
+  .pill.line{ background:#fff; color:var(--ink); border:1.5px solid var(--ink); padding:9px 17px 10px; }
+  .pill svg{ width:13px; height:13px; flex:none; }
+  .pill:active{ transform:scale(.97); }
+
+  .brand .m{ font-size:22px; font-weight:900; letter-spacing:-.02em; line-height:1; margin-top:4px; }
+  .top{ display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:16px; }
+  h1.title{ font-size:clamp(26px,7vw,38px); font-weight:800; line-height:1.38; letter-spacing:-.01em; margin:38px 0 0; }
+  .title + .meta{ margin-top:14px; }
+  article{ margin-top:36px; }
+  article p{ font-size:15.5px; font-weight:400; line-height:2.1; color:#222; margin:0 0 18px; }
+  article p strong{ font-weight:700; color:var(--ink); }
+  article p a{ color:inherit; text-decoration:underline; text-underline-offset:3px; text-decoration-thickness:1px; text-decoration-color:rgba(17,17,17,.35); }
+  article h2{ font-size:17px; font-weight:800; line-height:1.5; margin:46px 0 14px; padding-left:12px; border-left:3px solid var(--ink); }
+  /* 下部: いいね(ハブと同じハート+数字だけ) → 一覧に戻る。右寄せ */
+  .end{ margin-top:48px; padding-top:22px; border-top:1px solid var(--line); display:flex; justify-content:flex-end; align-items:center; gap:10px; }
+  .like{ font-variant-numeric:tabular-nums; }
+  .like svg{ width:14px; height:14px; }
+  .like b{ font-weight:400; font-size:13px; }
+  .like.liked{ background:var(--ink); color:#fff; }
+  @keyframes likePop{ 0%{ transform:scale(1); } 40%{ transform:scale(1.45); } 100%{ transform:scale(1); } }
+  .like.pop svg{ animation:likePop .4s ease-out; }
+</style>
+<!-- Google AdSense -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8539036056022595" crossorigin="anonymous"></script>
+<link rel="icon" type="image/png" href="./icon.png">
+<meta property="og:image" content="https://makimura-gamehub.com/icon.png">
+</head>
+<body>
+  <div class="wrap">
+    <div class="top"><a class="brand" href="./tsubuyaki.html"><span class="k">牧村たちの</span><span class="m">つぶやき</span></a></div>
+    <hr class="rule">
+
+    <h1 class="title">誰も打てなくなった日</h1>
+    <div class="meta"><span>書いた人：牧村</span><span>2026/08/26</span></div>
+
+    <article>
+<p><a href="./gomokumoku.html">五もくもく並べ</a>のオンライン対戦を出してしばらくした頃、こんな報告が来ました。</p>
+
+    <p>「ふたりとも、相手の番のまま動かなくなった」</p>
+
+    <p>片方の画面では相手の番。もう片方の画面でも相手の番。<strong>どちらも相手を待っていて、どちらも打てない。</strong>時間が経っても何も起きない。ゲームが、静かに死んでいました。</p>
+
+    <h2>一手が、届かなかった</h2>
+
+    <p>オンライン対戦の仕組みは単純です。自分が石を置いたら、「ここに置いた」という知らせを相手に送る。相手はそれを受け取って、自分の盤面にも同じ石を置いて、自分の番に切り替える。それだけです。</p>
+
+    <p>問題は、その知らせが<strong>必ず届くとは限らなかった</strong>ことです。</p>
+
+    <p>使っている通信の仕組みには「届かないこともある」という性質がありました。ほとんどの場合は届く。でも、たまに落ちる。私はそれを知らずに、「送ったら届く」前提で作っていました。</p>
+
+    <p>一手が落ちると、送った側は「送ったから相手の番」と思っている。受け取れなかった側は「まだ相手が打っていない」と思っている。<strong>たった一回落ちるだけで、ふたりとも相手を待つ状態になります。</strong>そこから抜け出す方法は、ありませんでした。</p>
+
+    <h2>「届いたよ」を返してもらう</h2>
+
+    <p>直し方は、考えてみれば当たり前のことでした。</p>
+
+    <p>まず、一手ごとに番号をつけます。1手目、2手目、3手目。次に、受け取った側は「N手目、届いたよ」と返事を返す。送った側は、その返事が来るまで、<strong>1.4秒ごとに同じ一手を送り直し続ける。</strong></p>
+
+    <p>これで、一回落ちても次で届きます。二回落ちても三回目で届く。番号がついているので、同じ手が二回届いても、二重に置かれることはありません。</p>
+
+    <p>仕組みとしては小さなものです。でもこれを入れてから、「止まった」という報告は一度も来ていません。</p>
+
+    <h2>「たいてい届く」は「必ず届く」ではない</h2>
+
+    <p>この一件で学んだのは、これでした。テストでは何十回も対戦して、一度も落ちなかった。だから大丈夫だと思っていた。でも、落ちる確率がゼロでないなら、遊ぶ人が増えれば必ず誰かが踏みます。そしてゲームが止まるには、一回で十分です。</p>
+
+    <p>それ以降に作った対戦ゲームには、この「番号をつけて、返事を待って、届くまで送り直す」を最初から入れています。ま囲碁も、バミリバーシも、将棋onビンゴも、中身は同じです。</p>
+
+    <p>大人数で遊ぶゲームは、別のやり方にしました。一手ずつ送るのではなく、部屋の主が「今の状態はこうです」というまとめを、数秒おきに全員へ配る。一回落ちても、次のまとめで追いつけます。人数が多いほど落ちる回数も増えるので、こちらの方が向いていました。</p>
+
+    <h2>スマホは、一瞬いなくなる</h2>
+
+    <p>似た話がもう一つあります。<a href="./mate.html">待てアート</a>で「勝手にタイトルに戻された」という報告でした。</p>
+
+    <p>調べると、スマホで通知を開いたり別のアプリに切り替えたりした瞬間、その人が<strong>部屋から抜けた扱い</strong>になっていました。実際には数秒で戻ってくるのに、抜けたと判定されて、人数が足りないからゲームが終わる。</p>
+
+    <p>これも、「いなくなった」と判定するまでに20秒の猶予を置くだけで直りました。20秒以内に戻ってきたら、何もなかったことにする。</p>
+
+    <p>通信は届かないことがあるし、人は一瞬いなくなる。そういう前提で作らないと、ゲームは意外なところで止まります。派手な機能ではないけれど、こういうところを直した日が、いちばん「作った」という気がしています。</p>
+
+    <h2>直したあとに、確かめ方も変えた</h2>
+
+    <p>この一件のあとから、オンラインの確認のやり方も変えました。それまでは、自分のパソコンで2つの画面を開いて対戦して、うまく動けば良しとしていました。でも同じパソコンの中では、通信はまず落ちません。落ちない環境で「落ちたときの動き」を確かめるのは、無理があります。</p>
+
+    <p>今は、わざと一手を捨てるテストをします。送った知らせを一回だけ握りつぶして、それでも次の再送で復帰するか。返事だけを落として、二重に置かれないか。地味な確認ですが、これをやっておくと「たぶん大丈夫」が「大丈夫」になります。</p>
+
+    <p>それでも最後は、実際のスマホ2台で、別々の回線から遊んでみるのが一番です。電車の中で片方が地下に入る、みたいなことは、机の上では起きません。作った本人が外で遊んでみて、初めて分かることがまだあります。</p>
+
+    <p>派手な新機能は、遊んだ人がすぐ気づいてくれます。こういう「止まらなくなった」直しは、誰にも気づかれません。でも、気づかれないのが一番いい状態なので、それでいいと思っています。</p>
+    </article>
+
+    <div class="end">
+      <button type="button" class="pill line like" id="likeBtn" aria-label="いいね"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 21C6.5 16.7 3 13.4 3 9.3 3 6.6 5.1 4.6 7.7 4.6c1.6 0 3.2.8 4.3 2.2 1.1-1.4 2.7-2.2 4.3-2.2C18.9 4.6 21 6.6 21 9.3c0 4.1-3.5 7.4-9 11.7z"/></svg><b id="likeN">…</b></button>
+      <a class="pill line" href="./tsubuyaki.html">一覧に戻る</a>
+    </div>
+  </div>
+<script>
+/* いいね: ハブのカードと同じ仕組み(scoresへ name="__col__"/mode="col_like_<記事ID>"/score=±1 を積んで合計)。本文は静的HTMLのまま=審査に影響なし */
+(function(){
+  const COL_ID="column-03";
+  const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co";
+  const SB_KEY="sb_publishable_cak3-W9Mmgahnwawreoa1Q_CVuhmkKL";
+  const H={ "apikey":SB_KEY, "Authorization":"Bearer "+SB_KEY };
+  const MODE="col_like_"+COL_ID, KEY="gmk.liked.col."+COL_ID;
+  const btn=document.getElementById("likeBtn"), num=document.getElementById("likeN");
+  if(!btn) return;
+  let likes=null;
+  const has=()=>{ try{ return localStorage.getItem(KEY)==="1"; }catch(e){ return false; } };
+  const set=v=>{ try{ v?localStorage.setItem(KEY,"1"):localStorage.removeItem(KEY); }catch(e){} };
+  const fmt=n=>n>=10000?(Math.round(n/1000)/10)+"万":String(n);
+  if(has()) btn.classList.add("liked");
+  fetch(SB_URL+"/rest/v1/scores?name=eq.__col__&mode=eq."+MODE+"&select=score",{headers:H})
+    .then(r=>r.ok?r.json():[]).then(a=>{ likes=Math.max(0,(Array.isArray(a)?a:[]).reduce((t,x)=>t+(x.score|0),0)); num.textContent=fmt(likes); })
+    .catch(()=>{ likes=0; num.textContent="0"; });
+  btn.addEventListener("click",()=>{
+    if(likes==null) return;
+    const now=!has(); set(now);
+    likes=Math.max(0,likes+(now?1:-1)); num.textContent=fmt(likes);
+    btn.classList.toggle("liked",now);
+    if(now){ btn.classList.remove("pop"); void btn.offsetWidth; btn.classList.add("pop"); }
+    fetch(SB_URL+"/rest/v1/scores",{ method:"POST", headers:{...H,"Content-Type":"application/json","Prefer":"return=minimal"},
+      body:JSON.stringify({ name:"__col__", mode:MODE, score: now?1:-1 }) }).catch(()=>{});
+  });
+})();
+</script>
+<script>document.addEventListener("focusin",function(e){var t=e.target;if(t&&t.tagName==="INPUT"&&t.value){setTimeout(function(){try{t.select();}catch(_){}},0);}});(function(){var tap=(window.matchMedia&&matchMedia("(pointer:coarse)").matches)?"タップ":"クリック";window.__TAPW=tap;function run(){var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);var n;while(n=w.nextNode()){var v=n.nodeValue;if(v&&(v.indexOf("タップ")>=0||v.indexOf("タッチ")>=0))n.nodeValue=v.split("タッチ").join(tap).split("タップ").join(tap);}}if(document.readyState!=="loading")run();else document.addEventListener("DOMContentLoaded",run);})();</script>
+</body>
+</html>

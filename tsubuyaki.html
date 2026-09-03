@@ -8,63 +8,48 @@
 <meta name="description" content="読んでください">
 <meta property="og:title" content="牧村たちのつぶやき">
 <meta property="og:description" content="読んでください">
-<meta name="theme-color" content="#ff3616">
+<meta name="theme-color" content="#ffffff">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
-  /* 生き物図鑑と同じ骨格(ヘッダー帯+クリーム地+紙のカード+金バー見出し+固定フッター)。色だけ本作の紺。緑にしたければ --pri/--pri-d/--pri-l の3つを図鑑の値に */
-  :root{
-    --pri:#ff3616; --pri-d:#d92a10; --pri-l:#ffece7; --pri-hi:#ff5a3e;
-    --brown:#8a5a2b; --cream:#f6efe0; --paper:#fffdf7; --ink:#33291f; --gold:#d8a53a;
-  }
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap');
+  /* 牧村たちのつぶやき: 白黒のエディトリアル調(2026-09-03牧村指示「白黒メインでスタイリッシュに・図鑑に引っ張られない」)。装飾は罫線と余白だけ */
+  :root{ --ink:#111; --sub:#7a7a7a; --line:#e6e6e6; }
   *{ box-sizing:border-box; font-family:"Noto Sans JP","Hiragino Sans",sans-serif; -webkit-tap-highlight-color:transparent; }
-  html,body{ margin:0; min-height:100%; }
-  body{ background:var(--cream); color:var(--ink); line-height:1.7; }
-  .wrap{ max-width:680px; margin:0 auto; padding:26px 14px 96px; }
+  html,body{ margin:0; }
+  body{ background:#fff; color:var(--ink); line-height:1.7; -webkit-font-smoothing:antialiased; }
+  .wrap{ max-width:640px; margin:0 auto; padding:52px 22px 64px; }
+  .brand{ display:flex; flex-direction:column; align-items:flex-start; text-decoration:none; color:var(--ink); }
+  .brand .k{ font-size:11px; font-weight:700; letter-spacing:.34em; }
+  .rule{ border:0; border-top:1px solid var(--ink); margin:0; }
+  .sec{ display:flex; align-items:baseline; gap:12px; margin:44px 0 6px; }
+  .sec .no{ font-size:11px; font-weight:400; letter-spacing:.18em; color:var(--sub); font-variant-numeric:tabular-nums; }
+  .sec .lb{ font-size:12px; font-weight:700; letter-spacing:.2em; }
+  .meta{ display:flex; flex-wrap:wrap; gap:14px; font-size:12.5px; color:var(--sub); font-variant-numeric:tabular-nums; }
+  .pill{ display:inline-flex; align-items:center; gap:8px; text-decoration:none; border-radius:999px; font-size:13px; font-weight:700; letter-spacing:.06em; white-space:nowrap; cursor:pointer; }
+  .pill.solid{ background:var(--ink); color:#fff; padding:11px 20px 12px; }
+  .pill.line{ background:#fff; color:var(--ink); border:1.5px solid var(--ink); padding:9px 17px 10px; }
+  .pill svg{ width:13px; height:13px; flex:none; }
+  .pill:active{ transform:scale(.97); }
 
-  header.site{ background:linear-gradient(160deg,var(--pri-hi),var(--pri) 60%,var(--pri-d)); color:#fff; padding:26px 16px 28px; position:relative; overflow:hidden; }
-  header .in{ width:100%; max-width:680px; margin:0 auto; position:relative; z-index:1; text-align:center; }
-  header h1.logo{ margin:0 0 8px; display:flex; align-items:center; justify-content:center; gap:11px; }
-  .logo-mark{ flex:none; width:92px; height:78px; display:flex; align-items:center; justify-content:center; }
-  .logo-mark svg{ width:92px; height:78px; filter:drop-shadow(0 2px 4px rgba(0,0,0,.22)); transform:translateY(2px); }
-  .logo-txt{ display:flex; flex-direction:column; align-items:flex-start; text-align:left; line-height:1; }
-  .logo-txt .k{ font-size:12px; font-weight:900; letter-spacing:.22em; color:rgba(255,255,255,.82); margin-bottom:4px; margin-left:2px; }
-  .logo-txt .m{ font-size:clamp(27px,7.4vw,36px); font-weight:900; letter-spacing:.02em; color:#fff; text-shadow:0 2px 4px rgba(120,25,8,.3); }
-  .logo-txt .m b{ color:#ffe08a; }
-  header p{ margin:0; font-size:12px; font-weight:500; opacity:.92; }
-
-  .section-label{ font-size:12px; font-weight:900; letter-spacing:.12em; color:var(--pri-d); margin:22px 4px 10px; display:flex; align-items:center; gap:8px; }
-  .section-label::before{ content:""; width:6px; height:16px; border-radius:3px; background:var(--gold); }
-
+  .brand .m{ font-size:clamp(44px,13vw,68px); font-weight:900; letter-spacing:-.03em; line-height:1; margin-top:6px; }
+  .lead{ font-size:13px; color:var(--sub); margin:18px 0 30px; letter-spacing:.04em; }
   /* 最新のつぶやき */
-  .hero{ position:relative; display:block; text-decoration:none; color:inherit; background:var(--paper); border:2px solid var(--pri); border-radius:18px; padding:20px 18px;
-    box-shadow:0 8px 22px rgba(255,54,22,.14); transition:transform .15s; }
-  .hero:active{ transform:scale(.99); }
-  .hero .cdate{ position:absolute; top:15px; right:18px; font-size:12px; font-weight:800; color:rgba(138,90,43,.55); }
-  .hero .nm{ font-size:clamp(20px,5.6vw,27px); font-weight:900; color:var(--pri-d); margin:4px 0 6px; letter-spacing:.01em; line-height:1.45; padding-right:84px; }
-  .hero .by{ font-size:12.5px; font-weight:800; color:var(--brown); margin:0 0 8px 2px; }
-  .hero .note{ font-size:13.5px; font-weight:600; color:rgba(51,41,31,.75); margin:0 0 0 2px; line-height:1.85; }
-  .hero-foot{ display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-top:14px; }
-  .read-btn{ flex:none; font-size:14px; font-weight:900; letter-spacing:.06em; color:#fff;
-    background:linear-gradient(150deg,var(--pri-hi),var(--pri) 60%,var(--pri-d)); border-radius:999px; padding:9px 22px 10px;
-    box-shadow:0 3px 8px rgba(255,54,22,.35); white-space:nowrap; }
-
+  .hero{ display:block; text-decoration:none; color:inherit; padding:14px 0 28px; border-bottom:1px solid var(--line); }
+  .hero .t{ font-size:clamp(24px,6.6vw,34px); font-weight:800; line-height:1.38; letter-spacing:-.01em; margin:0; }
+  .hero .meta{ margin-top:14px; }
+  .hero .go{ display:flex; justify-content:flex-end; margin-top:24px; }
+  @media(hover:hover){ .hero:hover .pill.solid{ transform:translateX(2px); } }
   /* これまでのつぶやき */
-  .clist{ display:flex; flex-direction:column; gap:9px; }
-  .crow{ display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit; background:var(--paper); border:1.5px solid rgba(138,90,43,.22); border-radius:13px; padding:12px 15px; transition:transform .12s; }
-  .crow:active{ transform:scale(.99); }
-  .crow .cmain{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
-  .crow .cn{ font-size:15.5px; font-weight:900; color:var(--pri-d); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .crow .cday{ font-size:11px; font-weight:700; color:rgba(138,90,43,.6); }
-  .crow .arw{ color:rgba(138,90,43,.5); flex:none; display:flex; align-items:center; }
-  .crow .arw svg{ width:11px; height:11px; }
-  .empty{ background:var(--paper); border:2px dashed rgba(138,90,43,.35); border-radius:16px; padding:24px 18px; text-align:center;
-    color:rgba(51,41,31,.6); font-weight:700; font-size:13.5px; line-height:1.8; }
-
-  .home-foot{ position:fixed; left:0; right:0; bottom:0; z-index:40; display:block; text-align:center;
-    padding:34px 0 16px; font-size:13px; font-weight:800; letter-spacing:.2em; text-decoration:none;
-    color:rgba(255,255,255,.95); text-shadow:0 1px 2px rgba(10,30,50,.45);
-    background:linear-gradient(to top, rgba(217,42,16,.34), rgba(217,42,16,.16) 50%, rgba(217,42,16,0)); }
-  .home-foot:active{ opacity:.6; }
+  .row{ display:flex; align-items:center; gap:14px; padding:18px 0; border-bottom:1px solid var(--line); text-decoration:none; color:inherit; }
+  .row .idx{ flex:none; width:24px; font-size:11px; letter-spacing:.12em; color:var(--sub); font-variant-numeric:tabular-nums; }
+  .row .tt{ flex:1; min-width:0; font-size:15.5px; font-weight:700; line-height:1.55; }
+  .row .by{ flex:none; font-size:12px; color:var(--sub); }
+  .row .arw{ flex:none; display:flex; color:var(--ink); }
+  .row .arw svg{ width:13px; height:13px; }
+  @media(hover:hover){ .row:hover .arw{ transform:translateX(3px); } .row .arw{ transition:transform .15s; } }
+  @media(max-width:420px){ .row .by{ display:none; } }
+  .empty{ padding:26px 0; font-size:13px; color:var(--sub); border-bottom:1px solid var(--line); }
+  .foot{ margin-top:60px; text-align:center; }
+  .foot a{ display:inline-block; font-size:11.5px; font-weight:700; letter-spacing:.26em; color:var(--ink); text-decoration:none; border-bottom:1px solid var(--ink); padding-bottom:4px; }
 </style>
 <!-- Google AdSense -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8539036056022595" crossorigin="anonymous"></script>
@@ -72,41 +57,36 @@
 <meta property="og:image" content="https://makimura-gamehub.com/icon.png">
 </head>
 <body>
-  <header class="site">
-    <div class="in">
-      <h1 class="logo">
-        <span class="logo-mark"><svg viewBox="0 0 92 78" xmlns="http://www.w3.org/2000/svg">
-          <!-- 吹き出し2つ=牧村と友達。中は文章に見立てた罫線 -->
-          <path d="M20 56 L14 70 L34 56 Z" fill="#fffdf7"/>
-          <rect x="6" y="8" width="56" height="48" rx="12" fill="#fffdf7"/>
-          <g stroke="rgba(255,54,22,.45)" stroke-width="4.2" stroke-linecap="round"><path d="M17 23 H51"/><path d="M17 33 H45"/><path d="M17 43 H37"/></g>
-          <path d="M72 62 L78 74 L60 62 Z" fill="#ffe08a"/>
-          <rect x="44" y="30" width="42" height="32" rx="10" fill="#ffe08a"/>
-          <g stroke="rgba(120,80,20,.5)" stroke-width="3.6" stroke-linecap="round"><path d="M53 42 H77"/><path d="M53 51 H69"/></g>
-        </svg></span>
-        <span class="logo-txt"><span class="k">牧村たちの</span><span class="m">つぶやき</span></span>
-      </h1>
-      <p>読んでください</p>
-    </div>
-  </header>
-
   <div class="wrap">
-    <div class="section-label">最新のつぶやき</div>
+    <h1 class="brand" style="margin:0;"><span class="k">牧村たちの</span><span class="m">つぶやき</span></h1>
+    <p class="lead">読んでください</p>
+    <hr class="rule">
+
+    <div class="sec"><span class="no">01</span><span class="lb">最新のつぶやき</span></div>
     <a class="hero" href="./column-01.html">
-      <span class="cdate">2026/09/03</span>
-      <div class="nm">「本当にただの点に」― ノミのみができるまで</div>
-      <div class="by">書いた人：牧村</div>
-      <div class="note">最初に作ったノミには、脚が生えていました。トゲも影もモヤもあった。それを全部削って、最後に残ったのが「ただの黒い点」でした。なぜ削ったのか、にじみの原因が何だったのか、そして虹ノミの確率をどう決めたのか。</div>
-      <div class="hero-foot"><span class="read-btn">読む</span></div>
+      <h2 class="t">「本当にただの点に」― ノミのみができるまで</h2>
+      <div class="meta"><span>書いた人：牧村</span><span>2026/09/03</span></div>
+      <div class="go"><span class="pill solid">読んでみる <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M12 5l7 7-7 7"/></svg></span></div>
     </a>
 
-    <div class="section-label">これから増えていきます</div>
-    <div class="clist">
-      <div class="empty">2本目からここに並びます<br>思いついたときに書き足していきます</div>
+    <div class="sec"><span class="no">02</span><span class="lb">これまでのつぶやき</span></div>
+    <div class="list">
+      <a class="row" href="./column-02.html">
+        <span class="idx">02</span>
+        <span class="tt">「待て！」と言えるのは、ひとり一回だけ</span>
+        <span class="by">書いた人：牧村</span>
+        <span class="arw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M12 5l7 7-7 7"/></svg></span>
+      </a>
+      <a class="row" href="./column-03.html">
+        <span class="idx">03</span>
+        <span class="tt">誰も打てなくなった日</span>
+        <span class="by">書いた人：牧村</span>
+        <span class="arw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M12 5l7 7-7 7"/></svg></span>
+      </a>
     </div>
-  </div>
 
-  <a class="home-foot" href="./index.html">牧村が作ったゲーム集へ</a>
+    <div class="foot"><a href="./index.html">牧村が作ったゲーム集へ</a></div>
+  </div>
 <script>document.addEventListener("focusin",function(e){var t=e.target;if(t&&t.tagName==="INPUT"&&t.value){setTimeout(function(){try{t.select();}catch(_){}},0);}});(function(){var tap=(window.matchMedia&&matchMedia("(pointer:coarse)").matches)?"タップ":"クリック";window.__TAPW=tap;function run(){var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);var n;while(n=w.nextNode()){var v=n.nodeValue;if(v&&(v.indexOf("タップ")>=0||v.indexOf("タッチ")>=0))n.nodeValue=v.split("タッチ").join(tap).split("タップ").join(tap);}}if(document.readyState!=="loading")run();else document.addEventListener("DOMContentLoaded",run);})();</script>
 </body>
 </html>

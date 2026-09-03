@@ -8,60 +8,45 @@
 <meta name="description" content="ノミのみは、作っては削りを繰り返して最後に「ただの黒い点」になった。脚を消し、にじみを直し、音だけを足し続けた制作の記録">
 <meta property="og:title" content="「本当にただの点に」― ノミのみができるまで">
 <meta property="og:description" content="ノミのみは、作っては削りを繰り返して最後に「ただの黒い点」になった。脚を消し、にじみを直し、音だけを足し続けた制作の記録">
-<meta name="theme-color" content="#ff3616">
+<meta name="theme-color" content="#ffffff">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
-  :root{
-    --pri:#ff3616; --pri-d:#d92a10; --pri-l:#ffece7; --pri-hi:#ff5a3e;
-    --brown:#8a5a2b; --cream:#f6efe0; --paper:#fffdf7; --ink:#33291f; --gold:#d8a53a;
-  }
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap');
+  /* 牧村たちのつぶやき: 白黒のエディトリアル調(2026-09-03牧村指示「白黒メインでスタイリッシュに・図鑑に引っ張られない」)。装飾は罫線と余白だけ */
+  :root{ --ink:#111; --sub:#7a7a7a; --line:#e6e6e6; }
   *{ box-sizing:border-box; font-family:"Noto Sans JP","Hiragino Sans",sans-serif; -webkit-tap-highlight-color:transparent; }
-  html,body{ margin:0; min-height:100%; }
-  body{ background:var(--cream); color:var(--ink); line-height:1.7; }
-  .wrap{ max-width:680px; margin:0 auto; padding:18px 14px 96px; }
+  html,body{ margin:0; }
+  body{ background:#fff; color:var(--ink); line-height:1.7; -webkit-font-smoothing:antialiased; }
+  .wrap{ max-width:640px; margin:0 auto; padding:52px 22px 64px; }
+  .brand{ display:flex; flex-direction:column; align-items:flex-start; text-decoration:none; color:var(--ink); }
+  .brand .k{ font-size:11px; font-weight:700; letter-spacing:.34em; }
+  .rule{ border:0; border-top:1px solid var(--ink); margin:0; }
+  .sec{ display:flex; align-items:baseline; gap:12px; margin:44px 0 6px; }
+  .sec .no{ font-size:11px; font-weight:400; letter-spacing:.18em; color:var(--sub); font-variant-numeric:tabular-nums; }
+  .sec .lb{ font-size:12px; font-weight:700; letter-spacing:.2em; }
+  .meta{ display:flex; flex-wrap:wrap; gap:14px; font-size:12.5px; color:var(--sub); font-variant-numeric:tabular-nums; }
+  .pill{ display:inline-flex; align-items:center; gap:8px; text-decoration:none; border-radius:999px; font-size:13px; font-weight:700; letter-spacing:.06em; white-space:nowrap; cursor:pointer; }
+  .pill.solid{ background:var(--ink); color:#fff; padding:11px 20px 12px; }
+  .pill.line{ background:#fff; color:var(--ink); border:1.5px solid var(--ink); padding:9px 17px 10px; }
+  .pill svg{ width:13px; height:13px; flex:none; }
+  .pill:active{ transform:scale(.97); }
 
-  header.site{ background:linear-gradient(160deg,var(--pri-hi),var(--pri) 60%,var(--pri-d)); color:#fff; padding:16px 16px 18px; }
-  header .in{ width:100%; max-width:680px; margin:0 auto; text-align:center; }
-  header a.logo{ display:inline-flex; align-items:center; justify-content:center; gap:9px; text-decoration:none; color:#fff; }
-  .logo-mark svg{ width:54px; height:46px; display:block; filter:drop-shadow(0 2px 4px rgba(0,0,0,.22)); }
-  .logo-txt{ display:flex; flex-direction:column; align-items:flex-start; line-height:1; }
-  .logo-txt .k{ font-size:10px; font-weight:900; letter-spacing:.22em; color:rgba(255,255,255,.82); margin-bottom:3px; margin-left:1px; }
-  .logo-txt .m{ font-size:22px; font-weight:900; letter-spacing:.02em; text-shadow:0 2px 4px rgba(120,25,8,.3); }
-
-
-  /* 囲みなし=テキストだけ(2026-09-03牧村指示) */
-  .detail-head{ padding:14px 2px 4px; margin-bottom:4px; }
-  .detail-head .cdate{ display:block; font-size:12px; font-weight:800; color:rgba(138,90,43,.55); margin-bottom:6px; }
-  .detail-head .nm{ font-size:clamp(21px,5.8vw,28px); font-weight:900; color:var(--pri-d); letter-spacing:.01em; line-height:1.45; margin:0; }
-  .detail-head .by{ font-size:13px; font-weight:800; color:var(--brown); margin-top:8px; }
-
-  .paper{ padding:0 2px; }
-  .paper p{ font-size:15px; font-weight:500; line-height:2.05; color:rgba(51,41,31,.85); margin:14px 0; }
-  .paper p strong{ font-weight:800; color:var(--ink); }
-  .paper p a{ color:inherit; font-weight:500; text-decoration:underline; text-underline-offset:2px; text-decoration-thickness:1px; text-decoration-color:rgba(51,41,31,.32); }
-  .paper h2.sec{ font-size:16px; font-weight:900; letter-spacing:.04em; color:var(--pri-d); margin:34px 0 6px; display:flex; align-items:center; gap:8px; line-height:1.5; }
-  .paper h2.sec::before{ content:""; flex:none; width:6px; height:16px; border-radius:3px; background:var(--gold); }
-
-  .end-row{ display:flex; align-items:center; justify-content:center; gap:10px; margin-top:18px; flex-wrap:wrap; }
-  .btn{ display:inline-flex; align-items:center; justify-content:center; text-decoration:none; border-radius:12px; font-weight:900; font-size:15px; padding:11px 22px; white-space:nowrap; }
-  /* いいね(ハブのカードと同じ見た目・同じ仕組み=Supabaseに+1/-1を積んで合計) */
-  .like-row{ display:flex; justify-content:center; margin-top:30px; }
-  .c-like{ display:inline-flex; align-items:center; gap:7px; cursor:pointer; font-size:14px; font-weight:800; letter-spacing:.04em;
-    color:var(--pri); background:#fff; border:1.5px solid var(--pri); border-radius:999px; padding:9px 18px 10px; white-space:nowrap;
-    transition:transform .14s cubic-bezier(.3,1.4,.5,1), background .15s ease, color .15s ease, box-shadow .15s ease; }
-  .c-like svg{ width:15px; height:15px; fill:currentColor; flex:none; }
-  .c-like b{ font-size:14px; font-weight:400; margin-left:2px; }
-  .c-like:active{ transform:scale(.94); }
-  .c-like.liked{ color:#fff; background:linear-gradient(150deg,var(--pri-hi),var(--pri) 60%,var(--pri-d)); border-color:transparent; }
+  .brand .m{ font-size:22px; font-weight:900; letter-spacing:-.02em; line-height:1; margin-top:4px; }
+  .top{ display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:16px; }
+  h1.title{ font-size:clamp(26px,7vw,38px); font-weight:800; line-height:1.38; letter-spacing:-.01em; margin:38px 0 0; }
+  .title + .meta{ margin-top:14px; }
+  article{ margin-top:36px; }
+  article p{ font-size:15.5px; font-weight:400; line-height:2.1; color:#222; margin:0 0 18px; }
+  article p strong{ font-weight:700; color:var(--ink); }
+  article p a{ color:inherit; text-decoration:underline; text-underline-offset:3px; text-decoration-thickness:1px; text-decoration-color:rgba(17,17,17,.35); }
+  article h2{ font-size:17px; font-weight:800; line-height:1.5; margin:46px 0 14px; padding-left:12px; border-left:3px solid var(--ink); }
+  /* 下部: いいね(ハブと同じハート+数字だけ) → 一覧に戻る。右寄せ */
+  .end{ margin-top:48px; padding-top:22px; border-top:1px solid var(--line); display:flex; justify-content:flex-end; align-items:center; gap:10px; }
+  .like{ font-variant-numeric:tabular-nums; }
+  .like svg{ width:14px; height:14px; }
+  .like b{ font-weight:400; font-size:13px; }
+  .like.liked{ background:var(--ink); color:#fff; }
   @keyframes likePop{ 0%{ transform:scale(1); } 40%{ transform:scale(1.45); } 100%{ transform:scale(1); } }
-  .c-like.pop svg{ animation:likePop .4s ease-out; }
-  .btn.ghost{ background:#fff; color:var(--pri-d); border:2px solid rgba(255,54,22,.4); }
-
-  .home-foot{ position:fixed; left:0; right:0; bottom:0; z-index:40; display:block; text-align:center;
-    padding:34px 0 16px; font-size:13px; font-weight:800; letter-spacing:.2em; text-decoration:none;
-    color:rgba(255,255,255,.95); text-shadow:0 1px 2px rgba(10,30,50,.45);
-    background:linear-gradient(to top, rgba(217,42,16,.34), rgba(217,42,16,.16) 50%, rgba(217,42,16,0)); }
-  .home-foot:active{ opacity:.6; }
+  .like.pop svg{ animation:likePop .4s ease-out; }
 </style>
 <!-- Google AdSense -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8539036056022595" crossorigin="anonymous"></script>
@@ -69,34 +54,19 @@
 <meta property="og:image" content="https://makimura-gamehub.com/icon.png">
 </head>
 <body>
-  <header class="site">
-    <div class="in">
-      <a class="logo" href="./tsubuyaki.html">
-        <span class="logo-mark"><svg viewBox="0 0 92 78" xmlns="http://www.w3.org/2000/svg">
-          <path d="M20 56 L14 70 L34 56 Z" fill="#fffdf7"/><rect x="6" y="8" width="56" height="48" rx="12" fill="#fffdf7"/>
-          <g stroke="rgba(255,54,22,.45)" stroke-width="4.2" stroke-linecap="round"><path d="M17 23 H51"/><path d="M17 33 H45"/><path d="M17 43 H37"/></g>
-          <path d="M72 62 L78 74 L60 62 Z" fill="#ffe08a"/><rect x="44" y="30" width="42" height="32" rx="10" fill="#ffe08a"/>
-          <g stroke="rgba(120,80,20,.5)" stroke-width="3.6" stroke-linecap="round"><path d="M53 42 H77"/><path d="M53 51 H69"/></g>
-        </svg></span>
-        <span class="logo-txt"><span class="k">牧村たちの</span><span class="m">つぶやき</span></span>
-      </a>
-    </div>
-  </header>
-
   <div class="wrap">
-    <div class="detail-head">
-      <span class="cdate">2026/09/03</span>
-      <h1 class="nm">「本当にただの点に」― ノミのみができるまで</h1>
-      <div class="by">書いた人：牧村</div>
-    </div>
+    <div class="top"><a class="brand" href="./tsubuyaki.html"><span class="k">牧村たちの</span><span class="m">つぶやき</span></a></div>
+    <hr class="rule">
 
-    <article class="paper">
+    <h1 class="title">「本当にただの点に」― ノミのみができるまで</h1>
+    <div class="meta"><span>書いた人：牧村</span><span>2026/09/03</span></div>
 
-    <p><a href="./nomi.html">ノミのみ</a>は、画面に映るのはノミのみ、それをただつぶすだけのゲームです。目的はありません。世界ランキングはあるけれど、クリアも勝ち負けもない。</p>
+    <article>
+<p><a href="./nomi.html">ノミのみ</a>は、画面に映るのはノミのみ、それをただつぶすだけのゲームです。目的はありません。世界ランキングはあるけれど、クリアも勝ち負けもない。</p>
 
     <p>このゲーム、実は一番作り直した作品です。作っては削り、作っては削りを繰り返して、最後に残ったのが「ただの黒い点」でした。今日はその話を書きます。</p>
 
-    <h2 class="sec">最初のノミには、脚が生えていた</h2>
+    <h2>最初のノミには、脚が生えていた</h2>
 
     <p>最初に作ったノミは、ちゃんとノミの形をしていました。小さなトゲがあって、脚が何本かあって、ちょこちょこ向きを変えながら歩く。周りにうっすらモヤみたいな影もつけました。生き物っぽくしたかったからです。</p>
 
@@ -106,7 +76,7 @@
 
     <p>だから削りました。トゲを消し、脚を消し、回転をやめ、ゆらぎもやめた。影も、モヤも、光もやめた。残ったのは、本当にただの丸い黒い点です。</p>
 
-    <h2 class="sec">にじんでいたのは、解像度のせいだった</h2>
+    <h2>にじんでいたのは、解像度のせいだった</h2>
 
     <p>点にしたあとも、まだ「ぼやぼやしている」感じが残っていました。ぼかしなんてどこにも入れていないのに、輪郭がにじんで見える。</p>
 
@@ -116,7 +86,7 @@
 
     <p><strong>「ぼかしを消す」のではなく「引き伸ばすのをやめる」のが正解だった</strong>、という話です。</p>
 
-    <h2 class="sec">削るのをやめて、足したもの</h2>
+    <h2>削るのをやめて、足したもの</h2>
 
     <p>見た目はとにかく削りましたが、ひとつだけ足し続けたものがあります。音です。</p>
 
@@ -124,7 +94,7 @@
 
     <p>最初に作った音は鈍かった。「もっと明るく」と直したら今度は高すぎて耳に刺さった。そこから一段だけ戻して、今の音になっています。ここは何度もやり直しました。文字にすると数行だけれど、実際は一番時間をかけたところです。</p>
 
-    <h2 class="sec">虹ノミは、負けている人に多く出る</h2>
+    <h2>虹ノミは、負けている人に多く出る</h2>
 
     <p>たまに、虹色に光るノミが出ます。つぶすと50匹ぶんになる、当たりのノミです。</p>
 
@@ -132,7 +102,7 @@
 
     <p>これは意図的にそうしました。ずっと上位にいる人が虹ノミも多く拾えたら、差はもう縮まりません。始めたばかりの人にこそ「お、光った」があってほしかった。</p>
 
-    <h2 class="sec">時計を進めても、増えません</h2>
+    <h2>時計を進めても、増えません</h2>
 
     <p>ノミは、ページを閉じている間も増えます。次に開いたときに、留守にしていた分がまとまって湧く。</p>
 
@@ -142,7 +112,7 @@
 
     <p>こういう「誰も気づかないところ」を直すのは、正直しんどいです。でもランキングがあるゲームで、そこを放っておくのは違うと思いました。</p>
 
-    <h2 class="sec">数字は、ノミに押されて動きます</h2>
+    <h2>数字は、ノミに押されて動きます</h2>
 
     <p>画面の真ん中にある「つぶした数」の数字。あれ、固定されていません。<strong>ノミが体でぶつかると、その方向にじわじわ押されて動きます。</strong></p>
 
@@ -152,29 +122,22 @@
 
     <p>誰も気づかない仕様だと思います。でも、あの数字がわずかに動いているだけで、画面が生きている感じがするんです。</p>
 
-    <h2 class="sec">それで、目的はないままです</h2>
+    <h2>それで、目的はないままです</h2>
 
     <p>さんざん手をかけたのに、このゲームには目的がありません。クリアもない。</p>
 
     <p>ただ、たまに「4万匹つぶした」というスクリーンショットが送られてきます。あの数字を見ると、こっちが変な気持ちになります。ああ、この人こんなに押したんだ、と思う。</p>
 
     <p>それでいいと思っています。</p>
-
     </article>
 
-    <div class="like-row">
-      <button type="button" class="c-like" id="likeBtn" aria-label="この文章にいいね"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21C6.5 16.7 3 13.4 3 9.3 3 6.6 5.1 4.6 7.7 4.6c1.6 0 3.2.8 4.3 2.2 1.1-1.4 2.7-2.2 4.3-2.2C18.9 4.6 21 6.6 21 9.3c0 4.1-3.5 7.4-9 11.7z"/></svg>この文章いいね<b id="likeN">…</b></button>
-    </div>
-    <div class="end-row">
-      <a class="btn ghost" href="./tsubuyaki.html">一覧に戻る</a>
+    <div class="end">
+      <button type="button" class="pill line like" id="likeBtn" aria-label="いいね"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 21C6.5 16.7 3 13.4 3 9.3 3 6.6 5.1 4.6 7.7 4.6c1.6 0 3.2.8 4.3 2.2 1.1-1.4 2.7-2.2 4.3-2.2C18.9 4.6 21 6.6 21 9.3c0 4.1-3.5 7.4-9 11.7z"/></svg><b id="likeN">…</b></button>
+      <a class="pill line" href="./tsubuyaki.html">一覧に戻る</a>
     </div>
   </div>
-
-  <a class="home-foot" href="./index.html">牧村が作ったゲーム集へ</a>
 <script>
-/* いいね: ハブのカードと同じ仕組み。scoresテーブルに name="__col__" / mode="col_like_<記事ID>" / score=+1 or -1 を積み、合計を表示。
-   公開キーはINSERT/SELECTのみなので取り消しは-1行で相殺。押した記録はこのブラウザのlocalStorageに保存(トグル)。
-   ※本文は静的HTMLのまま=審査に影響しない。数字だけ後から届く */
+/* いいね: ハブのカードと同じ仕組み(scoresへ name="__col__"/mode="col_like_<記事ID>"/score=±1 を積んで合計)。本文は静的HTMLのまま=審査に影響なし */
 (function(){
   const COL_ID="column-01";
   const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co";
