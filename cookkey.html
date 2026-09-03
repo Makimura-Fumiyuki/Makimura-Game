@@ -161,6 +161,7 @@
   .sc-nm{ flex:1; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .sc-pt{ font-size:15px; font-weight:900; min-width:56px; text-align:right; }
   .sc-kick{ padding:4px 10px; border-radius:999px; border:1.5px solid rgba(215,71,63,.6); background:#fff; color:#d7473f; font-size:12px; font-weight:900; cursor:pointer; }
+  #doneBtn.waiting{ filter:saturate(.4) brightness(.85); font-size:15px; letter-spacing:.06em; }
   .done-list{ font-size:12.5px; font-weight:700; opacity:.75; text-align:center; min-height:16px; letter-spacing:.03em; }
   .size-btn{
     width:56px; height:56px; border:2px solid rgba(253,246,231,.28); border-radius:13px; cursor:pointer;
@@ -344,15 +345,7 @@
   .txt-btn{ padding:9px 22px; border:1.5px solid rgba(253,246,231,.35); border-radius:999px;
     background:transparent; color:var(--card); font-size:14px; font-weight:800; letter-spacing:.08em; cursor:pointer; }
 
-  /* 試作用(完成時に消す) */
-  .dev-bar{ display:none !important; }
-  /* デバッグ(ひとりで遊ぶ)はクッキーの左側に縦並び。下部だとスタンプバーと重なって押せないことがあった */
-  .dev-side{ position:absolute; right:calc(100% + 10px); top:0; display:none; flex-direction:column; gap:8px; z-index:8; }
-  .dev-side.on{ display:flex; }
-  .dev-side button{ padding:7px 12px; border:1.5px dashed rgba(253,246,231,.45); border-radius:999px; white-space:nowrap;
-    background:rgba(0,0,0,.25); color:var(--card); font-size:12px; font-weight:800; cursor:pointer; opacity:.9; }
-  .dev-bar button{ padding:6px 14px; border:1.5px dashed rgba(253,246,231,.4); border-radius:999px;
-    background:transparent; color:var(--card); font-size:12px; font-weight:800; cursor:pointer; opacity:.75; }
+
 </style>
 </head>
 <body>
@@ -392,14 +385,13 @@
 <div class="scene" id="gameScene">
   <div class="top-bar">
     <span class="pill" id="roundPill">1回目</span>
-    <span class="timer" id="timer">00:20</span>
+    <span class="timer" id="timer">00:30</span>
     <span class="pill" style="visibility:hidden;"></span>
   </div>
   <div class="plate" id="cookiePlate">
     <canvas id="cookie"></canvas>
     <div id="penGhost"></div>
     <div id="addFloat"></div>
-    <div class="dev-side" id="devSide"></div>
   </div>
   <div class="pen-row" id="penRow">
     <div class="pen-sizes" id="sizeRow">
@@ -412,11 +404,6 @@
   </div>
   <div class="top-bar one" id="roleRow" style="margin:10px 0 0;">
     <span class="role" id="roleTx">友達を信じてクッキーを食べよう</span>
-  </div>
-  <div class="dev-bar" id="devBar" style="display:none;">
-    <button id="devLv">シルエットLv1</button>
-    <button id="devNewKey">鍵を作り直す</button>
-    <button id="devSolve">形どおりに削る</button>
   </div>
 
   <div class="judge-wrap" id="judgeWrap">
@@ -1075,7 +1062,7 @@ let cookie=null, keyMeta=null, key=null, hazards=[], target=null;
 let players=[], carverIdx=0, roundNo=1, phase="title";
 let penSize=7, carving=false, devMode=false;
 /* 通しのタイマー(全クッキー共通)。爆弾を削ると−30秒、1枚仕上げるごとに一致度ぶん増える */
-let timeLimit=20, tIdx=1, tEnd=0, tIv=0, clockMs=0, clockRunning=false, danger30=false;
+let timeLimit=30, tIdx=2, tEnd=0, tIv=0, clockMs=0, clockRunning=false, danger30=false;
 const TIMES=Array.from({length:30},(_,i)=>(i+1)*10);   // 10秒刻み・10秒〜5分
 let rounds=5;                              // ラウンド数(ロビーで1〜10・対戦のみ)
 /* ルールは協力のみ(2026-08-19に対戦モードとクリア基準を廃止)。ラウンド制で、スコア=各ラウンドの一致度(%)の合計 */
@@ -1087,11 +1074,9 @@ const PCOL=["#ff6b6b","#4dabf7","#69db7c","#ffd43b","#da77f2","#ff922b","#38d9a9
 let eater=null, totals={}, lastScores=null, scoreView=false, edgeMask=null;   // edgeMask=お手本のきわ2マス以内(外側)=高得点ゾーン
 let doneSet=new Set();
 let lastKind=null;                         // 直前のお手本の種類(同じ形を続けない)
-let devLevel=0;                            // ひとりで遊ぶのデバッグ: シルエットレベル(0=自動)
 /* お手本のレベル: 協力=3ラウンドごとに1→2→3(以降3)。対戦=1。ひとりのデバッグで固定もできる */
 /* お手本のレベル: 1ラウンド目=鍵。残りのラウンドの最初の1/3(切り上げ)がLv1、それ以降がLv2 */
-function shapeLevel(){ if(!online && devLevel) return devLevel; if(roundNo<=1) return 1; const rest=rounds-1, lv1n=Math.ceil(rest/3); return (roundNo-2 < lv1n)? 1 : 2; }
-let devRegen=false;                        // デバッグの「作り直す」中(1枚目でも鍵以外を出す)                     // 「鍵完成」を押した人(全員そろったら判定へ)
+function shapeLevel(){ if(roundNo<=1) return 1; const rest=rounds-1, lv1n=Math.ceil(rest/3); return (roundNo-2 < lv1n)? 1 : 2; }                     // 「鍵完成」を押した人(全員そろったら判定へ)
 let pens={}, penSendAt=0;                  // ほかの人のペンの位置(食べていなくても見える)   // eater=マスごとに「誰が食べたか」(players index+1)
 const BOMB_PENALTY=20;
 const myId=Math.random().toString(36).slice(2,10);   // ★端末ごとに違うID(固定値にすると全員が同じ人だと判定される)
@@ -1099,7 +1084,6 @@ let regions=1;
 let online=false, ch=null, myName="";   // オンライン用(次の実装で使う)
 function instructors(){ return players.filter((p,i)=>i!==carverIdx); }
 function iAmCarver(){ return !!players[carverIdx] && players[carverIdx].id===myId; }
-/* 試作モード(1人で遊んでみる)のときだけ、指示側でもクッキーを食べられる。本編では絶対に通さない */
 function canCarve(){ return true; }   // 2026-08-19改修: 全員が同時に食べる(役割なし)
 function myRegion(){
   const ins=instructors(), k=ins.findIndex(p=>p.id===myId);
@@ -1522,7 +1506,8 @@ function revFrame(now){
 
 /* ================= 進行 ================= */
 function showScene(s){ ["titleScene","lobbyScene","gameScene","resultScene"].forEach(id=>$(id).classList.toggle("on", id===s));
-  $("scoreBtn").style.display=(s==="gameScene")?"":"none"; $("scoreOv").classList.remove("on"); }
+  $("scoreBtn").style.display=(s==="gameScene")?"":"none"; $("scoreOv").classList.remove("on");
+  $("stampBar").classList.toggle("on", (s==="lobbyScene"&&online) || s==="gameScene"); }   // スタンプはロビーでも使える(2026-09-03)
 let toastTmr=0;
 function toast(msg,ms){ const t=$("toast"); t.textContent=msg; t.classList.add("on");
   clearTimeout(toastTmr); toastTmr=setTimeout(()=>t.classList.remove("on"), ms||1900); }
@@ -1548,9 +1533,9 @@ function newKey(){
   if(lv>=2){
     let pool=SHAPE_LV2.filter(k=>k!==lastKind); if(!pool.length) pool=SHAPE_LV2.slice();
     keyMeta=Object.assign(randomShapeMeta(), {kind:pool[R(0,pool.length-1)], lv:2});
-  }else if(roundNo===1 && !devLevel && !devRegen){ keyMeta=randomKey(); keyMeta.lv=lv; }   // 1枚目は鍵(デバッグの作り直しは何でも出る)
+  }else if(roundNo===1){ keyMeta=randomKey(); keyMeta.lv=lv; }   // 1枚目は鍵
   else{
-    let pool=SHAPE_KINDS.slice(); if(roundNo>=3 || devLevel || devRegen) pool.push("key");
+    let pool=SHAPE_KINDS.slice(); if(roundNo>=3) pool.push("key");
     pool=pool.filter(k=>k!==lastKind); if(!pool.length) pool=SHAPE_KINDS.slice();
     const kind=pool[R(0,pool.length-1)];
     keyMeta=(kind==="key")? randomKey() : Object.assign(randomShapeMeta(), {kind:kind});
@@ -1571,7 +1556,7 @@ function newKey(){
   crumbs=[]; if(crIv){ clearInterval(crIv); crIv=0; }
   popTx=[]; rev=null;
 }
-function startRound(){        // お手本を作るのはホスト(または試作モード)だけ
+function startRound(){        // お手本を作るのはホスト(またはひとりで遊ぶ)だけ
   clockMs=timeLimit*1000; danger30=false; document.body.classList.remove("danger");   // ラウンドごとに持ち時間はリセット(30秒固定)
   newKey();
   phase="carve"; lastPh="carve";
@@ -1587,13 +1572,12 @@ function enterCarveUI(){
   $("roundPill").textContent=roundNo+" / "+rounds;
   resetZoom(); ptrs.clear(); pinch=null; pinchLock=false;
   $("timer").style.visibility="visible";
-  doneSet=new Set(); const db=$("doneBtn"); db.disabled=false; db.textContent="鍵完成"; renderDoneList();
+  doneSet=new Set(); renderDoneBtn(); renderDoneList();
   $("roleRow").style.display="none";        // 役割テキストは廃止
   $("penRow").style.display=canCarve()?"flex":"none";   // 全員が食べるので全員に出る
   $("doneBtn").style.display="";                         // 鍵完成=全員が押すか時間切れで判定へ
   $("ptList").style.display="none"; $("ptList").innerHTML="";
   $("sizeRow").style.display=canCarve()?"flex":"none";
-  $("devSide").classList.toggle("on", !online);  // ひとりで遊ぶ=デバッグ(シルエットLv/作り直す/形どおりに削る)あり
   hideGhost(); layoutCookie();
   if(isHost||!online) startClock(); else startTimerFollowClock();   // ひとりで遊ぶ(オンラインなし)も自分でタイマーを回す
   $("stampBar").classList.add("on");
@@ -1678,7 +1662,6 @@ function enterJudgeUI(){
   }
   document.body.classList.remove("danger");
   $("penRow").style.display="none";
-  $("devSide").classList.remove("on");
   $("roleRow").style.display="none";
   $("timer").style.visibility="hidden";      // 判定中の「00:00」は意味がないので隠す
   $("judgeWrap").classList.add("on");
@@ -1706,13 +1689,18 @@ function showScoreBoard(rate){
 }
 function playScore(){ if(!actx) return; const t=actx.currentTime; note(660,t,0.08,0.06,"triangle"); note(880,t+0.09,0.08,0.06,"triangle"); note(1100,t+0.18,0.14,0.07,"triangle"); }
 $("doneBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); pressDone(); });
-function pressDone(){                      // 自分は「鍵完成」。全員が押したら(または時間切れで)判定へ
-  if(phase!=="carve" || doneSet.has(myId)) return;
-  doneSet.add(myId);
-  const db=$("doneBtn"); db.disabled=true; db.textContent= (online && players.length>1)? "みんなを待っています…" : "鍵完成";
-  renderDoneList();
-  if(online && !isHost){ try{ ch.send({type:"broadcast",event:"act",payload:{t:"done",from:myId}}); }catch(e){} return; }
-  checkAllDone();
+function pressDone(){                      // 自分は「鍵完成」。もう一度押すと取り消し。全員が押したら(または時間切れで)判定へ
+  if(phase!=="carve") return;
+  const undo=doneSet.has(myId);
+  if(undo) doneSet.delete(myId); else doneSet.add(myId);
+  renderDoneBtn(); renderDoneList();
+  if(online && !isHost){ try{ ch.send({type:"broadcast",event:"act",payload:{t:undo?"undone":"done",from:myId}}); }catch(e){} return; }
+  if(undo) sendSnap(); else checkAllDone();
+}
+function renderDoneBtn(){                  // 押した後は「みんなを待っています…」(もう一度押せば解除)
+  const db=$("doneBtn"); const mine=doneSet.has(myId);
+  db.classList.toggle("waiting", mine);
+  db.textContent= mine? ((online && players.length>1)? "みんなを待っています…（押すと取り消し）" : "鍵完成") : "鍵完成";
 }
 function checkAllDone(){
   if(phase!=="carve") return;
@@ -1783,7 +1771,6 @@ function gameOverUI(){
   $("bigCount").classList.remove("on");
   $("penRow").style.display="none";           // 「鍵作り終了」の間はまわりのUIを隠す
   $("roleRow").style.display="none";
-  $("devSide").classList.remove("on");
   $("judgeWrap").classList.remove("on");
   $("nextBtn").style.display="none";
   $("judgeBig").textContent="";
@@ -1827,7 +1814,7 @@ function miniKey(grid, tgt){       // 削り上がったクッキーを小さく
 $("resLobby").addEventListener("click",()=>{      // 部屋主=全員でロビーへ / ゲスト=自分だけ先にロビー画面へ(部屋主が戻れば同期する)
   ensureAudio(); playSelect();
   if(isHost) hostToLobby();
-  else { showScene("lobbyScene"); renderLobby(); $("stampBar").classList.remove("on"); }
+  else { showScene("lobbyScene"); renderLobby(); }
 });
 $("resClose").addEventListener("click",()=>{      // 自分だけ抜ける
   ensureAudio(); playSelect();
@@ -1848,7 +1835,7 @@ function ruleFrameHTML(px){
     +'</div>'
     +'<button class="txt-btn rule-reset" id="'+px+'RuleReset">初期設定に戻す</button>';   // 枠の外(他作品と同じ)
 }
-const DEF_ROUNDS=5, DEF_TIDX=1;   // 初期設定=5ラウンド・20秒
+const DEF_ROUNDS=5, DEF_TIDX=2;   // 初期設定=5ラウンド・30秒
 function ruleSummary(){ return rounds+'ラウンド・制限時間 '+fmtTime(timeLimit); }
 function wireRuleFrame(px, after){       // 枠のボタン配線(after=変更後に呼ぶ。ロビーはsendSnap)
   const g=id=>$(px+id); const fin=()=>{ renderTime(); if(after) after(); };
@@ -1867,7 +1854,6 @@ function renderTime(){ timeLimit=TIMES[tIdx];
 }
 function wireRule(){ wireRuleFrame("", ()=>sendSnap()); renderTime(); }   // ロビー(部屋主だけ)
 
-/* ================= 試作用(完成時に消す) ================= */
 /* ひとりで遊ぶ(オンラインなし) */
 function startSolo(){
   ensureAudio(); playSelect(); devMode=false;
@@ -1901,10 +1887,6 @@ $("scoreBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); render
 $("scoreClose").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("scoreOv").classList.remove("on"); });
 $("scoreOv").addEventListener("click",e=>{ if(e.target===$("scoreOv")) $("scoreOv").classList.remove("on"); });
 $("soloRule").innerHTML=ruleFrameHTML("s"); wireRuleFrame("s", null); renderTime();
-(function(){ const sd=$("devSide"); ["devLv","devNewKey","devSolve"].forEach(id=>sd.appendChild($(id))); })();   // デバッグボタンをクッキー左へ
-$("devLv").addEventListener("click",()=>{ ensureAudio(); playSelect(); devLevel=(devLevel%2)+1; $("devLv").textContent="シルエットLv"+devLevel; });
-$("devNewKey").addEventListener("click",()=>{ ensureAudio(); playSelect(); devRegen=true; newKey(); devRegen=false; layoutCookie(); toast("作り直した",1100); });
-$("devSolve").addEventListener("click",()=>{ ensureAudio(); playSelect(); cookie=Uint8Array.from(target); buildImage(); drawCookie(); toast("お手本どおりに削った",1100); });
 
 /* ================= オンライン(ホスト権威+スナップショット) ================= */
 const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co";
@@ -1987,7 +1969,6 @@ function hostToLobby(){
   phase="lobby"; lastPh="lobby"; clearInterval(tIv);
   document.body.classList.remove("danger");
   document.querySelectorAll(".overlay").forEach(o=>o.classList.remove("on"));
-  $("stampBar").classList.remove("on");
   showScene("lobbyScene"); renderLobby(); sendSnap();
 }
 function goTitle(){
@@ -2005,7 +1986,7 @@ $("makeRoomBtn").addEventListener("click",()=>{
   code=genCode(); isHost=true; hostId=myId; online=true; devMode=false;
   players=[{id:myId, n:myName||"", s:0}];
   roundNo=1; carverIdx=0; madeKeys=[]; madeAt=-1;
-  openChannel(code, ()=>{ phase="lobby"; showScene("lobbyScene"); renderLobby(); sendSnap(); startHb(); });
+  openChannel(code, ()=>{ phase="lobby"; showScene("lobbyScene"); renderLobby(); sendSnap(); startHb(); });   // showSceneがロビーでもスタンプバーを出す
 });
 $("joinRoomBtn").addEventListener("click",()=>{
   ensureAudio(); playSelect(); leaveChannel();
@@ -2184,7 +2165,7 @@ function applySnap(p){
   if(p.rds) rounds=p.rds;
   if(typeof p.rs==="number") rateSum=p.rs;
   if(p.tot) totals=p.tot;
-  if(p.dn){ doneSet=new Set(p.dn); renderDoneList(); if(doneSet.has(myId)){ const db=$("doneBtn"); db.disabled=true; db.textContent="みんなを待っています…"; } }
+  if(p.dn){ doneSet=new Set(p.dn); renderDoneList(); renderDoneBtn(); }
   const ph=p.ph;
   if(ph!=="lobby" && p.km){
     const fresh = !keyMeta || JSON.stringify(keyMeta)!==JSON.stringify(p.km);
@@ -2207,7 +2188,7 @@ function applySnap(p){
     return;
   }
   lastPh=ph; phase=ph;
-  if(ph==="lobby"){ showScene("lobbyScene"); renderLobby(); $("stampBar").classList.remove("on"); }
+  if(ph==="lobby"){ showScene("lobbyScene"); renderLobby(); }
   else if(ph==="carve"){ enterCarveUI(); }
   else if(ph==="judge"){ enterJudgeUI(); }
   else if(ph==="over"){ gameOverUI(); }
@@ -2220,6 +2201,7 @@ function hostAct(a){
     return;
   }
   if(a.t==="done" && phase==="carve" && byId(a.from)){ doneSet.add(a.from); checkAllDone(); return; }   // 全員そろったら判定
+  if(a.t==="undone" && phase==="carve"){ doneSet.delete(a.from); renderDoneList(); sendSnap(); return; }   // 取り消し
   if(a.t==="next" && phase==="judge" && a.from===hostId){ nextRound(); return; }
 }
 /* 削りは「ペンの位置と太さ」を送って各自が同じ形にする(画像は送らない) */
@@ -2347,16 +2329,7 @@ document.addEventListener("focusin",e=>{
   if(t && t.tagName==="INPUT" && t.value){ setTimeout(()=>{ try{ t.select(); }catch(_){}} ,0); }
 });
 
-/* ★試作の検証用フック(完成時に削除する) */
-window.__ckDev={ get W(){return W;}, get H(){return H;}, get key(){return key;}, get target(){return target;},
-  get hazards(){return hazards;}, get regions(){return regions;}, get clock(){return clockMs;}, get popTx(){return popTx;},
-  rate:()=>shapeRate(cookie,target), newKey:()=>{ newKey(); layoutCookie(); },
-  solve:()=>{ cookie=Uint8Array.from(target); buildImage(); drawCookie(); },
-  over:()=>{ clockMs=0; gameOverUI(); },
-  setRound:(n)=>{ roundNo=n; },
-  scores:()=>calcScores(), board:()=>{ lastScores=calcScores(); showScoreBoard(shapeRate(cookie,target)); },
-  eaten:(k)=>{ let c=0; for(let i=0;i<W*H;i++) if(eater&&eater[i]===k) c++; return c; },
-  get pens(){ return pens; }, get done(){ return [...doneSet]; }, get kind(){ return keyMeta&&keyMeta.kind; } };
+
 
 function drawLogo(){   // ロゴの「Key」に、ゲーム中とまったく同じクッキーの柄を敷く
   const el=document.querySelector(".logo .key"); if(!el) return;
