@@ -102,8 +102,9 @@
   .c-thumb.t-maigo{ background:#f3ead7; }
   .c-thumb.t-maigomoku{ background:#f3ead7; }
   .c-thumb.t-bamiri{ background:#eef1ea; }
-  .c-thumb.t-derby{ background:#f4f1e9; }
   .c-thumb.t-mate{ background:#f6efe1; }
+  .c-thumb.t-tsubuyaki{ background:#fff; }
+  .c-thumb img{ width:100%; height:100%; object-fit:cover; object-position:50% 25%; display:block; }   /* 写真サムネ(つぶやき)。25%=顔が切れない位置 */
   .c-body{ padding:22px 22px 20px; display:flex; flex-direction:column; flex:1; }
   .c-name{ font-size:22px; font-weight:800; letter-spacing:.02em; color:var(--red);
     display:flex; align-items:center; gap:9px; }
@@ -376,6 +377,26 @@
             <span class="tag">運まかせ</span><span class="tag">将棋</span><span class="tag">ビンゴ</span>
           </div>
           <div class="c-foot"><span class="c-play">あそぶ <span class="tri">▶</span></span><span class="c-count"></span></div>
+        </div>
+      </a>
+    </template>
+
+    <template id="tpl-tsubuyaki">
+      <a class="card" href="./tsubuyaki.html">
+        <div class="c-bar"></div>
+        <div class="c-thumb t-tsubuyaki">
+          <!-- 牧村たちのつぶやき: 牧村本人の写真(2026-09-03牧村指示。画像ファイルを使う唯一の例外) -->
+          <img src="./MakimuraFumiyuki_IDphoto.jpg" alt="牧村" loading="lazy">
+        </div>
+        <div class="c-body">
+          <div class="c-name">牧村たちのつぶやき</div>
+          <div class="c-desc">
+            読んでください
+          </div>
+          <div class="c-tags">
+            <span class="tag">ひまつぶし</span><span class="tag">吐露</span><span class="tag">本棚</span>
+          </div>
+          <div class="c-foot"><span class="c-play">読む <span class="tri">▶</span></span><span class="c-count"></span></div>
         </div>
       </a>
     </template>
@@ -827,66 +848,6 @@
       </a>
     </template>
 
-    <template id="tpl-derby">
-      <a class="card" href="./derby.html">
-        <div class="c-bar"></div>
-        <div class="c-thumb t-derby">
-          <!-- 俺たちダービー: 本編と同じ明るいクリーム地。緑のトラックを丸アイコンがレース、先頭(赤)が金オーラ+後方流線でゴール、勝利の金コインが弾け飛ぶ -->
-          <svg viewBox="0 0 260 132" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <radialGradient id="dbSky" cx=".5" cy="-.1" r="1.1">
-                <stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#f6f3ec"/><stop offset="1" stop-color="#eef1f2"/>
-              </radialGradient>
-              <linearGradient id="dbTurf" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#49b06e"/><stop offset=".55" stop-color="#3a9e5c"/><stop offset="1" stop-color="#2c7d47"/>
-              </linearGradient>
-              <radialGradient id="dbAura" cx=".5" cy=".5" r=".5">
-                <stop offset="0" stop-color="rgba(255,214,102,.85)"/><stop offset="1" stop-color="rgba(255,214,102,0)"/>
-              </radialGradient>
-              <pattern id="dbGoal" width="8" height="8" patternUnits="userSpaceOnUse">
-                <rect width="8" height="8" fill="#f4f4f1"/>
-                <rect width="4" height="4" fill="#1a1a1a"/><rect x="4" y="4" width="4" height="4" fill="#1a1a1a"/>
-              </pattern>
-            </defs>
-            <rect width="260" height="132" fill="url(#dbSky)"/>
-            <!-- コースは上下中央に配置(数px上へ)。走者は少し小さめでレース端に被らないように -->
-            <g transform="translate(0,-4)">
-              <!-- レーストラック -->
-              <rect x="10" y="26" width="240" height="88" rx="9" fill="#245c39"/>
-              <rect x="10" y="25" width="240" height="88" rx="9" fill="url(#dbTurf)"/>
-              <g stroke="rgba(255,255,255,.4)" stroke-width="1.4" stroke-dasharray="6 6">
-                <path d="M12 43.6 H248 M12 61.2 H248 M12 78.8 H248 M12 96.4 H248"/>
-              </g>
-              <!-- ゴール(チェッカー) -->
-              <rect x="214" y="27" width="9" height="85" fill="url(#dbGoal)" opacity=".92"/>
-              <!-- 先頭ランナー(赤)の金オーラ+後方流線 -->
-              <circle cx="206" cy="70" r="16" fill="url(#dbAura)"/>
-              <g stroke="#ffd666" stroke-width="2" stroke-linecap="round" opacity=".85">
-                <path d="M189 66 h-15"/><path d="M187 70 h-20"/><path d="M189 74 h-15"/>
-              </g>
-              <!-- 丸アイコンのランナー(1レーン1頭)。先頭(赤)がゴール目前 -->
-              <g transform="translate(150,35)"><circle r="8" fill="#2f7de3" stroke="#fff" stroke-width="2.2"/><ellipse cx="-2.2" cy="-2.6" rx="2.7" ry="1.9" fill="rgba(255,255,255,.55)"/></g>
-              <g transform="translate(132,52)"><circle r="8" fill="#f39a1f" stroke="#fff" stroke-width="2.2"/><ellipse cx="-2.2" cy="-2.6" rx="2.7" ry="1.9" fill="rgba(255,255,255,.55)"/></g>
-              <g transform="translate(144,88)"><circle r="8" fill="#8a5cd6" stroke="#fff" stroke-width="2.2"/><ellipse cx="-2.2" cy="-2.6" rx="2.7" ry="1.9" fill="rgba(255,255,255,.55)"/></g>
-              <g transform="translate(120,105)"><circle r="8" fill="#17a2a2" stroke="#fff" stroke-width="2.2"/><ellipse cx="-2.2" cy="-2.6" rx="2.7" ry="1.9" fill="rgba(255,255,255,.55)"/></g>
-              <g transform="translate(206,70)"><circle r="9" fill="#e3452f" stroke="#fff" stroke-width="2.4"/><ellipse cx="-2.4" cy="-2.8" rx="3" ry="2" fill="rgba(255,255,255,.6)"/></g>
-            </g>
-          </svg>
-        </div>
-        <div class="c-body">
-          <div class="c-name">俺たちダービー
-            <span class="c-players"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6.5" cy="9" r="2.6"/><path d="M6.5 12.6c-2.6 0-4.5 1.5-4.5 3.6V18h9v-1.8c0-2.1-1.9-3.6-4.5-3.6z"/><circle cx="17.5" cy="9" r="2.6"/><path d="M17.5 12.6c-2.6 0-4.5 1.5-4.5 3.6V18h9v-1.8c0-2.1-1.9-3.6-4.5-3.6z"/><circle cx="12" cy="6.5" r="3"/><path d="M12 10.6c-3 0-5.2 1.8-5.2 4.2V17.4h10.4v-2.6c0-2.4-2.2-4.2-5.2-4.2z"/></svg>2〜99人</span>
-          </div>
-          <div class="c-desc">
-            「コースを走るのは馬じゃない。俺たちだ」お題に数字で答え、誰が一番大きい数字を回答したか予想して、チップを賭けよう
-          </div>
-          <div class="c-tags">
-            <span class="tag">ギャンブル</span><span class="tag">仲良くなれる</span>
-          </div>
-          <div class="c-foot"><span class="c-play">あそぶ <span class="tri">▶</span></span><span class="c-count"></span></div>
-        </div>
-      </a>
-    </template>
 
     <template id="tpl-mate">
       <a class="card" href="./mate.html">
@@ -992,12 +953,12 @@
 (function(){
   /* ゲームのデータ: release=リリース日 / cats=カテゴリ / clicks=あそばれた回数(サーバー集計) */
   const GAMES=[
+    { id:"tsubuyaki", thumbLight:true, noIntro:true, yomi:"まきむらたちのつぶやき", tpl:"tpl-tsubuyaki", release:"2026-09-03", cats:["その他"], clicks:null, likes:null },
     { id:"cookkey", yomi:"くっきー", tpl:"tpl-cookkey", release:"2026-09-03", cats:["パーティ"], clicks:null, likes:null },
     { id:"shogibingo", yomi:"しょうぎおんびんご", tpl:"tpl-shogibingo", release:"2026-08-03", cats:["対戦"], clicks:null, likes:null },
-    { id:"zukan", yomi:"みんなでいきものずかん", tpl:"tpl-zukan", release:"2026-07-17", cats:["交流"], clicks:null, likes:null },
+    { id:"zukan", yomi:"みんなでいきものずかん", tpl:"tpl-zukan", release:"2026-07-17", cats:["その他"], clicks:null, likes:null },
     { id:"nomi", thumbLight:true, yomi:"のみのみ", tpl:"tpl-nomi", release:"2026-07-12", cats:["１人でコツコツ"], clicks:null, likes:null },
     { id:"mate", thumbLight:true, yomi:"まてあーと", tpl:"tpl-mate", release:"2026-07-11", cats:["パーティ"], clicks:null, likes:null },
-    { id:"derby", thumbLight:true, yomi:"おれたちだーびー", tpl:"tpl-derby", release:"2026-07-10", cats:["パーティ"], soon:true, clicks:null, likes:null },
     { id:"dox", thumbLight:true, yomi:"どっくす",  tpl:"tpl-dox",  release:"2026-07-06", cats:["１人でコツコツ"], clicks:null, likes:null },
     { id:"bamiri", thumbLight:true, yomi:"ばみりばーし", tpl:"tpl-bamiri", release:"2026-07-08", cats:["対戦"], clicks:null, likes:null },
     { id:"maigomoku", thumbLight:true, yomi:"まいごもくもくならべ", tpl:"tpl-maigomoku", release:"2026-07-08", cats:["対戦"], clicks:null, likes:null },
@@ -1009,8 +970,8 @@
   const SECTIONS=[
     { label:"パーティ", filter:g=>g.cats.includes("パーティ") },
     { label:"対戦", filter:g=>g.cats.includes("対戦") },
-    { label:"交流", filter:g=>g.cats.includes("交流") },
     { label:"１人でコツコツ", filter:g=>g.cats.includes("１人でコツコツ") },
+    { label:"その他", filter:g=>g.cats.includes("その他") },
   ];
   /* ---- 集計: あそばれた回数(hub_<id>)と いいね(hub_like_<id>)をSupabaseに記録・集計 ---- */
   const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co";
@@ -1242,6 +1203,22 @@
     window.addEventListener("keydown",e=>{ hubKeys.add((e.key||"").toLowerCase()); if(hubKeys.has("m")&&hubKeys.has("k")) armH(); });
     window.addEventListener("keyup",e=>{ hubKeys.delete((e.key||"").toLowerCase()); if(!(hubKeys.has("m")&&hubKeys.has("k"))) disH(); });
     window.addEventListener("blur",()=>{ hubKeys.clear(); disH(); });
+  }
+
+  /* ===== 文字化け(mojibake.html)のステージとして iframe 表示される時(?stage=1) =====
+     全員が同じ画面を見られるように: 並び順は「リリース順」に固定(保存はしない)・いいね済みの赤塗りを解除・管理バッジと広告は隠す。
+     高さは親(mojibake.html)へ postMessage で知らせる(file://直開きでも届く) */
+  if(/[?&]stage=1/.test(location.search)){
+    try{ sel.value="release"; render(); }catch(e){}
+    const cs=document.createElement("style");
+    cs.textContent="html{scrollbar-width:none} ::-webkit-scrollbar{display:none} *{user-select:none!important;-webkit-user-select:none!important} .c-like.liked{color:var(--red)!important;background:#fff!important;border-color:var(--red)!important} ins.adsbygoogle{display:none!important}";
+    document.head.appendChild(cs);
+    document.querySelectorAll("body > *").forEach(el=>{ if((el.textContent||"").indexOf("管理モード中")===0) el.remove(); });
+    const post=()=>{ try{ parent.postMessage({ mjb:"h", h:Math.ceil(Math.max(document.documentElement.scrollHeight, document.body.getBoundingClientRect().bottom)) },"*"); }catch(e){} };
+    post(); window.addEventListener("load",post); window.addEventListener("resize",post);
+    if(document.fonts&&document.fonts.ready) document.fonts.ready.then(post);
+    [400,1000,2000,3500,6000].forEach(t=>setTimeout(post,t));
+    let mt=0; new MutationObserver(()=>{ clearTimeout(mt); mt=setTimeout(post,80); }).observe(document.body,{childList:true,subtree:true,characterData:true});
   }
 })();
 </script>
