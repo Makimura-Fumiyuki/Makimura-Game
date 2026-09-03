@@ -2023,7 +2023,24 @@
     else{ (document.getElementById("gameScene")||document.body).appendChild(el); }   // 碁笥/駒と同じ重なり文脈に入れる(盤より前・碁石入れより後ろ)
     setTimeout(()=>el.remove(), 2350);
   }
+  /* スタンプを押した時の読み上げ(将棋onビンゴの「王手」と同じ方式。端末に日本語音声があれば) */
+  const STAMP_WORDS=["やめてよぉ","すごぉい","わろたぁ"];
+  let stampTTSVoice=null, stampTTSWarm=false;
+  function speakStamp(i){
+    try{
+      if(!window.speechSynthesis) return;
+      if(typeof seOn!=="undefined" && !seOn) return;
+      if(typeof stampMuted!=="undefined" && stampMuted) return;
+      if(!stampTTSVoice){ const vs=speechSynthesis.getVoices()||[]; stampTTSVoice=vs.find(v=>/ja/i.test(v.lang))||null; }
+      if(!stampTTSWarm){ stampTTSWarm=true; speechSynthesis.onvoiceschanged=()=>{ const v2=speechSynthesis.getVoices()||[]; stampTTSVoice=v2.find(v=>/ja/i.test(v.lang))||stampTTSVoice; }; }
+      const u=new SpeechSynthesisUtterance(STAMP_WORDS[Math.max(0,Math.min(2,i|0))]); u.lang="ja-JP"; u.rate=1.05; u.pitch=1.1; u.volume=1;
+      if(stampTTSVoice) u.voice=stampTTSVoice;
+      if(speechSynthesis.speaking||speechSynthesis.pending) speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+    }catch(e){}
+  }
   function sendStamp(i){
+    speakStamp(i);   // タップした人の端末で読み上げ(やめてよぉ/すごい/わらえる)
     spawnStamp(i, "自分", true);
     if(online && ch){ try{ ch.send({ type:"broadcast", event:"stamp", payload:{ i } }); }catch(e){} }   // 相手にも届ける(ロストしても実害なし)
   }
