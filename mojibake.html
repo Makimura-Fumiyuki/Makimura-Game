@@ -147,11 +147,15 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 .hider .hd.tl{ left:calc(-3px - var(--hs)/2); top:calc(-3px - var(--hs)/2); cursor:nwse-resize; }
 .hider .hd.tr{ right:calc(-3px - var(--hs)/2); top:calc(-3px - var(--hs)/2); cursor:nesw-resize; }
 .hider .hd.bl{ left:calc(-3px - var(--hs)/2); bottom:calc(-3px - var(--hs)/2); cursor:nesw-resize; }
-.hider .hd.rot{ width:calc(var(--hs)*1.7); height:calc(var(--hs)*1.7); right:calc(-3px - var(--hs)*1.9); top:calc(-3px - var(--hs)*2.9); border-radius:50%; cursor:grab;
-  background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff2d7a' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 12a7 7 0 1 1-2.3-5.2'/%3E%3Cpath d='M17 3v4h-4'/%3E%3C/svg%3E") center/68% no-repeat; }   /* 回転ハンドル(右上の外) */
+/* 回転ハンドル=右上コーナー(tr)の真上。つまみの左右に弧の矢印(待てアートの取っ手ヒントと同じ形) */
+.hider .hd.rot{ --rs:max(14px, calc(var(--hs)*2.2)); width:calc(var(--rs)*2.6); height:var(--rs); right:calc(-3px - var(--rs)*1.3); top:calc(-3px - var(--hs)/2 - var(--rs) - 3px); background:none; border:none; border-radius:0; cursor:grab; z-index:3; }
+.hider .hd.rot svg{ width:100%; height:100%; display:block; pointer-events:none; overflow:visible; }
+.hider .hd.rot .rh-arc{ opacity:0; transform:scaleX(.2); transform-box:fill-box; transform-origin:center; transition:opacity .16s, transform .22s cubic-bezier(.3,1.3,.5,1); }
+.hider .hd.rot:hover .rh-arc, .hider.rotating .hd.rot .rh-arc{ opacity:1; transform:none; }
 .hider.rotating .hd.rot{ cursor:grabbing; }
-.hider .edit-row, .hider .vote-row, .hider .who, .hider .tally{ transform:rotate(calc(-1 * var(--rot))); transform-origin:0 0; }   /* 箱が回っても文字は読める向き */
-.edit-row{ position:absolute; left:-3px; top:calc(100% + 14px); display:flex; gap:6px; align-items:center; z-index:3; white-space:nowrap; }
+/* 入力欄・投票ボタン・名前・集計は箱の外(#hideLayer直下)に置き、回っていても常に「箱の下(名前は上)」に水平に出す */
+.att{ position:absolute; z-index:99000; white-space:nowrap; }
+.edit-row{ display:flex; gap:6px; align-items:center; }
 .edit-row input{ width:230px; height:30px; padding:0 10px; border-radius:8px; border:1.5px solid transparent; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.18); font-size:13px; font-weight:700; color:var(--ink); outline:none; font-family:"Noto Sans JP",sans-serif; }
 .edit-row input:focus{ border-color:var(--ink); }
 .edit-row input.err{ border-color:var(--mag); background:#fff0f5; }
@@ -162,22 +166,19 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 .hider.found .frame2{ border:2.5px solid var(--mag); animation:foundPop .5s ease-out; }
 .hider.reveal .frame2{ border:2px dashed var(--cyan); }
 @keyframes foundPop{ 0%{ transform:scale(1.6); } 100%{ transform:none; } }
-#gameScene.voting .hider .who{ display:none; }
 /* 点滅は全員ぶん1本のアニメ(voteGlow)で同時に始める。色や消灯は変数--gcだけ変える=アニメを差し替えないので点滅のタイミングがズレない */
 #gameScene.voting .hider .frame2{ animation:voteGlow 1.4s ease-in-out infinite; border-style:solid; border-color:var(--mag); --gc:rgba(255,45,122,.8); }
-#gameScene.voting .hider.vsel .frame2{ border-color:var(--blue); --gc:rgba(43,125,233,.8); }   /* 選択中=青 */
 #gameScene.voting .hider.voted .frame2, #gameScene.voting .hider.own .frame2, #gameScene.voting.vdone .hider .frame2{ --gc:transparent; }   /* 投票済み・自分の箱・投票完了後は発光なし */
 @keyframes voteGlow{ 0%,100%{ box-shadow:0 0 0 0 transparent; } 50%{ box-shadow:0 0 40px 16px var(--gc); } }
 /* リザルト後: 上に名前・下にグッド/バッドの数 */
-#gameScene.resulted .hider .who{ display:block; top:auto; bottom:calc(100% + 8px); background:rgba(255,255,255,.92); color:var(--ink); box-shadow:0 2px 6px rgba(0,0,0,.14); }
-.hider .tally{ position:absolute; left:-3px; top:calc(100% + 8px); display:none; gap:10px; align-items:center; white-space:nowrap; background:rgba(255,255,255,.92); padding:2px 8px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,.14); font-family:"Noto Sans JP",sans-serif; line-height:1.4; }
-#gameScene.resulted .hider .tally{ display:inline-flex; }
+#gameScene.resulted .who{ display:block; transform:translateY(-100%); background:rgba(255,255,255,.92); color:var(--ink); box-shadow:0 2px 6px rgba(0,0,0,.14); }
+.tally{ display:none; gap:10px; align-items:center; white-space:nowrap; background:rgba(255,255,255,.92); padding:2px 8px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,.14); font-family:"Noto Sans JP",sans-serif; line-height:1.4; }
+#gameScene.resulted .tally{ display:inline-flex; }
 .res-head{ font-size:13px; font-weight:700; color:var(--gray); letter-spacing:.08em; margin-bottom:-6px; }
-.hider .vote-row{ display:none; }
-.hider.vsel .vote-row{ display:flex; }
-.hider .who{ position:absolute; left:0; top:100%; margin-top:5px; font-size:11px; font-weight:900; color:#fff; background:var(--mag); padding:1px 6px; border-radius:6px; line-height:1.4; white-space:nowrap; font-family:"Noto Sans JP",sans-serif; }
-.hider.reveal .who{ background:var(--cyan); }
-.vote-row{ position:absolute; left:-3px; top:calc(100% + 8px); display:flex; gap:6px; align-items:center; z-index:3; white-space:nowrap; }
+.vote-row{ display:none; }
+.vote-row.on{ display:flex; }
+.who{ display:none; font-size:11px; font-weight:900; color:#fff; background:var(--mag); padding:1px 6px; border-radius:6px; line-height:1.4; white-space:nowrap; font-family:"Noto Sans JP",sans-serif; }
+.vote-row{ gap:6px; align-items:center; }
 .vb{ display:inline-flex; align-items:center; justify-content:center; width:34px; height:26px; padding:0; border-radius:999px; background:#fff; border:1.5px solid var(--mag); color:var(--mag); font-size:12px; font-weight:400; font-family:"Noto Sans JP",sans-serif; box-shadow:0 2px 6px rgba(0,0,0,.12); transition:transform .14s cubic-bezier(.3,1.4,.5,1), background .15s, color .15s; }
 .vb svg{ width:13px; height:13px; }
 .vb.angry{ border-color:var(--blue); color:var(--blue); }
@@ -413,7 +414,7 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
   <div class="win-banner" id="winBanner"></div>
   <div class="res-head">素敵な隠れ方ランキング</div>
   <div class="res-list" id="resList"></div>
-  <div class="row"><button class="txt-btn" id="resAgain">もう一回</button><button class="txt-btn" id="resLobby">ロビーへ</button></div>
+  <div class="row"><button class="txt-btn" id="resLobby">ロビーへ</button></div>
 </div></div>
 <button class="ok" id="peekBtn">結果にもどる</button>
 
@@ -471,7 +472,7 @@ renderSe();
 /* ================= 状態 ================= */
 const SW=1200;
 const MIN_SIZE=6, MAX_SIZE=400, MAX_LEN=30, DEF_TEXT="牧村", DEF_SIZE=16, EMPTY_TEXT="あ", VOTE_SEC=60, MAX_PLAYERS=99;
-const DEF_RULES={ hide:120, seek:180, lives:5, seeker:"random" };
+const DEF_RULES={ hide:120, seek:180, lives:3, seeker:"random" };
 const RULE_LIM={ hide:[10,300,10], seek:[10,300,10], lives:[0,10,1] };
 let rules={ ...DEF_RULES };
 const FONTS=[
@@ -610,7 +611,7 @@ function applySnapBody(s){
 let lastTap=null, lastTapSeen=0, resultShown=false;
 function syncHiders(list){   // 自分の分は化ける中は手元が正
   const ids=new Set(list.map(h=>h.id));
-  hiders=hiders.filter(h=>{ if(h===mine) return true; if(!ids.has(h.id)){ if(h.el) h.el.remove(); return false; } return true; });   // 自分の箱はホストに届く前でも消さない
+  hiders=hiders.filter(h=>{ if(h===mine) return true; if(!ids.has(h.id)){ if(h.el) h.el.remove(); if(h.atts) h.atts.forEach(a=>a.el.remove()); return false; } return true; });   // 自分の箱はホストに届く前でも消さない
   list.forEach(d=>{
     let h=hiders.find(x=>x.id===d.id);
     if(h===mine&&phase==="hide"){ h.found=d.found; return; }
@@ -907,16 +908,28 @@ function inkShift(h){
     return Math.round((L/2-inkC)*10)/10;
   }catch(e){ return 0; }
 }
+const ROT_SVG='<svg viewBox="0 0 64 24" aria-hidden="true"><g class="rh-arc"><path d="M 8 17 A 40 40 0 0 1 56 17" fill="none" stroke="#ff2d7a" stroke-width="2.2" stroke-linecap="round"/><polygon points="0,-7 -4.5,0 4.5,0" fill="#ff2d7a" transform="translate(8,17) rotate(-124)"/><polygon points="0,-7 -4.5,0 4.5,0" fill="#ff2d7a" transform="translate(56,17) rotate(124)"/></g><circle cx="32" cy="9" r="5.2" fill="#fff" stroke="#ff2d7a" stroke-width="1.8"/></svg>';
+/* 箱に付随するUI(入力欄・投票ボタン・名前・集計)は箱の外に置き、回転していても箱の下(上)に水平に並べる */
+function attach(h,el,where,gap){ h.atts=h.atts||[]; h.atts.push({el,where,gap:gap||8}); $("hideLayer").appendChild(el); placeAtts(h); }
+function detach(h,el){ if(!h.atts) return; h.atts=h.atts.filter(a=>a.el!==el); el.remove(); }
+function bbox(h){   // 回転後の箱を囲む水平な矩形(ステージ座標)
+  const w=h.w||0, hh=h.h||0, cx=h.x+w/2, cy=h.y+hh/2, a=(h.rot||0)*Math.PI/180, c=Math.cos(a), sn=Math.sin(a);
+  let minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
+  [[-w/2,-hh/2],[w/2,-hh/2],[w/2,hh/2],[-w/2,hh/2]].forEach(([px,py])=>{ const X=cx+px*c-py*sn, Y=cy+px*sn+py*c; if(X<minX)minX=X; if(X>maxX)maxX=X; if(Y<minY)minY=Y; if(Y>maxY)maxY=Y; });
+  return {minX,minY,maxX,maxY};
+}
+function placeAtts(h){ if(!h.atts||!h.atts.length) return; const vis=h.x!=null&&h.el&&h.el.style.display!=="none"&&!h.el.classList.contains("hid"); const b=vis?bbox(h):null;
+  h.atts.forEach(a=>{ a.el.style.display=vis?"":"none"; if(!b) return; a.el.style.left=Math.round(b.minX-3)+"px"; a.el.style.top=Math.round(a.where==="above"?b.minY-a.gap:b.maxY+a.gap)+"px"; }); }
 function makeHider(h){
-  if(h.el) h.el.remove();
+  if(h.el) h.el.remove(); if(h.atts){ h.atts.forEach(a=>a.el.remove()); h.atts=[]; }
   const el=document.createElement("div"); el.className="hider"+(h===mine?" mine":""); el.dataset.id=h.id;
   const ht=document.createElement("div"); ht.className="ht"; const tx=document.createElement("span"); tx.className="tx"; ht.appendChild(tx); el.appendChild(ht);
   if(h===mine){
     const fr=document.createElement("div"); fr.className="frame"; el.appendChild(fr);
-    ["tl","t","tr","l","r","bl","b","br","rot"].forEach(k=>{ const d=document.createElement("div"); d.className="hd "+k; d.dataset.h=k; el.appendChild(d); });
-    const row=document.createElement("div"); row.className="edit-row";
+    ["tl","t","tr","l","r","bl","b","br","rot"].forEach(k=>{ const d=document.createElement("div"); d.className="hd "+k; d.dataset.h=k; if(k==="rot") d.innerHTML=ROT_SVG; el.appendChild(d); });
+    const row=document.createElement("div"); row.className="edit-row att";
     row.innerHTML='<input id="txtIn" maxlength="'+MAX_LEN+'" autocomplete="off" spellcheck="false" placeholder="最低1文字"><button id="txtReset" type="button">リセット</button>';
-    el.appendChild(row);
+    attach(h,row,"below",14); h.editRow=row;
     const inp=row.querySelector("#txtIn"); inp.value=h.text;
     inp.addEventListener("input",e=>{ h.text=e.target.value.replace(/[\r\n]/g,"").slice(0,MAX_LEN); styleHider(h); pushHist("type"); sendUpd(); });
     inp.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key==="Escape") e.target.blur(); if((e.metaKey||e.ctrlKey)&&/^[zy]$/i.test(e.key||"")){ e.preventDefault(); if(e.key.toLowerCase()==="y"||e.shiftKey) redo(); else undo(); } });
@@ -934,17 +947,18 @@ function styleHider(h){
   ht.style.transform=(h.sx!==1||h.sy!==1)?("scale("+h.sx+","+h.sy+")"):"";
   h.el.style.setProperty("--rot",(h.rot||0)+"deg"); h.el.style.transform=h.rot?("rotate("+h.rot+"deg)"):"";
   h.tx.style.top=h.cpu?"":(inkShift(h)+"px");
-  if(h===mine){ const inp=h.el.querySelector("#txtIn"); if(inp){ inp.classList.toggle("err",h.text===""); inp.style.fontFamily=h.font; } $("hideDone").disabled=!(h.x!=null&&h.text!==""); }
+  if(h===mine){ const inp=h.editRow&&h.editRow.querySelector("#txtIn"); if(inp){ inp.classList.toggle("err",h.text===""); inp.style.fontFamily=h.font; } $("hideDone").disabled=!(h.x!=null&&h.text!==""); }
   layoutHider(h);
 }
 function layoutHider(h){
   const el=h.el; if(!el) return;
-  if(h.x==null){ el.style.display="none"; return; }
+  if(h.x==null){ el.style.display="none"; placeAtts(h); return; }
   el.style.display="";
   const w=h.ht.offsetWidth*h.sx, hh=h.ht.offsetHeight*h.sy;
   if(h===mine||h.cpu||!h.w||!online){ h.w=w; h.h=hh; }   // 他人の箱は持ち主が測った寸法を使う(端末差の吸収)
   el.style.left=h.x+"px"; el.style.top=h.y+"px"; el.style.width=h.w+"px"; el.style.height=h.h+"px";
   el.style.zIndex=(dragging&&h===mine)?99990:zOf(h);   // 小さい箱ほど上のレイヤー(大きい箱で覆っても下が見える)。つかんでいる間だけ自分を最前面
+  placeAtts(h);
   if(h===mine){ const hs=Math.max(3,Math.min(10,Math.min(w,hh)*0.3)); el.style.setProperty("--hs",hs.toFixed(1)+"px"); el.style.setProperty("--hb",(hs<6?1:1.5)+"px"); }
 }
 function zOf(h){ return 60000-Math.min(59000, Math.round(Math.sqrt(Math.max(1,(h.w||1)*(h.h||1)))*20)); }
@@ -957,7 +971,7 @@ function flushUpd(){ clearTimeout(updT); updT=0; if(!online||!mine||(phase!=="hi
 
 /* 見える/見えない(化ける中は自分の分だけ。それ以外は全員) */
 function renderAll(){
-  hiders.forEach(h=>{ if(!h.el) return; const vis=(phase!=="hide")||h.id===myId||amHider(); const was=h.el.classList.contains("hid"); h.el.classList.toggle("hid",!vis); if(was&&vis) layoutHider(h); });   // 化ける中: 化ける側はみんなの箱がリアルタイムに見える。探す人だけ見えない
+  hiders.forEach(h=>{ if(!h.el) return; const vis=(phase!=="hide")||h.id===myId||amHider(); const was=h.el.classList.contains("hid"); h.el.classList.toggle("hid",!vis); if(was&&vis) layoutHider(h); else placeAtts(h); });   // 化ける中: 化ける側はみんなの箱がリアルタイムに見える。探す人だけ見えない
   if(phase==="hide"){ renderWho(readyIds); }
   else if(phase==="vote"){ renderWho(voteDoneIds); $("gameScene").classList.toggle("vdone",voteDoneIds.has(myId)); }
   else { $("voteWho").classList.remove("on"); }
@@ -1035,7 +1049,7 @@ function applyHist(o){
   const wi=WEIGHTS.findIndex(w=>w.v===mine.weight); if(wi>=0) $("weightSel").value=wi;
   $("fgCol").value=mine.color; $("bgCol").value=mine.bg; paintSwatches();
   $("bgOnBtn").classList.toggle("on",mine.bgOn); $("bgOnBtn").textContent=mine.bgOn?"あり":"なし"; $("bgSw").classList.toggle("off",!mine.bgOn);
-  const inp=mine.el&&mine.el.querySelector("#txtIn"); if(inp&&inp.value!==mine.text) inp.value=mine.text;
+  const inp=mine.editRow&&mine.editRow.querySelector("#txtIn"); if(inp&&inp.value!==mine.text) inp.value=mine.text;
   styleHider(mine); sendUpd();
 }
 function undo(){ if(phase!=="hide"||!mine||hidx<=0) return; hidx--; applyHist(hist[hidx]); histTag=""; playSelect(); }
@@ -1080,7 +1094,7 @@ wrapEl.addEventListener("pointerdown",e=>{
   }else if(phase==="vote"){
     const hel=e.target.closest&&e.target.closest(".hider");
     if(hel&&hel.dataset.id===myId) toast("自分には投票できません");
-    hiders.forEach(h=>h.el.classList.toggle("vsel", !!hel&&h.el===hel&&h.id!==myId));
+    hiders.forEach(h=>{ const on=!!hel&&h.el===hel&&h.id!==myId; h.el.classList.toggle("vsel",on); if(h.voteRow) h.voteRow.classList.toggle("on",on); });
   }
 });
 wrapEl.addEventListener("pointermove",e=>{
@@ -1140,7 +1154,7 @@ function finishHide(){
   if(phase!=="hide"||!isHost()) return;
   hiders.forEach(h=>{ if(h.x==null){ h.x=Math.round(stage.w/2-60); h.y=Math.round(Math.min(stage.h-40,300)); } if(h.text==="") h.text=EMPTY_TEXT; });
   stopTimer(); playConfirm(); $("voteWho").classList.remove("on");
-  if(mine&&mine.el){ mine.el.classList.remove("mine","unsel"); mine.el.querySelectorAll(".frame,.hd,.edit-row").forEach(x=>x.remove()); styleHider(mine); }
+  if(mine&&mine.el){ mine.el.classList.remove("mine","unsel"); mine.el.querySelectorAll(".frame,.hd").forEach(x=>x.remove()); if(mine.editRow){ detach(mine,mine.editRow); mine.editRow=null; } styleHider(mine); }
   try{ placeCPUs(cpuN); }catch(err){ console.warn("CPU配置に失敗",err); }
   phase="swap"; sendSnap(); showMid("文字化けを探そう",1300); setTimeout(startSeek,1000);   // swap中(1秒)は遅れて届いたupdも受ける=最後の微調整の取りこぼし防止
 }
@@ -1185,7 +1199,7 @@ function placeCPUs(n){
 /* ================= さがす ================= */
 function enterSeekUI(){
   $("gameScene").classList.add("seek");
-  if(mine&&mine.el){ mine.el.classList.remove("mine","unsel"); mine.el.querySelectorAll(".frame,.hd,.edit-row").forEach(x=>x.remove()); }
+  if(mine&&mine.el){ mine.el.classList.remove("mine","unsel"); mine.el.querySelectorAll(".frame,.hd").forEach(x=>x.remove()); if(mine.editRow){ detach(mine,mine.editRow); mine.editRow=null; } }
   $("hideBar").style.display="none"; $("seekBar").style.display=""; $("toolWrap").style.display=""; $("hideDone").style.display="none"; $("voteWho").classList.remove("on");
   $("giveUp").style.display=isSeeker()?"":"none";
   $("toolWrap").classList.remove("closed"); renderToolToggle(); layoutFloat();
@@ -1235,10 +1249,10 @@ function enterVoteUI(){
   revealAll(); hiders.forEach(h=>{ if(h.el) h.el.classList.toggle("own",h.id===myId); }); $("toolWrap").style.display="none"; $("giveUp").style.display="none"; $("voteDone").style.display=""; $("gameScene").classList.add("voting"); renderWho(voteDoneIds);
   hiders.forEach(h=>{
     if(h.id===myId||h.voteRow) return;
-    const row=document.createElement("div"); row.className="vote-row";
+    const row=document.createElement("div"); row.className="vote-row att";
     row.innerHTML='<button class="vb like" data-v="like" aria-label="グッド">'+LIKE_SVG+'</button><button class="vb angry" data-v="angry" aria-label="バッド">'+ANGRY_SVG+'</button>';
     row.querySelectorAll(".vb").forEach(b=>b.addEventListener("click",()=>{ if(phase!=="vote") return; if(voteDoneIds.has(myId)){ toast("「やっぱ無し」を押すと変えられます"); return; } playSelect(); castVote(h,b.dataset.v); }));
-    h.el.appendChild(row); h.voteRow=row;
+    attach(h,row,"below",8); h.voteRow=row;
   });
   renderVotes();
 }
@@ -1265,14 +1279,14 @@ function checkAllVoted(){ if(phase!=="vote"||!isHost()) return; const all=(membe
 function showResultHost(){ if(phase!=="vote"||!isHost()) return; phase="result"; stopTimer(); sendSnap(); showResult(); }
 function showResult(){
   if(phase!=="result") return; stopTimer(); tally();
-  hiders.forEach(h=>{ if(h.voteRow){ h.voteRow.remove(); h.voteRow=null; } h.el&&h.el.classList.remove("vsel"); }); $("gameScene").classList.remove("voting");
+  hiders.forEach(h=>{ if(h.voteRow){ detach(h,h.voteRow); h.voteRow=null; } h.el&&h.el.classList.remove("vsel"); }); $("gameScene").classList.remove("voting");
   $("voteDone").style.display="none"; $("voteWho").classList.remove("on");
   if(resultShown) return; resultShown=true;   // snapは2.5秒ごとに届くので、ここから下は1ゲームに1回だけ(音が無限に鳴るバグの修正)
   playFinish();
   $("gameScene").classList.add("resulted");
   hiders.forEach(h=>{ if(!h.el) return; h.el.classList.remove("vsel","voted","own");
-    if(!h.el.querySelector(".who")){ const w=document.createElement("span"); w.className="who"; w.textContent=h.name; h.el.appendChild(w); }
-    let t=h.el.querySelector(".tally"); if(!t){ t=document.createElement("div"); t.className="tally"; h.el.appendChild(t); }
+    if(!h.whoEl){ const w=document.createElement("span"); w.className="who att"; h.whoEl=w; attach(h,w,"above",8); } h.whoEl.textContent=h.name+(h.id===myId?"（あなた）":"");
+    let t=h.tallyEl; if(!t){ t=document.createElement("div"); t.className="tally att"; h.tallyEl=t; attach(h,t,"below",8); }
     t.innerHTML='<span class="vp like">'+LIKE_SVG+'<b>'+h.likes+'</b></span><span class="vp angry">'+ANGRY_SVG+'<b>'+h.angry+'</b></span>'; });
   const wb=$("winBanner"); wb.className="win-banner"+(seekerWin?" seeker":""); wb.textContent=(seekerWin?"探す側の勝ち":"化ける側の勝ち");
   const list=$("resList"); list.innerHTML="";
@@ -1281,15 +1295,14 @@ function showResult(){
   sorted.forEach((h,i)=>{ const sc=h.likes-h.angry; if(sc!==prev){ rank=i+1; prev=sc; }
     const row=document.createElement("div"); row.className="res-row";
     row.innerHTML='<span class="rk">'+rank+'</span><span class="nm"></span><span class="tx"></span><span class="vt"><span class="vp like">'+LIKE_SVG+'<b>'+h.likes+'</b></span><span class="vp angry">'+ANGRY_SVG+'<b>'+h.angry+'</b></span></span><span class="st'+(h.found?"":" ok")+'">'+(h.found?"文字化け失敗":"文字化け完了")+'</span>';
-    row.querySelector(".nm").textContent=h.name; row.querySelector(".tx").textContent="「"+h.text+"」"; list.appendChild(row); });
-  $("resAgain").style.display=(isHost()||!online)?"":"none"; $("resAgain").textContent=online?"ロビーへもどる（全員）":"もう一回"; $("resLobby").style.display=online?"none":"";
+    row.querySelector(".nm").textContent=h.name+(h.id===myId?"（あなた）":""); row.querySelector(".tx").textContent="「"+h.text+"」"; list.appendChild(row); });
+  $("resLobby").style.display=(isHost()||!online)?"":"none"; $("resLobby").textContent=online?"ロビーへもどる（全員）":"ロビーへ";
   $("resultOv").dataset.ver=String(lastVer); $("resultOv").classList.remove("peek"); $("resultOv").classList.add("on");
   const sts=[...list.querySelectorAll(".st")]; sts.forEach(x=>x.style.width=""); const mw=Math.max(0,...sts.map(x=>x.getBoundingClientRect().width)); if(mw) sts.forEach(x=>x.style.width=Math.ceil(mw)+"px");   // バッジは2種とも同じ幅(広い方に合わせる。表示後に測る)
 }
 $("resultOv").addEventListener("click",e=>{ if(e.target===$("resultOv")) $("resultOv").classList.add("peek"); });
 $("peekBtn").addEventListener("click",()=>{ playSelect(); $("resultOv").classList.remove("peek"); });
-$("resAgain").addEventListener("click",()=>{ playSelect(); $("resultOv").classList.remove("on"); if(online) hostToLobby(); else startSolo(); });
-$("resLobby").addEventListener("click",()=>{ playSelect(); $("resultOv").classList.remove("on"); stopTimer(); clearStage(); phase="lobby"; showScene("lobbyScene"); renderMembers(); });
+$("resLobby").addEventListener("click",()=>{ playSelect(); $("resultOv").classList.remove("on"); if(online){ hostToLobby(); return; } stopTimer(); clearStage(); phase="lobby"; showScene("lobbyScene"); renderMembers(); });
 function hostToLobby(){ if(!isHost()) return; stopTimer(); clearStage(); phase="lobby"; seekerId=null; showScene("lobbyScene"); $("resultOv").classList.remove("on"); renderMembers(); sendSnap(); }
 
 /* ================= スタンプ ================= */
