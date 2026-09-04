@@ -30,8 +30,8 @@
   .pill svg{ width:13px; height:13px; flex:none; }
   .pill:active{ transform:scale(.97); }
 
-  .brand .m{ font-size:clamp(44px,13vw,68px); font-weight:900; letter-spacing:-.03em; line-height:1; margin-top:6px; }
-  .lead{ font-size:13px; color:var(--sub); margin:18px 0 30px; letter-spacing:.04em; }
+  h1.brand{ margin:0 0 26px; }
+  .brand .m{ font-size:clamp(30px,9vw,46px); font-weight:900; letter-spacing:-.02em; line-height:1.1; }
   /* 最新のつぶやき */
   .hero{ display:block; text-decoration:none; color:inherit; padding:14px 0 28px; border-bottom:1px solid var(--line); }
   .hero .t{ font-size:clamp(24px,6.6vw,34px); font-weight:800; line-height:1.38; letter-spacing:-.01em; margin:0; }
@@ -40,13 +40,12 @@
   @media(hover:hover){ .hero:hover .pill.solid{ transform:translateX(2px); } }
   /* これまでのつぶやき */
   .row{ display:flex; align-items:center; gap:14px; padding:18px 0; border-bottom:1px solid var(--line); text-decoration:none; color:inherit; }
-  .row .idx{ flex:none; width:24px; font-size:11px; letter-spacing:.12em; color:var(--sub); font-variant-numeric:tabular-nums; }
-  .row .tt{ flex:1; min-width:0; font-size:15.5px; font-weight:700; line-height:1.55; }
-  .row .by{ flex:none; font-size:12px; color:var(--sub); }
+  .row .rm{ flex:1; min-width:0; display:flex; flex-direction:column; gap:7px; }
+  .row .tt{ font-size:15.5px; font-weight:700; line-height:1.55; }
+  .row .meta{ font-size:12px; gap:12px; }
   .row .arw{ flex:none; display:flex; color:var(--ink); }
   .row .arw svg{ width:13px; height:13px; }
   @media(hover:hover){ .row:hover .arw{ transform:translateX(3px); } .row .arw{ transition:transform .15s; } }
-  @media(max-width:420px){ .row .by{ display:none; } }
   .empty{ padding:26px 0; font-size:13px; color:var(--sub); border-bottom:1px solid var(--line); }
   .foot{ margin-top:60px; text-align:center; }
   .foot a{ display:inline-block; font-size:11.5px; font-weight:700; letter-spacing:.26em; color:var(--ink); text-decoration:none; border-bottom:1px solid var(--ink); padding-bottom:4px; }
@@ -58,29 +57,24 @@
 </head>
 <body>
   <div class="wrap">
-    <h1 class="brand" style="margin:0;"><span class="k">牧村たちの</span><span class="m">つぶやき</span></h1>
-    <p class="lead">読んでください</p>
+    <h1 class="brand"><span class="m">牧村たちのつぶやき</span></h1>
     <hr class="rule">
 
-    <div class="sec"><span class="no">01</span><span class="lb">最新のつぶやき</span></div>
+    <div class="sec"><span class="lb">最新のつぶやき</span></div>
     <a class="hero" href="./column-01.html">
-      <h2 class="t">「本当にただの点に」― ノミのみができるまで</h2>
+      <h2 class="t">テストテスト</h2>
       <div class="meta"><span>書いた人：牧村</span><span>2026/09/03</span></div>
       <div class="go"><span class="pill solid">読んでみる <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M12 5l7 7-7 7"/></svg></span></div>
     </a>
 
-    <div class="sec"><span class="no">02</span><span class="lb">これまでのつぶやき</span></div>
+    <div class="sec"><span class="lb">これまでのつぶやき</span></div>
     <div class="list">
       <a class="row" href="./column-02.html">
-        <span class="idx">02</span>
-        <span class="tt">「待て！」と言えるのは、ひとり一回だけ</span>
-        <span class="by">書いた人：牧村</span>
+        <span class="rm"><span class="tt">おためしだよ</span><span class="meta"><span>書いた人：牧村</span><span>2026/08/30</span></span></span>
         <span class="arw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M12 5l7 7-7 7"/></svg></span>
       </a>
       <a class="row" href="./column-03.html">
-        <span class="idx">03</span>
-        <span class="tt">誰も打てなくなった日</span>
-        <span class="by">書いた人：牧村</span>
+        <span class="rm"><span class="tt">あいうえおあいうえお</span><span class="meta"><span>書いた人：牧村</span><span>2026/08/26</span></span></span>
         <span class="arw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M12 5l7 7-7 7"/></svg></span>
       </a>
     </div>
