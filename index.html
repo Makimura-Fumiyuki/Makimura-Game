@@ -297,6 +297,40 @@
     </div>
     <div id="sections"></div>
 
+    <template id="tpl-mojibake">
+      <a class="card" href="./mojibake.html">
+        <div class="c-bar"></div>
+        <div class="c-thumb t-mojibake" style="background:#f4f4f6;">
+          <!-- 文字化け: 白地に「文字化け」。色ずれ(シアン/マゼンタ)で化けている感じ。1文字だけテキストボックスの枠が付いている -->
+          <svg viewBox="0 0 260 132" xmlns="http://www.w3.org/2000/svg">
+            <g font-family="'Noto Sans JP','Hiragino Sans',sans-serif" font-weight="900" font-size="46" text-anchor="middle">
+              <text x="127" y="72" fill="#16c1d9">文字化け</text>
+              <text x="133" y="72" fill="#ff2d7a">文字化け</text>
+              <text x="130" y="72" fill="#1c1c22">文字化け</text>
+            </g>
+            <rect x="150" y="34" width="46" height="48" fill="none" stroke="#ff2d7a" stroke-width="1.6" stroke-dasharray="4 3"/>
+            <g fill="#fff" stroke="#ff2d7a" stroke-width="1.4">
+              <rect x="146" y="30" width="8" height="8"/><rect x="192" y="30" width="8" height="8"/><rect x="146" y="78" width="8" height="8"/><rect x="192" y="78" width="8" height="8"/>
+            </g>
+            <text x="130" y="104" font-family="'Noto Sans JP','Hiragino Sans',sans-serif" font-weight="500" font-size="12" fill="#7a7a86" text-anchor="middle" letter-spacing="2">譁�ｭ怜喧縺�</text>
+          </svg>
+          <span class="pc-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="12.5" rx="1.6"/><path d="M9 20.5h6M12 16.5v4"/></svg>PC推奨</span>
+        </div>
+        <div class="c-body">
+          <div class="c-name">文字化け
+            <span class="c-players"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="7.2" r="4.2"/><path d="M9 13.4c-4.4 0-8 2.5-8 6.1V21h16v-1.5c0-3.6-3.6-6.1-8-6.1z"/><circle cx="17.5" cy="8.2" r="3.3"/><path d="M17.5 13.2c-.8 0-1.6.1-2.3.3 1.9 1.3 3.1 3.2 3.1 5.5V21H23v-1.3c0-3-2.5-5.5-5.5-5.5z"/></svg>2〜99人</span>
+          </div>
+          <div class="c-desc">
+            文字に化けて、かくれんぼ
+          </div>
+          <div class="c-tags">
+            <span class="tag">かくれんぼ</span><span class="tag">化ける</span>
+          </div>
+          <div class="c-foot"><span class="c-play">あそぶ <span class="tri">▶</span></span><span class="c-count"></span></div>
+        </div>
+      </a>
+    </template>
+
     <template id="tpl-cookkey">
       <a class="card" href="./cookkey.html">
         <div class="c-bar"></div>
@@ -955,6 +989,7 @@
   /* ゲームのデータ: release=リリース日 / cats=カテゴリ / clicks=あそばれた回数(サーバー集計) */
   const GAMES=[
     { id:"tsubuyaki", thumbLight:true, noIntro:true, yomi:"まきむらたちのつぶやき", tpl:"tpl-tsubuyaki", release:"2026-09-03", cats:["その他"], clicks:null, likes:null },
+    { id:"mojibake", thumbLight:true, noIntro:true, yomi:"もじばけ", tpl:"tpl-mojibake", release:"2026-09-04", cats:["パーティ"], soon:true, clicks:null, likes:null },   // 制作中=Coming Soon(リリース時にsoon:trueを外し、intro-mojibake.htmlを作ってnoIntroも外す)
     { id:"cookkey", yomi:"くっきー", tpl:"tpl-cookkey", release:"2026-09-03", cats:["パーティ"], clicks:null, likes:null },
     { id:"shogibingo", yomi:"しょうぎおんびんご", tpl:"tpl-shogibingo", release:"2026-08-03", cats:["対戦"], clicks:null, likes:null },
     { id:"zukan", yomi:"みんなでいきものずかん", tpl:"tpl-zukan", release:"2026-07-17", cats:["その他"], clicks:null, likes:null },
@@ -1220,6 +1255,26 @@
     if(document.fonts&&document.fonts.ready) document.fonts.ready.then(post);
     [400,1000,2000,3500,6000].forEach(t=>setTimeout(post,t));
     let mt=0; new MutationObserver(()=>{ clearTimeout(mt); mt=setTimeout(post,80); }).observe(document.body,{childList:true,subtree:true,characterData:true});
+    // 文字化けのCPUが化ける先=「文字の行」の候補を親に返す(親から見えない file:// でも動く)
+    const bgOf=el=>{ for(let e=el; e&&e.nodeType===1; e=e.parentElement){ const cs=getComputedStyle(e); const m=/rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:[,\s/]+([\d.]+))?/.exec(cs.backgroundColor); if(m&&(m[4]==null||+m[4]>0.98)) return [+m[1],+m[2],+m[3]]; if(cs.backgroundImage&&cs.backgroundImage!=="none") return null; } return [247,246,243]; };
+    const hex=v=>("0"+Math.round(Math.max(0,Math.min(255,v))).toString(16)).slice(-2);
+    window.addEventListener("message",e=>{
+      const d=e.data; if(!d||d.mjb!=="cands") return;
+      const out=[]; const SKIP={SCRIPT:1,STYLE:1,TEMPLATE:1,OPTION:1,SELECT:1,NOSCRIPT:1};
+      document.body.querySelectorAll("*").forEach(el=>{
+        if(SKIP[el.tagName]||el.namespaceURI==="http://www.w3.org/2000/svg") return;
+        let has=false; for(const nd of el.childNodes){ if(nd.nodeType===3&&nd.textContent.trim().length>=2){ has=true; break; } } if(!has) return;
+        const cs=getComputedStyle(el); if(cs.visibility==="hidden"||cs.display==="none"||parseFloat(cs.opacity)<0.6) return;
+        const fs=parseFloat(cs.fontSize); if(fs<6||fs>36) return;
+        const bg=bgOf(el); if(!bg) return;
+        const m=/rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:[,\s/]+([\d.]+))?/.exec(cs.color); if(!m) return;
+        let c=[+m[1],+m[2],+m[3]]; const a=m[4]==null?1:+m[4]; if(a<1) c=c.map((v,i)=>v*a+bg[i]*(1-a));
+        const er=el.getBoundingClientRect();
+        for(const nd of el.childNodes){ if(nd.nodeType!==3||nd.textContent.trim().length<2) continue; const rg=document.createRange(); rg.selectNodeContents(nd);
+          Array.prototype.forEach.call(rg.getClientRects(),r=>{ if(r.width>10&&r.height>=fs&&r.top>=0) out.push({ x:r.left, y:r.top, w:r.width, h:r.height, fs, weight:+cs.fontWeight||400, color:"#"+hex(c[0])+hex(c[1])+hex(c[2]), bg:"#"+hex(bg[0])+hex(bg[1])+hex(bg[2]), elRight:er.right, font:cs.fontFamily }); }); }
+      });
+      try{ parent.postMessage({ mjb:"cands", list:out.slice(0,400) },"*"); }catch(err){}
+    });
   }
 })();
 </script>
