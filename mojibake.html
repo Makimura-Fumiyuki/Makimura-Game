@@ -59,7 +59,7 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 .code-pill b{ font-size:22px; font-weight:900; letter-spacing:.18em; }
 .code-pill small{ font-size:11px; color:var(--gray); font-weight:700; }
 .member-list{ width:100%; display:flex; flex-direction:column; gap:6px; }
-.member{ display:flex; align-items:center; gap:10px; background:var(--panel); border:1.5px solid var(--line); border-radius:12px; padding:8px 10px 8px 14px; font-size:14px; font-weight:700; }
+.member{ display:flex; align-items:center; gap:10px; text-align:left; background:var(--panel); border:1.5px solid var(--line); border-radius:12px; padding:8px 10px 8px 14px; font-size:14px; font-weight:700; }
 .member .dot{ width:12px; height:12px; border-radius:50%; background:var(--mag); flex:none; }
 .member .nm.undef{ opacity:.42; }   /* 名前がまだ未定の人=薄く出す(待てアート/クッKeyと同じ) */
 .member .you{ font-size:11px; font-weight:700; color:#fff; background:var(--ink); padding:2px 8px; border-radius:6px; }
@@ -148,8 +148,8 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 .hider .hd.tr{ right:calc(-3px - var(--hs)/2); top:calc(-3px - var(--hs)/2); cursor:nesw-resize; }
 .hider .hd.bl{ left:calc(-3px - var(--hs)/2); bottom:calc(-3px - var(--hs)/2); cursor:nesw-resize; }
 /* 回転ハンドル=右上コーナー(tr)の真上。つまみの左右に弧の矢印(待てアートの取っ手ヒントと同じ形) */
-.hider .hd.rot{ --rs:max(14px, calc(var(--hs)*2.2)); width:calc(var(--rs)*2.6); height:var(--rs); right:calc(-1 * var(--rs)*2.3); top:calc(-3px - var(--hs)/2 - var(--rs)*0.6); background:none; border:none; border-radius:0; cursor:grab; z-index:3; }
-.hider .hd.rot svg{ width:100%; height:100%; display:block; pointer-events:none; overflow:visible; }
+.hider .hd.rot{ --rs:max(14px, calc(var(--hs)*2.2)); width:calc(var(--rs)*.9); height:calc(var(--rs)*.9); right:calc(-1 * var(--rs)*1.45); top:calc(-5px - var(--hs)/2 - var(--rs)*0.675); background:none; border:none; border-radius:50%; cursor:grab; z-index:3; }   /* 当たり判定=つまみだけ。つまみの中心は右上コーナーの斜め右上 */
+.hider .hd.rot svg{ position:absolute; left:calc(50% - var(--rs)*1.3); top:calc(50% - var(--rs)*0.375); width:calc(var(--rs)*2.6); height:var(--rs); display:block; pointer-events:none; overflow:visible; }
 .hider .hd.rot .rh-arc{ opacity:0; transform:scaleX(.2); transform-box:fill-box; transform-origin:center; transition:opacity .16s, transform .22s cubic-bezier(.3,1.3,.5,1); }
 .hider .hd.rot:hover .rh-arc, .hider.rotating .hd.rot .rh-arc{ opacity:1; transform:none; }
 .hider.rotating .hd.rot{ cursor:grabbing; }
@@ -322,7 +322,7 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
           写真をえらぶ<small>手持ちの画像で化ける</small></button>
       </div>
       <input type="file" id="photoFile" accept="image/*" style="display:none">
-      <div class="photo-note" id="photoNote" style="display:none;">写真はこの端末と部屋のメンバーの端末だけで使い、サーバーには保存されません<br><span id="fileName">まだ選ばれていません</span></div>
+      <div class="photo-note" id="photoNote" style="display:none;">写真はこの端末と部屋のメンバーの端末だけで使い、サーバーには保存されません<span id="dropHint"><br>（画像ファイルをこの画面にドラッグ＆ドロップでも選べます）</span><br><span id="fileName">まだ選ばれていません</span></div>
     </div>
     <div class="rule-frame" id="ruleFrame2">
       <div class="rf-title">ルール</div>
@@ -366,7 +366,7 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
       <button class="tool-toggle" id="toolToggle" aria-label="道具をとじる"></button>
       <div class="grp"><div class="gl">テキスト</div><div class="gr">
         <select class="dd" id="fontSel" aria-label="フォント"></select>
-        <select class="dd" id="weightSel" aria-label="太さ"></select>
+        <select class="dd" id="blurSel" aria-label="ぼかし"></select>
         <span class="swatch" id="fgSw" title="文字色"><input type="color" id="fgCol" value="#20211f"></span>
       </div></div>
       <div class="grp"><div class="gl">背景</div><div class="gr">
@@ -486,7 +486,8 @@ const FONTS=[
 ];
 const WEIGHTS=[{v:400,n:"ふつう"},{v:500,n:"やや太"},{v:700,n:"太い"},{v:900,n:"極太"}];
 const CODE_CHARS="ABCDEFGHJKMNPRSTUVWXYZ23456789";
-const HKEYS=["text","font","weight","color","bg","bgOn","size","sx","sy","rot","x","y","w","h"];
+const HKEYS=["text","font","weight","blur","color","bg","bgOn","size","sx","sy","rot","x","y","w","h"];
+const BLURS=[{v:0,n:"ぼかしなし"},{v:0.3,n:"ぼかし弱"},{v:0.6,n:"ぼかし中"},{v:1,n:"ぼかし強"},{v:1.6,n:"ぼかし最強"}];   // 太さの代わり(2026-09-05)。画質の悪い写真になじませる
 const COLORS=["#e3452f","#2f7de3","#2f9e55","#f39a1f","#8a5cd6","#17a2a2","#e35a9c","#8a6a3f","#5a7d2f","#c9482f","#2f5ac9","#7d7d29"];   // メンバーの色(待てアートと同じ並び)
 const UNDEF_NM="（名前を考え中）";
 let colors={};                        // id -> 色(オーナーが割り当て、snapのcolsで配る)
@@ -517,14 +518,15 @@ const isSeeker=()=>seekerId===myId;
 const amHider=()=>!online||seekerId!==myId;   // ひとりで試す(オフライン)は化ける側と探す側を兼ねる
 function showScene(id){ document.querySelectorAll(".scene").forEach(s=>s.classList.toggle("on",s.id===id)); $("stampBar").classList.toggle("on", id==="lobbyScene"||id==="gameScene"); $("memBtn").style.display=(id==="lobbyScene"||id==="gameScene")?"":"none"; }
 FONTS.forEach((f,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=f.n; o.style.fontFamily=f.f; $("fontSel").appendChild(o); });
-WEIGHTS.forEach((w,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=w.n; $("weightSel").appendChild(o); });
+BLURS.forEach((b,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=b.n; $("blurSel").appendChild(o); });
 
 /* ================= オンライン(Supabase Realtime・ホスト権威+スナップショット) ================= */
 const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co", SB_KEY="sb_publishable_cak3-W9Mmgahnwawreoa1Q_CVuhmkKL";
 let snapVer=0, lastVer=-1, lastSnapHost=null, hbT=0, joinChk=0, gotSnap=false, helloSent=false, photoInfo=null;
 function genCode(){ let c=""; for(let i=0;i<5;i++) c+=CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)]; return c; }
 function inviteText(c){ return "牧村が作った『文字化け』を一緒に遊ぼう！\n"+location.origin+location.pathname+"?join="+c+"\n\n合言葉："+c+"\n※リンクから参加できない時に使ってね"; }
-function myPresence(){ return { id:myId, name:nameDecided?myName:"", host:isHost(), t:joinT }; }
+let hostAt=0, noHostT=0;   // hostAt=オーナーになった時刻(presenceに載せる。オーナーが2人見えた時は新しい方が正)
+function myPresence(){ return { id:myId, name:nameDecided?myName:"", host:isHost(), ha:isHost()?hostAt:0, t:joinT }; }
 function send(event,payload){ if(!online||!ch) return; try{ ch.send({ type:"broadcast", event, payload }); }catch(e){} }
 function leaveChannel(){
   clearInterval(hbT); hbT=0; clearTimeout(joinChk);
@@ -535,7 +537,7 @@ function joinRoom(code,asHost){
   if(!window.supabase){ toast("通信ライブラリが読み込めませんでした"); return; }
   sb=sb||supabase.createClient(SB_URL,SB_KEY);
   leaveChannel();
-  roomCode=code; online=true; joinT=Date.now(); hostId=asHost?myId:null; members=[]; gotSnap=false; lastVer=-1; lastSnapHost=null; snapVer=0; nameDecided=false; nameAsked=false; colors={}; photoInfo=null; helloSent=false;
+  roomCode=code; online=true; joinT=Date.now(); hostId=asHost?myId:null; hostAt=asHost?Date.now():0; clearTimeout(noHostT); noHostT=0; members=[]; gotSnap=false; lastVer=-1; lastSnapHost=null; snapVer=0; nameDecided=false; nameAsked=false; colors={}; photoInfo=null; helloSent=false;
   ch=sb.channel("mjb-"+code,{ config:{ presence:{ key:myId } } });
   ch.on("presence",{event:"sync"},onPresence);
   ch.on("broadcast",{event:"snap"},({payload})=>{ if(payload&&!isHost()) applySnap(payload); });
@@ -543,7 +545,7 @@ function joinRoom(code,asHost){
   ch.on("broadcast",{event:"hello"},({payload})=>{ if(!isHost()||!payload) return; const known=members.some(m=>m.id===payload.id)||hiders.some(h=>h.id===payload.id); if(phase!=="lobby"&&!known){ send("busy",{to:payload.id}); } else { sendSnap(); } });   // 既にいる人(再接続)は追い返さない
   ch.on("broadcast",{event:"busy"},({payload})=>{ if(payload&&payload.to===myId){ toast("次のゲーム開始まで待ってね"); goTitle(); } });
   ch.on("broadcast",{event:"kick"},({payload})=>{ if(payload&&payload.to===myId){ toast("オーナーに退出させられました"); goTitle(); } });
-  ch.on("broadcast",{event:"host"},({payload})=>{ if(!payload) return; hostId=payload.to; if(payload.to===myId){ try{ ch.track(myPresence()); }catch(e){} toast("オーナーになった"); } renderMembers(); });
+  ch.on("broadcast",{event:"host"},({payload})=>{ if(!payload) return; hostId=payload.to; clearTimeout(noHostT); noHostT=0; if(payload.to===myId){ hostAt=Date.now(); try{ ch.track(myPresence()); }catch(e){} startHeartbeat(); toast("オーナーになった"); } renderMembers(); });
   ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload&&payload.from!==myId){ speakStamp(payload.i|0); spawnStamp(payload.i|0, payload.n||"？", false, payload.c); } });   // 届いたスタンプも読み上げる
   ch.on("broadcast",{event:"cur"},({payload})=>{ if(payload&&payload.from!==myId&&phase==="seek") showSeekCur(payload.x,payload.y); });
   ch.on("broadcast",{event:"img"},({payload})=>{ if(payload) onImgChunk(payload); });
@@ -557,12 +559,15 @@ function joinRoom(code,asHost){
 function onPresence(){
   if(!ch) return;
   const st=ch.presenceState(); const arr=[];
-  Object.keys(st).forEach(k=>{ const p=st[k][0]; if(p&&p.id) arr.push({ id:p.id, name:p.name||"", host:!!p.host, t:p.t||0 }); });
+  Object.keys(st).forEach(k=>{ const p=st[k][0]; if(p&&p.id) arr.push({ id:p.id, name:p.name||"", host:!!p.host, ha:p.ha||0, t:p.t||0 }); });
   arr.sort((a,b)=>a.t-b.t);
   const prevIds=members.map(m=>m.id); members=arr;
-  const h=arr.find(m=>m.host);
-  if(h) hostId=h.id;
-  else if(arr.length){ hostId=arr[0].id; if(hostId===myId){ try{ ch.track(myPresence()); }catch(e){} toast("オーナーになった"); } }
+  const hs=arr.filter(m=>m.host);
+  if(hs.length){ const h=hs.reduce((a,b)=>(b.ha||0)>(a.ha||0)?b:a); hostId=h.id; clearTimeout(noHostT); noHostT=0; }   // 2人以上がオーナーを名乗っていたら新しい方
+  else if(arr.length&&!noHostT){   // 誰もオーナーでない=譲渡の途中か、オーナーの通信が一瞬切れただけの可能性→3秒待ってから繰り上げ(即・繰り上げると「勝手に譲渡」になる)
+    noHostT=setTimeout(()=>{ noHostT=0; if(!ch) return; const st2=ch.presenceState(); const arr2=[]; Object.keys(st2).forEach(k=>{ const p=st2[k][0]; if(p&&p.id) arr2.push(p); }); if(arr2.some(p=>p.host)||!arr2.length) return; arr2.sort((a,b)=>(a.t||0)-(b.t||0)); hostId=arr2[0].id; if(hostId===myId){ hostAt=Date.now(); try{ ch.track(myPresence()); }catch(e){} startHeartbeat(); toast("オーナーになった"); } renderMembers(); sendSnap(); },3000);
+  }
+  const me=arr.find(m=>m.id===myId); if(me&&me.host!==isHost()){ try{ ch.track(myPresence()); }catch(e){} }   // 自分のpresenceの旗が実態とズレていたら直す
   if(isHost()){ arr.forEach(m=>{ if(!colors[m.id]) colors[m.id]=nextColor(); }); }
   renderMembers();
   if(isHost()){
@@ -587,6 +592,7 @@ function startHeartbeat(){ clearInterval(hbT); hbT=setInterval(()=>{ if(isHost()
 /* ---- ゲスト: スナップショット反映 ---- */
 function applySnap(s){
   if(s.hid&&s.hid!==lastSnapHost){ lastSnapHost=s.hid; lastVer=-1; }   // オーナーが替わったら番号は振り直し(古い番号のまま無視し続けるバグの防止)
+  if(s.hid&&s.hid!==myId){ hostId=s.hid; }   // snapを送っているのがオーナー
   if(s.ver<=lastVer) return; lastVer=s.ver; gotSnap=true; clearTimeout(joinChk);
   try{ applySnapBody(s); }catch(err){ console.error("applySnap",err); }
 }
@@ -733,7 +739,7 @@ function renderMemberOv(){
 $("memBtn").addEventListener("click",()=>{ playSelect(); renderMemberOv(); $("memOv").classList.add("on"); });
 $("memClose").addEventListener("click",()=>{ playSelect(); $("memOv").classList.remove("on"); });
 $("memOv").addEventListener("click",e=>{ if(e.target===$("memOv")) $("memOv").classList.remove("on"); });
-function transferHost(id){ if(!isHost()||!members.some(m=>m.id===id)) return; hostId=id; try{ ch.track(myPresence()); }catch(e){} send("host",{to:id}); clearInterval(hbT); renderMembers(); toast("オーナーをゆずった"); }
+function transferHost(id){ if(!isHost()||!members.some(m=>m.id===id)) return; hostId=id; hostAt=0; clearInterval(hbT); hbT=0; try{ ch.track(myPresence()); }catch(e){} send("host",{to:id}); setTimeout(()=>send("host",{to:id}),400); renderMembers(); toast("オーナーをゆずった"); }   // 譲渡は2回送る(ロスト対策)
 function kickMember(id){ if(!isHost()||id===myId) return; send("kick",{to:id}); members=members.filter(m=>m.id!==id); renderMembers(); renderMemberOv(); }
 $("copyCode").addEventListener("click",async()=>{ playSelect(); try{ await navigator.clipboard.writeText(inviteText(roomCode)); toast("招待メッセージをコピーした"); }catch(e){ toast("コピーできませんでした"); } });
 $("lobbyBack").addEventListener("click",()=>{ playSelect(); goTitle(); });
@@ -753,22 +759,26 @@ document.querySelectorAll(".stepper button").forEach(b=>b.addEventListener("clic
 }));
 $("ruleReset").addEventListener("click",()=>{ if(!isHost()) return; playSelect(); rules={ ...DEF_RULES }; renderRules(); sendSnap(); });
 $("stHub").addEventListener("click",()=>{ if(!isHost()){ toast("ステージはオーナーだけが変えられます"); return; } playSelect(); stageKind="hub"; renderStageSel(); renderMembers(); sendSnap(); });
-$("stPhoto").addEventListener("click",()=>{ if(!isHost()){ toast("ステージはオーナーだけが変えられます"); return; } playSelect(); stageKind="photo"; renderStageSel(); renderMembers(); sendSnap(); if(!photoImg) $("photoFile").click(); });
+$("stPhoto").addEventListener("click",()=>{ if(!isHost()){ toast("ステージはオーナーだけが変えられます"); return; } playSelect(); stageKind="photo"; renderStageSel(); renderMembers(); sendSnap(); $("photoFile").click(); });   // 2回目以降も選び直せる
 function renderStageSel(){
   $("stHub").classList.toggle("selected",stageKind==="hub"); $("stPhoto").classList.toggle("selected",stageKind==="photo");
   $("photoNote").style.display=stageKind==="photo"?"block":"none";
   if(isHost()||!online){ $("fileName").textContent=photoImg?(photoName+"（"+photoImg.naturalWidth+"×"+photoImg.naturalHeight+"）"):"まだ選ばれていません"; }
-  else{ $("fileName").textContent=photoInfo?("オーナーの写真："+photoInfo.n+"（"+photoInfo.w+"×"+photoInfo.h+"）"):"オーナーが写真を選んでいます…"; }   // ゲストには「まだ選ばれていません」を出さない
+  else{ $("fileName").textContent=photoInfo?"写真決定":"オーナーが写真を選んでいます…"; }   // ゲストには「まだ選ばれていません」を出さない
+  $("dropHint").style.display=(isHost()||!online)?"":"none";
   $("soloBtn").disabled=(stageKind==="photo"&&!photoImg);
 }
-$("photoFile").addEventListener("change",e=>{
-  const f=e.target.files&&e.target.files[0]; if(!f) return;
-  e.target.value="";   // 同じ写真をもう一度選んでもchangeが飛ぶように
+function loadPhotoFile(f){
+  if(!f||!/^image\//.test(f.type||"")){ toast("画像ファイルを選んでね"); return; }
   const url=URL.createObjectURL(f); const im=new Image();
-  im.onload=()=>{ photoImg=im; photoName=f.name; renderStageSel(); renderMembers(); sendSnap(); URL.revokeObjectURL(url); };
+  im.onload=()=>{ photoImg=im; photoName=f.name; stageKind="photo"; renderStageSel(); renderMembers(); sendSnap(); URL.revokeObjectURL(url); };
   im.onerror=()=>{ $("fileName").textContent="この画像は読み込めませんでした"; };
   im.src=url;
-});
+}
+$("photoFile").addEventListener("change",e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=""; if(f) loadPhotoFile(f); });   // value=""=同じ写真をもう一度選んでもchangeが飛ぶ
+/* ロビー画面に画像をドラッグ＆ドロップでも選べる(オーナーだけ) */
+["dragenter","dragover"].forEach(ev=>$("lobbyScene").addEventListener(ev,e=>{ e.preventDefault(); }));
+$("lobbyScene").addEventListener("drop",e=>{ e.preventDefault(); if(!isHost()){ toast("ステージはオーナーだけが変えられます"); return; } const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f){ playSelect(); loadPhotoFile(f); } });
 $("photoNote").addEventListener("click",()=>{ if(isHost()) $("photoFile").click(); });
 $("cpuSeg").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{ playSelect(); cpuN=+b.dataset.n; $("cpuSeg").querySelectorAll("button").forEach(x=>x.classList.toggle("selected",x===b)); }));
 $("soloBtn").addEventListener("click",()=>{ playConfirm(); startSolo(); });
@@ -908,10 +918,11 @@ function inkShift(h){
     return Math.round((L/2-inkC)*10)/10;
   }catch(e){ return 0; }
 }
-const ROT_SVG='<svg viewBox="0 0 64 24" aria-hidden="true"><g class="rh-arc"><path d="M 8 17 A 40 40 0 0 1 56 17" fill="none" stroke="#ff2d7a" stroke-width="2.2" stroke-linecap="round"/><polygon points="0,-7 -4.5,0 4.5,0" fill="#ff2d7a" transform="translate(8,17) rotate(-124)"/><polygon points="0,-7 -4.5,0 4.5,0" fill="#ff2d7a" transform="translate(56,17) rotate(124)"/></g><circle cx="32" cy="9" r="5.2" fill="#fff" stroke="#ff2d7a" stroke-width="1.8"/></svg>';
+const ROT_SVG='<svg viewBox="0 0 64 24" aria-hidden="true"><g transform="rotate(45 32 9)"><g class="rh-arc"><path d="M 8 17 A 40 40 0 0 1 56 17" fill="none" stroke="#ff2d7a" stroke-width="2.2" stroke-linecap="round"/><polygon points="0,-7 -4.5,0 4.5,0" fill="#ff2d7a" transform="translate(8,17) rotate(-124)"/><polygon points="0,-7 -4.5,0 4.5,0" fill="#ff2d7a" transform="translate(56,17) rotate(124)"/></g></g><circle cx="32" cy="9" r="6.5" fill="#fff" stroke="#ff2d7a" stroke-width="1.8"/></svg>';   // 弧は45°傾け=箱の中心まわりの回転方向(接線)に沿う
 /* 箱に付随するUI(入力欄・投票ボタン・名前・集計)は箱の外に置き、回転していても箱の下(上)に水平に並べる */
 function attach(h,el,where,gap){ h.atts=h.atts||[]; h.atts.push({el,where,gap:gap||8}); $("hideLayer").appendChild(el); placeAtts(h); }
 function detach(h,el){ if(!h.atts) return; h.atts=h.atts.filter(a=>a.el!==el); el.remove(); }
+function anchorWorld(x,y,w,h,rr,f){ const cx=x+w/2, cy=y+h/2, lx=f[0]*w-w/2, ly=f[1]*h-h/2, c=Math.cos(rr), sn=Math.sin(rr); return { x:cx+lx*c-ly*sn, y:cy+lx*sn+ly*c }; }   // 箱の中の点(f=0〜1の割合)のステージ座標(回転込み)
 function bbox(h){   // 回転後の箱を囲む水平な矩形(ステージ座標)
   const w=h.w||0, hh=h.h||0, cx=h.x+w/2, cy=h.y+hh/2, a=(h.rot||0)*Math.PI/180, c=Math.cos(a), sn=Math.sin(a);
   let minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
@@ -919,7 +930,7 @@ function bbox(h){   // 回転後の箱を囲む水平な矩形(ステージ座�
   return {minX,minY,maxX,maxY};
 }
 function placeAtts(h){ if(!h.atts||!h.atts.length) return; const vis=h.x!=null&&h.el&&h.el.style.display!=="none"&&!h.el.classList.contains("hid"); const b=vis?bbox(h):null;
-  h.atts.forEach(a=>{ a.el.style.display=vis?"":"none"; if(!b) return; a.el.style.left=Math.round(b.minX-3)+"px"; a.el.style.top=Math.round(a.where==="above"?b.minY-a.gap:b.maxY+a.gap)+"px"; }); }
+  h.atts.forEach(a=>{ const hideEdit=(a.el===h.editRow&&h.el.classList.contains("unsel")); a.el.style.display=(vis&&!hideEdit)?"":"none"; if(!b) return; a.el.style.left=Math.round(b.minX-3)+"px"; a.el.style.top=Math.round(a.where==="above"?b.minY-a.gap:b.maxY+a.gap)+"px"; }); }
 function makeHider(h){
   if(h.el) h.el.remove(); if(h.atts){ h.atts.forEach(a=>a.el.remove()); h.atts=[]; }
   const el=document.createElement("div"); el.className="hider"+(h===mine?" mine":""); el.dataset.id=h.id;
@@ -932,7 +943,8 @@ function makeHider(h){
     attach(h,row,"below",14); h.editRow=row;
     const inp=row.querySelector("#txtIn"); inp.value=h.text;
     inp.addEventListener("input",e=>{ h.text=e.target.value.replace(/[\r\n]/g,"").slice(0,MAX_LEN); styleHider(h); pushHist("type"); sendUpd(); });
-    inp.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key==="Escape") e.target.blur(); if((e.metaKey||e.ctrlKey)&&/^[zy]$/i.test(e.key||"")){ e.preventDefault(); if(e.key.toLowerCase()==="y"||e.shiftKey) redo(); else undo(); } });
+    inp.addEventListener("keydown",e=>{ if(e.isComposing||e.keyCode===229) return;   // 日本語入力の変換確定Enterで入力欄を閉じない(ローマ字しか打てない/日本語が打てないバグの原因)
+      if(e.key==="Enter"||e.key==="Escape") e.target.blur(); if((e.metaKey||e.ctrlKey)&&/^[zy]$/i.test(e.key||"")){ e.preventDefault(); if(e.key.toLowerCase()==="y"||e.shiftKey) redo(); else undo(); } });
     row.querySelector("#txtReset").addEventListener("click",()=>{ playSelect(); h.size=DEF_SIZE; h.sx=1; h.sy=1; h.rot=0; styleHider(h); pushHist(); sendUpd(); });
   }
   h.el=el; h.ht=ht; h.tx=tx; $("hideLayer").appendChild(el); styleHider(h); return el;
@@ -942,6 +954,7 @@ function styleHider(h){
   const shown=shownText(h);
   if(h.tx.textContent!==shown) h.tx.textContent=shown;
   ht.style.fontFamily=h.font; ht.style.fontSize=h.size+"px"; ht.style.fontWeight=h.weight; ht.style.color=h.color;
+  ht.style.filter=h.blur?("blur("+h.blur+"px)"):"";
   ht.style.background=h.bgOn?h.bg:"transparent";
   ht.style.lineHeight=h.lineH?(h.lineH+"px"):"";
   ht.style.transform=(h.sx!==1||h.sy!==1)?("scale("+h.sx+","+h.sy+")"):"";
@@ -963,7 +976,7 @@ function layoutHider(h){
 }
 function zOf(h){ return 60000-Math.min(59000, Math.round(Math.sqrt(Math.max(1,(h.w||1)*(h.h||1)))*20)); }
 function newMine(){
-  return { id:myId, name:myName, text:DEF_TEXT, font:FONTS[+$("fontSel").value].f, weight:WEIGHTS[+$("weightSel").value].v,
+  return { id:myId, name:myName, text:DEF_TEXT, font:FONTS[+$("fontSel").value].f, weight:400, blur:BLURS[+$("blurSel").value].v,
            color:$("fgCol").value, bg:$("bgCol").value, bgOn:$("bgOnBtn").classList.contains("on"), size:DEF_SIZE, sx:1, sy:1, rot:0, x:null, y:null, cpu:false, found:false, likes:0, angry:0 };
 }
 let updT=0; function sendUpd(){ if(!online||!mine||(phase!=="hide"&&phase!=="swap")) return; clearTimeout(updT); updT=setTimeout(flushUpd,150); }   // 化ける中は自分の箱を全員へ(オーナーはsnap・ゲストはact)
@@ -1017,11 +1030,11 @@ function beginGameAsHost(solo){
 }
 function readBar(tag){
   if(!mine) return;
-  mine.font=FONTS[+$("fontSel").value].f; mine.weight=WEIGHTS[+$("weightSel").value].v; mine.color=$("fgCol").value; mine.bg=$("bgCol").value; mine.bgOn=$("bgOnBtn").classList.contains("on");
+  mine.font=FONTS[+$("fontSel").value].f; mine.blur=BLURS[+$("blurSel").value].v; mine.color=$("fgCol").value; mine.bg=$("bgCol").value; mine.bgOn=$("bgOnBtn").classList.contains("on");
   styleHider(mine); pushHist(tag); sendUpd();
 }
 $("fontSel").addEventListener("change",()=>{ playSelect(); readBar(); $("fontSel").blur(); });
-$("weightSel").addEventListener("change",()=>{ playSelect(); readBar(); $("weightSel").blur(); });
+$("blurSel").addEventListener("change",()=>{ playSelect(); readBar(); $("blurSel").blur(); });
 $("bgOnBtn").addEventListener("click",()=>{ playSelect(); const on=$("bgOnBtn").classList.toggle("on"); $("bgOnBtn").textContent=on?"あり":"なし"; $("bgSw").classList.toggle("off",!on); readBar(); });
 function paintSwatches(){ $("fgSw").style.background=$("fgCol").value; $("bgSw").style.background=$("bgCol").value; }
 ["input","change"].forEach(ev=>{ $("fgCol").addEventListener(ev,()=>{ readBar("fg"); paintSwatches(); }); $("bgCol").addEventListener(ev,()=>{ readBar("bg"); paintSwatches(); }); });
@@ -1046,7 +1059,7 @@ function pushHist(tag){
 function applyHist(o){
   HKEYS.forEach(k=>mine[k]=o[k]);
   const fi=FONTS.findIndex(f=>f.f===mine.font); if(fi>=0) $("fontSel").value=fi;
-  const wi=WEIGHTS.findIndex(w=>w.v===mine.weight); if(wi>=0) $("weightSel").value=wi;
+  const bi=BLURS.findIndex(b=>b.v===(mine.blur||0)); if(bi>=0) $("blurSel").value=bi;
   $("fgCol").value=mine.color; $("bgCol").value=mine.bg; paintSwatches();
   $("bgOnBtn").classList.toggle("on",mine.bgOn); $("bgOnBtn").textContent=mine.bgOn?"あり":"なし"; $("bgSw").classList.toggle("off",!mine.bgOn);
   const inp=mine.editRow&&mine.editRow.querySelector("#txtIn"); if(inp&&inp.value!==mine.text) inp.value=mine.text;
@@ -1082,7 +1095,7 @@ wrapEl.addEventListener("pointerdown",e=>{
       dragging={ kind:"move", id:e.pointerId, sx:e.clientX, sy:e.clientY, ox:mine.x, oy:mine.y }; layoutHider(mine);
       try{ mine.ht.setPointerCapture(e.pointerId); }catch(_){ } return;
     }
-    if(mine.x!=null){ if(typing()) document.activeElement.blur(); mine.el.classList.add("unsel"); return; }
+    if(mine.x!=null){ if(typing()) document.activeElement.blur(); mine.el.classList.add("unsel"); placeAtts(mine); return; }
     const p=stagePt(e); if(p.x<0||p.y<0||p.x>stage.w||p.y>stage.h) return;
     mine.x=0; mine.y=0; layoutHider(mine);
     mine.x=Math.round(Math.max(0,Math.min(stage.w-mine.w,p.x-mine.w/2))); mine.y=Math.round(Math.max(0,Math.min(stage.h-mine.h,p.y-mine.h/2)));
@@ -1110,14 +1123,16 @@ wrapEl.addEventListener("pointermove",e=>{
     deg=((deg+180)%360+360)%360-180; if(Math.abs(deg)<0.6&&!e.shiftKey) deg=0;
     mine.rot=Math.round(deg*10)/10; styleHider(mine); sendUpd(); return;
   }
-  const right0=d.x0+d.w0, bottom0=d.y0+d.h0, keep=e.shiftKey;
+  const keep=e.shiftKey, rr=(mine.rot||0)*Math.PI/180, cR=Math.cos(rr), sR=Math.sin(rr);
+  const dl=dx*cR+dy*sR, dt=-dx*sR+dy*cR;   // ポインタの動きを箱の向き(ローカル軸)に直す=回転していても「右ハンドルを引けば横に伸びる」
   const clampS=v=>Math.max(0.25,Math.min(6,v));
-  if(d.kind==="r"||d.kind==="l"){ const nw=Math.max(6,d.kind==="r"?d.w0+dx:d.w0-dx); const f=nw/d.w0; mine.sx=clampS(d.sxs*f); if(keep) mine.sy=clampS(d.sys*f); }
-  else if(d.kind==="b"||d.kind==="t"){ const nh=Math.max(6,d.kind==="b"?d.h0+dy:d.h0-dy); const f=nh/d.h0; mine.sy=clampS(d.sys*f); if(keep) mine.sx=clampS(d.sxs*f); }
-  else{ const down=(d.kind==="br"||d.kind==="bl"); const nh=Math.max(6,down?d.h0+dy:d.h0-dy); mine.size=Math.round(Math.max(MIN_SIZE,Math.min(MAX_SIZE,d.size0*nh/d.h0))); }
+  if(d.kind==="r"||d.kind==="l"){ const nw=Math.max(6,d.kind==="r"?d.w0+dl:d.w0-dl); const f=nw/d.w0; mine.sx=clampS(d.sxs*f); if(keep) mine.sy=clampS(d.sys*f); }
+  else if(d.kind==="b"||d.kind==="t"){ const nh=Math.max(6,d.kind==="b"?d.h0+dt:d.h0-dt); const f=nh/d.h0; mine.sy=clampS(d.sys*f); if(keep) mine.sx=clampS(d.sxs*f); }
+  else{ const down=(d.kind==="br"||d.kind==="bl"); const nh=Math.max(6,down?d.h0+dt:d.h0-dt); mine.size=Math.round(Math.max(MIN_SIZE,Math.min(MAX_SIZE,d.size0*nh/d.h0))); }
   styleHider(mine);
-  if(d.kind==="l"||d.kind==="tl"||d.kind==="bl") mine.x=Math.round(right0-mine.w);
-  if(d.kind==="t"||d.kind==="tl"||d.kind==="tr") mine.y=Math.round(bottom0-mine.h);
+  const AN={r:[0,.5],l:[1,.5],b:[.5,0],t:[.5,1],br:[0,0],bl:[1,0],tr:[0,1],tl:[1,1]}[d.kind];   // 反対側の辺/角を固定点にする(回転していても動かない)
+  const P=anchorWorld(d.x0,d.y0,d.w0,d.h0,rr,AN), Q=anchorWorld(0,0,mine.w,mine.h,rr,AN);
+  mine.x=Math.round(P.x-Q.x); mine.y=Math.round(P.y-Q.y);
   mine.x=Math.max(0,Math.min(stage.w-mine.w,mine.x)); mine.y=Math.max(0,Math.min(stage.h-mine.h,mine.y)); layoutHider(mine); sendUpd();
 });
 ["pointerup","pointercancel"].forEach(ev=>wrapEl.addEventListener(ev,e=>{ if(dragging&&dragging.id===e.pointerId){ dragging=null; if(mine&&mine.el){ mine.el.classList.remove("rotating"); layoutHider(mine); } pushHist(); flushUpd(); } }));
@@ -1359,7 +1374,7 @@ function buildHelp(){
   $("helpBody").innerHTML='<div class="h-sec">基本ルール</div>'
    +'<p>プレイヤーは「文字」。ひとりが探す人、のこりは化ける人<br>化ける人はWebサイトの画面の中に自分の文字を置いて、まわりの文字に化けます<br>探す人は、もともと無かったニセモノの文字を'+TAPW+'して見つけます。まちがえると体力が減る<br>全員みつけたら探す側の勝ち。体力切れ・時間切れなら化ける側の勝ち</p>'
    +'<div class="h-sec">化け方</div>'
-   +'<p>まわりの文字と同じ大きさ・同じ色にすると見つかりにくい<br>テキストボックスはつかんで移動、ハンドルで引き伸ばせる（Shiftを押しながらで縦横比そのまま）。右上の丸いハンドルで回転（Shiftで15°刻み）。文字は下の入力欄で書きかえる<br>小さいテキストボックスほど手前に表示される（大きい箱で上から覆っても隠せない）<br>色はパレットから選ぶ（パレットのスポイトで画面の色を吸える）<br>拡大したら、ホイールクリックかスペースを押しながらドラッグで画面を動かせる</p>'
+   +'<p>まわりの文字と同じ大きさ・同じ色にすると見つかりにくい<br>テキストボックスはつかんで移動、ハンドルで引き伸ばせる（Shiftを押しながらで縦横比そのまま）。右上の丸いハンドルで回転（Shiftで15°刻み）。文字は下の入力欄で書きかえる<br>小さいテキストボックスほど手前に表示される（大きい箱で上から覆っても隠せない）<br>色はパレットから選ぶ（パレットのスポイトで画面の色を吸える）。画質の悪い写真には「ぼかし」でなじませる<br>拡大したら、ホイールクリックかスペースを押しながらドラッグで画面を動かせる</p>'
    +'<div class="h-sec">投票タイム</div>'
    +'<p>探す時間が終わると、みんなの隠れ場所が公開されます<br>文字を'+TAPW+'して、化け方に「グッド」か「バッド」を送ろう（どちらか片方だけ）。グッド − バッド が化ける側の順位になる</p>'
    +'<div class="h-sec">オンライン</div>'

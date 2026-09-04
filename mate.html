@@ -1740,7 +1740,7 @@ function openChannel(c, onReady){
   ch.on("broadcast",{event:"snap"},({payload})=>{ if(!isHost && payload) applySnap(payload); });
   ch.on("broadcast",{event:"act"},({payload})=>{ if(isHost && payload) hostAct(payload); });
   ch.on("broadcast",{event:"chat"},({payload})=>{ if(payload) addChat(payload.id, payload.n, payload.tx, payload.ans===1, payload.ok===1); });
-  ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) spawnStamp(payload.i|0, payload.name||"", payload.color||"#fff"); });   // ロストしても実害なし=seq/ack不要
+  ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) speakStamp(payload.i|0); if(payload) spawnStamp(payload.i|0, payload.name||"", payload.color||"#fff"); });   // ロストしても実害なし=seq/ack不要
   ch.on("broadcast",{event:"rot"},({payload})=>{ if(payload&&typeof payload.r==="number"){ cupRot=payload.r; applyCupRot(); } });   // カップ回転の共有
   ch.on("broadcast",{event:"erase"},({payload})=>{ if(payload && drawerId!==myId){ $("cupWrap").classList.toggle("erasing", payload.on===1); } });   // 描き手の消しゴム=みんなのフチも赤
   ch.on("broadcast",{event:"draw"},({payload})=>{
@@ -2289,7 +2289,7 @@ function speakStamp(i){
   }catch(e){}
 }
 function sendStamp(i){
-  speakStamp(i);   // タップした人の端末で読み上げ(やめてよぉ/すごい/わらえる)
+  speakStamp(i);   // 読み上げ(やめてよぉ/すごい/わらえる)。届いたスタンプも受け側で読み上げる(2026-09-05)
   if(online){
     const me=byId(myId);
     const nm=(me&&me.n)?me.n:((myName||UNDEF_NM)+(spectating?"（観戦）":""));

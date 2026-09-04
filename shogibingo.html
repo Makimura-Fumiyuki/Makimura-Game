@@ -1580,7 +1580,7 @@ function openChannel(code, asHost){
     $("cfOv").classList.remove("on");
     gameOver(mySide, "あいてが降参した");
   });
-  ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) spawnStamp(payload.i|0, payload.w||(spectating?"プレイヤー":"あいて")); });
+  ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) speakStamp(payload.i|0); if(payload) spawnStamp(payload.i|0, payload.w||(spectating?"プレイヤー":"あいて")); });
   ch.on("broadcast",{event:"check"},()=>{ if(online && !stampMuted) showCheckFx(); });
   ch.on("broadcast",{event:"skipfx"},()=>{ if(online && curSkipFn) curSkipFn(); });   // 動かした本人がスキップ=全員の演出を同じところまで飛ばす   // あいての王手宣言(スタンプ扱い=ミュート中は流れない)
   ch.on("broadcast",{event:"undoreq"},({payload})=>{   // あいてが一手戻したい
@@ -1931,7 +1931,7 @@ function speakStamp(i){
   }catch(e){}
 }
 function sendStamp(i){
-  speakStamp(i);   // タップした人の端末で読み上げ(やめてよぉ/すごい/わらえる)
+  speakStamp(i);   // 読み上げ(やめてよぉ/すごい/わらえる)。届いたスタンプも受け側で読み上げる(2026-09-05)
   spawnStamp(i, spectating?"観戦":"自分", true);
   if(online&&ch){ try{ ch.send({ type:"broadcast", event:"stamp", payload:{ i:i, w:spectating?"観戦":null } }); }catch(e){} }   // ロストしても実害なし
 }

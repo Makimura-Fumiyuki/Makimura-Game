@@ -1688,7 +1688,7 @@
       rTitle.textContent="あいての投了！"; rTitle.className="r-title win";
       rSub.textContent="あなたの勝ち"; playWin(); bumpRoomStats("win"); resultOverlay.classList.add("on");
     });
-    ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) spawnStamp(payload.i|0, "あいて"); });
+    ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) speakStamp(payload.i|0); if(payload) spawnStamp(payload.i|0, "あいて"); });
     ch.on("broadcast",{event:"rematch"},()=>{
       peerRematch=true;
       if(myRematch){ if(isHost) hostRestart(); }   // 両者合意: 部屋主が先手後手を引き直して開始合図を送る
@@ -2257,7 +2257,7 @@
     }catch(e){}
   }
   function sendStamp(i){
-    speakStamp(i);   // タップした人の端末で読み上げ(やめてよぉ/すごい/わらえる)
+    speakStamp(i);   // 読み上げ(やめてよぉ/すごい/わらえる)。届いたスタンプも受け側で読み上げる(2026-09-05)
     spawnStamp(i, "自分", true);
     if(online && ch){ try{ ch.send({ type:"broadcast", event:"stamp", payload:{ i } }); }catch(e){} }   // 相手にも届ける(ロストしても実害なし)
   }

@@ -150,6 +150,11 @@
 
   .plate{ position:relative; }   /* クッキーの周りの囲みはなし */
   #cookie{ display:block; touch-action:none; cursor:crosshair; image-rendering:pixelated; }
+  #carvePad{ position:absolute; inset:-16px; z-index:2; touch-action:none; cursor:crosshair; }   /* クッキーの外側まで広げた操作エリア=ふちにペンの一部がかかる位置でも食べられる・ペン枠も消えない */
+  #countFx{ position:fixed; left:0; right:0; top:0; height:100svh; z-index:73; display:none; align-items:center; justify-content:center; pointer-events:none; }
+  #countFx.on{ display:flex; }
+  #countFx span{ font-size:clamp(96px,28vw,190px); font-weight:900; line-height:1; color:var(--gold); text-shadow:0 6px 0 rgba(0,0,0,.42); animation:cntPop .6s ease-out forwards; }
+  @keyframes cntPop{ 0%{ opacity:0; transform:scale(1.6); } 25%{ opacity:1; transform:scale(1); } 80%{ opacity:1; } 100%{ opacity:0; transform:scale(.9); } }
   #penGhost{ position:absolute; display:none; pointer-events:none; border:2px dashed rgba(253,246,231,.9);
     background:rgba(253,246,231,.12); border-radius:2px; }
 
@@ -322,6 +327,7 @@
     border-radius:11px; padding:9px 14px; font-size:15px; font-weight:800; }
   .lobby-row .nm{ flex:1; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .lobby-row .nm.undef{ opacity:.42; font-weight:700; }
+  .lobby-row .p-dot{ width:12px; height:12px; border-radius:50%; flex:none; }   /* 一致度チェックで使う色(PCOL)と同じ */
   .lobby-row .hostmark{ flex:none; font-size:11px; font-weight:900; color:#3a2a06; background:var(--gold);
     border-radius:999px; padding:2px 10px 3px; }
   .lobby-row .you{ flex:none; font-size:11px; font-weight:900; color:var(--card);
@@ -390,6 +396,7 @@
   </div>
   <div class="plate" id="cookiePlate">
     <canvas id="cookie"></canvas>
+    <div id="carvePad"></div>
     <div id="penGhost"></div>
     <div id="addFloat"></div>
   </div>
@@ -444,6 +451,7 @@
 <div class="toast" id="toast"></div>
 <div id="boom"></div>
 <div id="warn15"><span>のこり15秒</span></div>
+<div id="countFx"><span id="countNum"></span></div>
 <div id="endFx"><span>鍵作り終了</span></div>
 
 <div class="overlay" id="scoreOv">
@@ -1069,7 +1077,7 @@ let rounds=5;                              // ラウンド数(ロビーで1〜10
 let rateSum=0;                             // 一致度の合計(ゲームのスコア)
 const ROUNDS_MIN=1, ROUNDS_MAX=10;
 /* 得点: お手本の外側を食べた量で加点、お手本(残す所)を食べたら大きく減点。一致度はおまけ表示 */
-const GOOD_PER_PT=30, BAD_PT=2/3, EDGE_MUL=3;   // 食べてよい所30マス=+1pt(お手本のきわ2マス以内は3倍)／お手本を1マス食べると−2/3pt(2026-08-19)   // お手本を1マス食べると−3pt(=食べてよい所30マスぶん)。一致度はおまけ表示(得点には関係しない)
+const GOOD_PER_PT=30, BAD_PT=2/3, EDGE_MUL=5;   // きわ=5倍(2026-09-05に3→5)   // 食べてよい所30マス=+1pt(お手本のきわ2マス以内は3倍)／お手本を1マス食べると−2/3pt(2026-08-19)   // お手本を1マス食べると−3pt(=食べてよい所30マスぶん)。一致度はおまけ表示(得点には関係しない)
 const PCOL=["#ff6b6b","#4dabf7","#69db7c","#ffd43b","#da77f2","#ff922b","#38d9a9","#f783ac","#a9e34b"];
 let eater=null, totals={}, lastScores=null, scoreView=false, edgeMask=null;   // edgeMask=お手本のきわ2マス以内(外側)=高得点ゾーン
 let doneSet=new Set();
@@ -1165,6 +1173,7 @@ function layoutCookie(){
   /* ★親(=キャンバスを包む箱)の幅から測ると、呼ぶたびに縮んでいく。画面幅から直接決める */
   const box=Math.min(vpW()*0.94, 520);
   cell=Math.max(0.6, Math.min(box/W, availH()/H));
+  { const pd=$("carvePad"); if(pd) pd.style.inset=(-Math.max(12, cell*8))+"px"; }
   const d=dprv();
   cv.width=Math.round(W*cell*d); cv.height=Math.round(H*cell*d);
   cv.style.width=(W*cell)+"px"; cv.style.height=(H*cell)+"px";
@@ -1397,7 +1406,8 @@ function blowUp(h){            // 触れた爆弾の数だけライフが減る(
 const ghost=$("penGhost");
 function showGhost(px,py){
   const [cx,cy]=cellAt(px,py);
-  const k=penSpan(penSize)[0];
+  const [k,k1]=penSpan(penSize);
+  if(cx+k1<0||cx-k>=W||cy+k1<0||cy-k>=H){ hideGhost(); return; }   // ペンがクッキーにまったく掛からない所では出さない
   const cw=cell;                                              // 枠(plate)の座標系=拡大前のpx(拡大はplateごとtransformされる)
   ghost.style.display="block";
   ghost.style.left=((cx-k)*cw)+"px";
@@ -1422,11 +1432,12 @@ function pinchMove(){ if(!pinch) return; const a=[...ptrs.values()]; const d=Mat
 let touchPending=null;   // タッチ1本目: 2本目が来るかもしれないので70msだけ待ってから削り始める(ピンチの最初の指で削れてしまう誤作動の防止)
 function beginCarve(e){
   ensureAudio(); carving=true; lastCell=null;
-  try{ cv.setPointerCapture(e.pointerId); }catch(_){}
+  try{ pad.setPointerCapture(e.pointerId); }catch(_){}
   carveAt(e.clientX,e.clientY);
 }
-cv.addEventListener("pointerdown",e=>{
-  if(phase!=="carve"||!canCarve()) return;
+const pad=$("carvePad");
+pad.addEventListener("pointerdown",e=>{
+  if(phase!=="carve"||!canCarve()||countdown) return;
   if(e.pointerType==="touch"){ ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(ptrs.size>=2){ if(touchPending){ clearTimeout(touchPending.t); touchPending=null; }
       carving=false; lastCell=null; hideGhost(); pinchLock=true; pinchStart(); e.preventDefault(); return; }
@@ -1438,8 +1449,8 @@ cv.addEventListener("pointerdown",e=>{
   if(pinchLock) return;
   beginCarve(e); e.preventDefault();
 });
-cv.addEventListener("pointermove",e=>{
-  if(phase!=="carve"||!canCarve()) return;
+pad.addEventListener("pointermove",e=>{
+  if(phase!=="carve"||!canCarve()||countdown) return;
   if(e.pointerType==="touch" && ptrs.has(e.pointerId)){ ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY}); if(ptrs.size>=2){ pinchMove(); e.preventDefault(); return; }
     if(touchPending && touchPending.id===e.pointerId && Math.hypot(e.clientX-touchPending.x,e.clientY-touchPending.y)>4){   // 待ち中に動いた=1本指の削り
       clearTimeout(touchPending.t); touchPending=null; if(!pinchLock) beginCarve({pointerId:e.pointerId, clientX:touchPending? touchPending.x:e.clientX, clientY:e.clientY}); } }
@@ -1448,7 +1459,7 @@ cv.addEventListener("pointermove",e=>{
   if(e.pointerType!=="touch") showGhost(e.clientX,e.clientY);
   sendPen(e.clientX,e.clientY);                            // ほかの人にもペンの位置を見せる(食べていなくても)
 });
-cv.addEventListener("pointerleave",()=>{ hideGhost(); sendPenOff(); });
+pad.addEventListener("pointerleave",()=>{ hideGhost(); sendPenOff(); });
 function sendPen(px,py){
   if(!online||!ch) return;
   const now=Date.now(); if(now-penSendAt<90) return; penSendAt=now;
@@ -1461,7 +1472,7 @@ setInterval(()=>{                                          // 古いペン位置
   Object.keys(pens).forEach(id=>{ if(now-pens[id].t>1600){ delete pens[id]; ch2=true; } });
   if(ch2 && phase==="carve") drawCookie();
 },400);
-["pointerup","pointercancel"].forEach(ev=>cv.addEventListener(ev,e=>{
+["pointerup","pointercancel"].forEach(ev=>pad.addEventListener(ev,e=>{
   if(touchPending && touchPending.id===e.pointerId){ clearTimeout(touchPending.t); const tp=touchPending; touchPending=null; if(!pinchLock && ptrs.size===1){ beginCarve({pointerId:e.pointerId, clientX:tp.x, clientY:tp.y}); } }   // 短いタップ=その場を1回削る
   carving=false; lastCell=null; ptrs.delete(e.pointerId);
   if(ptrs.size<2) pinch=null; if(ptrs.size===0) pinchLock=false; }));   // 指が全部離れたら削りを再開できる
@@ -1579,10 +1590,20 @@ function enterCarveUI(){
   $("ptList").style.display="none"; $("ptList").innerHTML="";
   $("sizeRow").style.display=canCarve()?"flex":"none";
   hideGhost(); layoutCookie();
-  if(isHost||!online) startClock(); else startTimerFollowClock();   // ひとりで遊ぶ(オンラインなし)も自分でタイマーを回す
+  runCountdown(()=>{ if(isHost||!online) startClock(); else startTimerFollowClock(); });   // 3カウントのあとに食べはじめ(ひとりで遊ぶも自分でタイマーを回す)
   $("stampBar").classList.add("on");
 }
 
+/* 食べはじめる前の3カウント(3→2→1を0.6秒ずつ=実時間より少しテンポよく)。カウント中は食べられない */
+let countdown=false, cntTs=[];
+function playCount(n){ if(!actx) return; const t=actx.currentTime; if(n>0) note(880,t,0.09,0.14,"triangle"); else { note(1320,t,0.14,0.16,"triangle"); note(1760,t+0.08,0.2,0.12,"triangle"); } }
+function runCountdown(cb){
+  cntTs.forEach(clearTimeout); cntTs=[]; countdown=true; hideGhost();
+  const fx=$("countFx"), num=$("countNum");
+  const show=n=>{ num.textContent=n; fx.classList.remove("on"); void num.offsetWidth; fxOnCookie(fx); fx.classList.add("on"); playCount(n); };
+  [3,2,1].forEach((n,i)=>cntTs.push(setTimeout(()=>{ if(phase==="carve") show(n); },i*600)));
+  cntTs.push(setTimeout(()=>{ fx.classList.remove("on"); countdown=false; if(phase==="carve"){ playCount(0); cb(); } },1800));
+}
 function renderClock(){
   const ms=clockRunning? Math.max(0,tEnd-Date.now()) : clockMs;
   $("timer").textContent=fmtClock(ms);
@@ -1690,7 +1711,7 @@ function showScoreBoard(rate){
 function playScore(){ if(!actx) return; const t=actx.currentTime; note(660,t,0.08,0.06,"triangle"); note(880,t+0.09,0.08,0.06,"triangle"); note(1100,t+0.18,0.14,0.07,"triangle"); }
 $("doneBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); pressDone(); });
 function pressDone(){                      // 自分は「鍵完成」。もう一度押すと取り消し。全員が押したら(または時間切れで)判定へ
-  if(phase!=="carve") return;
+  if(phase!=="carve"||countdown) return;
   const undo=doneSet.has(myId);
   if(undo) doneSet.delete(myId); else doneSet.add(myId);
   renderDoneBtn(); renderDoneList();
@@ -2043,7 +2064,7 @@ function openChannel(c, onReady){
   ch.on("broadcast",{event:"pen"},({payload})=>{ if(!payload||payload.from===myId) return;
     if(payload.off) delete pens[payload.from]; else pens[payload.from]={x:payload.x,y:payload.y,s:payload.s,t:Date.now()};
     if(phase==="carve") drawCookie(); });
-  ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) spawnStamp(payload.i|0, payload.n||"あいて"); });
+  ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) speakStamp(payload.i|0); if(payload) spawnStamp(payload.i|0, payload.n||"あいて"); });
   ch.on("broadcast",{event:"bye"},({payload})=>{ if(payload) onLeave(payload.id); });
   ch.on("broadcast",{event:"kick"},({payload})=>{ if(payload && payload.to===myId && !isHost){ toast("部屋主に退出させられました"); goTitle(); } });
   ch.on("presence",{event:"leave"},({leftPresences})=>{ (leftPresences||[]).forEach(p=>{ if(!p||!p.id) return;
@@ -2072,8 +2093,8 @@ function startHb(){ clearInterval(hbIv); hbIv=setInterval(sendSnap, 2200); }
 function renderLobby(){
   if(!online) return;
   let html='<div class="lobby-list">';
-  players.forEach(p=>{
-    html+='<div class="lobby-row"><span class="nm'+(p.n?"":" undef")+'">'+esc(nmOf(p))+'</span>'
+  players.forEach((p,i)=>{
+    html+='<div class="lobby-row"><span class="p-dot" style="background:'+PCOL[i%PCOL.length]+'"></span><span class="nm'+(p.n?"":" undef")+'">'+esc(nmOf(p))+'</span>'
       +(p.id===hostId?'<span class="hostmark">部屋主</span>':"")
       +(p.id===myId?'<span class="you">じぶん</span>':"")
       +((isHost&&p.id!==myId)?'<button class="kick-btn" data-kick="'+esc(p.id)+'">追放</button>':"")+'</div>';
@@ -2285,7 +2306,7 @@ function speakStamp(i){
   }catch(e){}
 }
 function sendStamp(i){
-  speakStamp(i);   // タップした人の端末で読み上げ(やめてよぉ/すごい/わらえる)
+  speakStamp(i);   // 読み上げ(やめてよぉ/すごい/わらえる)。届いたスタンプも受け側で読み上げる(2026-09-05)
   spawnStamp(i, "自分", true);
   if(online&&ch){ try{ ch.send({ type:"broadcast", event:"stamp", payload:{ i:i, n:myName } }); }catch(e){} }   // ロストしても実害なし
 }
