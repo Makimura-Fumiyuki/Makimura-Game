@@ -371,7 +371,7 @@
           <span class="pc-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="12.5" rx="1.6"/><path d="M9 20.5h6M12 16.5v4"/></svg>PC推奨</span>
         </div>
         <div class="c-body">
-          <div class="c-name">文字化け
+          <div class="c-name">とても文字化け
             <span class="c-players"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="7.2" r="4.2"/><path d="M9 13.4c-4.4 0-8 2.5-8 6.1V21h16v-1.5c0-3.6-3.6-6.1-8-6.1z"/><circle cx="17.5" cy="8.2" r="3.3"/><path d="M17.5 13.2c-.8 0-1.6.1-2.3.3 1.9 1.3 3.1 3.2 3.1 5.5V21H23v-1.3c0-3-2.5-5.5-5.5-5.5z"/></svg>2〜99人</span>
           </div>
           <div class="c-desc">
@@ -1043,7 +1043,7 @@
   /* ゲームのデータ: release=リリース日 / cats=カテゴリ / clicks=あそばれた回数(サーバー集計) */
   const GAMES=[
     { id:"tsubuyaki", thumbLight:true, noIntro:true, yomi:"まきむらたちのつぶやき", tpl:"tpl-tsubuyaki", release:"2026-09-03", cats:["その他"], clicks:null, likes:null },
-    { id:"mojibake", thumbLight:true, yomi:"もじばけ", tpl:"tpl-mojibake", release:"2026-09-04", cats:["パーティ"], soon:true, clicks:null, likes:null },   // 制作中=Coming Soon(リリース時にsoon:trueを外し、intro-mojibake.htmlを作ってnoIntroも外す)
+    { id:"mojibake", thumbLight:true, yomi:"とてももじばけ", tpl:"tpl-mojibake", release:"2026-09-04", cats:["パーティ"], soon:true, clicks:null, likes:null },   // 制作中=Coming Soon(リリース時にsoon:trueを外し、intro-mojibake.htmlを作ってnoIntroも外す)
     { id:"cookkey", yomi:"くっきー", tpl:"tpl-cookkey", release:"2026-09-03", cats:["パーティ"], clicks:null, likes:null },
     { id:"shogibingo", yomi:"しょうぎおんびんご", tpl:"tpl-shogibingo", release:"2026-08-03", cats:["対戦"], clicks:null, likes:null },
     { id:"zukan", yomi:"みんなでいきものずかん", tpl:"tpl-zukan", release:"2026-07-17", cats:["その他"], clicks:null, likes:null },
@@ -1153,7 +1153,7 @@
         ib.style.color = g.thumbLight ? "#20211f" : "#fff";   // 明るいサムネは黒・暗いサムネは白
         ib.setAttribute("aria-label","どんなゲーム？"); ib.setAttribute("title","どんなゲーム？");
         ib.innerHTML='<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18.2A8.2 8.2 0 1 1 12 3.8a8.2 8.2 0 0 1 0 16.4z"/><text x="12" y="16.3" text-anchor="middle" font-size="11" font-weight="900" fill="currentColor" font-family="Noto Sans JP,sans-serif">?</text></svg>';
-        ib.addEventListener("click",e=>{ e.preventDefault(); e.stopPropagation(); window.location.href="./intro-"+g.id+".html"; });
+        ib.addEventListener("click",e=>{ e.preventDefault(); e.stopPropagation(); window.location.href="./intro/intro-"+g.id+".html"; });
         th.appendChild(ib);
       }
     }

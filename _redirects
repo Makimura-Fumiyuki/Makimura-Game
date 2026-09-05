@@ -1,0 +1,12 @@
+# 紹介ページを intro/ フォルダへ移動(2026-09-05)。旧URLは新URLへ301転送(検索登録済みURL対策)
+/intro-bamiri.html /intro/intro-bamiri.html 301
+/intro-cookkey.html /intro/intro-cookkey.html 301
+/intro-dox.html /intro/intro-dox.html 301
+/intro-maigo.html /intro/intro-maigo.html 301
+/intro-maigomoku.html /intro/intro-maigomoku.html 301
+/intro-mate.html /intro/intro-mate.html 301
+/intro-mojibake.html /intro/intro-mojibake.html 301
+/intro-moku.html /intro/intro-moku.html 301
+/intro-nomi.html /intro/intro-nomi.html 301
+/intro-shogibingo.html /intro/intro-shogibingo.html 301
+/intro-zukan.html /intro/intro-zukan.html 301

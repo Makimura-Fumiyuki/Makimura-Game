@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>文字化け</title>
-<meta name="apple-mobile-web-app-title" content="文字化け">
+<title>とても文字化け</title>
+<meta name="apple-mobile-web-app-title" content="とても文字化け">
 <meta name="description" content="文字に化けてかくれんぼ。webサイトに隠れたり、自分で用意した画像に隠れたり">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="牧村が作ったゲーム集">
-<meta property="og:title" content="文字化け">
+<meta property="og:title" content="とても文字化け">
 <meta property="og:description" content="文字に化けてかくれんぼ。webサイトに隠れたり、自分で用意した画像に隠れたり">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjMWMxYzIyIi8+PHRleHQgeD0iMTYiIHk9IjE2LjUiIGZvbnQtc2l6ZT0iMTgiIGZvbnQtd2VpZ2h0PSI3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIiBmaWxsPSIjZmZmIiBmb250LWZhbWlseT0iJ0hpcmFnaW5vIFNhbnMnLCdOb3RvIFNhbnMgSlAnLHNhbnMtc2VyaWYiPuaWhzwvdGV4dD48L3N2Zz4=">
@@ -34,7 +34,7 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 #titleScene, #lobbyScene{ flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:20px; overflow:auto; }
 #lobbyScene{ justify-content:flex-start; padding-top:56px; padding-bottom:110px; }
 .logo{ position:relative; text-align:center; line-height:1; }
-.logo .main{ display:block; font-size:clamp(54px,14vw,96px); font-weight:900; letter-spacing:.04em; color:var(--ink);
+.logo .main{ display:block; font-size:clamp(40px,10.5vw,74px); font-weight:900; letter-spacing:.04em; color:var(--ink);
   text-shadow:3px 0 0 var(--cyan), -3px 0 0 var(--mag); animation:glitch 6s infinite; }
 .logo .garble{ display:block; margin-top:10px; font-size:clamp(12px,3vw,16px); color:var(--gray); letter-spacing:.14em; }
 @keyframes glitch{ 0%,92%,100%{ text-shadow:3px 0 0 var(--cyan), -3px 0 0 var(--mag); transform:none; }
@@ -73,7 +73,8 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 .rule-frame .rf-title{ font-size:12px; font-weight:700; color:var(--gray); letter-spacing:.1em; }
 .rf-row{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
 .rf-note{ font-size:9.5px; font-weight:500; color:var(--gray); }
-.rule-frame.off .stepper button{ pointer-events:none; opacity:.35; }   /* おまけ機能は写真ステージでは使えない */
+.rule-frame.off{ opacity:.45; }   /* おまけ機能は写真ステージでは使えない=枠ごとグレーアウト(注記も中にあるので読める程度に) */
+.rule-frame.off .stepper button{ pointer-events:none; }
 .rule-frame.locked .rule-ctl button, .rule-frame.locked .stage-row button, .rule-frame.locked .stepper button{ pointer-events:none; opacity:.6; }
 .stage-row{ display:flex; gap:10px; width:100%; }
 .stage-row button{ flex:1 1 0; background:#fff; border:1.5px solid var(--line); border-radius:14px; padding:12px 8px; font-size:14px; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:6px; }
@@ -278,8 +279,8 @@ button.dd{ text-align:left; min-width:96px; }
 .win-banner.seeker{ background:var(--mag); }
 .res-list{ width:100%; display:flex; flex-direction:column; gap:6px; }
 .res-row{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; background:#f4f4f6; font-size:13px; text-align:left; font-weight:400; }
-.res-row .rk{ font-weight:700; min-width:2.4em; color:var(--gray); }
-.res-row .rk.mvp{ color:var(--mag); font-weight:900; letter-spacing:.02em; }
+.res-row .rk{ font-weight:700; min-width:1.4em; color:var(--gray); }
+.res-row .rk.r1{ color:#c9a227; font-weight:900; } .res-row .rk.r2{ color:#8f9aa6; font-weight:900; } .res-row .rk.r3{ color:#b5713a; font-weight:900; }   /* 1・2・3位=金・銀・銅の色 */
 .res-row .nm{ font-weight:500; min-width:52px; white-space:nowrap; }
 .res-row .tx{ flex:1 1 auto; font-weight:500; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:pre; margin-left:-15px; }
 .res-row .vt{ display:inline-flex; gap:10px; flex:none; }
@@ -312,7 +313,7 @@ button.dd{ text-align:left; min-width:96px; }
 
 <!-- ===== タイトル ===== -->
 <div class="scene on" id="titleScene">
-  <div class="logo"><span class="main">文字化け</span><span class="garble">譁�ｭ怜喧縺�</span></div>
+  <div class="logo"><span class="main">とても文字化け</span><span class="garble">縺ｨ縺ｦ繧よ枚蟄怜喧縺�</span></div>
   <div class="tagline">文字に化けて、かくれんぼ</div>
   <div class="mode-row">
     <button id="makeRoomBtn">部屋を作る<small>合言葉を発行</small></button>
@@ -430,7 +431,7 @@ button.dd{ text-align:left; min-width:96px; }
 <!-- 結果 -->
 <div class="ov" id="resultOv"><div class="card">
   <div class="win-banner" id="winBanner"></div>
-  <div class="res-head">素敵な隠れ方ランキング</div>
+  <div class="res-head">隠れ方ランキング</div>
   <div class="res-list" id="resList"></div>
   <div class="row"><button class="txt-btn" id="resLobby">ロビーへ</button></div>
 </div></div>
@@ -561,7 +562,7 @@ mkDD("blurSel",BLURS.map(b=>({n:"ぼかし "+b.n,blur:b.v})),()=>readBar());   /
 const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co", SB_KEY="sb_publishable_cak3-W9Mmgahnwawreoa1Q_CVuhmkKL";
 let snapVer=0, lastVer=-1, lastSnapHost=null, hbT=0, joinChk=0, gotSnap=false, helloSent=false, photoInfo=null;
 function genCode(){ let c=""; for(let i=0;i<5;i++) c+=CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)]; return c; }
-function inviteText(c){ return "牧村が作った『文字化け』を一緒に遊ぼう！\n"+location.origin+location.pathname+"?join="+c+"\n\n合言葉："+c+"\n※リンクから参加できない時に使ってね"; }
+function inviteText(c){ return "牧村が作った『とても文字化け』を一緒に遊ぼう！\n"+location.origin+location.pathname+"?join="+c+"\n\n合言葉："+c+"\n※リンクから参加できない時に使ってね"; }
 let hostAt=0, noHostT=0;   // hostAt=オーナーになった時刻(presenceに載せる。オーナーが2人見えた時は新しい方が正)
 function myPresence(){ return { id:myId, name:nameDecided?myName:"", host:isHost(), ha:isHost()?hostAt:0, t:joinT }; }
 function send(event,payload){ if(!online||!ch) return; try{ ch.send({ type:"broadcast", event, payload }); }catch(e){} }
@@ -1351,7 +1352,7 @@ function showResult(){
   let rank=0, prev=null;
   sorted.forEach((h,i)=>{ const sc=h.likes-h.angry; if(sc!==prev){ rank=i+1; prev=sc; }
     const row=document.createElement("div"); row.className="res-row";
-    row.innerHTML='<span class="rk'+(rank===1&&sc>0?" mvp":"")+'">'+(rank===1&&sc>0?"MVP":rank)+'</span><span class="nm"></span><span class="tx"></span><span class="vt"><span class="vp like">'+LIKE_SVG+'<b>'+h.likes+'</b></span><span class="vp angry">'+ANGRY_SVG+'<b>'+h.angry+'</b></span></span><span class="st'+(h.found?"":" ok")+'">'+(h.found?"文字化け失敗":"文字化け完了")+'</span>';
+    row.innerHTML='<span class="rk'+(rank<=3?" r"+rank:"")+'">'+rank+'</span><span class="nm"></span><span class="tx"></span><span class="vt"><span class="vp like">'+LIKE_SVG+'<b>'+h.likes+'</b></span><span class="vp angry">'+ANGRY_SVG+'<b>'+h.angry+'</b></span></span><span class="st'+(h.found?"":" ok")+'">'+(h.found?"文字化け失敗":"文字化け完了")+'</span>';
     row.querySelector(".nm").textContent=h.name+(h.id===myId?"（あなた）":""); row.querySelector(".tx").textContent="「"+h.text+"」"; list.appendChild(row); });
   $("resLobby").style.display=(isHost()||!online)?"":"none"; $("resLobby").textContent=online?"ロビーへもどる（全員）":"ロビーへ";
   $("resultOv").dataset.ver=String(lastVer); $("resultOv").classList.remove("peek"); $("resultOv").classList.add("on");
