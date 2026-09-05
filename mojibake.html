@@ -148,7 +148,7 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 .hider .hd.tr{ right:calc(-3px - var(--hs)/2); top:calc(-3px - var(--hs)/2); cursor:nesw-resize; }
 .hider .hd.bl{ left:calc(-3px - var(--hs)/2); bottom:calc(-3px - var(--hs)/2); cursor:nesw-resize; }
 /* 回転ハンドル=右上コーナー(tr)の真上。つまみの左右に弧の矢印(待てアートの取っ手ヒントと同じ形) */
-.hider .hd.rot{ --rs:max(14px, calc(var(--hs)*2.2)); width:calc(var(--rs)*.9); height:calc(var(--rs)*.9); right:calc(-1 * var(--rs)*1.45); top:calc(-5px - var(--hs)/2 - var(--rs)*0.675); background:none; border:none; border-radius:50%; cursor:grab; z-index:3; }   /* 当たり判定=つまみだけ。つまみの中心は右上コーナーの斜め右上 */
+.hider .hd.rot{ --rs:calc(var(--hs)*2.2); width:calc(var(--rs)*.5417); height:calc(var(--rs)*.5417); right:calc(-1 * var(--rs)*1.27 + 1px); top:calc(-5px - var(--hs)/2 - var(--rs)*0.496); background:none; border:none; border-radius:50%; cursor:grab; z-index:3; }   /* 大きさは他のハンドル(--hs)に比例。当たり判定=つまみの丸とぴったり同じ(直径=13/24rs)。中心は右上コーナーの斜め右上 */
 .hider .hd.rot svg{ position:absolute; left:calc(50% - var(--rs)*1.3); top:calc(50% - var(--rs)*0.375); width:calc(var(--rs)*2.6); height:var(--rs); display:block; pointer-events:none; overflow:visible; }
 .hider .hd.rot .rh-arc{ opacity:0; transform:scaleX(.2); transform-box:fill-box; transform-origin:center; transition:opacity .16s, transform .22s cubic-bezier(.3,1.3,.5,1); }
 .hider .hd.rot:hover .rh-arc, .hider.rotating .hd.rot .rh-arc{ opacity:1; transform:none; }
@@ -168,6 +168,10 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 @keyframes foundPop{ 0%{ transform:scale(1.6); } 100%{ transform:none; } }
 /* 点滅は全員ぶん1本のアニメ(voteGlow)で同時に始める。色や消灯は変数--gcだけ変える=アニメを差し替えないので点滅のタイミングがズレない */
 #gameScene.voting .hider .frame2{ animation:voteGlow 1.4s ease-in-out infinite; border-style:solid; border-color:var(--mag); --gc:rgba(255,45,122,.8); }
+/* 投票中: 箱から波紋が広がる(発光だけでは気付けないため。色は--gcに連動=投票済み/自分/投票完了中は出ない) */
+#gameScene.voting .hider .frame2::before, #gameScene.voting .hider .frame2::after{ content:""; position:absolute; left:50%; top:50%; width:220px; height:220px; margin:-110px 0 0 -110px; border-radius:50%; border:3px solid var(--gc); opacity:0; animation:voteRip 2s ease-out infinite; pointer-events:none; }
+#gameScene.voting .hider .frame2::after{ animation-delay:1s; }
+@keyframes voteRip{ 0%{ transform:scale(.12); opacity:.95; } 100%{ transform:scale(1); opacity:0; } }
 #gameScene.voting .hider.voted .frame2, #gameScene.voting .hider.own .frame2, #gameScene.voting.vdone .hider .frame2{ --gc:transparent; }   /* 投票済み・自分の箱・投票完了後は発光なし */
 @keyframes voteGlow{ 0%,100%{ box-shadow:0 0 0 0 transparent; } 50%{ box-shadow:0 0 40px 16px var(--gc); } }
 /* リザルト後: 上に名前・下にグッド/バッドの数 */
@@ -209,6 +213,16 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 .dd{ height:30px; border:none; border-radius:8px; background:var(--ctl); font-size:12px; font-weight:700; color:var(--ink); padding:0 26px 0 10px; appearance:none; -webkit-appearance:none; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.14);
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%237a7a86' stroke-width='1.6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 9px center; background-size:10px 6px; }
 .dd:focus{ outline:none; box-shadow:0 0 0 2px var(--ink) inset, 0 2px 8px rgba(0,0,0,.14); }
+button.dd{ text-align:left; min-width:96px; }
+/* 自前のプルダウン(ネイティブのselectはmacOS等で項目にフォントを当てられないため)。項目それぞれをそのフォント/太さで表示 */
+.dd-menu{ position:fixed; display:none; flex-direction:column; gap:1px; background:#fff; border-radius:12px; box-shadow:0 8px 28px rgba(0,0,0,.22); padding:6px; max-height:min(62vh,520px); overflow:auto; z-index:96; min-width:170px; }
+.dd-menu.on{ display:flex; }
+.dd-item{ padding:7px 14px; border-radius:7px; font-size:14px; text-align:left; white-space:nowrap; color:var(--ink); }
+.dd-item:hover{ background:#f0f0f4; }
+.dd-item.sel{ background:var(--ink); color:#fff; }
+#dropOv{ position:fixed; inset:0; z-index:80; display:none; align-items:center; justify-content:center; background:rgba(28,28,34,.45); pointer-events:none; }
+#dropOv.on{ display:flex; }
+#dropOv .drop-box{ border:3px dashed #fff; border-radius:20px; padding:36px 48px; color:#fff; font-size:20px; font-weight:900; letter-spacing:.06em; background:rgba(255,255,255,.08); }
 .tg{ height:30px; padding:0 12px; border-radius:8px; background:var(--ctl); font-size:12px; font-weight:700; box-shadow:0 2px 8px rgba(0,0,0,.14); }
 .tg.on{ background:var(--ink); color:#fff; }
 .swatch{ width:30px; height:30px; border-radius:8px; overflow:hidden; position:relative; display:inline-block; background:var(--ctl); box-shadow:0 2px 8px rgba(0,0,0,.14), 0 0 0 1px rgba(0,0,0,.08) inset; }
@@ -273,8 +287,7 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 .res-row .st.ok{ background:var(--cyan); }
 #resultOv.peek .card{ visibility:hidden; }
 #resultOv.peek{ background:transparent; pointer-events:none; }   /* のぞき見中はステージをスクロールできる */
-#peekBtn{ position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:61; display:none; }
-#resultOv.peek ~ #peekBtn{ display:block; }
+/* のぞき見中は画面のどこをタップしても結果にもどる(スクロールは可)=documentのpointerdown/upで判定 */
 .help-body{ text-align:left; width:100%; }
 .h-sec{ position:relative; font-size:14px; font-weight:900; letter-spacing:.06em; margin:12px 0 4px; padding-left:12px; }
 .h-sec::before{ content:""; position:absolute; left:0; top:2px; bottom:2px; width:5px; border-radius:3px; background:var(--mag); }
@@ -322,14 +335,14 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
           写真をえらぶ<small>手持ちの画像で化ける</small></button>
       </div>
       <input type="file" id="photoFile" accept="image/*" style="display:none">
-      <div class="photo-note" id="photoNote" style="display:none;">写真はこの端末と部屋のメンバーの端末だけで使い、サーバーには保存されません<span id="dropHint"><br>（画像ファイルをこの画面にドラッグ＆ドロップでも選べます）</span><br><span id="fileName">まだ選ばれていません</span></div>
+      <div class="photo-note" id="photoNote" style="display:none;">写真はこの端末と部屋のメンバーの端末だけで使い、サーバーには保存されません<br><span id="fileName">まだ選ばれていません</span></div>
     </div>
     <div class="rule-frame" id="ruleFrame2">
       <div class="rf-title">ルール</div>
-      <div class="rule-grp"><div class="rg-title">化けるとき</div>
+      <div class="rule-grp"><div class="rg-title">化ける側のルール</div>
         <div class="rules"><div class="rule-ctl"><span class="rl">時間</span><div class="stepper"><button data-r="hide" data-d="-1">−</button><b id="rHide"></b><button data-r="hide" data-d="1">＋</button></div></div></div>
       </div>
-      <div class="rule-grp"><div class="rg-title">探すとき</div>
+      <div class="rule-grp"><div class="rg-title">探す側のルール</div>
         <div class="rules">
           <div class="rule-ctl"><span class="rl">探す人</span><select class="dd rule-dd" id="seekerSel"></select></div>
           <div class="rule-ctl"><span class="rl">時間</span><div class="stepper"><button data-r="seek" data-d="-1">−</button><b id="rSeek"></b><button data-r="seek" data-d="1">＋</button></div></div>
@@ -365,8 +378,9 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
     <div class="tool" id="hideBar">
       <button class="tool-toggle" id="toolToggle" aria-label="道具をとじる"></button>
       <div class="grp"><div class="gl">テキスト</div><div class="gr">
-        <select class="dd" id="fontSel" aria-label="フォント"></select>
-        <select class="dd" id="blurSel" aria-label="ぼかし"></select>
+        <button type="button" class="dd" id="fontSel" aria-label="フォント"></button>
+        <button type="button" class="dd" id="weightSel" aria-label="太さ"></button>
+        <button type="button" class="dd" id="blurSel" aria-label="ぼかし"></button>
         <span class="swatch" id="fgSw" title="文字色"><input type="color" id="fgCol" value="#20211f"></span>
       </div></div>
       <div class="grp"><div class="gl">背景</div><div class="gr">
@@ -416,7 +430,8 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
   <div class="res-list" id="resList"></div>
   <div class="row"><button class="txt-btn" id="resLobby">ロビーへ</button></div>
 </div></div>
-<button class="ok" id="peekBtn">結果にもどる</button>
+<div class="dd-menu" id="ddMenu"></div>
+<div id="dropOv"><div class="drop-box">ここにドロップして写真をえらぶ</div></div>
 
 <!-- 参加者一覧 -->
 <div class="ov" id="memOv"><div class="card">
@@ -476,18 +491,18 @@ const DEF_RULES={ hide:120, seek:180, lives:3, seeker:"random" };
 const RULE_LIM={ hide:[10,300,10], seek:[10,300,10], lives:[0,10,1] };
 let rules={ ...DEF_RULES };
 const FONTS=[
-  {n:"ゴシック",f:'"Noto Sans JP","Hiragino Sans",sans-serif'},{n:"角ゴシック",f:'"Zen Kaku Gothic New","Noto Sans JP",sans-serif'},{n:"UDゴシック",f:'"BIZ UDPGothic","Noto Sans JP",sans-serif'},
-  {n:"明朝",f:'"Noto Serif JP","Hiragino Mincho ProN",serif'},{n:"しっぽり明朝",f:'"Shippori Mincho",serif'},{n:"古風明朝",f:'"Zen Old Mincho",serif'},{n:"UD明朝",f:'"BIZ UDPMincho",serif'},
-  {n:"丸ゴシック",f:'"Zen Maru Gothic","Noto Sans JP",sans-serif'},{n:"キウイ丸",f:'"Kiwi Maru",sans-serif'},{n:"教科書体",f:'"Klee One",serif'},
-  {n:"筆文字",f:'"Yuji Syuku",serif'},{n:"手書き",f:'"Yusei Magic",sans-serif'},{n:"よもぎ",f:'"Yomogi",cursive'},
-  {n:"ポップ",f:'"Mochiy Pop One",sans-serif'},{n:"まる文字",f:'"Hachi Maru Pop",cursive'},{n:"装飾明朝",f:'"Kaisei Decol",serif'},
-  {n:"極太",f:'"Dela Gothic One",sans-serif'},{n:"レゲエ",f:'"Reggae One",sans-serif'},{n:"ロック",f:'"RocknRoll One",sans-serif'},{n:"棒",f:'"Stick",sans-serif'},{n:"電車",f:'"Train One",sans-serif'},{n:"城壁",f:'"Rampart One",sans-serif'},
-  {n:"ドット",f:'"DotGothic16","Noto Sans JP",sans-serif'}
+  {n:"Noto Sans JP",f:'"Noto Sans JP","Hiragino Sans",sans-serif'},{n:"Zen角ゴシック New",f:'"Zen Kaku Gothic New","Noto Sans JP",sans-serif'},{n:"BIZ UDPゴシック",f:'"BIZ UDPGothic","Noto Sans JP",sans-serif'},
+  {n:"Noto Serif JP",f:'"Noto Serif JP","Hiragino Mincho ProN",serif'},{n:"しっぽり明朝",f:'"Shippori Mincho",serif'},{n:"Zen Old 明朝",f:'"Zen Old Mincho",serif'},{n:"BIZ UDP明朝",f:'"BIZ UDPMincho",serif'},
+  {n:"Zen丸ゴシック",f:'"Zen Maru Gothic","Noto Sans JP",sans-serif'},{n:"キウイ丸",f:'"Kiwi Maru",sans-serif'},{n:"クレー One",f:'"Klee One",serif'},
+  {n:"佑字 肅",f:'"Yuji Syuku",serif'},{n:"油性マジック",f:'"Yusei Magic",sans-serif'},{n:"よもぎフォント",f:'"Yomogi",cursive'},
+  {n:"モッチーポップ",f:'"Mochiy Pop One",sans-serif'},{n:"はちまるポップ",f:'"Hachi Maru Pop",cursive'},{n:"解星デコール",f:'"Kaisei Decol",serif'},
+  {n:"デラゴシック",f:'"Dela Gothic One",sans-serif'},{n:"レゲエ One",f:'"Reggae One",sans-serif'},{n:"ロックンロール One",f:'"RocknRoll One",sans-serif'},{n:"ステッキ",f:'"Stick",sans-serif'},{n:"トレイン One",f:'"Train One",sans-serif'},{n:"ランパート One",f:'"Rampart One",sans-serif'},
+  {n:"ドットゴシック16",f:'"DotGothic16","Noto Sans JP",sans-serif'}
 ];
 const WEIGHTS=[{v:400,n:"ふつう"},{v:500,n:"やや太"},{v:700,n:"太い"},{v:900,n:"極太"}];
 const CODE_CHARS="ABCDEFGHJKMNPRSTUVWXYZ23456789";
 const HKEYS=["text","font","weight","blur","color","bg","bgOn","size","sx","sy","rot","x","y","w","h"];
-const BLURS=[{v:0,n:"ぼかしなし"},{v:0.3,n:"ぼかし弱"},{v:0.6,n:"ぼかし中"},{v:1,n:"ぼかし強"},{v:1.6,n:"ぼかし最強"}];   // 太さの代わり(2026-09-05)。画質の悪い写真になじませる
+const BLURS=[{v:0,n:"無し"},{v:0.3,n:"弱"},{v:0.6,n:"中"},{v:1,n:"強"},{v:1.6,n:"最強"}];   // 表示は「ぼかし 弱」の形式(太さも「太さ ふつう」)   // 太さの代わり(2026-09-05)。画質の悪い写真になじませる
 const COLORS=["#e3452f","#2f7de3","#2f9e55","#f39a1f","#8a5cd6","#17a2a2","#e35a9c","#8a6a3f","#5a7d2f","#c9482f","#2f5ac9","#7d7d29"];   // メンバーの色(待てアートと同じ並び)
 const UNDEF_NM="（名前を考え中）";
 let colors={};                        // id -> 色(オーナーが割り当て、snapのcolsで配る)
@@ -517,8 +532,24 @@ let hubCands=null;                   // ハブから届く「文字の行」候�
 const isSeeker=()=>seekerId===myId;
 const amHider=()=>!online||seekerId!==myId;   // ひとりで試す(オフライン)は化ける側と探す側を兼ねる
 function showScene(id){ document.querySelectorAll(".scene").forEach(s=>s.classList.toggle("on",s.id===id)); $("stampBar").classList.toggle("on", id==="lobbyScene"||id==="gameScene"); $("memBtn").style.display=(id==="lobbyScene"||id==="gameScene")?"":"none"; }
-FONTS.forEach((f,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=f.n; o.style.fontFamily=f.f; $("fontSel").appendChild(o); });
-BLURS.forEach((b,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=b.n; $("blurSel").appendChild(o); });
+/* 自前プルダウン(項目ごとにフォント/太さを当てて表示。ネイティブselectはmacOS等で項目の書体を変えられない) */
+const DDS={};
+function mkDD(id,items,onChange){ DDS[id]={items,v:0,onChange}; $(id).addEventListener("click",e=>{ e.stopPropagation(); openDD(id); }); ddSet(id,0); }
+function ddVal(id){ return DDS[id].v; }
+function ddSet(id,i,fire){ const d=DDS[id]; d.v=i; const b=$(id), it=d.items[i]; b.textContent=it.n; b.style.fontFamily=it.font||""; b.style.fontWeight=it.weight||""; if(fire&&d.onChange) d.onChange(i); }
+function openDD(id){
+  const m=$("ddMenu"); if(m.classList.contains("on")&&m.dataset.for===id){ closeDD(); return; }
+  const d=DDS[id]; m.innerHTML="";
+  d.items.forEach((it,i)=>{ const el=document.createElement("button"); el.type="button"; el.className="dd-item"+(i===d.v?" sel":""); el.textContent=it.n; if(it.font) el.style.fontFamily=it.font; if(it.weight) el.style.fontWeight=it.weight; el.addEventListener("click",()=>{ playSelect(); ddSet(id,i,true); closeDD(); }); m.appendChild(el); });
+  m.dataset.for=id; m.classList.add("on");
+  const r=$(id).getBoundingClientRect(); m.style.left=Math.max(6,Math.min(window.innerWidth-m.offsetWidth-6,r.left))+"px"; m.style.top=Math.max(6,r.top-m.offsetHeight-6)+"px";
+  const sel=m.querySelector(".sel"); if(sel) sel.scrollIntoView({block:"nearest"});
+}
+function closeDD(){ $("ddMenu").classList.remove("on"); }
+document.addEventListener("pointerdown",e=>{ if(!(e.target.closest&&(e.target.closest("#ddMenu")||e.target.closest(".tool .dd")))) closeDD(); });
+mkDD("fontSel",FONTS.map(f=>({n:f.n,font:f.f})),()=>readBar());
+mkDD("weightSel",WEIGHTS.map(w=>({n:"太さ "+w.n,weight:w.v})),()=>readBar());
+mkDD("blurSel",BLURS.map(b=>({n:"ぼかし "+b.n})),()=>readBar());
 
 /* ================= オンライン(Supabase Realtime・ホスト権威+スナップショット) ================= */
 const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co", SB_KEY="sb_publishable_cak3-W9Mmgahnwawreoa1Q_CVuhmkKL";
@@ -604,6 +635,7 @@ function applySnapBody(s){
   { const mv=votes[myId]; votes=s.votes||{}; if(s.phase==="vote"&&mv) votes[myId]=mv; }   // 自分の投票は手元が正(古いsnapで巻き戻さない)
   if(s.stageKind) stageKind=s.stageKind;
   if(s.img&&(!imgMeta||imgMeta.id!==s.img.id)){ imgMeta={ id:s.img.id, n:s.img.n, parts:[] }; imgReqTimer(); }
+  if(s.img&&photoImgId!==s.img.id&&s.phase!=="lobby"){ photoImg=null; if(stage&&stage.kind==="photo"){ stage.pending=true; $("stageLoading").hidden=false; $("stageLoading").textContent="オーナーの写真を受け取っています…"; } }   // ★新しい写真が配られる時は前の写真を捨てる(2枚目以降が反映されなかったバグ)
   if(prevPhase==="lobby"||prevPhase==="title"||prevPhase==="result"){ if(s.phase!=="lobby"&&s.phase!=="result") { guestStartGame(s); } }
   if(s.phase==="lobby"){ if(prevPhase!=="lobby"){ stopTimer(); clearStage(); $("resultOv").classList.remove("on"); enterLobby(); } renderRules(); renderStageSel(); renderMembers(); return; }
   syncHiders(s.hz||[]);
@@ -658,7 +690,7 @@ function hostAct(a){
 function nameOf(id){ const m=members.find(x=>x.id===id); return m?dispName(m):(id===myId?myName:"？"); }
 
 /* ---- 写真の配布(WebP・分割broadcast・サーバー保存なし) ---- */
-let imgMeta=null, imgChunks=null, imgReqT=0;
+let imgMeta=null, imgChunks=null, imgReqT=0, photoImgId=null;   // photoImgId=いま持っている写真の配布id(ゲスト)
 function distributePhoto(){
   if(!online||!isHost()||stageKind!=="photo"||!stage||!stage.cv) return;
   let url=""; try{ url=stage.cv.toDataURL("image/webp",0.7); if(url.indexOf("image/webp")<0) url=stage.cv.toDataURL("image/jpeg",0.7); }catch(e){ return; }
@@ -672,7 +704,7 @@ function onImgChunk(p){
   if(!imgMeta||imgMeta.id!==p.id){ imgMeta={ id:p.id, n:p.n, parts:[] }; }
   imgMeta.parts[p.i]=p.d;
   let have=0; for(let i=0;i<imgMeta.n;i++) if(imgMeta.parts[i]) have++;
-  if(have===imgMeta.n){ clearTimeout(imgReqT); const im=new Image(); im.onload=()=>{ photoImg=im; photoName="(オーナーの写真)"; if(stage&&stage.kind==="photo"&&stage.pending){ paintPhotoStage(); } }; im.src=imgMeta.parts.join(""); }
+  if(have===imgMeta.n){ clearTimeout(imgReqT); const id=imgMeta.id; const im=new Image(); im.onload=()=>{ photoImg=im; photoImgId=id; photoName="(オーナーの写真)"; if(stage&&stage.kind==="photo") paintPhotoStage(); }; im.src=imgMeta.parts.join(""); }   // 届いたら必ず描き直す(pending判定はしない)
   else imgReqTimer();
 }
 function imgReqTimer(){ clearTimeout(imgReqT); imgReqT=setTimeout(()=>{ if(!imgMeta||!imgMeta.parts) return; const miss=[]; for(let i=0;i<imgMeta.n;i++) if(!imgMeta.parts[i]) miss.push(i); if(miss.length){ act("imgreq",{missing:miss}); imgReqTimer(); } },3000); }
@@ -764,8 +796,7 @@ function renderStageSel(){
   $("stHub").classList.toggle("selected",stageKind==="hub"); $("stPhoto").classList.toggle("selected",stageKind==="photo");
   $("photoNote").style.display=stageKind==="photo"?"block":"none";
   if(isHost()||!online){ $("fileName").textContent=photoImg?(photoName+"（"+photoImg.naturalWidth+"×"+photoImg.naturalHeight+"）"):"まだ選ばれていません"; }
-  else{ $("fileName").textContent=photoInfo?"写真決定":"オーナーが写真を選んでいます…"; }   // ゲストには「まだ選ばれていません」を出さない
-  $("dropHint").style.display=(isHost()||!online)?"":"none";
+  else{ $("fileName").textContent=photoInfo?"写真選択済み":"オーナーが写真を選んでいます…"; }   // ゲストには「まだ選ばれていません」を出さない
   $("soloBtn").disabled=(stageKind==="photo"&&!photoImg);
 }
 function loadPhotoFile(f){
@@ -777,8 +808,12 @@ function loadPhotoFile(f){
 }
 $("photoFile").addEventListener("change",e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=""; if(f) loadPhotoFile(f); });   // value=""=同じ写真をもう一度選んでもchangeが飛ぶ
 /* ロビー画面に画像をドラッグ＆ドロップでも選べる(オーナーだけ) */
-["dragenter","dragover"].forEach(ev=>$("lobbyScene").addEventListener(ev,e=>{ e.preventDefault(); }));
-$("lobbyScene").addEventListener("drop",e=>{ e.preventDefault(); if(!isHost()){ toast("ステージはオーナーだけが変えられます"); return; } const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f){ playSelect(); loadPhotoFile(f); } });
+const hasFiles=e=>{ const t=e.dataTransfer&&e.dataTransfer.types; return !!(t&&Array.prototype.indexOf.call(t,"Files")>=0); };
+let dragDepth=0;
+["dragenter","dragover"].forEach(ev=>$("lobbyScene").addEventListener(ev,e=>{ if(!hasFiles(e)) return; e.preventDefault(); if(ev==="dragenter") dragDepth++; if(isHost()) $("dropOv").classList.add("on"); }));   // ドラッグ中は「ここにドロップ」の目印を出す
+$("lobbyScene").addEventListener("dragleave",e=>{ dragDepth=Math.max(0,dragDepth-1); if(dragDepth===0) $("dropOv").classList.remove("on"); });
+window.addEventListener("dragend",()=>{ dragDepth=0; $("dropOv").classList.remove("on"); });
+$("lobbyScene").addEventListener("drop",e=>{ e.preventDefault(); dragDepth=0; $("dropOv").classList.remove("on"); if(!isHost()){ toast("ステージはオーナーだけが変えられます"); return; } const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f){ playSelect(); loadPhotoFile(f); } });
 $("photoNote").addEventListener("click",()=>{ if(isHost()) $("photoFile").click(); });
 $("cpuSeg").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{ playSelect(); cpuN=+b.dataset.n; $("cpuSeg").querySelectorAll("button").forEach(x=>x.classList.toggle("selected",x===b)); }));
 $("soloBtn").addEventListener("click",()=>{ playConfirm(); startSolo(); });
@@ -954,7 +989,7 @@ function styleHider(h){
   const shown=shownText(h);
   if(h.tx.textContent!==shown) h.tx.textContent=shown;
   ht.style.fontFamily=h.font; ht.style.fontSize=h.size+"px"; ht.style.fontWeight=h.weight; ht.style.color=h.color;
-  ht.style.filter=h.blur?("blur("+h.blur+"px)"):"";
+  h.tx.style.filter=h.blur?("blur("+h.blur+"px)"):"";   // ぼかすのは文字だけ(背景はぼかさない)
   ht.style.background=h.bgOn?h.bg:"transparent";
   ht.style.lineHeight=h.lineH?(h.lineH+"px"):"";
   ht.style.transform=(h.sx!==1||h.sy!==1)?("scale("+h.sx+","+h.sy+")"):"";
@@ -976,7 +1011,7 @@ function layoutHider(h){
 }
 function zOf(h){ return 60000-Math.min(59000, Math.round(Math.sqrt(Math.max(1,(h.w||1)*(h.h||1)))*20)); }
 function newMine(){
-  return { id:myId, name:myName, text:DEF_TEXT, font:FONTS[+$("fontSel").value].f, weight:400, blur:BLURS[+$("blurSel").value].v,
+  return { id:myId, name:myName, text:DEF_TEXT, font:FONTS[ddVal("fontSel")].f, weight:WEIGHTS[ddVal("weightSel")].v, blur:BLURS[ddVal("blurSel")].v,
            color:$("fgCol").value, bg:$("bgCol").value, bgOn:$("bgOnBtn").classList.contains("on"), size:DEF_SIZE, sx:1, sy:1, rot:0, x:null, y:null, cpu:false, found:false, likes:0, angry:0 };
 }
 let updT=0; function sendUpd(){ if(!online||!mine||(phase!=="hide"&&phase!=="swap")) return; clearTimeout(updT); updT=setTimeout(flushUpd,150); }   // 化ける中は自分の箱を全員へ(オーナーはsnap・ゲストはact)
@@ -1030,11 +1065,9 @@ function beginGameAsHost(solo){
 }
 function readBar(tag){
   if(!mine) return;
-  mine.font=FONTS[+$("fontSel").value].f; mine.blur=BLURS[+$("blurSel").value].v; mine.color=$("fgCol").value; mine.bg=$("bgCol").value; mine.bgOn=$("bgOnBtn").classList.contains("on");
+  mine.font=FONTS[ddVal("fontSel")].f; mine.weight=WEIGHTS[ddVal("weightSel")].v; mine.blur=BLURS[ddVal("blurSel")].v; mine.color=$("fgCol").value; mine.bg=$("bgCol").value; mine.bgOn=$("bgOnBtn").classList.contains("on");
   styleHider(mine); pushHist(tag); sendUpd();
 }
-$("fontSel").addEventListener("change",()=>{ playSelect(); readBar(); $("fontSel").blur(); });
-$("blurSel").addEventListener("change",()=>{ playSelect(); readBar(); $("blurSel").blur(); });
 $("bgOnBtn").addEventListener("click",()=>{ playSelect(); const on=$("bgOnBtn").classList.toggle("on"); $("bgOnBtn").textContent=on?"あり":"なし"; $("bgSw").classList.toggle("off",!on); readBar(); });
 function paintSwatches(){ $("fgSw").style.background=$("fgCol").value; $("bgSw").style.background=$("bgCol").value; }
 ["input","change"].forEach(ev=>{ $("fgCol").addEventListener(ev,()=>{ readBar("fg"); paintSwatches(); }); $("bgCol").addEventListener(ev,()=>{ readBar("bg"); paintSwatches(); }); });
@@ -1058,8 +1091,9 @@ function pushHist(tag){
 }
 function applyHist(o){
   HKEYS.forEach(k=>mine[k]=o[k]);
-  const fi=FONTS.findIndex(f=>f.f===mine.font); if(fi>=0) $("fontSel").value=fi;
-  const bi=BLURS.findIndex(b=>b.v===(mine.blur||0)); if(bi>=0) $("blurSel").value=bi;
+  const fi=FONTS.findIndex(f=>f.f===mine.font); if(fi>=0) ddSet("fontSel",fi);
+  const wi=WEIGHTS.findIndex(w=>w.v===mine.weight); if(wi>=0) ddSet("weightSel",wi);
+  const bi=BLURS.findIndex(b=>b.v===(mine.blur||0)); if(bi>=0) ddSet("blurSel",bi);
   $("fgCol").value=mine.color; $("bgCol").value=mine.bg; paintSwatches();
   $("bgOnBtn").classList.toggle("on",mine.bgOn); $("bgOnBtn").textContent=mine.bgOn?"あり":"なし"; $("bgSw").classList.toggle("off",!mine.bgOn);
   const inp=mine.editRow&&mine.editRow.querySelector("#txtIn"); if(inp&&inp.value!==mine.text) inp.value=mine.text;
@@ -1316,7 +1350,9 @@ function showResult(){
   const sts=[...list.querySelectorAll(".st")]; sts.forEach(x=>x.style.width=""); const mw=Math.max(0,...sts.map(x=>x.getBoundingClientRect().width)); if(mw) sts.forEach(x=>x.style.width=Math.ceil(mw)+"px");   // バッジは2種とも同じ幅(広い方に合わせる。表示後に測る)
 }
 $("resultOv").addEventListener("click",e=>{ if(e.target===$("resultOv")) $("resultOv").classList.add("peek"); });
-$("peekBtn").addEventListener("click",()=>{ playSelect(); $("resultOv").classList.remove("peek"); });
+let peekDown=null;   // のぞき見中: 画面のどこかを「タップ」(動かさず離す)したら結果にもどる。スクロールやドラッグはそのまま
+document.addEventListener("pointerdown",e=>{ if($("resultOv").classList.contains("peek")) peekDown={x:e.clientX,y:e.clientY}; else peekDown=null; },true);
+document.addEventListener("pointerup",e=>{ if(!peekDown) return; const d=Math.hypot(e.clientX-peekDown.x,e.clientY-peekDown.y); peekDown=null; if(d<8&&$("resultOv").classList.contains("peek")){ playSelect(); $("resultOv").classList.remove("peek"); } },true);
 $("resLobby").addEventListener("click",()=>{ playSelect(); $("resultOv").classList.remove("on"); if(online){ hostToLobby(); return; } stopTimer(); clearStage(); phase="lobby"; showScene("lobbyScene"); renderMembers(); });
 function hostToLobby(){ if(!isHost()) return; stopTimer(); clearStage(); phase="lobby"; seekerId=null; showScene("lobbyScene"); $("resultOv").classList.remove("on"); renderMembers(); sendSnap(); }
 
