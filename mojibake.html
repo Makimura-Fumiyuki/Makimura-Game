@@ -375,7 +375,6 @@ button.dd{ text-align:left; min-width:96px; }
         <div class="stepper"><button id="cpuM">−</button><b id="cpuV">0人</b><button id="cpuP">＋</button></div>
       </div>
     </div>
-    <button class="txt-btn" id="soloBtn">ひとりで試す（デバッグ）</button>
     <button class="txt-btn" id="lobbyBack">← タイトルにもどる</button>
   </div>
 </div>
@@ -814,7 +813,6 @@ function renderStageSel(){
   $("photoNote").style.display=stageKind==="photo"?"block":"none";
   if(isHost()||!online){ $("fileName").textContent=photoImg?(photoName+"（"+photoImg.naturalWidth+"×"+photoImg.naturalHeight+"）"):"ドラッグ&ドロップでも選択可能です"; }
   else{ $("fileName").textContent=photoInfo?"写真選択済み":"オーナーが写真を選んでいます…"; }   // ゲストには「まだ選ばれていません」を出さない
-  $("soloBtn").disabled=(stageKind==="photo"&&!photoImg);
   $("cpuV").textContent=cpuN+"人";
   $("cpuNote").style.display=stageKind==="photo"?"":"none"; $("debugFrame").classList.toggle("off",stageKind==="photo");
 }
@@ -835,7 +833,6 @@ window.addEventListener("dragend",()=>{ dragDepth=0; $("dropOv").classList.remov
 $("lobbyScene").addEventListener("drop",e=>{ e.preventDefault(); dragDepth=0; $("dropOv").classList.remove("on"); if(!isHost()){ toast("ステージはオーナーだけが変えられます"); return; } const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f){ playSelect(); loadPhotoFile(f); } });
 $("photoNote").addEventListener("click",()=>{ if(isHost()) $("photoFile").click(); });
 [["cpuM",-1],["cpuP",1]].forEach(([id,d])=>$(id).addEventListener("click",()=>{ if(!isHost()){ toast("おまけ機能はオーナーだけが変えられます"); return; } if(stageKind==="photo"){ toast("ステージ「牧村が作ったゲーム集」の時だけ使えます"); return; } playSelect(); cpuN=Math.max(0,Math.min(10,cpuN+d)); renderStageSel(); }));
-$("soloBtn").addEventListener("click",()=>{ playConfirm(); startSolo(); });
 
 /* ================= ステージ ================= */
 function clearStage(){
