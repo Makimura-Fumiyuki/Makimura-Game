@@ -71,6 +71,9 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 .rule-frame{ width:100%; border:1.5px solid var(--line); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:12px; background:var(--panel); }
 .rule-frame.debug{ border-style:dashed; background:transparent; color:var(--gray); }
 .rule-frame .rf-title{ font-size:12px; font-weight:700; color:var(--gray); letter-spacing:.1em; }
+.rf-row{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+.rf-note{ font-size:9.5px; font-weight:500; color:var(--gray); }
+.rule-frame.off .stepper button{ pointer-events:none; opacity:.35; }   /* おまけ機能は写真ステージでは使えない */
 .rule-frame.locked .rule-ctl button, .rule-frame.locked .stage-row button, .rule-frame.locked .stepper button{ pointer-events:none; opacity:.6; }
 .stage-row{ display:flex; gap:10px; width:100%; }
 .stage-row button{ flex:1 1 0; background:#fff; border:1.5px solid var(--line); border-radius:14px; padding:12px 8px; font-size:14px; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:6px; }
@@ -275,7 +278,8 @@ button.dd{ text-align:left; min-width:96px; }
 .win-banner.seeker{ background:var(--mag); }
 .res-list{ width:100%; display:flex; flex-direction:column; gap:6px; }
 .res-row{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; background:#f4f4f6; font-size:13px; text-align:left; font-weight:400; }
-.res-row .rk{ font-weight:700; min-width:1.4em; color:var(--gray); }
+.res-row .rk{ font-weight:700; min-width:2.4em; color:var(--gray); }
+.res-row .rk.mvp{ color:var(--mag); font-weight:900; letter-spacing:.02em; }
 .res-row .nm{ font-weight:500; min-width:52px; white-space:nowrap; }
 .res-row .tx{ flex:1 1 auto; font-weight:500; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:pre; margin-left:-15px; }
 .res-row .vt{ display:inline-flex; gap:10px; flex:none; }
@@ -355,11 +359,10 @@ button.dd{ text-align:left; min-width:96px; }
     <button class="btn-main" id="startBtn" disabled>はじめる</button>
     <div class="sec-label" id="startNote"></div>
     <div class="rule-frame debug" id="debugFrame">
-      <div class="rf-title">おまけ機能</div>
+      <div class="rf-row"><div class="rf-title">おまけ機能</div><span class="rf-note" id="cpuNote">※ステージ「牧村が作ったゲーム集」の時だけ使用可能</span></div>
       <div class="opt-line"><span>CPUも化ける</span>
-        <div class="stepper"><button id="cpuM">−</button><b id="cpuV">0</b><button id="cpuP">＋</button></div>
+        <div class="stepper"><button id="cpuM">−</button><b id="cpuV">0人</b><button id="cpuP">＋</button></div>
       </div>
-      <div class="sec-label" style="letter-spacing:0; font-weight:500;">※写真ステージだと弱いです</div>
     </div>
     <button class="txt-btn" id="soloBtn">ひとりで試す（デバッグ）</button>
     <button class="txt-btn" id="lobbyBack">← タイトルにもどる</button>
@@ -801,7 +804,8 @@ function renderStageSel(){
   if(isHost()||!online){ $("fileName").textContent=photoImg?(photoName+"（"+photoImg.naturalWidth+"×"+photoImg.naturalHeight+"）"):"ドラッグ&ドロップでも選択可能です"; }
   else{ $("fileName").textContent=photoInfo?"写真選択済み":"オーナーが写真を選んでいます…"; }   // ゲストには「まだ選ばれていません」を出さない
   $("soloBtn").disabled=(stageKind==="photo"&&!photoImg);
-  $("cpuV").textContent=cpuN+(cpuN?"人":"");
+  $("cpuV").textContent=cpuN+"人";
+  $("cpuNote").style.display=stageKind==="photo"?"":"none"; $("debugFrame").classList.toggle("off",stageKind==="photo");
 }
 function loadPhotoFile(f){
   if(!f||!/^image\//.test(f.type||"")){ toast("画像ファイルを選んでね"); return; }
@@ -819,7 +823,7 @@ $("lobbyScene").addEventListener("dragleave",e=>{ dragDepth=Math.max(0,dragDepth
 window.addEventListener("dragend",()=>{ dragDepth=0; $("dropOv").classList.remove("on"); });
 $("lobbyScene").addEventListener("drop",e=>{ e.preventDefault(); dragDepth=0; $("dropOv").classList.remove("on"); if(!isHost()){ toast("ステージはオーナーだけが変えられます"); return; } const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f){ playSelect(); loadPhotoFile(f); } });
 $("photoNote").addEventListener("click",()=>{ if(isHost()) $("photoFile").click(); });
-[["cpuM",-1],["cpuP",1]].forEach(([id,d])=>$(id).addEventListener("click",()=>{ if(!isHost()){ toast("おまけ機能はオーナーだけが変えられます"); return; } playSelect(); cpuN=Math.max(0,Math.min(10,cpuN+d)); renderStageSel(); }));
+[["cpuM",-1],["cpuP",1]].forEach(([id,d])=>$(id).addEventListener("click",()=>{ if(!isHost()){ toast("おまけ機能はオーナーだけが変えられます"); return; } if(stageKind==="photo"){ toast("ステージ「牧村が作ったゲーム集」の時だけ使えます"); return; } playSelect(); cpuN=Math.max(0,Math.min(10,cpuN+d)); renderStageSel(); }));
 $("soloBtn").addEventListener("click",()=>{ playConfirm(); startSolo(); });
 
 /* ================= ステージ ================= */
@@ -1208,7 +1212,7 @@ function finishHide(){
   hiders.forEach(h=>{ if(h.x==null){ h.x=Math.round(stage.w/2-60); h.y=Math.round(Math.min(stage.h-40,300)); } if(h.text==="") h.text=EMPTY_TEXT; });
   stopTimer(); playConfirm(); $("voteWho").classList.remove("on");
   if(mine&&mine.el){ mine.el.classList.remove("mine","unsel"); mine.el.querySelectorAll(".frame,.hd").forEach(x=>x.remove()); if(mine.editRow){ detach(mine,mine.editRow); mine.editRow=null; } styleHider(mine); }
-  try{ placeCPUs(cpuN); }catch(err){ console.warn("CPU配置に失敗",err); }
+  if(stage&&stage.kind==="hub"){ try{ placeCPUs(cpuN); }catch(err){ console.warn("CPU配置に失敗",err); } }   // CPUはハブのステージだけ
   phase="swap"; sendSnap(); showMid("文字化けを探そう",1300); setTimeout(startSeek,1000);   // swap中(1秒)は遅れて届いたupdも受ける=最後の微調整の取りこぼし防止
 }
 
@@ -1347,7 +1351,7 @@ function showResult(){
   let rank=0, prev=null;
   sorted.forEach((h,i)=>{ const sc=h.likes-h.angry; if(sc!==prev){ rank=i+1; prev=sc; }
     const row=document.createElement("div"); row.className="res-row";
-    row.innerHTML='<span class="rk">'+rank+'</span><span class="nm"></span><span class="tx"></span><span class="vt"><span class="vp like">'+LIKE_SVG+'<b>'+h.likes+'</b></span><span class="vp angry">'+ANGRY_SVG+'<b>'+h.angry+'</b></span></span><span class="st'+(h.found?"":" ok")+'">'+(h.found?"文字化け失敗":"文字化け完了")+'</span>';
+    row.innerHTML='<span class="rk'+(rank===1&&sc>0?" mvp":"")+'">'+(rank===1&&sc>0?"MVP":rank)+'</span><span class="nm"></span><span class="tx"></span><span class="vt"><span class="vp like">'+LIKE_SVG+'<b>'+h.likes+'</b></span><span class="vp angry">'+ANGRY_SVG+'<b>'+h.angry+'</b></span></span><span class="st'+(h.found?"":" ok")+'">'+(h.found?"文字化け失敗":"文字化け完了")+'</span>';
     row.querySelector(".nm").textContent=h.name+(h.id===myId?"（あなた）":""); row.querySelector(".tx").textContent="「"+h.text+"」"; list.appendChild(row); });
   $("resLobby").style.display=(isHost()||!online)?"":"none"; $("resLobby").textContent=online?"ロビーへもどる（全員）":"ロビーへ";
   $("resultOv").dataset.ver=String(lastVer); $("resultOv").classList.remove("peek"); $("resultOv").classList.add("on");
@@ -1412,13 +1416,11 @@ document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{ const i=+b.datase
 /* ================= あそびかた ================= */
 function buildHelp(){
   $("helpBody").innerHTML='<div class="h-sec">基本ルール</div>'
-   +'<p>プレイヤーは「文字」。ひとりがさがす人、のこりは化ける人<br>化ける人はWebサイトの画面の中に自分の文字を置いて、まわりの文字に化けます<br>探す人は、もともと無かったニセモノの文字を'+TAPW+'して見つけます。まちがえると体力が減る<br>全員みつけたら探す側の勝ち。体力切れ・時間切れなら化ける側の勝ち</p>'
-   +'<div class="h-sec">化け方</div>'
-   +'<p>まわりの文字と同じ大きさ・同じ色にすると見つかりにくい<br>テキストボックスはつかんで移動、ハンドルで引き伸ばせる（Shiftを押しながらで縦横比そのまま）。右上の丸いハンドルで回転（Shiftで15°刻み）。文字は下の入力欄で書きかえる<br>小さいテキストボックスほど手前に表示される（大きい箱で上から覆っても隠せない）<br>色はパレットから選ぶ（パレットのスポイトで画面の色を吸える）。画質の悪い写真には「ぼかし」でなじませる<br>拡大したら、ホイールクリックかスペースを押しながらドラッグで画面を動かせる</p>'
+   +'<p>文字に化けてかくれんぼ！<br>化ける側は隠れ切ったら勝ち、探す側は文字化けを全部見つけたら勝ち</p>'
    +'<div class="h-sec">投票タイム</div>'
-   +'<p>探す時間が終わると、みんなの隠れ場所が公開されます<br>文字を'+TAPW+'して、化け方に「グッド」か「バッド」を送ろう（どちらか片方だけ）。グッド − バッド が化ける側の順位になる</p>'
-   +'<div class="h-sec">オンライン</div>'
-   +'<p>部屋を作って合言葉を友達に送ろう。2〜'+MAX_PLAYERS+'人で遊べます<br>ステージとルールはオーナーが決めます。写真はオーナーの端末から部屋のメンバーにだけ配られ、サーバーには保存されません</p>';
+   +'<p>ゲーム終了後、みんなの化け方を評価<br>面白いと思った化け方には「グッド」、うーんって思った化け方には「バッド」<br>いちばんグッドの多かった人がMVP</p>'
+   +'<div class="h-sec">小ばなし</div>'
+   +'<p>自分で用意した画像にも化けれるかも...</p>';
 }
 $("helpBtn").addEventListener("click",()=>{ playSelect(); buildHelp(); $("helpOv").classList.add("on"); });
 $("helpClose").addEventListener("click",()=>{ playSelect(); $("helpOv").classList.remove("on"); });
