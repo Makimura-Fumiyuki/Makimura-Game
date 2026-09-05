@@ -16,7 +16,7 @@
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8539036056022595" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Serif+JP:wght@400;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=BIZ+UDPGothic:wght@400;700&family=BIZ+UDPMincho&family=Shippori+Mincho:wght@400;700&family=Zen+Old+Mincho:wght@400;700;900&family=Klee+One:wght@400;600&family=Kiwi+Maru:wght@400;500&family=Kaisei+Decol:wght@400;700&family=DotGothic16&family=Yuji+Syuku&family=Yusei+Magic&family=Mochiy+Pop+One&family=Hachi+Maru+Pop&family=Dela+Gothic+One&family=Reggae+One&family=RocknRoll+One&family=Stick&family=Train+One&family=Yomogi&family=Rampart+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Noto+Serif+JP:wght@300;400;700;900&family=Zen+Maru+Gothic:wght@300;400;500;700;900&family=Zen+Kaku+Gothic+New:wght@300;400;500;700;900&family=BIZ+UDPGothic:wght@400;700&family=BIZ+UDPMincho&family=Shippori+Mincho:wght@400;700&family=Zen+Old+Mincho:wght@400;700;900&family=Klee+One:wght@400;600&family=Kiwi+Maru:wght@400;500&family=Kaisei+Decol:wght@400;700&family=DotGothic16&family=Yuji+Syuku&family=Yusei+Magic&family=Mochiy+Pop+One&family=Hachi+Maru+Pop&family=Dela+Gothic+One&family=Reggae+One&family=RocknRoll+One&family=Stick&family=Train+One&family=Yomogi&family=Rampart+One&display=swap');
 :root{
   --blue:#2b7de9;
   --ink:#1c1c22; --bg:#f4f4f6; --panel:#ffffff; --line:#d9d9e0; --ctl:#ffffff;
@@ -71,7 +71,7 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 .rule-frame{ width:100%; border:1.5px solid var(--line); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:12px; background:var(--panel); }
 .rule-frame.debug{ border-style:dashed; background:transparent; }
 .rule-frame .rf-title{ font-size:12px; font-weight:700; color:var(--gray); letter-spacing:.1em; }
-.rule-frame.locked .rule-ctl button, .rule-frame.locked .stage-row button{ pointer-events:none; opacity:.6; }
+.rule-frame.locked .rule-ctl button, .rule-frame.locked .stage-row button, .rule-frame.locked .stepper button{ pointer-events:none; opacity:.6; }
 .stage-row{ display:flex; gap:10px; width:100%; }
 .stage-row button{ flex:1 1 0; background:#fff; border:1.5px solid var(--line); border-radius:14px; padding:12px 8px; font-size:14px; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:6px; }
 .stage-row button.selected{ border-color:var(--mag); box-shadow:0 0 0 2px var(--mag) inset; }
@@ -148,7 +148,7 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 .hider .hd.tr{ right:calc(-3px - var(--hs)/2); top:calc(-3px - var(--hs)/2); cursor:nesw-resize; }
 .hider .hd.bl{ left:calc(-3px - var(--hs)/2); bottom:calc(-3px - var(--hs)/2); cursor:nesw-resize; }
 /* 回転ハンドル=右上コーナー(tr)の真上。つまみの左右に弧の矢印(待てアートの取っ手ヒントと同じ形) */
-.hider .hd.rot{ --rs:calc(var(--hs)*2.2); width:calc(var(--rs)*.5417); height:calc(var(--rs)*.5417); right:calc(-1 * var(--rs)*1.27 + 1px); top:calc(-5px - var(--hs)/2 - var(--rs)*0.496); background:none; border:none; border-radius:50%; cursor:grab; z-index:3; }   /* 大きさは他のハンドル(--hs)に比例。当たり判定=つまみの丸とぴったり同じ(直径=13/24rs)。中心は右上コーナーの斜め右上 */
+.hider .hd.rot{ --rs:calc(var(--hs)*2.2); width:calc(var(--rs)*.5417); height:calc(var(--rs)*.5417); right:calc(-1 * var(--rs)*1.27 + 1px); top:calc(-7px - var(--hs)/2 - var(--rs)*0.496); background:none; border:none; border-radius:50%; cursor:grab; z-index:3; }   /* 大きさは他のハンドル(--hs)に比例。当たり判定=つまみの丸とぴったり同じ(直径=13/24rs)。中心は右上コーナーの斜め右上 */
 .hider .hd.rot svg{ position:absolute; left:calc(50% - var(--rs)*1.3); top:calc(50% - var(--rs)*0.375); width:calc(var(--rs)*2.6); height:var(--rs); display:block; pointer-events:none; overflow:visible; }
 .hider .hd.rot .rh-arc{ opacity:0; transform:scaleX(.2); transform-box:fill-box; transform-origin:center; transition:opacity .16s, transform .22s cubic-bezier(.3,1.3,.5,1); }
 .hider .hd.rot:hover .rh-arc, .hider.rotating .hd.rot .rh-arc{ opacity:1; transform:none; }
@@ -315,6 +315,7 @@ button.dd{ text-align:left; min-width:96px; }
     <button id="joinRoomBtn">部屋に入る<small>合言葉で入室</small></button>
   </div>
   <div class="room-area" id="roomArea"></div>
+  <button class="txt-btn" id="soloBtn" style="position:fixed; left:10px; bottom:10px; font-size:11px; padding:6px 12px; opacity:.55;">ひとりで試す（デバッグ）</button>
 </div>
 
 <!-- ===== ロビー ===== -->
@@ -335,7 +336,7 @@ button.dd{ text-align:left; min-width:96px; }
           写真をえらぶ<small>手持ちの画像で化ける</small></button>
       </div>
       <input type="file" id="photoFile" accept="image/*" style="display:none">
-      <div class="photo-note" id="photoNote" style="display:none;">写真はこの端末と部屋のメンバーの端末だけで使い、サーバーには保存されません<br><span id="fileName">まだ選ばれていません</span></div>
+      <div class="photo-note" id="photoNote" style="display:none;">写真はこの端末と部屋のメンバーの端末だけで使い、サーバーには保存されません<br><span id="fileName">ドラッグ&amp;ドロップでも選択可能です</span></div>
     </div>
     <div class="rule-frame" id="ruleFrame2">
       <div class="rf-title">ルール</div>
@@ -354,12 +355,11 @@ button.dd{ text-align:left; min-width:96px; }
     <div class="sec-label" id="ruleNote" style="display:none;">※ステージとルールはオーナーだけが変えられます</div>
     <button class="btn-main" id="startBtn" disabled>はじめる</button>
     <div class="sec-label" id="startNote"></div>
-    <div class="rule-frame debug" id="debugFrame">
-      <div class="rf-title">デバッグ</div>
+    <div class="rule-frame" id="debugFrame">
+      <div class="rf-title">おまけ機能</div>
       <div class="opt-line"><span>CPUも化ける</span>
-        <div class="seg" id="cpuSeg"><button data-n="0">なし</button><button data-n="3" class="selected">3人</button><button data-n="5">5人</button></div>
+        <div class="stepper"><button id="cpuM">−</button><b id="cpuV">0</b><button id="cpuP">＋</button></div>
       </div>
-      <button class="txt-btn" id="soloBtn" style="align-self:center;">ひとりで試す（化けて、自分でさがす）</button>
     </div>
     <button class="txt-btn" id="lobbyBack">← タイトルにもどる</button>
   </div>
@@ -431,7 +431,7 @@ button.dd{ text-align:left; min-width:96px; }
   <div class="row"><button class="txt-btn" id="resLobby">ロビーへ</button></div>
 </div></div>
 <div class="dd-menu" id="ddMenu"></div>
-<div id="dropOv"><div class="drop-box">ここにドロップして写真をえらぶ</div></div>
+<div id="dropOv"><div class="drop-box">ドロップで写真を確定</div></div>
 
 <!-- 参加者一覧 -->
 <div class="ov" id="memOv"><div class="card">
@@ -478,6 +478,8 @@ function playConfirm(){ ensureAudio(); [523,784,1047].forEach((f,i)=>note(f,now(
 function playFound(){ ensureAudio(); note(1047,now(),0.12,0.14,"triangle"); note(1568,now()+0.09,0.22,0.12,"triangle"); }
 function playMiss(){ ensureAudio(); note(180,now(),0.16,0.16,"triangle"); note(140,now()+0.05,0.18,0.1,"sine"); }
 function playResult(){ ensureAudio(); [392,523,659,784].forEach((f,i)=>note(f,now()+i*0.09,0.25,0.11,"triangle")); }
+function playSad(){ ensureAudio(); const t=now(); [523,466,415,349].forEach((f,i)=>note(f,t+i*0.16,0.42,0.09,"sine")); note(262,t+0.64,0.7,0.06,"sine"); }   // 少し悲しい(不快にはしない=柔らかいsineの下降)
+function playEndSound(){ const win=(seekerWin===isSeeker()); if(win) playResult(); else playSad(); }   // 探す側が全員みつけた=探す人だけ嬉しい／それ以外=化ける側が嬉しい
 function playFinish(){ ensureAudio(); const t=now(); [523,659,784,1047].forEach((f,i)=>note(f,t+i*0.09,0.28,0.13,"triangle")); [1047,1319,1568].forEach((f,i)=>note(f,t+0.45+i*0.07,0.5,0.1,"sine")); note(2093,t+0.7,0.6,0.05,"sine"); }   // ゲーム終了・おつかれさまのファンファーレ
 function playWarn(){ ensureAudio(); note(880,now(),0.12,0.12,"triangle"); note(880,now()+0.16,0.12,0.12,"triangle"); }
 function renderSe(){ $("seBtn").textContent="効果音 "+(seOn?"ON":"OFF"); }
@@ -499,7 +501,7 @@ const FONTS=[
   {n:"デラゴシック",f:'"Dela Gothic One",sans-serif'},{n:"レゲエ One",f:'"Reggae One",sans-serif'},{n:"ロックンロール One",f:'"RocknRoll One",sans-serif'},{n:"ステッキ",f:'"Stick",sans-serif'},{n:"トレイン One",f:'"Train One",sans-serif'},{n:"ランパート One",f:'"Rampart One",sans-serif'},
   {n:"ドットゴシック16",f:'"DotGothic16","Noto Sans JP",sans-serif'}
 ];
-const WEIGHTS=[{v:400,n:"ふつう"},{v:500,n:"やや太"},{v:700,n:"太い"},{v:900,n:"極太"}];
+const WEIGHTS=[{v:300,n:"細い"},{v:400,n:"ふつう"},{v:500,n:"やや太"},{v:700,n:"太い"},{v:900,n:"極太"}];   // 細い(300)はそのウェイトを持つフォント(Noto Sans/Serif・Zen角ゴ・Zen丸ゴ等)だけ効く
 const CODE_CHARS="ABCDEFGHJKMNPRSTUVWXYZ23456789";
 const HKEYS=["text","font","weight","blur","color","bg","bgOn","size","sx","sy","rot","x","y","w","h"];
 const BLURS=[{v:0,n:"無し"},{v:0.3,n:"弱"},{v:0.6,n:"中"},{v:1,n:"強"},{v:1.6,n:"最強"}];   // 表示は「ぼかし 弱」の形式(太さも「太さ ふつう」)   // 太さの代わり(2026-09-05)。画質の悪い写真になじませる
@@ -516,7 +518,7 @@ let members=[];                      // {id,name,host,t}
 let hostId=null;
 const isHost=()=>hostId===myId;
 let online=false, ch=null, sb=null, roomCode="", joinT=Date.now();
-let stageKind="hub", cpuN=3, photoImg=null, photoName="";
+let stageKind="hub", cpuN=0, photoImg=null, photoName="";   // CPU=おまけ機能(0〜10・初期0)
 let stage=null;
 let scale=1, fit=1, zoom=1;
 let phase="title";                   // lobby / hide / swap / seek / ending / vote / result
@@ -540,7 +542,7 @@ function ddSet(id,i,fire){ const d=DDS[id]; d.v=i; const b=$(id), it=d.items[i];
 function openDD(id){
   const m=$("ddMenu"); if(m.classList.contains("on")&&m.dataset.for===id){ closeDD(); return; }
   const d=DDS[id]; m.innerHTML="";
-  d.items.forEach((it,i)=>{ const el=document.createElement("button"); el.type="button"; el.className="dd-item"+(i===d.v?" sel":""); el.textContent=it.n; if(it.font) el.style.fontFamily=it.font; if(it.weight) el.style.fontWeight=it.weight; el.addEventListener("click",()=>{ playSelect(); ddSet(id,i,true); closeDD(); }); m.appendChild(el); });
+  d.items.forEach((it,i)=>{ const el=document.createElement("button"); el.type="button"; el.className="dd-item"+(i===d.v?" sel":""); el.textContent=it.n; if(it.font) el.style.fontFamily=it.font; if(it.weight) el.style.fontWeight=it.weight; if(it.blur) el.style.filter="blur("+it.blur+"px)"; el.addEventListener("click",()=>{ playSelect(); ddSet(id,i,true); closeDD(); }); m.appendChild(el); });
   m.dataset.for=id; m.classList.add("on");
   const r=$(id).getBoundingClientRect(); m.style.left=Math.max(6,Math.min(window.innerWidth-m.offsetWidth-6,r.left))+"px"; m.style.top=Math.max(6,r.top-m.offsetHeight-6)+"px";
   const sel=m.querySelector(".sel"); if(sel) sel.scrollIntoView({block:"nearest"});
@@ -548,8 +550,8 @@ function openDD(id){
 function closeDD(){ $("ddMenu").classList.remove("on"); }
 document.addEventListener("pointerdown",e=>{ if(!(e.target.closest&&(e.target.closest("#ddMenu")||e.target.closest(".tool .dd")))) closeDD(); });
 mkDD("fontSel",FONTS.map(f=>({n:f.n,font:f.f})),()=>readBar());
-mkDD("weightSel",WEIGHTS.map(w=>({n:"太さ "+w.n,weight:w.v})),()=>readBar());
-mkDD("blurSel",BLURS.map(b=>({n:"ぼかし "+b.n})),()=>readBar());
+mkDD("weightSel",WEIGHTS.map(w=>({n:"太さ "+w.n,weight:w.v})),()=>readBar()); ddSet("weightSel",1);
+mkDD("blurSel",BLURS.map(b=>({n:"ぼかし "+b.n,blur:b.v})),()=>readBar());   // 項目にも実際にぼかしをかける
 
 /* ================= オンライン(Supabase Realtime・ホスト権威+スナップショット) ================= */
 const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co", SB_KEY="sb_publishable_cak3-W9Mmgahnwawreoa1Q_CVuhmkKL";
@@ -667,7 +669,7 @@ function guestStartGame(s){
 }
 function guestPhase(np, prev){
   if(np==="seek"){ phase="seek"; enterSeekUI(); showMid("文字化けを探そう",1300); }
-  if(np==="ending"){ $("toolWrap").style.display="none"; playResult(); showMid("ゲーム終了",1500); setTimeout(()=>{ if(phase==="ending"||phase==="vote"){ revealAll(); showMid("隠れ方を評価しよう",1500); } },1500); }
+  if(np==="ending"){ $("toolWrap").style.display="none"; playEndSound(); showMid("ゲーム終了",1500); setTimeout(()=>{ if(phase==="ending"||phase==="vote"){ revealAll(); showMid("隠れ方を評価しよう",1500); } },1500); }
   if(np==="vote"&&prev!=="vote"){ setTimeout(()=>{ if(phase==="vote") enterVoteUI(); }, prev==="ending"?1600:0); }
 }
 /* ---- ゲスト→ホストの操作 ---- */
@@ -753,7 +755,7 @@ function renderMembers(){
   $("ruleFrame").classList.toggle("locked",!isHost()); $("ruleFrame2").classList.toggle("locked",!isHost()); $("ruleReset").style.display=isHost()?"":"none"; $("ruleNote").style.display=isHost()?"none":"";
   const n=arr.length; $("startBtn").disabled=!(isHost()&&n>=2&&(stageKind!=="photo"||photoImg));
   $("startNote").textContent=isHost()?(n<2?"2人以上で始められます（"+n+"/"+MAX_PLAYERS+"）":"") : "オーナーが始めるのを待っています";
-  $("debugFrame").style.display=isHost()?"":"none";
+  $("debugFrame").classList.toggle("locked",!isHost());
 }
 function renderMemberOv(){
   const list=$("memOvList"); if(!list) return; list.innerHTML="";
@@ -795,9 +797,10 @@ $("stPhoto").addEventListener("click",()=>{ if(!isHost()){ toast("ステージ�
 function renderStageSel(){
   $("stHub").classList.toggle("selected",stageKind==="hub"); $("stPhoto").classList.toggle("selected",stageKind==="photo");
   $("photoNote").style.display=stageKind==="photo"?"block":"none";
-  if(isHost()||!online){ $("fileName").textContent=photoImg?(photoName+"（"+photoImg.naturalWidth+"×"+photoImg.naturalHeight+"）"):"まだ選ばれていません"; }
+  if(isHost()||!online){ $("fileName").textContent=photoImg?(photoName+"（"+photoImg.naturalWidth+"×"+photoImg.naturalHeight+"）"):"ドラッグ&ドロップでも選択可能です"; }
   else{ $("fileName").textContent=photoInfo?"写真選択済み":"オーナーが写真を選んでいます…"; }   // ゲストには「まだ選ばれていません」を出さない
   $("soloBtn").disabled=(stageKind==="photo"&&!photoImg);
+  $("cpuV").textContent=cpuN+(cpuN?"人":"");
 }
 function loadPhotoFile(f){
   if(!f||!/^image\//.test(f.type||"")){ toast("画像ファイルを選んでね"); return; }
@@ -815,7 +818,7 @@ $("lobbyScene").addEventListener("dragleave",e=>{ dragDepth=Math.max(0,dragDepth
 window.addEventListener("dragend",()=>{ dragDepth=0; $("dropOv").classList.remove("on"); });
 $("lobbyScene").addEventListener("drop",e=>{ e.preventDefault(); dragDepth=0; $("dropOv").classList.remove("on"); if(!isHost()){ toast("ステージはオーナーだけが変えられます"); return; } const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f){ playSelect(); loadPhotoFile(f); } });
 $("photoNote").addEventListener("click",()=>{ if(isHost()) $("photoFile").click(); });
-$("cpuSeg").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{ playSelect(); cpuN=+b.dataset.n; $("cpuSeg").querySelectorAll("button").forEach(x=>x.classList.toggle("selected",x===b)); }));
+[["cpuM",-1],["cpuP",1]].forEach(([id,d])=>$(id).addEventListener("click",()=>{ if(!isHost()){ toast("おまけ機能はオーナーだけが変えられます"); return; } playSelect(); cpuN=Math.max(0,Math.min(10,cpuN+d)); renderStageSel(); }));
 $("soloBtn").addEventListener("click",()=>{ playConfirm(); startSolo(); });
 
 /* ================= ステージ ================= */
@@ -1286,7 +1289,7 @@ function endSeek(reason){   // ホスト
   if(phase!=="seek"||!isHost()) return; phase="ending"; stopTimer(); endReason=reason;
   seekerWin=(reason==="all");
   $("toolWrap").style.display="none"; $("giveUp").style.display="none";
-  playResult(); showMid("ゲーム終了",1500); sendSnap();
+  playEndSound(); showMid("ゲーム終了",1500); sendSnap();
   setTimeout(()=>{ revealAll(); showMid("隠れ方を評価しよう",1500); setTimeout(startVote,1500); },1500);
 }
 function revealAll(){ hiders.forEach(h=>{ if(!h.el) return; h.el.classList.remove("hid"); if(h.found){ h.el.classList.remove("found"); } h.el.classList.add("reveal"); tagWho(h); }); }
