@@ -34,8 +34,11 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 #titleScene, #lobbyScene{ flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:20px; overflow:auto; }
 #lobbyScene{ justify-content:flex-start; padding-top:56px; padding-bottom:110px; }
 .logo{ position:relative; text-align:center; line-height:1; }
-.logo .main{ display:block; font-size:clamp(40px,10.5vw,74px); font-weight:900; letter-spacing:.04em; color:var(--ink);
+.logo .main{ display:flex; flex-direction:column; align-items:center; font-size:clamp(54px,14vw,96px); font-weight:900; letter-spacing:.04em; color:var(--ink);
   text-shadow:3px 0 0 var(--cyan), -3px 0 0 var(--mag); animation:glitch 6s infinite; }
+/* ロゴ=「とても」(小・上・少し左寄せ)＋「文字化け」(大・下)の2段。参考画像のレイアウト(2026-09-05) */
+.logo .tm-top{ display:block; font-size:.46em; line-height:1; letter-spacing:.06em; margin-bottom:-.08em; transform:translateX(-9%); }
+.logo .tm-big{ display:block; line-height:1; }
 .logo .garble{ display:block; margin-top:10px; font-size:clamp(12px,3vw,16px); color:var(--gray); letter-spacing:.14em; }
 @keyframes glitch{ 0%,92%,100%{ text-shadow:3px 0 0 var(--cyan), -3px 0 0 var(--mag); transform:none; }
   94%{ text-shadow:-5px 0 0 var(--cyan), 5px 0 0 var(--mag); transform:translateX(2px) skewX(-4deg); }
@@ -313,7 +316,7 @@ button.dd{ text-align:left; min-width:96px; }
 
 <!-- ===== タイトル ===== -->
 <div class="scene on" id="titleScene">
-  <div class="logo"><span class="main">とても文字化け</span><span class="garble">縺ｨ縺ｦ繧よ枚蟄怜喧縺�</span></div>
+  <div class="logo"><span class="main"><span class="tm-top">とても</span><span class="tm-big">文字化け</span></span><span class="garble">縺ｨ縺ｦ繧よ枚蟄怜喧縺�</span></div>
   <div class="tagline">文字に化けて、かくれんぼ</div>
   <div class="mode-row">
     <button id="makeRoomBtn">部屋を作る<small>合言葉を発行</small></button>
