@@ -69,7 +69,7 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 .member .mb.kick{ color:var(--mag); border-color:var(--mag); }
 .member .badge.seek{ font-size:11px; font-weight:700; color:#fff; background:var(--mag); padding:2px 8px; border-radius:6px; }
 .rule-frame{ width:100%; border:1.5px solid var(--line); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:12px; background:var(--panel); }
-.rule-frame.debug{ border-style:dashed; background:transparent; }
+.rule-frame.debug{ border-style:dashed; background:transparent; color:var(--gray); }
 .rule-frame .rf-title{ font-size:12px; font-weight:700; color:var(--gray); letter-spacing:.1em; }
 .rule-frame.locked .rule-ctl button, .rule-frame.locked .stage-row button, .rule-frame.locked .stepper button{ pointer-events:none; opacity:.6; }
 .stage-row{ display:flex; gap:10px; width:100%; }
@@ -315,7 +315,6 @@ button.dd{ text-align:left; min-width:96px; }
     <button id="joinRoomBtn">部屋に入る<small>合言葉で入室</small></button>
   </div>
   <div class="room-area" id="roomArea"></div>
-  <button class="txt-btn" id="soloBtn" style="position:fixed; left:10px; bottom:10px; font-size:11px; padding:6px 12px; opacity:.55;">ひとりで試す（デバッグ）</button>
 </div>
 
 <!-- ===== ロビー ===== -->
@@ -340,12 +339,12 @@ button.dd{ text-align:left; min-width:96px; }
     </div>
     <div class="rule-frame" id="ruleFrame2">
       <div class="rf-title">ルール</div>
-      <div class="rule-grp"><div class="rg-title">化ける側のルール</div>
+      <div class="rule-grp"><div class="rg-title">化ける側</div>
         <div class="rules"><div class="rule-ctl"><span class="rl">時間</span><div class="stepper"><button data-r="hide" data-d="-1">−</button><b id="rHide"></b><button data-r="hide" data-d="1">＋</button></div></div></div>
       </div>
-      <div class="rule-grp"><div class="rg-title">探す側のルール</div>
+      <div class="rule-grp"><div class="rg-title">さがす側</div>
         <div class="rules">
-          <div class="rule-ctl"><span class="rl">探す人</span><select class="dd rule-dd" id="seekerSel"></select></div>
+          <div class="rule-ctl"><span class="rl">さがす人</span><select class="dd rule-dd" id="seekerSel"></select></div>
           <div class="rule-ctl"><span class="rl">時間</span><div class="stepper"><button data-r="seek" data-d="-1">−</button><b id="rSeek"></b><button data-r="seek" data-d="1">＋</button></div></div>
           <div class="rule-ctl"><span class="rl">間違えて良い回数</span><div class="stepper"><button data-r="lives" data-d="-1">−</button><b id="rLives"></b><button data-r="lives" data-d="1">＋</button></div></div>
         </div>
@@ -355,12 +354,14 @@ button.dd{ text-align:left; min-width:96px; }
     <div class="sec-label" id="ruleNote" style="display:none;">※ステージとルールはオーナーだけが変えられます</div>
     <button class="btn-main" id="startBtn" disabled>はじめる</button>
     <div class="sec-label" id="startNote"></div>
-    <div class="rule-frame" id="debugFrame">
+    <div class="rule-frame debug" id="debugFrame">
       <div class="rf-title">おまけ機能</div>
       <div class="opt-line"><span>CPUも化ける</span>
         <div class="stepper"><button id="cpuM">−</button><b id="cpuV">0</b><button id="cpuP">＋</button></div>
       </div>
+      <div class="sec-label" style="letter-spacing:0; font-weight:500;">※写真ステージだと弱いです</div>
     </div>
+    <button class="txt-btn" id="soloBtn">ひとりで試す（デバッグ）</button>
     <button class="txt-btn" id="lobbyBack">← タイトルにもどる</button>
   </div>
 </div>
@@ -606,7 +607,7 @@ function onPresence(){
   if(isHost()){
     const left=prevIds.filter(id=>!arr.some(m=>m.id===id));
     if(left.length&&phase!=="lobby"){
-      if(left.includes(seekerId)){ toast("探す人が退出したのでロビーへ"); hostToLobby(); }
+      if(left.includes(seekerId)){ toast("さがす人が退出したのでロビーへ"); hostToLobby(); }
       else{ hiders=hiders.filter(x=>x.cpu||arr.some(m=>m.id===x.id)); left.forEach(id=>{ readyIds.delete(id); voteDoneIds.delete(id); delete votes[id]; }); checkAllReady(); checkAllVoted(); renderAll(); }
     }
     if(phase==="lobby") renderRules();
@@ -762,7 +763,7 @@ function renderMemberOv(){
   const arr=members.length?members:[{id:myId,name:myName,host:true}];
   arr.forEach(m=>{
     const row=document.createElement("div"); row.className="member";
-    row.innerHTML='<span class="dot"></span><span class="nm'+(m.name?"":" undef")+'"></span>'+(m.id===seekerId&&phase!=="lobby"?'<span class="badge seek">探す人</span>':"")+(m.id===hostId?'<span class="host">オーナー</span>':"")+(m.id===myId?'<span class="you">じぶん</span>':"")
+    row.innerHTML='<span class="dot"></span><span class="nm'+(m.name?"":" undef")+'"></span>'+(m.id===seekerId&&phase!=="lobby"?'<span class="badge seek">さがす人</span>':"")+(m.id===hostId?'<span class="host">オーナー</span>':"")+(m.id===myId?'<span class="you">じぶん</span>':"")
       +(isHost()&&m.id!==myId?'<button class="mb kick" data-id="'+m.id+'">追放</button>':"");
     row.querySelector(".dot").style.background=colorOf(m.id);
     row.querySelector(".nm").textContent=dispName(m);
@@ -1411,7 +1412,7 @@ document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{ const i=+b.datase
 /* ================= あそびかた ================= */
 function buildHelp(){
   $("helpBody").innerHTML='<div class="h-sec">基本ルール</div>'
-   +'<p>プレイヤーは「文字」。ひとりが探す人、のこりは化ける人<br>化ける人はWebサイトの画面の中に自分の文字を置いて、まわりの文字に化けます<br>探す人は、もともと無かったニセモノの文字を'+TAPW+'して見つけます。まちがえると体力が減る<br>全員みつけたら探す側の勝ち。体力切れ・時間切れなら化ける側の勝ち</p>'
+   +'<p>プレイヤーは「文字」。ひとりがさがす人、のこりは化ける人<br>化ける人はWebサイトの画面の中に自分の文字を置いて、まわりの文字に化けます<br>探す人は、もともと無かったニセモノの文字を'+TAPW+'して見つけます。まちがえると体力が減る<br>全員みつけたら探す側の勝ち。体力切れ・時間切れなら化ける側の勝ち</p>'
    +'<div class="h-sec">化け方</div>'
    +'<p>まわりの文字と同じ大きさ・同じ色にすると見つかりにくい<br>テキストボックスはつかんで移動、ハンドルで引き伸ばせる（Shiftを押しながらで縦横比そのまま）。右上の丸いハンドルで回転（Shiftで15°刻み）。文字は下の入力欄で書きかえる<br>小さいテキストボックスほど手前に表示される（大きい箱で上から覆っても隠せない）<br>色はパレットから選ぶ（パレットのスポイトで画面の色を吸える）。画質の悪い写真には「ぼかし」でなじませる<br>拡大したら、ホイールクリックかスペースを押しながらドラッグで画面を動かせる</p>'
    +'<div class="h-sec">投票タイム</div>'

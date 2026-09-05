@@ -301,16 +301,72 @@
       <a class="card" href="./mojibake.html">
         <div class="c-bar"></div>
         <div class="c-thumb t-mojibake" style="background:#e9e9ee;">
-          <!-- 文字化け: 「牧村」をパターンで画面いっぱいに敷き詰め(カードの大きさに関係なく常に端まで)、中央付き1か所だけ「平田」が化けている(枠とハンドル) -->
-          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" font-family="'Noto Sans JP','Hiragino Sans',sans-serif" font-weight="700" fill="#5e5e68">
-            <defs><pattern id="mjPat" patternUnits="userSpaceOnUse" width="46" height="26"><text x="23" y="13" text-anchor="middle" dominant-baseline="central" font-size="15">牧村</text></pattern></defs>
-            <svg x="50%" y="50%" width="1" height="1" overflow="visible">
-              <rect x="-4000" y="-4000" width="8000" height="8000" fill="url(#mjPat)"/>
-              <rect x="46" y="-52" width="46" height="26" fill="#e9e9ee"/>
-              <text x="69" y="-39" text-anchor="middle" dominant-baseline="central" font-size="17.5">平田</text>
-              <rect x="47" y="-52" width="44" height="26" fill="none" stroke="#ff2d7a" stroke-width="1.4" stroke-dasharray="4 3"/>
-              <g fill="#fff" stroke="#ff2d7a" stroke-width="1.2"><rect x="44" y="-55" width="6" height="6"/><rect x="88" y="-55" width="6" height="6"/><rect x="44" y="-29" width="6" height="6"/><rect x="88" y="-29" width="6" height="6"/></g>
-            </svg>
+          <!-- 文字化け: 「牧村」がびっしり並ぶ中(左右の余白はそのまま・縦は詰める)、左上のほうで「平田」のテキストボックスが牧村に被さって化けている(枠とハンドル) -->
+          <svg viewBox="0 0 260 132" xmlns="http://www.w3.org/2000/svg">
+            <g font-family="'Noto Sans JP','Hiragino Sans',sans-serif" font-size="15" font-weight="700" fill="#5e5e68">
+              <text x="10" y="14">牧村</text>
+              <text x="47" y="14">牧村</text>
+              <text x="84" y="14">牧村</text>
+              <text x="121" y="14">牧村</text>
+              <text x="158" y="14">牧村</text>
+              <text x="195" y="14">牧村</text>
+              <text x="232" y="14">牧村</text>
+              <text x="10" y="31">牧村</text>
+              <text x="47" y="31">牧村</text>
+              <text x="84" y="31">牧村</text>
+              <text x="121" y="31">牧村</text>
+              <text x="158" y="31">牧村</text>
+              <text x="195" y="31">牧村</text>
+              <text x="232" y="31">牧村</text>
+              <text x="10" y="48">牧村</text>
+              <text x="47" y="48">牧村</text>
+              <text x="84" y="48">牧村</text>
+              <text x="121" y="48">牧村</text>
+              <text x="158" y="48">牧村</text>
+              <text x="195" y="48">牧村</text>
+              <text x="232" y="48">牧村</text>
+              <text x="10" y="65">牧村</text>
+              <text x="47" y="65">牧村</text>
+              <text x="84" y="65">牧村</text>
+              <text x="121" y="65">牧村</text>
+              <text x="158" y="65">牧村</text>
+              <text x="195" y="65">牧村</text>
+              <text x="232" y="65">牧村</text>
+              <text x="10" y="82">牧村</text>
+              <text x="47" y="82">牧村</text>
+              <text x="84" y="82">牧村</text>
+              <text x="121" y="82">牧村</text>
+              <text x="158" y="82">牧村</text>
+              <text x="195" y="82">牧村</text>
+              <text x="232" y="82">牧村</text>
+              <text x="10" y="99">牧村</text>
+              <text x="47" y="99">牧村</text>
+              <text x="84" y="99">牧村</text>
+              <text x="121" y="99">牧村</text>
+              <text x="158" y="99">牧村</text>
+              <text x="195" y="99">牧村</text>
+              <text x="232" y="99">牧村</text>
+              <text x="10" y="116">牧村</text>
+              <text x="47" y="116">牧村</text>
+              <text x="84" y="116">牧村</text>
+              <text x="121" y="116">牧村</text>
+              <text x="158" y="116">牧村</text>
+              <text x="195" y="116">牧村</text>
+              <text x="232" y="116">牧村</text>
+              <text x="10" y="133">牧村</text>
+              <text x="47" y="133">牧村</text>
+              <text x="84" y="133">牧村</text>
+              <text x="121" y="133">牧村</text>
+              <text x="158" y="133">牧村</text>
+              <text x="195" y="133">牧村</text>
+              <text x="232" y="133">牧村</text>
+            </g>
+            <rect x="59" y="24" width="36" height="20" fill="#e9e9ee"/>
+            <text x="61" y="39" font-family="'Noto Sans JP','Hiragino Sans',sans-serif" font-size="17" font-weight="700" fill="#5e5e68">平田</text>
+            <rect x="59" y="24" width="36" height="20" fill="none" stroke="#ff2d7a" stroke-width="1.4" stroke-dasharray="4 3"/>
+            <g fill="#fff" stroke="#ff2d7a" stroke-width="1.2">
+              <rect x="56" y="21" width="6" height="6"/><rect x="92" y="21" width="6" height="6"/><rect x="56" y="41" width="6" height="6"/><rect x="92" y="41" width="6" height="6"/>
+            </g>
           </svg>
           <span class="pc-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="12.5" rx="1.6"/><path d="M9 20.5h6M12 16.5v4"/></svg>PC推奨</span>
         </div>
