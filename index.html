@@ -1416,7 +1416,7 @@
       const s=ses();
       if(s){
         card.innerHTML='<h2>アカウント</h2><p>ログイン中：<b id="acctEmail"></b><br>この端末の記録はアカウントに保存されます。他の端末に同じメールアドレスでログインすれば、記録を引き継げます</p>'
-          +'<label for="acctName">なまえ（ゲームで使われます）</label><input id="acctName" maxlength="16" placeholder="なまえ（16文字まで）">'
+          +'<label for="acctName">なまえ（ゲームで使われます）</label><input id="acctName" maxlength="16" placeholder="アカウント名">'
           +'<div class="acct-msg'+(ok?" ok":"")+'" id="acctMsg"></div><div class="acct-row"><button class="acct-btn" id="acctSave">名前を保存</button><button class="acct-btn warn" id="acctOut">ログアウト</button></div><button class="acct-close" id="acctX">とじる</button>';
         card.querySelector("#acctEmail").textContent=s.email||"";
         card.querySelector("#acctName").value=lsGet("mk.name");
@@ -1434,8 +1434,8 @@
           view(back?"ログアウトしました（この端末は、ログインする前の記録に戻りました）":"ログアウトしました（この端末はゲストに戻りました。記録はアカウントに残っています）",true);
         };
       }else{
-        card.innerHTML='<h2>アカウント</h2><p>アカウントを登録して頂くことで『ノミのみ』などの記録を、他の端末へ引き継げます<br>※オンラインランキングと生き物図鑑には、アカウントの登録が必要です<br>※登録しなくても、ゲームは普通に遊べます</p>'
-          +'<input id="acctName" maxlength="16" placeholder="なまえ（16文字まで）">'
+        card.innerHTML='<h2>アカウント</h2><p>アカウントを登録して頂くことで『ノミのみ』などの記録を、他の端末へ引き継げます<br>※一部ゲームには、アカウントの登録が必要な要素があります</p>'
+          +'<input id="acctName" maxlength="16" placeholder="アカウント名">'
           +'<input id="acctMail" type="email" placeholder="メールアドレス" autocomplete="email">'
           +'<div class="acct-pw"><input id="acctPw" type="password" placeholder="パスワード（6文字以上）" autocomplete="current-password"><button type="button" class="acct-eye" id="acctEye" aria-label="押している間だけパスワードを表示">'+EYE+'</button></div>'
           +'<div class="acct-msg'+(ok?" ok":"")+'" id="acctMsg"></div><div class="acct-row"><button class="acct-btn" id="acctIn">ログイン</button><button class="acct-btn sub" id="acctUp">新規登録</button></div><button class="acct-close" id="acctX">とじる</button>';
