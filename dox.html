@@ -1241,6 +1241,7 @@
       let seen=""; try{ seen=localStorage.getItem("dox.epoch")||""; }catch(e){}
       if(seen===ep) return;
       ["score","speed","endless"].forEach(m=>{ try{ localStorage.removeItem("dox.best."+m); localStorage.removeItem("dox.recent."+m); }catch(e){} });
+      try{ localStorage.removeItem("mk.preacct"); }catch(e){}   // ログイン前の控え(古い数字が入っている)もリセットで捨てる
       try{ localStorage.setItem("dox.epoch",ep); }catch(e){}
     }catch(e){}
   })();
