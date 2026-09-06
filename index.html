@@ -1318,7 +1318,16 @@
       if(qr){   // QRは文字列をそのままHTMLに埋めない(SVGの中の引用符で壊れるため)
         const qb=document.getElementById("hubQr");
         if(/^data:/.test(qr)){ const im=new Image(); im.alt="QR"; im.style.cssText="width:100%;display:block;"; im.src=qr; qb.appendChild(im); }
-        else qb.innerHTML=qr;   // 生のSVGが返ってくる版のSupabase向け
+        else{
+          qb.innerHTML=qr;   // Supabaseは生のSVG(219x219・viewBoxなし)を返すので、枠に収まるよう整える
+          const sv=qb.querySelector("svg");
+          if(sv){
+            const w=parseInt(sv.getAttribute("width")||"219",10)||219, h=parseInt(sv.getAttribute("height")||"219",10)||w;
+            if(!sv.getAttribute("viewBox")) sv.setAttribute("viewBox","0 0 "+w+" "+h);
+            sv.setAttribute("width","100%"); sv.removeAttribute("height");
+            sv.style.cssText="width:100%;height:auto;display:block;";
+          }
+        }
         const sb2=document.getElementById("hubSec"); if(sb2) sb2.textContent=secret||"";
       }
       const inp=document.getElementById("hubMfa"), msg=document.getElementById("hubMfaMsg");
