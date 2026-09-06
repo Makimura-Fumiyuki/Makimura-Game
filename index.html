@@ -1389,7 +1389,7 @@
     function view(msg,ok){
       const s=ses();
       if(s){
-        card.innerHTML='<h2>アカウント</h2><p>ログイン中：<b id="acctEmail"></b><br>この端末は、このアカウントの記録で遊びます。ほかの端末でも同じメールでログインすれば、記録を引き継げます</p>'
+        card.innerHTML='<h2>アカウント</h2><p>ログイン中：<b id="acctEmail"></b><br>この端末の記録はアカウントに保存されます。他の端末に同じメールアドレスでログインすれば、記録を引き継げます</p>'
           +'<label for="acctName">アカウント名</label><input id="acctName" maxlength="10" placeholder="アカウント名">'
           +'<div class="acct-msg'+(ok?" ok":"")+'" id="acctMsg"></div><div class="acct-row"><button class="acct-btn" id="acctSave">名前を保存</button><button class="acct-btn warn" id="acctOut">ログアウト</button></div><button class="acct-close" id="acctX">とじる</button>';
         card.querySelector("#acctEmail").textContent=s.email||"";
