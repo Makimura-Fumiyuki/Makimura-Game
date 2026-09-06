@@ -803,7 +803,7 @@ function renderRules(){ $("rHide").textContent=fmtSec(rules.hide); $("rSeek").te
   const sel=$("seekerSel"); sel.innerHTML='<option value="random">ランダム</option>'; (members.length?members:[{id:myId,name:myName}]).forEach(m=>{ const o=document.createElement("option"); o.value=m.id; o.textContent=dispName(m); sel.appendChild(o); });
   if(rules.seeker!=="random"&&!members.some(m=>m.id===rules.seeker)) rules.seeker="random"; sel.value=rules.seeker; sel.disabled=!isHost(); }
 $("seekerSel").addEventListener("change",()=>{ if(!isHost()) return; rules.seeker=$("seekerSel").value; playSelect(); sendSnap(); });
-document.querySelectorAll(".stepper button").forEach(b=>b.addEventListener("click",()=>{
+document.querySelectorAll(".stepper button[data-r]").forEach(b=>b.addEventListener("click",()=>{   // data-r=ルールのステッパーだけ(おまけ機能のCPU±は別ハンドラ)
   if(!isHost()){ toast("ルールはオーナーだけが変えられます"); return; }
   const r=b.dataset.r, d=+b.dataset.d, [lo,hi,st]=RULE_LIM[r];
   rules[r]=Math.max(lo,Math.min(hi,rules[r]+d*st)); playSelect(); renderRules(); sendSnap();

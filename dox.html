@@ -1205,12 +1205,42 @@
   const SB_URL = "https://kvgmsyognvgxqxkhvltx.supabase.co";
   const SB_KEY = "sb_publishable_cak3-W9Mmgahnwawreoa1Q_CVuhmkKL";
   const SB_HEAD = { "apikey": SB_KEY, "Authorization": "Bearer "+SB_KEY };
+  /* ===== チート対策(2026-09-05): サーバー権威化(anti-cheat/01_server.sql を Supabase で実行すると有効) =====
+     ・プレイ開始時に RPC dox_start でサーバーに開始を記録(サーバーの時計)
+     ・プレイ中の操作を記録([経過ms, 得点差])し、終了時に RPC dox_submit で送る → サーバーが記録から点数を再計算し、
+       時間の整合性(30秒のプレイは本当に30秒かかったか・早送りしていないか)と人間の限界(連打間隔)を確認して通ったものだけ記録
+     ・ランキングは dox_rank(1人1行のベスト)を読む。名前は登録制(dox_name)
+     ・サーバー側の用意がまだ(ビューが無い)なら従来の scores 方式にそのまま戻る */
+  const RANKED=/(^|\.)makimura-gamehub\.com$/.test(location.hostname);   // 本番ドメインからだけ送信(従来はどこからでも送っていた=ローカルのテスト記録が混ざる穴も塞ぐ)
+  let acRead=null;
+  function doxUid(){ try{ let u=localStorage.getItem("dox.uid"); if(!u||!/^[0-9a-f]{16}$/.test(u)){ const a=new Uint8Array(8); crypto.getRandomValues(a); u=[...a].map(b=>b.toString(16).padStart(2,"0")).join(""); localStorage.setItem("dox.uid",u); } return u; }catch(e){ return "anon"; } }
+  let myPid=""; try{ myPid=localStorage.getItem("dox.pid")||""; }catch(e){}
+  const acProbe=(async()=>{ try{ const r=await fetch(SB_URL+"/rest/v1/dox_rank?select=pid&limit=1",{headers:SB_HEAD}); acRead=r.ok; }catch(e){ acRead=null; } return acRead; })();
+  const acWrite=()=>RANKED && acRead===true;
+  async function rpc(fn, body){ const r=await fetch(SB_URL+"/rest/v1/rpc/"+fn,{ method:"POST", headers:{...SB_HEAD,"Content-Type":"application/json"}, body:JSON.stringify(body) }); if(r.status===404){ acRead=false; return null; } if(!r.ok) return null; return r.json(); }
+  // 1プレイ(run)の記録
+  let runId=null, runT0=0, runLog=[], runStartP=null, runTries=0;
+  async function acStartRun(){
+    await acProbe; if(!acWrite()) return null;
+    for(runTries=0; runTries<3; runTries++){
+      try{ const d=await rpc("dox_start",{ p_uid:doxUid(), p_mode:gameMode }); if(d&&d.run){ runId=d.run; return runId; } if(d&&d.error==="too_fast"){ await new Promise(r=>setTimeout(r,1100)); continue; } if(acRead===false) return null; }catch(e){}
+      await new Promise(r=>setTimeout(r,1500));
+    }
+    return null;
+  }
+  function logEv(delta){ runLog.push([Math.round(performance.now()-runT0), delta]); }
   function playerName(){ try{ return (localStorage.getItem("dox.name")||"").trim(); }catch(e){ return ""; } }
   function nameHistory(){ try{ return JSON.parse(localStorage.getItem("dox.names")||"[]"); }catch(e){ return []; } }
   function addNameHistory(n){ n=(n||"").trim(); if(!n) return; try{ const h=nameHistory(); if(!h.includes(n)){ h.push(n); localStorage.setItem("dox.names", JSON.stringify(h)); } }catch(e){} }
   function setPlayerName(n){ const v=[...(n||"")].slice(0,10).join("").trim(); try{ localStorage.setItem("dox.name", v); }catch(e){} addNameHistory(v); }
   async function sbNameExists(name){   // is this name already used by someone in DOX's own records? (scoped to dox modes — names used in other games like nomi don't block us. 2026-07-13)
-    try{ const r=await fetch(SB_URL+"/rest/v1/scores?name=eq."+encodeURIComponent(name)+"&mode=in.(score,speed,endless)&select=name&limit=1", { headers: SB_HEAD }); if(!r.ok) return false; const a=await r.json(); return Array.isArray(a)&&a.length>0; }catch(e){ return false; }   // on any error (e.g. offline) don't block registration
+    try{
+      await acProbe;
+      if(acRead){   // 新方式: 登録制。旧システムの名前(legacy)は「次に使った人が引き継ぐ」ので空き扱い
+        const r2=await fetch(SB_URL+"/rest/v1/dox_names?name=eq."+encodeURIComponent(name)+"&select=pid,legacy&limit=5",{ headers: SB_HEAD }); if(!r2.ok) return false; const a2=await r2.json();
+        return Array.isArray(a2)&&a2.some(x=>!x.legacy && x.pid!==myPid);
+      }
+      const r=await fetch(SB_URL+"/rest/v1/scores?name=eq."+encodeURIComponent(name)+"&mode=in.(score,speed,endless)&select=name&limit=1", { headers: SB_HEAD }); if(!r.ok) return false; const a=await r.json(); return Array.isArray(a)&&a.length>0; }catch(e){ return false; }   // on any error (e.g. offline) don't block registration
   }
   // NOTE: the public key allows INSERT/SELECT only — DELETE/PATCH return 401 (42501, verified 2026-07-12).
   // Rows can never be removed, so writes are INSERT-only and the reader collapses history per player:
@@ -1224,6 +1254,8 @@
   async function sbRename(oldName, newName){   // rename = 新しい名前で自分のベストを出し直すだけ(墓標で旧名を隠す処理は廃止=他人を隠せる穴になるため。旧名の行は残るが無害)
     if(!oldName || !newName || oldName===newName) return;
     try{
+      await acProbe;
+      if(acRead){ if(!RANKED) return; const d=await rpc("dox_rename",{ p_uid:doxUid(), p_name:newName }); if(d&&d.pid){ myPid=d.pid; try{ localStorage.setItem("dox.pid",myPid); }catch(e){} } return; }   // 新方式: サーバー側で名前と記録を付け替える
       for(const m of SB_MODES){
         const b=(loadBest(m)[0]|0);
         if(b>0) await sbPost(newName, b, m);   // carry my best over to the new name
@@ -1234,14 +1266,29 @@
     return;
   }
   try{ addNameHistory(playerName()); }catch(e){}   // seed the current name so the player can always reclaim it
-  async function sbSubmit(mode, sc){            // send a score (skips 0s and runs only if a name is set)
+  async function sbSubmit(mode, sc, snap){       // send a score (skips 0s and runs only if a name is set)
     const name = playerName(); if(!name || !(sc>0)) return;
+    await acProbe;
+    if(acRead){   // 新方式: 開始記録+操作ログをサーバーへ。サーバーが再計算・検証して通ったものだけ記録される
+      if(!RANKED) return;
+      const sn=snap||{ run:runId, log:runLog.slice(), p:runStartP };
+      try{ if(!sn.run && sn.p) { await sn.p; sn.run=runId; } }catch(e){}
+      if(!sn.run) return;   // 開始が記録できていない(通信不良)=このプレイは記録できない
+      try{
+        const d=await rpc("dox_submit",{ p_uid:doxUid(), p_run:sn.run, p_name:name, p_mode:mode, p_score:sc|0, p_log:sn.log });
+        if(d&&d.pid){ myPid=d.pid; try{ localStorage.setItem("dox.pid",myPid); }catch(e){} }
+        if(d&&d.error==="name_taken"){ openNameModal({ required:true, onDone:()=>sbSubmit(mode, sc, sn) }); }   // 名前が他人と重なった→別の名前にして同じプレイを送り直す
+      }catch(e){}
+      return;
+    }
     try{ await sbPost(name, sc, mode); }catch(e){}   // rows pile up per personal best; collapseRows() folds them to one per player on read
   }
   async function sbTop(mode){                   // full history for a mode, newest first (paged 1000/req, capped at 5000 rows)
     const out=[];
+    await acProbe;
     for(let off=0; off<5000; off+=1000){
-      const r = await fetch(SB_URL+"/rest/v1/scores?mode=eq."+mode+"&order=created_at.desc&limit=1000&offset="+off+"&select=name,score,created_at", { headers: SB_HEAD });
+      const r = await fetch(acRead ? (SB_URL+"/rest/v1/dox_rank?mode=eq."+mode+"&order=score.desc,created_at.asc&limit=1000&offset="+off+"&select=name,score,created_at")
+                                   : (SB_URL+"/rest/v1/scores?mode=eq."+mode+"&order=created_at.desc&limit=1000&offset="+off+"&select=name,score,created_at"), { headers: SB_HEAD });
       if(!r.ok) throw new Error("top "+r.status);
       const a = await r.json(); out.push(...a);
       if(!Array.isArray(a) || a.length<1000) break;
@@ -2046,6 +2093,7 @@
 
   function spawnNewGame(){
     score=0; failStreak=0; dockCount=0; graceMissUsed=false; mode="play"; scene="play"; menuLock=false; menuSel=null; updateDecideHint(); updateNameHud(); hideCornerTip(); clearGuide();
+    runId=null; runLog=[]; runT0=performance.now(); runStartP=acStartRun();   // チート対策: サーバーに開始を記録し、操作ログを取り直す
     setBGM("game");   // switch to the building-up in-game track
     bestPos.classList.remove("show"); scoreCrown.classList.remove("show");   // hide the result's BEST 3 list + crown
     howto.classList.remove("show"); void howto.offsetWidth; howto.classList.add("show");   // grow-fade in the start hint
@@ -2203,7 +2251,7 @@
         if(timerOn){   // only after the first successful dock: real escalating penalty + red text
           failStreak++;
           const pen=Math.min(failStreak, 3);   // consecutive misses: 1→-1, 2→-2, 3rd+→-3
-          score=Math.max(0, score-pen); renderScore(); bumpScore(); floatScoreText("-"+pen, pen);
+          score=Math.max(0, score-pen); renderScore(); bumpScore(); floatScoreText("-"+pen, pen); logEv(-pen);
           playFail(failStreak);
         } else {
           playFail(1);   // first-dock failure: no penalty text, gentle -1 sound (don't punish before the first dock)
@@ -2237,7 +2285,7 @@
     // QUICK dock = docked within 1/10 of this round's limit (per-round modes only).
     // It's worth +2 and gets the special, brighter sound (the climb jumps two steps).
     const quick = ((performance.now()-lastDock) < 680);  // quick (ALL modes): docked within 0.68s of the last dock
-    score += quick ? 2 : 1;
+    score += quick ? 2 : 1; logEv(quick?2:1);
     lastDock = performance.now();
     const others=dirs.map(d=>slots[d]);
     center=uniqueDigits(1,others)[0];
@@ -2320,7 +2368,7 @@
       const prevBest = loadBest(gameMode)[0] || 0;   // capture BEFORE recordScore
       recordScore(gameMode, score); renderBest(gameMode); bestPos.classList.add("show");   // save + show BEST 3
       // online ranking: submit ONLY a new personal best (so each player contributes just their best, per mode)
-      if(score>0 && score>prevBest){ const gm=gameMode, gs=score; if(playerName()) sbSubmit(gm, gs); else openNameModal({ required:true, onDone:()=>sbSubmit(gm, gs) }); }   // ranking-in with no name → name is required
+      if(score>0 && score>prevBest){ const gm=gameMode, gs=score, sn={ run:runId, log:runLog.slice(), p:runStartP }; if(playerName()) sbSubmit(gm, gs, sn); else openNameModal({ required:true, onDone:()=>sbSubmit(gm, gs, sn) }); }   // ranking-in with no name → name is required
       if(newBest) scoreCrown.classList.add("show"); else scoreCrown.classList.remove("show");   // crown only on a record
       if(newBest && miconEl.down) miconEl.down.classList.add("hilite");   // draw attention to その他 (ranking) after a new best — cleared when その他 opens
       if(newBest && menuDownHint){ menuDownHint.classList.remove("dark"); menuDownHint.classList.add("show"); }   // ▼ on the centre box (white — result cursor starts centred): recommend pressing ↓
@@ -3432,7 +3480,7 @@
         const nm=b.getAttribute("data-nm");
         if(!confirm("「"+nm+"」の"+MODE_LB[admMode]+"の記録を全て消しますか？")) return;
         b.disabled=true; b.textContent="削除中…";
-        const r=await fetch(SB_URL+"/rest/v1/scores?mode=eq."+admMode+"&name=eq."+encodeURIComponent(nm),
+        const r=await fetch(SB_URL+(acRead?"/rest/v1/dox_best?mode=eq.":"/rest/v1/scores?mode=eq.")+admMode+"&name=eq."+encodeURIComponent(nm),
           { method:"DELETE", headers:{ apikey:SB_KEY, Authorization:"Bearer "+admToken } });
         if(!r.ok){ alert("削除に失敗しました（エラー "+r.status+"）"); b.disabled=false; b.textContent="削除"; return; }
         listView();

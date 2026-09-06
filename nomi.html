@@ -300,6 +300,23 @@ function getUid(){
   }catch(e){ return "anon"; }
 }
 const MYMODE="nomi:"+getUid();
+/* ===== チート対策(2026-09-05): サーバー権威化 =====
+   anti-cheat/01_server.sql を Supabase で実行すると、ノミは「サーバーが湧かせる」方式になる。
+   ・端末は「つぶした数(黒/虹)」を RPC nomi_sync で報告 → サーバーが前回からの経過(サーバー時計)で湧いた数を数え、
+     その数までしか受理しない。虹ノミの当たりもサーバーが決める → 端末側をどう書き換えても、湧いた以上の点は取れない
+   ・端末のノミは「予測表示」。同期の返事(サーバーの生存数)に合わせて数と虹を合わせる(reconcile)
+   ・サーバー側の用意がまだ(ビューが無い=404)なら従来の scores 方式にそのまま戻る(acRead=false) */
+let acRead=null;            // null=確認中 / true=新方式(nomi_rank/nomi_sync がある) / false=従来方式
+let acLocalFallback=false;  // 6秒たっても確認できない(オフライン等)→留守分は端末で計算(後で同期が通れば合わせる)
+let srvTotal=0, pendB=0, pendN=0, myPid="";   // サーバー確定の合計 / 未送信のつぶし(黒・虹) / 自分の公開ID
+try{ srvTotal=parseInt(localStorage.getItem("nomi.srvTotal")||"0",10)||0; pendB=parseInt(localStorage.getItem("nomi.pendB")||"0",10)||0; pendN=parseInt(localStorage.getItem("nomi.pendN")||"0",10)||0; myPid=localStorage.getItem("nomi.pid")||""; }catch(e){}
+function acSave(){ try{ localStorage.setItem("nomi.srvTotal",String(srvTotal)); localStorage.setItem("nomi.pendB",String(pendB)); localStorage.setItem("nomi.pendN",String(pendN)); if(myPid) localStorage.setItem("nomi.pid",myPid); }catch(e){} }
+const acProbe=(async()=>{   // 新方式のビューがあるか(読み取りは公開)。無ければ従来方式
+  try{ const r=await fetch(SB_URL+"/rest/v1/nomi_rank?select=pid&limit=1",{headers:SB_HEAD}); noteServerTime(r); acRead=r.ok; }catch(e){ acRead=null; }
+  return acRead;
+})();
+setTimeout(()=>{ if(acRead===null) acLocalFallback=true; },6000);
+const acWrite=()=>RANKED && acRead===true;   // 書き込み(同期)は本番ドメイン+新方式の時だけ
 /* ランキング除外リスト: 明らかな不正(日付変更で異常に稼いだ等)のプレイヤーを運営が指定してランキングから隠す。
    名前 または mode(="nomi:個人ID") で指定。※コード内の固定リスト=運営だけが編集でき、攻撃者が他人を勝手に消すことはできない。
    使い方: 悪い人の名前を NOMI_BAN_NAMES に足す(例 ["ずるっこ"])。名前が同じ別人も隠れるので、確実に狙うならその人のmodeをSQLで調べてNOMI_BAN_MODESへ */
@@ -324,7 +341,12 @@ function myNames(){   // 自分がこのゲームで過去に使った名前=同
 }
 async function sbNameTaken(name){   // ノミのみの記録内で、他の誰かが使っている名前か(doxの名前とは別=doxで使われていてもここでは使える。通信エラー時は塞がない)
   try{
-    await loadBans();
+    await loadBans(); await acProbe;
+    if(acRead){   // 新方式: 名前は登録制(nomi_acc.name unique)。自分のpid以外が使っていたら不可
+      const r2=await fetch(SB_URL+"/rest/v1/nomi_rank?name=eq."+encodeURIComponent(name)+"&select=pid&limit=5",{headers:SB_HEAD});
+      if(!r2.ok) return false; const a2=await r2.json();
+      return Array.isArray(a2)&&a2.some(x=>x.pid!==myPid);
+    }
     const r=await fetch(SB_URL+"/rest/v1/scores?name=eq."+encodeURIComponent(name)+"&mode=like.nomi:*&select=mode&limit=10",{headers:SB_HEAD});
     if(!r.ok) return false;
     const a=await r.json();
@@ -332,8 +354,47 @@ async function sbNameTaken(name){   // ノミのみの記録内で、他の誰�
   }catch(e){ return false; }
 }
 let lastSync=0, lastSentScore=0, flushTimer=null;
-async function sbSubmit(opts){   // 自分の累計を1行追加で送る(読む側が最大値だけ拾う)
+/* ---- 新方式の同期(RPC nomi_sync)。1回ずつ順番に(二重送信で未送信分を二重に引かないため) ---- */
+let acBusy=false, acDirty=false, acTarget=null, acNameErr=false;
+async function acSync(opts){
+  if(!acWrite()) return;
+  if(acBusy){ acDirty=true; return; }
+  const o=opts||{}; const sb=pendB, sn=pendN, uid=getUid(); if(uid==="anon") return;
+  acBusy=true; lastSync=Date.now();
+  try{
+    const r=await fetch(SB_URL+"/rest/v1/rpc/nomi_sync",{ method:"POST", headers:{...SB_HEAD,"Content-Type":"application/json"},
+      body:JSON.stringify({ p_uid:uid, p_name:playerName()||"", p_black:sb, p_niji:sn, p_alive:true }), keepalive:!!o.keepalive });
+    noteServerTime(r);
+    if(r.status===404){ acRead=false; return; }   // 関数が無い=従来方式へ
+    if(!r.ok) return;
+    const d=await r.json(); if(!d||typeof d!=="object") return;
+    if(d.error==="name_taken"){ acNameErr=true; }   // 名前が他人と重なった(まれ)=登録画面で伝える。点数の同期自体は済んでいる
+    if(typeof d.total!=="number") return;
+    pendB=Math.max(0,pendB-sb); pendN=Math.max(0,pendN-sn);   // 送ったぶんは確定へ(受理されなかった分は total に反映されない=消える)
+    srvTotal=d.total; if(d.pid) myPid=d.pid; acSave();
+    if(typeof d.rank_pct==="number") setRankPct(d.rank_pct);
+    applyCount(srvTotal + pendB + 50*pendN);
+    backlogDone=true; carryOver=0; carryNiji=0;   // 留守分・前回の残りはサーバーの生存数に置き換える
+    acTarget={ b:Math.max(0,(d.alive_black|0)-pendB), n:Math.max(0,(d.alive_niji|0)-pendN) };   // 送信後につぶした分は端末では既に消えている
+    reconcileFleas();
+  }catch(e){}
+  finally{ acBusy=false; if(acDirty){ acDirty=false; acSync(); } }
+}
+/* 端末のノミ(予測)をサーバーの生存数に合わせる。虹ノミもサーバーが決めた数だけ(黒⇄虹の見た目を差し替える) */
+function setNiji(f,on){ f.niji=!!on; f.spr = on ? NIJI_SPRITES[Math.floor(Math.random()*NIJI_SPRITES.length)] : SPRITES[Math.floor(Math.random()*SPRITES.length)]; f.nijiPhase = on? Math.random()*6 : 0; }
+function reconcileFleas(){
+  if(!acTarget) return; if(vw<50||vh<50) return;   // 画面サイズ不明の間は保留(1秒ごとの処理で再試行)
+  const t=acTarget; acTarget=null;
+  let nN=fleas.filter(f=>f.niji).length, nB=fleas.length-nN;
+  while(nN<t.n){ const f=fleas.find(x=>!x.niji); if(f){ setNiji(f,true); nB--; } else { spawnFlea(true,1); } nN++; }
+  while(nN>t.n){ const f=fleas.find(x=>x.niji); if(!f) break; setNiji(f,false); nN--; nB++; }
+  while(nB<t.b && fleas.length<FLEA_CAP){ spawnFlea(true,0); nB++; }
+  for(let i=fleas.length-1; i>=0 && nB>t.b; i--){ if(!fleas[i].niji){ fleas.splice(i,1); nB--; } }
+}
+async function sbSubmit(opts){   // 自分の累計を送る。新方式なら acSync(サーバー権威)・従来なら1行追加(読む側が最大値だけ拾う)
   if(!RANKED) return;   // 本番ドメイン以外(ローカル/直接ファイル起動)は送信しない=ランキングに反映されない
+  if(acRead===null){ await acProbe; }
+  if(acRead){ return acSync(opts); }
   const name=playerName(); if(!name||!(count>0)||count<=lastSentScore) return;
   const o=opts||{}, prev=lastSentScore;
   lastSync=Date.now(); lastSentScore=count;
@@ -352,6 +413,8 @@ function scheduleSync(){   // つぶすたびに呼ぶ。行を増やしすぎ�
 }
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="hidden"){ sbSubmit({keepalive:true}); } });
 window.addEventListener("pagehide",()=>{ sbSubmit({keepalive:true}); });
+setInterval(()=>{ if(acWrite() && document.visibilityState==="visible" && amActive) acSync(); },30000);   // 生存の心拍(開いている間は1.5秒/匹で湧かせてもらう)+つぶしの同期
+acProbe.then(()=>{ if(acWrite()) acSync(); });   // 起動時: サーバーの生存数をもらって画面に出す(留守分も含む)
 
 /* ================= つぶした数 ================= */
 let count=0; try{ count=parseInt(localStorage.getItem("nomi.count")||"0",10)||0; }catch(e){}
@@ -371,10 +434,14 @@ function nudgeCount(x,y,power){
 }
 function placeCount(){ countWrap.style.transform="translate("+cX+"px,"+cY+"px) translate(-50%,-50%)"; }
 function renderCount(){ countEl.textContent=(count|0).toLocaleString("ja-JP"); }
-function bumpCount(n){
-  n=n||1;
+function bumpCount(n){ applyCount(count+(n||1)); scheduleSync(); }
+function bumpSquish(h){   // つぶした結果を数える。新方式=未送信として積み、表示は「サーバー確定+未送信」
+  if(acWrite()){ pendB+=h.n-h.niji; pendN+=h.niji; acSave(); applyCount(srvTotal + pendB + 50*pendN); scheduleSync(); }
+  else bumpCount(h.val);
+}
+function applyCount(v){
   const before=count;
-  count+=n;
+  count=v|0;
   try{ localStorage.setItem("nomi.count",String(count)); }catch(e){}
   renderCount();
   countEl.classList.remove("pop"); void countEl.offsetWidth; countEl.classList.add("pop");
@@ -383,7 +450,6 @@ function bumpCount(n){
   if(String(before).length!==String(count).length || Math.floor(before/pow)!==Math.floor(count/pow)){
     countEl.classList.add("gold"); setTimeout(()=>countEl.classList.remove("gold"),600);
   }
-  scheduleSync();
 }
 renderCount();
 /* 複数タブ対策: 別のタブが保存した累計の方が大きければ取り込む(上書きで数字が巻き戻るのを防ぐ) */
@@ -548,13 +614,14 @@ setInterval(()=>{
   try{ localStorage.setItem("nomi.lastAlive",String(now)); if(sn) localStorage.setItem("nomi.lastAliveS",String(Math.floor(sn))); }catch(e){}   // 生存時刻(端末=フォールバック用/サーバー=本命)を更新
   if(!amActive){ lastSpawn=nowP; return; }   // 非アクティブなタブは湧かせない(復帰時に一気に増やさない)
   try{ localStorage.setItem("nomi.fleaCount",String(fleas.length)); localStorage.setItem("nomi.nijiCount",String(fleas.reduce((a,f)=>a+(f.niji?1:0),0))); }catch(e){}   // 今の画面上のノミ数(と虹ノミの数)を記録=次回復活用(アクティブなタブだけ)
-  if(!backlogDone && sn) creditBacklog(true);   // サーバー時刻が取れたら留守分を反映
+  if(!backlogDone && sn && (!RANKED || acRead===false || acLocalFallback)) creditBacklog(true);   // サーバー時刻が取れたら留守分を反映(新方式ではサーバーの生存数が来るのを待つ)
   flushBacklog();   // 裏タブ起動で保留になっていた場合の保険(表に出た瞬間に一括)
+  reconcileFleas();   // 新方式: 保留していたサーバーの生存数への合わせ込み
   // スマホ保護: 描画が重くなってきたら(約25fps未満)それ以上は増やさない(端末が軽くなれば再開)
   const heavy = avgFrameMs>40 && fleas.length>1500;
   let n=Math.floor((nowP-lastSpawn)/LIVE_SPAWN_MS);   // 経過はperformance.now(単調増加)=時計変更で稼げない・裏タブでタイマー間引きでも実時間で追いつく
   if(n>0){ lastSpawn+=n*LIVE_SPAWN_MS;
-    if(!heavy){ const scatter=n>=3; while(n-->0) spawnFlea(scatter, nijiBaseP()*2); } }   // まとめて追いつく時(裏タブ放置後)は画面全体に散らばせる。ふだん(1匹ずつ)は左右の画面外から。ライブ湧き=ベース×2
+    if(!heavy){ const scatter=n>=3, np=acWrite()?0:nijiBaseP()*2; while(n-->0) spawnFlea(scatter, np); } }   // 新方式: 虹はサーバーが決めるので端末の湧きは黒だけ(同期で虹に差し替わる) // まとめて追いつく時(裏タブ放置後)は画面全体に散らばせる。ふだん(1匹ずつ)は左右の画面外から。ライブ湧き=ベース×2
 },1000);
 // 初回訪問のときだけ数匹出す(最初の空画面を避ける)。前回の残り(carryOver)や生存記録があるリロード/再訪では出さない=リロードのたびに5匹増えるのを防ぐ(2026-07-18修正)
 (function(){ let seen=false; try{ seen=!!(localStorage.getItem("nomi.lastAlive")||localStorage.getItem("nomi.lastAliveS")||localStorage.getItem("nomi.fleaCount")); }catch(e){} if(!seen && carryOver===0){ for(let i=0;i<5;i++) spawnFlea(false, nijiBaseP()*2); } })();
@@ -687,7 +754,7 @@ function squishHits(x,y){   // その地点を中心に、半径内のノミを�
   return {n:n, val:val, niji:niji};
 }
 function squishFeedback(h){ if(!h.n || !amActive) return; if(heldPts.size>=3) return;   // 3本指ホールド(隠しコマンド)中はつぶさない/数えない
-  if(h.niji) playNijiSquish(); else playSquish(); if(navigator.vibrate){ try{ navigator.vibrate(h.niji?24:12); }catch(_){}} bumpCount(h.val); }   // 非アクティブタブでは数えない。虹ノミは+NIJI_VAL・専用音・強めの振動
+  if(h.niji) playNijiSquish(); else playSquish(); if(navigator.vibrate){ try{ navigator.vibrate(h.niji?24:12); }catch(_){}} bumpSquish(h); }   // 非アクティブタブでは数えない。虹ノミは+NIJI_VAL・専用音・強めの振動
 /* タップ+長押し+なぞり: 押している間はつぶし続ける */
 const heldPts=new Map();
 cv.addEventListener("pointerdown",e=>{
@@ -753,7 +820,7 @@ async function confirmName(){
   setPlayerName(v);
   renderName();
   closeNameModal();
-  lastSentScore=0; sbSubmit();   // 名前を確定したらすぐ1回送る(改名なら新しい名前の行が最新=ランキングも変わる)
+  lastSentScore=0; acNameErr=false; sbSubmit();   // 名前を確定したらすぐ1回送る(新方式=サーバーに名前を登録/従来=新しい名前の行が最新)
 }
 nameOk.addEventListener("click",()=>{ ensureAudio(); confirmName(); });   // 枠外タップでは閉じない
 $("nameX").addEventListener("click",()=>{ ensureAudio(); playSelect(); closeNameModal(); });   // ×=新しい名前を入力していても更新せずに閉じる
@@ -767,7 +834,10 @@ if(!playerName()) openNameModal(true);   // 初回起動時のみ名前入力を
 const worldOverlay=$("worldOverlay"), wTotal=$("wTotal"), wList=$("wList");
 async function refreshRank(){   // 起動時などに順位だけ軽く取得してrankPctを更新(虹ノミの出やすさに使う)
   try{
-    await loadBans();
+    await loadBans(); await acProbe;
+    if(acRead){   // 新方式: 順位はサーバー同期(nomi_sync)の返事で更新されるので、ここではサーバー時刻の取得だけ
+      const r0=await fetch(SB_URL+"/rest/v1/nomi_rank?select=pid&limit=1",{headers:SB_HEAD}); noteServerTime(r0); return;
+    }
     const r=await fetch(SB_URL+"/rest/v1/scores?mode=like.nomi:*&order=score.desc,created_at.asc&limit=1000&select=score,mode",{headers:SB_HEAD});
     noteServerTime(r); creditBacklog(true);   // サーバー時刻が取れたら留守分を反映(ok/失敗どちらでも応答Dateは取れる)
     if(!r.ok) return;
@@ -782,10 +852,18 @@ async function refreshRank(){   // 起動時などに順位だけ軽く取得し
 }
 async function loadWorld(){
   wTotal.textContent="-";
-  try{ await loadBans(); }catch(e){}
+  try{ await loadBans(); await acProbe; }catch(e){}
   wList.innerHTML='<div class="w-state">読み込み中…</div>';
   let raw=[];
   try{
+    if(acRead){   // 新方式: サーバー確定の合計(1人1行)。pidで自分を見つける
+      for(let pg=0; pg<5; pg++){
+        const r=await fetch(SB_URL+"/rest/v1/nomi_rank?select=pid,name,total&order=total.desc&limit=1000&offset="+(pg*1000),{headers:SB_HEAD});
+        if(!r.ok) throw new Error("load "+r.status);
+        const page=await r.json(); raw=raw.concat(page.map(x=>({ name:x.name, score:x.total|0, mode:x.pid })));
+        if(page.length<1000) break;
+      }
+    } else
     // ページングで全行を取得(1ページ=1000件では高得点者の行が上位を占め下位プレイヤーが漏れるため)。
     // created_at.desc=新しい順に取り、mode(個人ID)ごとの最初=最新=最大値を拾う(累計は増える一方)
     for(let pg=0; pg<8; pg++){
@@ -800,22 +878,23 @@ async function loadWorld(){
     const rb=$("wRetry"); if(rb) rb.addEventListener("click",()=>{ playSelect(); loadWorld(); });
     return;
   }
-  // 個人(mode=nomi:ID)ごとに最大値の行だけ残す(累計は増える一方なので最大=最新。名前も最新のもの)
+  // 個人(mode=nomi:ID / 新方式=pid)ごとに最大値の行だけ残す(累計は増える一方なので最大=最新。名前も最新のもの)
+  const MYKEY = acRead ? myPid : MYMODE;
   const seen=new Map();
   raw.forEach(r=>{ if(nomiBanned(r.name,r.mode)) return; if(!seen.has(r.mode)) seen.set(r.mode,{name:r.name, score:r.score|0, mode:r.mode}); });   // 除外リストの人は集計しない=ランキング非表示
   // 自分のまだ送っていない分もその場で反映(見た目上ずれないように)
   const me=playerName();
-  if(me && count>0){
-    const mine=seen.get(MYMODE);
+  if(me && count>0 && MYKEY){
+    const mine=seen.get(MYKEY);
     if(mine){ mine.score=Math.max(mine.score, count|0); mine.name=me; }
-    else seen.set(MYMODE,{name:me, score:count|0, mode:MYMODE});
+    else seen.set(MYKEY,{name:me, score:count|0, mode:MYKEY});
   }
   const rows=[...seen.values()].sort((a,b)=>b.score-a.score);
   const SHOW_N=999;   // ランキングは999位まで表示
   const total=rows.reduce((s,r)=>s+r.score,0);
   wTotal.textContent=total.toLocaleString("ja-JP");
   if(!rows.length){ wList.innerHTML='<div class="w-state">まだ誰も遊んでないよ...</div>'; return; }
-  const myIdx=rows.findIndex(r=>r.mode===MYMODE);
+  const myIdx=rows.findIndex(r=>r.mode===MYKEY);
   setRankPct((myIdx>=0 && rows.length>1) ? (myIdx/(rows.length-1)) : 1);   // 虹ノミの出やすさ=順位に連動(下位ほど高い)
   let html="";
   rows.slice(0,SHOW_N).forEach((r,i)=>{
@@ -919,7 +998,13 @@ $("wMe").addEventListener("click",()=>{
       +'<div id="admList" style="font-size:14.5px;margin-top:16px;">読み込み中…</div></div>';
     document.getElementById("admClose").onclick=()=>{ location.href="nomi.html"; };
     let raw=[];
+    try{ await acProbe; }catch(e){}
     try{
+      if(acRead){   // 新方式: nomi_acc を管理トークンで直接読む(1人1行・pid=公開ID)
+        const r=await fetch(SB_URL+"/rest/v1/nomi_acc?select=pid,name,total,minted_black,minted_niji,squished_black,squished_niji,updated_at&order=total.desc&limit=3000",{ headers:{ apikey:SB_KEY, Authorization:"Bearer "+admToken } });
+        if(!r.ok) throw 0;
+        raw=(await r.json()).map(x=>({ name:x.name||"（名前なし）", score:x.total|0, mode:x.pid, meta:"湧き "+(x.minted_black+x.minted_niji)+"・虹 "+x.minted_niji+"・最終 "+(x.updated_at||"").slice(0,16).replace("T"," ") }));
+      } else
       for(let pg=0; pg<8; pg++){   // loadWorldと同じページング(新しい順→mode=個人IDごとの最初=最新=最大)
         const r=await fetch(SB_URL+"/rest/v1/scores?mode=like.nomi:*&order=created_at.desc&limit=1000&offset="+(pg*1000)+"&select=name,score,mode",{headers:SB_HEAD});
         if(!r.ok) throw 0;
@@ -930,7 +1015,7 @@ $("wMe").addEventListener("click",()=>{
     let dyn=[];
     try{ const br=await fetch(SB_URL+"/rest/v1/ban_list?game=eq.nomi&kind=eq.mode&select=value",{headers:{apikey:SB_KEY}}); if(br.ok) dyn=(await br.json()).map(x=>x.value); }catch(e){}
     const seen=new Map();
-    raw.forEach(r=>{ if(!seen.has(r.mode)) seen.set(r.mode,{name:r.name, score:r.score|0, mode:r.mode}); });   // 管理用: 除外リストの人も表示(消すため)
+    raw.forEach(r=>{ if(!seen.has(r.mode)) seen.set(r.mode,{name:r.name, score:r.score|0, mode:r.mode, meta:r.meta||""}); });   // 管理用: 除外リストの人も表示(消すため)
     const rows=[...seen.values()].sort((a,b)=>b.score-a.score);
     const box=document.getElementById("admList");
     if(!rows.length){ box.textContent="記録なし"; return; }
@@ -942,7 +1027,7 @@ $("wMe").addEventListener("click",()=>{
       +'<span style="flex:1;min-width:0;"><span style="font-weight:700;">'+escHtml(r.name)+'</span>'
       +(hard?' <span style="font-size:11px;color:#ffb35c;font-weight:700;">(コード内除外)</span>':'')
       +(dynB?' <span style="font-size:11px;color:#ffb35c;font-weight:700;">(除外中)</span>':'')
-      +'<br><span style="font-size:11px;opacity:.4;">'+escHtml(r.mode)+'</span></span>'
+      +'<br><span style="font-size:11px;opacity:.4;">'+escHtml(r.mode)+(r.meta?" ／ "+escHtml(r.meta):"")+'</span></span>'
       +'<span style="opacity:.85;">'+r.score.toLocaleString("ja-JP")+'</span>'
       +(hard?'':(dynB
         ?'<button data-unban="'+escHtml(r.mode)+'" data-nm="'+escHtml(r.name)+'" style="'+bcss+'background:#555;color:#fff;">除外解除</button>'
@@ -952,7 +1037,7 @@ $("wMe").addEventListener("click",()=>{
     box.querySelectorAll("[data-md]").forEach(b=>b.onclick=async()=>{
       if(!confirm("「"+b.getAttribute("data-nm")+"」の記録を全て消しますか？")) return;
       b.disabled=true; b.textContent="削除中…";
-      const r=await fetch(SB_URL+"/rest/v1/scores?mode=eq."+encodeURIComponent(b.getAttribute("data-md")),
+      const r=await fetch(SB_URL+(acRead ? "/rest/v1/nomi_acc?pid=eq." : "/rest/v1/scores?mode=eq.")+encodeURIComponent(b.getAttribute("data-md")),
         { method:"DELETE", headers:{ apikey:SB_KEY, Authorization:"Bearer "+admToken } });
       if(!r.ok){ alert("削除に失敗しました（エラー "+r.status+"）"); b.disabled=false; b.textContent="削除"; return; }
       listView();
