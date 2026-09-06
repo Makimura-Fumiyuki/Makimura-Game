@@ -1354,7 +1354,7 @@
       const r=await fetch(SB_URL+"/rest/v1/acct?select=nomi_uid,dox_uid,nomi_name,dox_name,acct_name",{ headers:H });
       if(!r.ok) throw new Error("acct "+r.status);
       const rows=await r.json();
-      if(rows&&rows[0]){ const changed=adopt(rows[0]); if(rows[0].acct_name) lsSet("mk.name",rows[0].acct_name); return changed?"このアカウントの記録をこの端末に引き継ぎました":"この端末はすでにこのアカウントの記録です"; }
+      if(rows&&rows[0]){ const changed=adopt(rows[0]); if(rows[0].acct_name) lsSet("mk.name",rows[0].acct_name); return changed?"このアカウントの記録をこの端末に引き継ぎました":"ログイン完了"; }
       const body=deviceIds(); const an=lsGet("mk.name"); if(an) body.acct_name=an;
       const r2=await fetch(SB_URL+"/rest/v1/acct",{ method:"POST", headers:{ ...H, Prefer:"return=minimal" }, body:JSON.stringify(body) });
       if(!r2.ok) throw new Error("acct-create "+r2.status);
