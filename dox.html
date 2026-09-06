@@ -3467,6 +3467,27 @@
         +'<button id="admGo" style="flex:1;padding:12px;border:none;border-radius:10px;font-weight:900;font-size:15px;background:#006987;color:#fff;cursor:pointer;">ログイン</button>'
         +'<button id="admQuit" style="padding:12px 18px;border:none;border-radius:10px;font-weight:900;font-size:15px;cursor:pointer;">やめる</button></div>'
         +'<div id="admMsg" style="margin-top:10px;color:#ff8f8f;font-size:13px;"></div></div>';
+      /* 二段階認証(2026-09-07): パスワードのあと、認証アプリの6桁をサーバーが照合する(通ると aal2 のトークン)。
+         削除・除外などのRLSは aal2 を必須にしてあるので、この仕組みをコードで読まれても6桁が分からなければ何もできない。
+         初回の登録(QRコードの読み取り)は、ハブの管理ログイン(index.html?admin=1)で行う */
+      async function admMfaUp(d){   // 戻り値: aal2のセッション / 未登録ならそのまま / 失敗はnull
+        const AH={ apikey:SB_KEY, Authorization:"Bearer "+d.access_token, "Content-Type":"application/json" };
+        let fs=[]; try{ fs=(((await (await fetch(SB_URL+"/auth/v1/user",{headers:AH})).json())||{}).factors)||[]; }catch(e){}
+        const v=fs.find(x=>x.status==="verified"); if(!v) return d;
+        for(let i=0;i<3;i++){
+          const code=prompt(i?"6桁が違います。もう一度入力してください":"認証アプリの6桁を入力してください");
+          if(code===null) return null;
+          try{
+            const c=await (await fetch(SB_URL+"/auth/v1/factors/"+v.id+"/challenge",{ method:"POST", headers:AH, body:"{}" })).json();
+            if(c&&c.id){
+              const r2=await fetch(SB_URL+"/auth/v1/factors/"+v.id+"/verify",{ method:"POST", headers:AH,
+                body:JSON.stringify({ challenge_id:c.id, code:String(code).replace(/\D/g,"") }) });
+              const j=await r2.json(); if(r2.ok&&j.access_token) return j;
+            }
+          }catch(e){}
+        }
+        return null;
+      }
       // セキュリティ(obscurity): ログイン/やめる どちらのボタンでもログインできない。
       // 正式ログイン=パスワードが正しい状態で「3本指で10秒以上長押し」or「M+Kを10秒以上長押し」
       const doAdmLogin=async()=>{
@@ -3478,8 +3499,9 @@
           const r=await fetch(SB_URL+"/auth/v1/token?grant_type=password",{ method:"POST",
             headers:{ apikey:SB_KEY, "Content-Type":"application/json" },
             body:JSON.stringify({ email:ADMIN_EMAIL, password:pw }) });
-          const d=await r.json();
-          if(!r.ok || !d.access_token) throw 0;
+          const d0=await r.json();
+          if(!r.ok || !d0.access_token) throw 0;
+          const d=await admMfaUp(d0); if(!d){ setMsg("認証できませんでした"); return; }   // 認証アプリの6桁
           admToken=d.access_token;
           try{ localStorage.setItem("mk.admin",JSON.stringify({ at:d.access_token, rt:d.refresh_token||"", exp:Math.floor(Date.now()/1000)+((d.expires_in|0)||3600)-60 })); }catch(e){}
           listView();

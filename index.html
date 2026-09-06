@@ -1286,6 +1286,64 @@
       +'<button id="hubAdmQuit" style="padding:12px 18px;border:none;border-radius:10px;font-weight:900;font-size:15px;cursor:pointer;">やめる</button></div>'
       +'<div id="hubAdmMsg" style="margin-top:10px;color:#ff8f8f;font-size:13px;"></div></div>';
     document.body.appendChild(wrap);
+    /* ===== 二段階認証(TOTP・2026-09-07) =====
+       パスワードのあとに、認証アプリ(Authenticator)の6桁を入れる。6桁はサーバー(Supabase)が照合し、
+       通ったトークンだけが「aal2」になる。削除・除外などの管理操作はRLSで aal2 を必須にしてあるので、
+       この仕組みをコードで読まれても、6桁が分からなければ何もできない。
+       まだ登録していない時は、この画面でQRコードを出して登録する(1回だけ) */
+    const AH=t=>({ apikey:SB_KEY, Authorization:"Bearer "+t, "Content-Type":"application/json" });
+    async function admFactors(at){ try{ const r=await fetch(SB_URL+"/auth/v1/user",{headers:AH(at)}); const u=await r.json(); return (u&&u.factors)||[]; }catch(e){ return []; } }
+    async function admVerify(at,fid,code){   // 6桁を照合 → 成功なら aal2 のセッション
+      try{
+        const c=await (await fetch(SB_URL+"/auth/v1/factors/"+fid+"/challenge",{ method:"POST", headers:AH(at), body:"{}" })).json();
+        if(!c||!c.id) return null;
+        const r=await fetch(SB_URL+"/auth/v1/factors/"+fid+"/verify",{ method:"POST", headers:AH(at),
+          body:JSON.stringify({ challenge_id:c.id, code:String(code||"").replace(/\D/g,"") }) });
+        const j=await r.json(); return (r.ok&&j.access_token)?j:null;
+      }catch(e){ return null; }
+    }
+    function saveAdmSes(d){ try{ localStorage.setItem("mk.admin",JSON.stringify({ at:d.access_token, rt:d.refresh_token||"", exp:Math.floor(Date.now()/1000)+((d.expires_in|0)||3600)-60 })); }catch(e){} }
+    function mfaCard(at, fid, qr, secret){   // fid有り=6桁を聞くだけ / qr有り=初回登録
+      const box=wrap.firstElementChild;
+      box.innerHTML='<div style="font-size:22px;font-weight:900;margin-bottom:4px;">'+(qr?"二段階認証の登録":"二段階認証")+'</div>'
+        +(qr?'<div style="opacity:.65;font-size:13px;margin-bottom:12px;">認証アプリでこのQRコードを読み取り、表示された6桁を入力してください</div>'
+             +'<div id="hubQr" style="background:#fff;padding:10px;border-radius:12px;width:200px;margin:0 auto 10px;"></div>'
+             +'<div style="opacity:.55;font-size:11px;text-align:center;margin-bottom:14px;word-break:break-all;">読み取れない時はこのキーを手入力：<b id="hubSec"></b></div>'
+           :'<div style="opacity:.65;font-size:13px;margin-bottom:14px;">認証アプリに表示されている6桁を入力してください</div>')
+        +'<input id="hubMfa" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6桁" style="width:100%;padding:12px;border-radius:10px;border:none;font-size:20px;letter-spacing:.4em;text-align:center;color:#111;box-sizing:border-box;">'
+        +'<div style="display:flex;gap:10px;margin-top:14px;">'
+        +'<button id="hubMfaGo" style="flex:1;padding:12px;border:none;border-radius:10px;font-weight:900;font-size:15px;background:#006987;color:#fff;cursor:pointer;">'+(qr?"登録する":"認証")+'</button>'
+        +'<button id="hubMfaQuit" style="padding:12px 18px;border:none;border-radius:10px;font-weight:900;font-size:15px;cursor:pointer;">やめる</button></div>'
+        +'<div id="hubMfaMsg" style="margin-top:10px;color:#ff8f8f;font-size:13px;"></div>';
+      if(qr){   // QRは文字列をそのままHTMLに埋めない(SVGの中の引用符で壊れるため)
+        const qb=document.getElementById("hubQr");
+        if(/^data:/.test(qr)){ const im=new Image(); im.alt="QR"; im.style.cssText="width:100%;display:block;"; im.src=qr; qb.appendChild(im); }
+        else qb.innerHTML=qr;   // 生のSVGが返ってくる版のSupabase向け
+        const sb2=document.getElementById("hubSec"); if(sb2) sb2.textContent=secret||"";
+      }
+      const inp=document.getElementById("hubMfa"), msg=document.getElementById("hubMfaMsg");
+      setTimeout(()=>{ try{ inp.focus(); }catch(e){} },60);
+      const go=async()=>{
+        msg.style.color="#ffd27f"; msg.textContent="確認中…";
+        const d2=await admVerify(at,fid,inp.value);
+        if(!d2){ msg.style.color="#ff8f8f"; msg.textContent="6桁が違います（時間切れの場合はアプリの新しい数字で）"; inp.value=""; inp.focus(); return; }
+        saveAdmSes(d2); location.href="index.html";
+      };
+      document.getElementById("hubMfaGo").onclick=go;
+      document.getElementById("hubMfaQuit").onclick=()=>{ location.href="index.html"; };
+      inp.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing) go(); });
+    }
+    async function startEnroll(at){   // 初回だけ: 認証アプリに登録する
+      try{
+        const fs=await admFactors(at);   // 途中でやめた未登録の分は消しておく(同じ名前で登録できないため)
+        for(const f of fs){ if(f.status!=="verified"){ try{ await fetch(SB_URL+"/auth/v1/factors/"+f.id,{ method:"DELETE", headers:AH(at) }); }catch(e){} } }
+        const r=await fetch(SB_URL+"/auth/v1/factors",{ method:"POST", headers:AH(at), body:JSON.stringify({ factor_type:"totp", friendly_name:"admin-"+Date.now() }) });
+        const j=await r.json();
+        if(!r.ok || !j.id) throw new Error((j&&(j.msg||j.message))||"enroll");
+        const qr=(j.totp&&j.totp.qr_code)||"", sec=(j.totp&&j.totp.secret)||"";
+        mfaCard(at, j.id, qr, sec);
+      }catch(e){ document.getElementById("hubAdmMsg").textContent="登録の準備に失敗しました（"+(e.message||"")+"）"; }
+    }
     // セキュリティ(obscurity): ログイン/やめる どちらのボタンでもログインできない。
     // 正式ログイン=パスワードが正しい状態で「3本指で10秒以上長押し」or「M+Kを10秒以上長押し」
     const doHubLogin=async()=>{
@@ -1298,8 +1356,9 @@
           body:JSON.stringify({ email:ADMIN_EMAIL, password:pw }) });
         const d=await r.json();
         if(!r.ok || !d.access_token) throw 0;
-        try{ localStorage.setItem("mk.admin",JSON.stringify({ at:d.access_token, rt:d.refresh_token||"", exp:Math.floor(Date.now()/1000)+((d.expires_in|0)||3600)-60 })); }catch(e){}
-        location.href="index.html";
+        const v=(await admFactors(d.access_token)).find(x=>x.status==="verified");
+        if(v) mfaCard(d.access_token, v.id, "", "");   // 6桁を聞く
+        else  startEnroll(d.access_token);             // まだ登録していない=QRを出す
       }catch(e){ document.getElementById("hubAdmMsg").textContent="パスワードが違います"; }
     };
     document.getElementById("hubAdmGo").onclick=()=>{ document.getElementById("hubAdmMsg").textContent="パスワードが違います"; };   // 「ログイン」=正誤問わず失敗表示(ダミー)

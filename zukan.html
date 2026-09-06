@@ -655,13 +655,37 @@
   // 正式ログイン=パスワードが正しい状態で「3本指で10秒以上長押し」or「M+Kを10秒以上長押し」
   $("admLogin").addEventListener("click",()=>toast("パスワードが違います"));   // 「ログイン」=正誤問わず失敗表示(ダミー)
   $("admCancel").addEventListener("click",()=>$("loginOv").classList.remove("on"));   // 「やめる」=管理画面を閉じる
+  /* 二段階認証(2026-09-07): パスワードのあと、認証アプリの6桁をサーバーが照合する(通ると aal2 のトークン)。
+     削除・除外などのRLSは aal2 を必須にしてあるので、この仕組みをコードで読まれても6桁が分からなければ何もできない。
+     初回の登録(QRコードの読み取り)は、ハブの管理ログイン(index.html?admin=1)で行う */
+  async function admMfaUp(d){   // 戻り値: aal2のセッション / 未登録ならそのまま / 失敗はnull
+    const AH={ apikey:SB_KEY, Authorization:"Bearer "+d.access_token, "Content-Type":"application/json" };
+    let fs=[]; try{ fs=(((await (await fetch(SB_URL+"/auth/v1/user",{headers:AH})).json())||{}).factors)||[]; }catch(e){}
+    const v=fs.find(x=>x.status==="verified"); if(!v) return d;
+    for(let i=0;i<3;i++){
+      const code=prompt(i?"6桁が違います。もう一度入力してください":"認証アプリの6桁を入力してください");
+      if(code===null) return null;
+      try{
+        const c=await (await fetch(SB_URL+"/auth/v1/factors/"+v.id+"/challenge",{ method:"POST", headers:AH, body:"{}" })).json();
+        if(c&&c.id){
+          const r2=await fetch(SB_URL+"/auth/v1/factors/"+v.id+"/verify",{ method:"POST", headers:AH,
+            body:JSON.stringify({ challenge_id:c.id, code:String(code).replace(/\D/g,"") }) });
+          const j=await r2.json(); if(r2.ok&&j.access_token) return j;
+        }
+      }catch(e){}
+    }
+    return null;
+  }
   const doAdmLogin=async()=>{
     if(!$("loginOv").classList.contains("on")) return;   // ログイン画面が出ている時だけ
     const pw=$("admPw").value||"";
     if(!pw){ toast("パスワードが違います"); return; }
     const r=await sb.auth.signInWithPassword({ email:ADMIN_EMAIL, password:pw });
     if(r.error){ toast("パスワードが違います"); return; }
-    try{ const s2=r.data.session; localStorage.setItem("mk.admin",JSON.stringify({ at:s2.access_token, rt:s2.refresh_token, exp:(s2.expires_at||0)-60 })); }catch(e){}
+    const up=await admMfaUp(r.data.session);   // 認証アプリの6桁(未登録ならそのまま)
+    if(!up){ toast("認証できませんでした"); return; }
+    try{ await sb.auth.setSession({ access_token:up.access_token, refresh_token:up.refresh_token }); }catch(e){}
+    try{ localStorage.setItem("mk.admin",JSON.stringify({ at:up.access_token, rt:up.refresh_token||"", exp:Math.floor(Date.now()/1000)+((up.expires_in|0)||3600)-60 })); }catch(e){}
     location.href="zukan.html?live=1";   // 管理者として入り直す
   };
   let admSecT=0; const armA=()=>{ if(admSecT) return; admSecT=setTimeout(doAdmLogin,10000); }, disA=()=>{ clearTimeout(admSecT); admSecT=0; };
