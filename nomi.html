@@ -125,6 +125,7 @@
     background:none; border:none; border-bottom:1px solid rgba(255,255,255,.6); border-radius:0; padding:10px 6px 3px; outline:none; caret-color:#fff; }   /* 下線は名前のすぐ下(かなり近く) */
   .n-input::placeholder{ color:rgba(255,255,255,.4); }
   .n-input:focus{ border-bottom-color:#fff; }
+  .n-guide{ margin-top:14px; font-size:13px; font-weight:500; line-height:1.9; color:rgba(255,255,255,.9); text-align:center; }
   .n-err{ margin-top:8px; font-size:12.5px; font-weight:700; letter-spacing:.06em; color:#ffb1a5; opacity:0; transition:opacity .5s linear; }
   .n-err.show{ opacity:1; transition:none; }   /* 出る時はパッと・消える時(3秒後)はフェードアウト */
   /* 左上の×(ランキングの×と同仕様)=名前を更新せずに閉じる(初回の必須登録時は非表示) */
@@ -195,7 +196,8 @@
     <button id="nameX" aria-label="とじる">
       <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
     </button>
-    <input class="n-input" id="nameInput" maxlength="10" autocomplete="off" spellcheck="false" placeholder="あなたの名前">
+    <input class="n-input" id="nameInput" maxlength="16" autocomplete="off" spellcheck="false" placeholder="あなたの名前">
+    <div class="n-guide" id="nameGuide" style="display:none;">オンラインランキングに載るには、アカウントの登録が必要です<br><a href="./index.html" style="color:#fff;">ゲーム集のトップでアカウントを作る</a></div>
     <div class="n-err" id="nameErr">この名前は使われています</div>
     <button class="n-ok" id="nameOk">決定</button>
     <div class="n-note">登録した名前はオンラインランキングで他のプレイヤーに公開されます</div>
@@ -331,9 +333,42 @@ function loadBans(){   // 1セッション1回。失敗しても空のまま(コ
   return bansReady;
 }
 function nomiBanned(name, mode){ return (name!=null && (NOMI_BAN_NAMES.indexOf(name)>=0 || DYN_BAN_NAMES.indexOf(name)>=0)) || NOMI_BAN_MODES.indexOf(mode)>=0 || DYN_BAN_MODES.indexOf(mode)>=0; }
-function playerName(){ try{ return (localStorage.getItem("nomi.name")||"").trim(); }catch(e){ return ""; } }
-function sharedName(n){ try{ return [...((localStorage.getItem("mk.name")||"").trim())].slice(0,n||10).join(""); }catch(e){ return ""; } }   // ハブのアカウント名=各ゲームの初期名(2026-09-05)
-function setPlayerName(n){ const v=[...(n||"")].slice(0,10).join("").trim(); try{ localStorage.setItem("nomi.name",v); }catch(e){} addNameHistory(v); }
+/* ===== サイト共通の名前(2026-09-06) =====
+   名前はハブのアカウントが持つ(サイトで1つ・16文字・重複不可)。どこから変えても全ゲームに反映される。
+   アカウントが無い人は「ゲスト」= オンラインランキングには載らない */
+const MK_GUEST="ゲスト";
+function mkSes(){ try{ return JSON.parse(localStorage.getItem("mk.acct")||"null"); }catch(e){ return null; } }
+function mkIn(){ return !!mkSes(); }
+function mkName(){ try{ return (localStorage.getItem("mk.name")||"").trim(); }catch(e){ return ""; } }
+async function mkToken(){
+  const s=mkSes(); if(!s) return null;
+  if(s.at && s.exp*1000 > Date.now()+60000) return s.at;
+  if(!s.rt) return null;
+  try{
+    const r=await fetch(SB_URL+"/auth/v1/token?grant_type=refresh_token",{ method:"POST", headers:{ apikey:SB_KEY, "Content-Type":"application/json" }, body:JSON.stringify({ refresh_token:s.rt }) });
+    const d=await r.json(); if(!r.ok||!d.access_token){ try{ localStorage.removeItem("mk.acct"); }catch(e){} return null; }
+    const ns={ at:d.access_token, rt:d.refresh_token||s.rt, exp:Math.floor(Date.now()/1000)+((d.expires_in|0)||3600)-60, email:s.email };
+    try{ localStorage.setItem("mk.acct",JSON.stringify(ns)); }catch(e){}
+    return ns.at;
+  }catch(e){ return null; }
+}
+async function mkSetName(nm){   // 戻り値: ""=成功 / 表示するエラー文
+  nm=[...((nm||"").trim())].slice(0,16).join("");
+  if(!nm) return "名前を入力してください";
+  const at=await mkToken(); if(!at) return "ハブでアカウントを登録すると名前を決められます";
+  try{
+    const r=await fetch(SB_URL+"/rest/v1/rpc/set_name",{ method:"POST", headers:{ apikey:SB_KEY, Authorization:"Bearer "+at, "Content-Type":"application/json" }, body:JSON.stringify({ p_name:nm }) });
+    const d=await r.json().catch(()=>null);
+    if(r.status===404){ try{ localStorage.setItem("mk.name",nm); }catch(e){} return ""; }   // サーバー側の用意がまだ=この端末にだけ保存
+    if(!r.ok) return "保存に失敗しました";
+    if(d&&d.error==="name_taken") return "その名前は使われています";
+    if(d&&d.error) return "保存に失敗しました";
+    try{ localStorage.setItem("mk.name",nm); }catch(e){}
+    return "";
+  }catch(e){ return "通信に失敗しました"; }
+}
+function playerName(){ return mkIn()? mkName() : ""; }   // アカウント名がそのままランキング名。未ログイン=名前なし=ランキングに載らない
+
 function nameHistory(){ try{ return JSON.parse(localStorage.getItem("nomi.names")||"[]"); }catch(e){ return []; } }
 function addNameHistory(n){ n=(n||"").trim(); if(!n) return; try{ const h=nameHistory(); if(!h.includes(n)){ h.push(n); localStorage.setItem("nomi.names",JSON.stringify(h)); } }catch(e){} }
 function myNames(){   // 自分がこのゲームで過去に使った名前=同じ端末なら取り戻せる(doxとは独立)
@@ -364,7 +399,7 @@ async function acSync(opts){
   acBusy=true; lastSync=Date.now();
   try{
     const r=await fetch(SB_URL+"/rest/v1/rpc/nomi_sync",{ method:"POST", headers:{...SB_HEAD,"Content-Type":"application/json"},
-      body:JSON.stringify({ p_uid:uid, p_name:playerName()||"", p_black:sb, p_niji:sn, p_alive:true }), keepalive:!!o.keepalive });
+      body:JSON.stringify({ p_uid:uid, p_name:"", p_black:sb, p_niji:sn, p_alive:true }), keepalive:!!o.keepalive });
     noteServerTime(r);
     if(r.status===404){ acRead=false; return; }   // 関数が無い=従来方式へ
     if(!r.ok) return;
@@ -396,7 +431,7 @@ async function sbSubmit(opts){   // 自分の累計を送る。新方式なら a
   if(!RANKED) return;   // 本番ドメイン以外(ローカル/直接ファイル起動)は送信しない=ランキングに反映されない
   if(acRead===null){ await acProbe; }
   if(acRead){ return acSync(opts); }
-  const name=playerName(); if(!name||!(count>0)||count<=lastSentScore) return;
+  const name=playerName(); if(!name||!(count>0)||count<=lastSentScore) return;   // 従来方式は名前が必須
   const o=opts||{}, prev=lastSentScore;
   lastSync=Date.now(); lastSentScore=count;
   try{
@@ -406,7 +441,7 @@ async function sbSubmit(opts){   // 自分の累計を送る。新方式なら a
   }catch(e){ lastSentScore=prev; }
 }
 function scheduleSync(){   // つぶすたびに呼ぶ。行を増やしすぎない送り方(初回すぐ→以降は+10匹かつ15秒あけて)
-  if(!playerName()) return;
+  if(!acWrite() && !playerName()) return;   // 新方式は名前が無くても同期する(あとでアカウントを作った時に引き継げる。名前が無い間はランキングに出ない)
   const now=Date.now();
   if(lastSentScore===0 || (count-lastSentScore>=10 && now-lastSync>15000)){ sbSubmit(); }
   if(flushTimer) clearTimeout(flushTimer);
@@ -788,18 +823,20 @@ cv.addEventListener("contextmenu",e=>e.preventDefault());
 const nameOverlay=$("nameOverlay"), nameInput=$("nameInput"), nameErr=$("nameErr"), nameOk=$("nameOk");
 let nameRequired=false;
 function renderName(){
-  const n=playerName();
-  $("myName").textContent=n;
-  $("namePill").classList.toggle("show",!!n);
+  $("myName").textContent=mkIn()? (mkName()||"名前をきめる") : MK_GUEST;
+  $("namePill").classList.add("show");
 }
 function openNameModal(req){
-  nameRequired=!!req;
-  $("nameX").style.display=nameRequired?"none":"";   // 初回の必須登録では×を出さない
+  nameRequired=false;
+  $("nameX").style.display="";
   nameErr.classList.remove("show");
-  nameInput.value=playerName()||sharedName();   // 未登録ならハブのアカウント名を初期値に
+  const inn=mkIn();
+  nameInput.style.display=inn?"":"none"; nameOk.style.display=inn?"":"none";
+  $("nameGuide").style.display=inn?"none":"";
+  nameInput.value=mkName();
   nameOk.disabled=false; nameOk.textContent="決定";
   nameOverlay.classList.add("on"); document.body.classList.add("veil");
-  setTimeout(()=>{ try{ nameInput.focus(); nameInput.select(); }catch(e){} },60);
+  if(inn) setTimeout(()=>{ try{ nameInput.focus(); nameInput.select(); }catch(e){} },60);
 }
 function closeNameModal(){ nameOverlay.classList.remove("on"); document.body.classList.remove("veil"); }
 let nameErrTimer=null;
@@ -809,16 +846,13 @@ function showNameErr(msg){
   nameErrTimer=setTimeout(()=>{ nameErr.classList.remove("show"); },3000);   // 3秒表示してフェードアウト
 }
 async function confirmName(){
-  const v=[...(nameInput.value||"")].slice(0,10).join("").trim();
+  const v=[...(nameInput.value||"")].slice(0,16).join("").trim();
   if(!v){ showNameErr("名前を入力してください"); return; }
-  const cur=playerName();
-  if(v===cur){ closeNameModal(); return; }
+  if(v===mkName()){ closeNameModal(); return; }
   nameOk.disabled=true; nameOk.textContent="確認中…";
-  let ok=true;
-  if(!myNames().has(v)){ ok=!(await sbNameTaken(v)); }   // 自分が過去に使った名前なら取り戻せる
+  const err=await mkSetName(v);   // サイト共通の名前を変更(ノミのみ・doxの記録の名前も一緒に変わる)
   nameOk.disabled=false; nameOk.textContent="決定";
-  if(!ok){ showNameErr("この名前は使われています"); return; }
-  setPlayerName(v);
+  if(err){ showNameErr(err); return; }
   renderName();
   closeNameModal();
   lastSentScore=0; acNameErr=false; sbSubmit();   // 名前を確定したらすぐ1回送る(新方式=サーバーに名前を登録/従来=新しい名前の行が最新)
@@ -829,7 +863,7 @@ nameInput.addEventListener("keydown",e=>{ if(e.key==="Enter" && !e.isComposing){
 nameInput.addEventListener("input",()=>nameErr.classList.remove("show"));
 $("namePill").addEventListener("click",()=>{ ensureAudio(); playSelect(); openNameModal(false); });   // ペン+名前のどこを押しても変更できる
 renderName();
-if(!playerName()) openNameModal(true);   // 初回起動時のみ名前入力を依頼
+window.addEventListener("focus",renderName);   // ハブで名前を変えて戻ってきた時に反映
 
 /* ================= 世界オーバーレイ ================= */
 const worldOverlay=$("worldOverlay"), wTotal=$("wTotal"), wList=$("wList");

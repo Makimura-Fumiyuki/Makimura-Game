@@ -357,8 +357,40 @@
   function toast(m,ms){ const el=$("toast"); el.textContent=m; el.classList.add("on"); clearTimeout(toastTmr); toastTmr=setTimeout(()=>el.classList.remove("on"), ms||1800); }
   function agreed(){ try{ return localStorage.getItem("zukan.agreed")==="1"; }catch(e){ return false; } }
   function setAgreed(){ try{ localStorage.setItem("zukan.agreed","1"); }catch(e){} }
-  function savedName(){ try{ return localStorage.getItem("zukan.author")||sharedName(16)||""; }catch(e){ return ""; } }
-  function sharedName(n){ try{ return [...((localStorage.getItem("mk.name")||"").trim())].slice(0,n||10).join(""); }catch(e){ return ""; } }   // ハブのアカウント名=各ゲームの初期名(2026-09-05)
+  /* ===== サイト共通の名前(2026-09-06) =====
+     名前はハブのアカウントが持つ(サイトで1つ・16文字・重複不可)。どこから変えても全ゲームに反映される */
+  const MK_GUEST="ゲスト";
+  function mkSes(){ try{ return JSON.parse(localStorage.getItem("mk.acct")||"null"); }catch(e){ return null; } }
+  function mkIn(){ return !!mkSes(); }
+  function mkName(){ try{ return (localStorage.getItem("mk.name")||"").trim(); }catch(e){ return ""; } }
+  async function mkToken(){
+    const s=mkSes(); if(!s) return null;
+    if(s.at && s.exp*1000 > Date.now()+60000) return s.at;
+    if(!s.rt) return null;
+    try{
+      const r=await fetch(SB_URL+"/auth/v1/token?grant_type=refresh_token",{ method:"POST", headers:{ apikey:SB_KEY, "Content-Type":"application/json" }, body:JSON.stringify({ refresh_token:s.rt }) });
+      const d=await r.json(); if(!r.ok||!d.access_token){ try{ localStorage.removeItem("mk.acct"); }catch(e){} return null; }
+      const ns={ at:d.access_token, rt:d.refresh_token||s.rt, exp:Math.floor(Date.now()/1000)+((d.expires_in|0)||3600)-60, email:s.email };
+      try{ localStorage.setItem("mk.acct",JSON.stringify(ns)); }catch(e){}
+      return ns.at;
+    }catch(e){ return null; }
+  }
+  async function mkSetName(nm){   // 戻り値: ""=成功 / 表示するエラー文
+    nm=[...((nm||"").trim())].slice(0,16).join("");
+    if(!nm) return "名前を入力してください";
+    const at=await mkToken(); if(!at) return "ゲーム集のトップでアカウントを登録してください";
+    try{
+      const r=await fetch(SB_URL+"/rest/v1/rpc/set_name",{ method:"POST", headers:{ apikey:SB_KEY, Authorization:"Bearer "+at, "Content-Type":"application/json" }, body:JSON.stringify({ p_name:nm }) });
+      const d=await r.json().catch(()=>null);
+      if(r.status===404){ try{ localStorage.setItem("mk.name",nm); }catch(e){} return ""; }   // サーバー側の用意がまだ=この端末にだけ保存
+      if(!r.ok) return "保存に失敗しました";
+      if(d&&d.error==="name_taken") return "その名前は使われています";
+      if(d&&d.error) return "保存に失敗しました";
+      try{ localStorage.setItem("mk.name",nm); }catch(e){}
+      return "";
+    }catch(e){ return "通信に失敗しました"; }
+  }
+  function savedName(){ return mkName(); }   // 名前はサイトで1つ(ハブのアカウント名)
   function saveName(n){ try{ localStorage.setItem("zukan.author",n); }catch(e){} }
   function fmtDT(s){ if(!s) return ""; const d=new Date(s); if(isNaN(d)) return ""; const p=n=>("0"+n).slice(-2);
     return d.getFullYear()+"/"+p(d.getMonth()+1)+"/"+p(d.getDate())+"　"+p(d.getHours())+":"+p(d.getMinutes()); }   // yyyy/mm/dd hh:mm(間は全角スペースで離す)
@@ -407,8 +439,10 @@
       myUid=ses.user.id;
       isAdmin=((ses.user.email||"")===ADMIN_EMAIL);
       if(WANT_ADMIN && !isAdmin){ $("admPw").value=""; $("loginOv").classList.add("on"); }
-      try{ const nr=await sb.from("zukan_name").select("name").eq("user_id",myUid).maybeSingle();
-        if(!nr.error && nr.data && nr.data.name){ myName=nr.data.name; saveName(myName); } }catch(e){}
+      myName = mkIn()? (mkName()||null) : null;   // 名前はハブのアカウント名。未ログインは投稿できない
+      if(mkIn() && myName){   // 名前を変えていたら、過去の投稿の署名もそろえる(自分の行だけ更新できる)
+        try{ await sb.from("zukan_entry").update({author:myName}).eq("user_id",myUid).neq("author",myName); }catch(e){}
+      }
       paintNamePill();
     }catch(e){ $("listBody").innerHTML='<div class="empty">接続に失敗しました。少し時間をおいて開き直してください。</div>'; return; }
     await loadList();
@@ -497,7 +531,7 @@
       const bd=(editing&&myEntry?myEntry.body:(myEntry?"":loadDraft()));
       const nameHtml = myName
         ? '<div class="pen-name">ペンネーム：<b>'+esc(myName)+'</b></div>'
-        : '<input id="fAuthor" maxlength="16" placeholder="ペンネーム" value="'+esc(savedName())+'">';
+        : '<div class="pen-name">図鑑を書くには、<a href="./index.html">ゲーム集のトップ</a>でアカウントの登録が必要です</div>';
       a.innerHTML='<div class="section-label">'+(myEntry?"図鑑を編集する":"この生き物の図鑑を書く")+'</div>'
         +'<div class="form-card">'
         +nameHtml
@@ -576,23 +610,12 @@
     if(DEMO){ toast("デモ表示中は投稿できません"); return; }
     if(busy) return;
     if(!agreed()){ pendingSubmit=true; $("yakuOk").textContent="同意して投稿"; $("yakuOv").classList.add("on"); return; }
-    const author=myName || (($("fAuthor")&&$("fAuthor").value||"").trim());
+    const author=myName||"";
     const body=($("fBody").value||"").trim();
-    if(!author){ toast("ペンネームを入れてね"); return; }
+    if(!author){ toast("アカウントを登録すると図鑑を書けます"); return; }
     if(!body){ toast("本文を書いてね"); return; }
     if([...body].length>MAXBODY){ toast("本文が長すぎます（"+MAXBODY+"字まで）"); return; }
     busy=true; $("postBtn").disabled=true; $("postBtn").textContent="送信中…";
-    if(!myName){   // 初回のみ: ペンネームを登録(DBのuniqueで名前被りは早い者勝ち)
-      const reg=await sb.from("zukan_name").insert({ user_id:myUid, name:author });
-      if(reg.error){
-        busy=false; $("postBtn").disabled=false; $("postBtn").textContent=myEntry?"更新する":"投稿する";
-        const m=(reg.error.message||"")+" "+(reg.error.code||"");
-        if(m.indexOf("duplicate")>=0||m.indexOf("23505")>=0) toast("そのペンネームはもう使われています");
-        else toast("ペンネームの登録に失敗しました。もう一度ためしてね");
-        return;
-      }
-      myName=author; saveName(author); paintNamePill();
-    }
     let res;
     if(myEntry){ res=await sb.from("zukan_entry").update({author,body,updated_at:new Date().toISOString()}).eq("id",myEntry.id).select(); }
     else{ res=await sb.from("zukan_entry").insert({creature_id:cur.id,author,body}).select(); }
@@ -698,10 +721,11 @@
   });
 
   /* ペンネーム(左上ピル+変更ダイアログ) */
-  function paintNamePill(){ $("namePillTxt").textContent = myName ? myName : "ペンネームをきめる"; }
+  function paintNamePill(){ $("namePillTxt").textContent = myName ? myName : (mkIn()? "名前をきめる" : "ゲスト"); }
   paintNamePill();
   $("namePill").addEventListener("click",()=>{
-    $("nameInput").value = myName || savedName() || "";
+    if(!mkIn()){ toast("ゲーム集のトップでアカウントを登録すると名前を決められます"); return; }
+    $("nameInput").value = mkName();
     $("nameOv").classList.add("on");
     setTimeout(()=>$("nameInput").focus(),50);
   });
@@ -715,23 +739,19 @@
     if(busy) return;
     busy=true; $("nameSave").disabled=true; $("nameSave").textContent="送信中…";
     const had=!!myName;
-    const r = had ? await sb.from("zukan_name").update({name:nm}).eq("user_id",myUid)
-                  : await sb.from("zukan_name").insert({user_id:myUid,name:nm});
-    if(r.error){
+    const err=await mkSetName(nm);   // サイト共通の名前を変更(ノミのみ・doxの記録の名前も一緒に変わる)
+    if(err){
       busy=false; $("nameSave").disabled=false; $("nameSave").textContent="決定";
-      const m=(r.error.message||"")+" "+(r.error.code||"");
-      if(m.indexOf("duplicate")>=0||m.indexOf("23505")>=0) toast("そのペンネームはもう使われています");
-      else toast("ペンネームの変更に失敗しました。もう一度ためしてね");
-      return;
+      toast(err); return;
     }
-    myName=nm; saveName(nm);
+    myName=nm;
     try{ await sb.from("zukan_entry").update({author:nm}).eq("user_id",myUid); }catch(e){}   // 過去の投稿の署名もまとめて変更
     curEntries.forEach(e=>{ if(e.user_id===myUid) e.author=nm; });
     if(myEntry) myEntry.author=nm;
     busy=false; $("nameSave").disabled=false; $("nameSave").textContent="決定";
     paintNamePill(); $("nameOv").classList.remove("on");
     if($("detailView").style.display!=="none"){ renderMyArea(); renderEntries(); }
-    toast(had?"ペンネームを変えました":"ペンネームを登録しました");
+    toast(had?"名前を変えました":"名前を登録しました");
   });
 
   /* やくそく */

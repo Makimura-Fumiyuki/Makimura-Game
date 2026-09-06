@@ -432,7 +432,7 @@ button.dd{ text-align:left; min-width:96px; }
 <!-- 名前 -->
 <div class="ov" id="nameOv"><div class="card">
   <h2>名前を考えよう</h2>
-  <input class="name-in" id="nameIn" maxlength="10" autocomplete="off">
+  <input class="name-in" id="nameIn" maxlength="16" autocomplete="off">
   <div class="err-line" id="nameErr"></div>
   <button class="btn-main" id="nameGo">決定</button>
 </div></div>
@@ -526,8 +526,42 @@ function nextColor(){ const used=Object.values(colors); for(const c of COLORS){ 
 function colorOf(id){ if(colors[id]) return colors[id]; const i=Math.max(0,members.findIndex(m=>m.id===id)); return COLORS[i%COLORS.length]; }
 function dispName(m){ return (m&&m.name)?m.name:UNDEF_NM; }
 const myId=Math.random().toString(36).slice(2,10);
-function sharedName(n){ try{ return [...((localStorage.getItem("mk.name")||"").trim())].slice(0,n||10).join(""); }catch(e){ return ""; } }   // ハブのアカウント名=各ゲームの初期名(2026-09-05)
-let myName="なまえ"; try{ myName=localStorage.getItem("mjb.name")||sharedName()||"なまえ"; }catch(e){}
+/* ===== サイト共通の名前(2026-09-06) =====
+   名前はハブのアカウントが持つ(サイトで1つ・16文字・重複不可)。どこから変えても全ゲームに反映される。
+   アカウントが無い人は「ゲスト」(この端末だけの名前として自由に変えられる) */
+const MK_GUEST="ゲスト";
+function mkSes(){ try{ return JSON.parse(localStorage.getItem("mk.acct")||"null"); }catch(e){ return null; } }
+function mkIn(){ return !!mkSes(); }
+function mkName(){ try{ return (localStorage.getItem("mk.name")||"").trim(); }catch(e){ return ""; } }
+async function mkToken(){
+  const s=mkSes(); if(!s) return null;
+  if(s.at && s.exp*1000 > Date.now()+60000) return s.at;
+  if(!s.rt) return null;
+  try{
+    const r=await fetch(SB_URL+"/auth/v1/token?grant_type=refresh_token",{ method:"POST", headers:{ apikey:SB_KEY, "Content-Type":"application/json" }, body:JSON.stringify({ refresh_token:s.rt }) });
+    const d=await r.json(); if(!r.ok||!d.access_token){ try{ localStorage.removeItem("mk.acct"); }catch(e){} return null; }
+    const ns={ at:d.access_token, rt:d.refresh_token||s.rt, exp:Math.floor(Date.now()/1000)+((d.expires_in|0)||3600)-60, email:s.email };
+    try{ localStorage.setItem("mk.acct",JSON.stringify(ns)); }catch(e){}
+    return ns.at;
+  }catch(e){ return null; }
+}
+async function mkSetName(nm){   // 戻り値: ""=成功 / 表示するエラー文。未ログインならこの端末だけに保存
+  nm=[...((nm||"").trim())].slice(0,16).join("");
+  if(!nm) return "名前を入力してください";
+  const at=await mkToken();
+  if(!at){ try{ localStorage.setItem("mk.name",nm); }catch(e){} return ""; }
+  try{
+    const r=await fetch(SB_URL+"/rest/v1/rpc/set_name",{ method:"POST", headers:{ apikey:SB_KEY, Authorization:"Bearer "+at, "Content-Type":"application/json" }, body:JSON.stringify({ p_name:nm }) });
+    const d=await r.json().catch(()=>null);
+    if(r.status===404){ try{ localStorage.setItem("mk.name",nm); }catch(e){} return ""; }   // サーバー側の用意がまだ=この端末にだけ保存
+    if(!r.ok) return "保存に失敗しました";
+    if(d&&d.error==="name_taken") return "その名前は使われています";
+    if(d&&d.error) return "保存に失敗しました";
+    try{ localStorage.setItem("mk.name",nm); }catch(e){}
+    return "";
+  }catch(e){ return "通信に失敗しました"; }
+}
+let myName="ゲスト"; try{ myName=localStorage.getItem("mjb.name")||mkName()||MK_GUEST; }catch(e){}
 let nameDecided=false;               // 部屋に入るたび名前を決め直す。決めるまでは「（名前を考え中）」で表示
 let members=[];                      // {id,name,host,t}
 let hostId=null;
@@ -748,10 +782,12 @@ function enterLobby(){
   if(!nameAsked){ nameAsked=true; openNameDlg(); }
 }
 $("nameOv").addEventListener("click",e=>{ if(e.target===$("nameOv")&&nameDecided) $("nameOv").classList.remove("on"); });
-function openNameDlg(){ $("nameIn").value=myName; $("nameErr").textContent=""; $("nameOv").classList.add("on"); setTimeout(()=>$("nameIn").focus(),50); }
-$("nameGo").addEventListener("click",()=>{
+function openNameDlg(){ $("nameIn").value=myName||mkName()||MK_GUEST; $("nameErr").textContent=""; $("nameOv").classList.add("on"); setTimeout(()=>$("nameIn").focus(),50); }
+$("nameGo").addEventListener("click",async()=>{
   const v=($("nameIn").value||"").trim(); if(!v){ $("nameErr").textContent="空欄はご遠慮ください"; return; }
-  myName=v.slice(0,10); nameDecided=true; try{ localStorage.setItem("mjb.name",myName); }catch(e){} playSelect(); $("nameOv").classList.remove("on");
+  const err=await mkSetName(v);   // 名前はサイトで1つ(ログイン中はアカウント名も変わる)
+  if(err){ $("nameErr").textContent=err; return; }
+  myName=[...v].slice(0,16).join(""); nameDecided=true; try{ localStorage.setItem("mjb.name",myName); }catch(e){} playSelect(); $("nameOv").classList.remove("on");
   if(ch){ try{ ch.track(myPresence()); }catch(e){} } if(!online||!members.length){ members=[{id:myId,name:myName,host:true,t:joinT}]; } renderMembers();
 });
 $("nameIn").addEventListener("keydown",e=>{ if(e.key==="Enter") $("nameGo").click(); });

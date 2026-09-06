@@ -464,7 +464,7 @@
 <div class="overlay" id="nameOv">
   <div class="r-card">
     <div class="r-title" style="font-size:22px;">名前を考えよう</div>
-    <input class="code-input" id="nameInput" maxlength="8" placeholder="なまえ" autocomplete="off"
+    <input class="code-input" id="nameInput" maxlength="16" placeholder="なまえ" autocomplete="off"
       style="width:min(70vw,240px); letter-spacing:.04em; font-size:17px;">
     <div class="note" id="nameErr" style="display:none; color:var(--red); opacity:1;"></div>
     <button class="close" id="nameGo">決定</button>
@@ -1920,8 +1920,42 @@ function inviteText(c){   // 招待メッセージ(2026-08-05共通テンプレ�
 let sb=null;
 function sbClient(){ if(!sb) sb=window.supabase.createClient(SB_URL, SB_KEY); return sb; }
 let code="", isHost=false, hostId=null, joinWatch=0, hbIv=0, lastPh="", nameAsked=false;
-try{ myName=(localStorage.getItem("ck.name")||"").slice(0,8); }catch(e){}
-function sharedName(n){ try{ return [...((localStorage.getItem("mk.name")||"").trim())].slice(0,n||10).join(""); }catch(e){ return ""; } }   // ハブのアカウント名=各ゲームの初期名(2026-09-05)
+try{ myName=(localStorage.getItem("ck.name")||mkName()||"").slice(0,16); }catch(e){}
+/* ===== サイト共通の名前(2026-09-06) =====
+   名前はハブのアカウントが持つ(サイトで1つ・16文字・重複不可)。どこから変えても全ゲームに反映される。
+   アカウントが無い人は「ゲスト」(この端末だけの名前として自由に変えられる) */
+const MK_GUEST="ゲスト";
+function mkSes(){ try{ return JSON.parse(localStorage.getItem("mk.acct")||"null"); }catch(e){ return null; } }
+function mkIn(){ return !!mkSes(); }
+function mkName(){ try{ return (localStorage.getItem("mk.name")||"").trim(); }catch(e){ return ""; } }
+async function mkToken(){
+  const s=mkSes(); if(!s) return null;
+  if(s.at && s.exp*1000 > Date.now()+60000) return s.at;
+  if(!s.rt) return null;
+  try{
+    const r=await fetch(SB_URL+"/auth/v1/token?grant_type=refresh_token",{ method:"POST", headers:{ apikey:SB_KEY, "Content-Type":"application/json" }, body:JSON.stringify({ refresh_token:s.rt }) });
+    const d=await r.json(); if(!r.ok||!d.access_token){ try{ localStorage.removeItem("mk.acct"); }catch(e){} return null; }
+    const ns={ at:d.access_token, rt:d.refresh_token||s.rt, exp:Math.floor(Date.now()/1000)+((d.expires_in|0)||3600)-60, email:s.email };
+    try{ localStorage.setItem("mk.acct",JSON.stringify(ns)); }catch(e){}
+    return ns.at;
+  }catch(e){ return null; }
+}
+async function mkSetName(nm){   // 戻り値: ""=成功 / 表示するエラー文。未ログインならこの端末だけに保存
+  nm=[...((nm||"").trim())].slice(0,16).join("");
+  if(!nm) return "名前を入力してください";
+  const at=await mkToken();
+  if(!at){ try{ localStorage.setItem("mk.name",nm); }catch(e){} return ""; }
+  try{
+    const r=await fetch(SB_URL+"/rest/v1/rpc/set_name",{ method:"POST", headers:{ apikey:SB_KEY, Authorization:"Bearer "+at, "Content-Type":"application/json" }, body:JSON.stringify({ p_name:nm }) });
+    const d=await r.json().catch(()=>null);
+    if(r.status===404){ try{ localStorage.setItem("mk.name",nm); }catch(e){} return ""; }   // サーバー側の用意がまだ=この端末にだけ保存
+    if(!r.ok) return "保存に失敗しました";
+    if(d&&d.error==="name_taken") return "その名前は使われています";
+    if(d&&d.error) return "保存に失敗しました";
+    try{ localStorage.setItem("mk.name",nm); }catch(e){}
+    return "";
+  }catch(e){ return "通信に失敗しました"; }
+}
 const UNDEF_NM="（名前を考え中）";
 function nmOf(p){ return (p&&p.n)?p.n:UNDEF_NM; }
 function byId(id){ return players.find(p=>p.id===id); }
@@ -1929,21 +1963,23 @@ const roomArea=()=>$("roomArea");
 
 /* --- 名前 --- */
 function setMyName(n){
-  myName=String(n||"").slice(0,8);
+  myName=[...String(n||"")].slice(0,16).join("");
   try{ localStorage.setItem("ck.name", myName); }catch(e){}
   if(!online) return;
   if(isHost){ const me=byId(myId); if(me){ me.n=myName; renderLobby(); sendSnap(); } }
   else{ try{ ch.send({type:"broadcast",event:"act",payload:{t:"rename",from:myId,n:myName}}); }catch(e){} }
 }
 function openNameOv(){
-  const i=$("nameInput"); i.value=myName||sharedName(8)||"なまえ";
+  const i=$("nameInput"); i.value=myName||mkName()||MK_GUEST;
   $("nameErr").style.display="none";
   $("nameOv").classList.add("on");
   setTimeout(()=>{ i.focus(); i.select(); },60);
 }
-$("nameGo").addEventListener("click",()=>{
+$("nameGo").addEventListener("click",async()=>{
   ensureAudio(); const v=$("nameInput").value.trim();
   if(!v){ $("nameErr").textContent="空欄はご遠慮ください"; $("nameErr").style.display="block"; return; }
+  const err=await mkSetName(v);   // 名前はサイトで1つ(ログイン中はアカウント名も変わる)
+  if(err){ $("nameErr").textContent=err; $("nameErr").style.display="block"; return; }
   playSelect(); setMyName(v); $("nameOv").classList.remove("on");
 });
 $("nameInput").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing) $("nameGo").click(); });

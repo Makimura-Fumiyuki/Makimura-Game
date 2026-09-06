@@ -507,7 +507,7 @@
         <div class="c-body">
           <div class="c-name">牧村たちのつぶやき</div>
           <div class="c-desc">
-            読んでください
+            ただの読み物
           </div>
           <div class="c-tags">
             <span class="tag">ひまつぶし</span><span class="tag">吐露</span><span class="tag">本棚</span>
@@ -1385,12 +1385,15 @@
     }
     function jwtSub(at){ try{ const p=JSON.parse(atob(at.split(".")[1].replace(/-/g,"+").replace(/_/g,"/"))); return p.sub||""; }catch(e){ return ""; } }
     async function saveAcctName(nm){   // アカウント名を保存(各ゲームの初期名になる)
-      nm=[...(nm||"").trim()].slice(0,10).join("");
+      nm=[...(nm||"").trim()].slice(0,16).join("");
       const at=await token(); if(!at) return "ログインしていません";
-      const sub=jwtSub(at); if(!sub) return "保存に失敗しました";
-      const r=await fetch(SB_URL+"/rest/v1/acct?user_id=eq."+sub,{ method:"PATCH", headers:{ apikey:SB_KEY, Authorization:"Bearer "+at, "Content-Type":"application/json", Prefer:"return=minimal" }, body:JSON.stringify({ acct_name:nm||null }) });
+      if(!nm) return "名前を入力してください";
+      const r=await fetch(SB_URL+"/rest/v1/rpc/set_name",{ method:"POST", headers:{ apikey:SB_KEY, Authorization:"Bearer "+at, "Content-Type":"application/json" }, body:JSON.stringify({ p_name:nm }) });   // 重複チェック+ノミのみ/doxの記録の名前も一緒に変える
+      const d=await r.json().catch(()=>null);
       if(!r.ok) return "保存に失敗しました（"+r.status+"）";
-      try{ if(nm) localStorage.setItem("mk.name",nm); else localStorage.removeItem("mk.name"); }catch(e){}
+      if(d&&d.error==="name_taken") return "その名前は使われています";
+      if(d&&d.error) return "保存に失敗しました";
+      try{ localStorage.setItem("mk.name",nm); }catch(e){}
       return "";
     }
     const EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg>';
@@ -1413,7 +1416,7 @@
       const s=ses();
       if(s){
         card.innerHTML='<h2>アカウント</h2><p>ログイン中：<b id="acctEmail"></b><br>この端末の記録はアカウントに保存されます。他の端末に同じメールアドレスでログインすれば、記録を引き継げます</p>'
-          +'<label for="acctName">アカウント名</label><input id="acctName" maxlength="10" placeholder="アカウント名">'
+          +'<label for="acctName">なまえ（ゲームで使われます）</label><input id="acctName" maxlength="16" placeholder="なまえ（16文字まで）">'
           +'<div class="acct-msg'+(ok?" ok":"")+'" id="acctMsg"></div><div class="acct-row"><button class="acct-btn" id="acctSave">名前を保存</button><button class="acct-btn warn" id="acctOut">ログアウト</button></div><button class="acct-close" id="acctX">とじる</button>';
         card.querySelector("#acctEmail").textContent=s.email||"";
         card.querySelector("#acctName").value=lsGet("mk.name");
@@ -1430,8 +1433,8 @@
           view(back?"ログアウトしました（この端末は、ログインする前の記録に戻りました）":"ログアウトしました（この端末の記録はそのまま残ります）",true);
         };
       }else{
-        card.innerHTML='<h2>アカウント</h2><p>アカウントを登録して頂くことで『ノミのみ』などの記録を、他の端末へ引き継げます<br>※アカウントを登録しなくても、普通に遊べます</p>'
-          +'<input id="acctName" maxlength="10" placeholder="アカウント名">'
+        card.innerHTML='<h2>アカウント</h2><p>アカウントを登録して頂くことで『ノミのみ』などの記録を、他の端末へ引き継げます<br>※オンラインランキングと生き物図鑑には、アカウントの登録が必要です<br>※登録しなくても、ゲームは普通に遊べます</p>'
+          +'<input id="acctName" maxlength="16" placeholder="なまえ（16文字まで）">'
           +'<input id="acctMail" type="email" placeholder="メールアドレス" autocomplete="email">'
           +'<div class="acct-pw"><input id="acctPw" type="password" placeholder="パスワード（6文字以上）" autocomplete="current-password"><button type="button" class="acct-eye" id="acctEye" aria-label="押している間だけパスワードを表示">'+EYE+'</button></div>'
           +'<div class="acct-msg'+(ok?" ok":"")+'" id="acctMsg"></div><div class="acct-row"><button class="acct-btn" id="acctIn">ログイン</button><button class="acct-btn sub" id="acctUp">新規登録</button></div><button class="acct-close" id="acctX">とじる</button>';

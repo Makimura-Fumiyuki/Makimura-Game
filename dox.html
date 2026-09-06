@@ -1239,8 +1239,41 @@
       try{ localStorage.setItem("dox.epoch",ep); }catch(e){}
     }catch(e){}
   })();
-  function playerName(){ try{ return (localStorage.getItem("dox.name")||"").trim(); }catch(e){ return ""; } }
-  function sharedName(n){ try{ return [...((localStorage.getItem("mk.name")||"").trim())].slice(0,n||10).join(""); }catch(e){ return ""; } }   // ハブのアカウント名=各ゲームの初期名(2026-09-05)
+  /* ===== サイト共通の名前(2026-09-06) =====
+     名前はハブのアカウントが持つ(サイトで1つ・16文字・重複不可)。どこから変えても全ゲームに反映される。
+     アカウントが無い人は「ゲスト」= オンラインランキングには載らない */
+  const MK_GUEST="ゲスト";
+  function mkSes(){ try{ return JSON.parse(localStorage.getItem("mk.acct")||"null"); }catch(e){ return null; } }
+  function mkIn(){ return !!mkSes(); }
+  function mkName(){ try{ return (localStorage.getItem("mk.name")||"").trim(); }catch(e){ return ""; } }
+  async function mkToken(){
+    const s=mkSes(); if(!s) return null;
+    if(s.at && s.exp*1000 > Date.now()+60000) return s.at;
+    if(!s.rt) return null;
+    try{
+      const r=await fetch(SB_URL+"/auth/v1/token?grant_type=refresh_token",{ method:"POST", headers:{ apikey:SB_KEY, "Content-Type":"application/json" }, body:JSON.stringify({ refresh_token:s.rt }) });
+      const d=await r.json(); if(!r.ok||!d.access_token){ try{ localStorage.removeItem("mk.acct"); }catch(e){} return null; }
+      const ns={ at:d.access_token, rt:d.refresh_token||s.rt, exp:Math.floor(Date.now()/1000)+((d.expires_in|0)||3600)-60, email:s.email };
+      try{ localStorage.setItem("mk.acct",JSON.stringify(ns)); }catch(e){}
+      return ns.at;
+    }catch(e){ return null; }
+  }
+  async function mkSetName(nm){   // 戻り値: ""=成功 / 表示するエラー文
+    nm=[...((nm||"").trim())].slice(0,16).join("");
+    if(!nm) return "名前を入力してください";
+    const at=await mkToken(); if(!at) return "ハブでアカウントを登録すると名前を決められます";
+    try{
+      const r=await fetch(SB_URL+"/rest/v1/rpc/set_name",{ method:"POST", headers:{ apikey:SB_KEY, Authorization:"Bearer "+at, "Content-Type":"application/json" }, body:JSON.stringify({ p_name:nm }) });
+      const d=await r.json().catch(()=>null);
+      if(r.status===404){ try{ localStorage.setItem("mk.name",nm); }catch(e){} return ""; }   // サーバー側の用意がまだ=この端末にだけ保存
+      if(!r.ok) return "保存に失敗しました";
+      if(d&&d.error==="name_taken") return "その名前は使われています";
+      if(d&&d.error) return "保存に失敗しました";
+      try{ localStorage.setItem("mk.name",nm); }catch(e){}
+      return "";
+    }catch(e){ return "通信に失敗しました"; }
+  }
+  function playerName(){ return mkIn()? mkName() : ""; }   // アカウント名がそのままランキング名。未ログイン=ランキングに載らない
   function nameHistory(){ try{ return JSON.parse(localStorage.getItem("dox.names")||"[]"); }catch(e){ return []; } }
   function addNameHistory(n){ n=(n||"").trim(); if(!n) return; try{ const h=nameHistory(); if(!h.includes(n)){ h.push(n); localStorage.setItem("dox.names", JSON.stringify(h)); } }catch(e){} }
   function setPlayerName(n){ const v=[...(n||"")].slice(0,10).join("").trim(); try{ localStorage.setItem("dox.name", v); }catch(e){} addNameHistory(v); }
@@ -1313,7 +1346,7 @@
   let nameModalOpen=false, nameCb=null, nameRequired=false;
   function openNameModal(opts){
     opts=opts||{}; nameCb=opts.onDone||null; nameRequired=!!opts.required;
-    nameInput.value = playerName()||sharedName();   // 未登録ならハブのアカウント名を初期値に
+    nameInput.value = mkName();
     if(nmErr) nmErr.classList.remove("show");
     nameModal.classList.add("show"); nameModalOpen=true;
     try{ ensureAudio(); playConfirm(); }catch(e){}     // same open sound as その他
@@ -1328,14 +1361,13 @@
   function showNameErr(msg){ if(nmErr){ if(msg) nmErr.textContent=msg; nmErr.classList.add("show"); } }
   function clearNameErr(){ if(nmErr) nmErr.classList.remove("show"); }
   async function confirmName(){
-    const v=(nameInput.value||"").trim().slice(0,10);
-    const oldName=playerName();
-    if(nameRequired && !v){ showNameErr(I18N[uiLang].nameNeeded); return; }   // name is mandatory here → don't close while empty
-    if(v && v!==oldName && !nameHistory().includes(v)){   // a name I've never used → it must be free
-      if(await sbNameExists(v)){ showNameErr(I18N[uiLang].nameTaken); return; }       // taken by someone else → keep the modal open
+    const v=[...((nameInput.value||"").trim())].slice(0,16).join("");
+    if(!mkIn()){ showNameErr("ゲーム集のトップでアカウントを登録してください"); return; }   // ランキングに載るにはアカウントが必要
+    if(v && v!==mkName()){
+      const err=await mkSetName(v);   // サイト共通の名前を変更(doxのランキング名も一緒に変わる)
+      if(err){ showNameErr(err); return; }
     }
     clearNameErr();
-    if(v){ if(oldName && oldName!==v) sbRename(oldName, v); setPlayerName(v); }   // save + rename my ranking records to the new name
     const cb=closeNameModal();
     updateNameHud();                                   // refresh the top-left hint (登録↔変更)
     if(cb){ try{ cb(v); }catch(e){} }
@@ -1351,9 +1383,9 @@
   const hubLink=document.getElementById("hubLink");
   function updateNameHud(){
     if(hubLink) hubLink.classList.toggle("show", scene==="title"||scene==="over");   // ゲーム集へ: プレイ中以外は常に出す(名前登録の有無は問わない)
-    if(!playerInfo) return; const show=(scene==="title"||scene==="over") && !!playerName(); playerInfo.classList.toggle("show", show);   // only shown once a name exists (nothing before the first score)
-    if(show && piName) piName.textContent = playerName(); }
-  if(playerInfo) playerInfo.addEventListener("click", ()=>{ if(!playerName()) return; ensureAudio(); openNameModal({ onDone:updateNameHud }); });   // whole top-left area (Esc icon + name) is tappable; no pre-play registration
+    if(!playerInfo) return; const show=(scene==="title"||scene==="over"); playerInfo.classList.toggle("show", show);   // 常に出す(未登録は「ゲスト」)
+    if(show && piName) piName.textContent = playerName()||MK_GUEST; }
+  if(playerInfo) playerInfo.addEventListener("click", ()=>{ ensureAudio(); openNameModal({ onDone:updateNameHud }); });   // whole top-left area (Esc icon + name) is tappable; no pre-play registration
 
   // ----- ranking screen -----
   const RANK_ORDER=["score","speed","endless"];
@@ -2381,7 +2413,7 @@
       const prevBest = loadBest(gameMode)[0] || 0;   // capture BEFORE recordScore
       recordScore(gameMode, score); renderBest(gameMode); bestPos.classList.add("show");   // save + show BEST 3
       // online ranking: submit ONLY a new personal best (so each player contributes just their best, per mode)
-      if(score>0 && (acRead!==false || score>prevBest)){ const gm=gameMode, gs=score, sn={ run:runId, log:runLog.slice(), p:runStartP, best:score>prevBest }; if(playerName()) sbSubmit(gm, gs, sn); else if(score>prevBest) openNameModal({ required:true, onDone:()=>sbSubmit(gm, gs, sn) }); }   // 新方式=毎プレイ送る(サーバーがベストを保持)。従来方式=自己ベスト更新時だけ   // ranking-in with no name → name is required
+      if(score>0 && (acRead!==false || score>prevBest) && playerName()){ const gm=gameMode, gs=score, sn={ run:runId, log:runLog.slice(), p:runStartP, best:score>prevBest }; sbSubmit(gm, gs, sn); }   // 名前が無い(アカウント未登録)=オンラインには送らない   // 新方式=毎プレイ送る(サーバーがベストを保持)。従来方式=自己ベスト更新時だけ   // ranking-in with no name → name is required
       if(newBest) scoreCrown.classList.add("show"); else scoreCrown.classList.remove("show");   // crown only on a record
       if(newBest && miconEl.down) miconEl.down.classList.add("hilite");   // draw attention to その他 (ranking) after a new best — cleared when その他 opens
       if(newBest && menuDownHint){ menuDownHint.classList.remove("dark"); menuDownHint.classList.add("show"); }   // ▼ on the centre box (white — result cursor starts centred): recommend pressing ↓
