@@ -546,7 +546,9 @@ let seekerWin=false, endReason="";
 let hubCands=null;                   // ハブから届く「文字の行」候補(CPU用)
 
 const isSeeker=()=>seekerId===myId;
-const amHider=()=>!online||seekerId!==myId;   // ひとりで試す(オフライン)は化ける側と探す側を兼ねる
+let soloMode=false;                  // 1人でおためし(CPU相手・部屋につないだまま)=化ける側と探す側を兼ねる
+const amHider=()=>soloMode||!online||seekerId!==myId;
+const soloOK=()=>isHost()&&members.length<2&&stageKind==="hub"&&cpuN>=1;   // ハブのステージでCPUが1人以上なら、1人でも始められる
 function showScene(id){ document.querySelectorAll(".scene").forEach(s=>s.classList.toggle("on",s.id===id)); $("stampBar").classList.toggle("on", id==="lobbyScene"||id==="gameScene"); $("memBtn").style.display=(id==="lobbyScene"||id==="gameScene")?"":"none"; }
 /* 自前プルダウン(項目ごとにフォント/太さを当てて表示。ネイティブselectはmacOS等で項目の書体を変えられない) */
 const DDS={};
@@ -767,8 +769,9 @@ function renderMembers(){
   list.querySelectorAll(".give").forEach(b=>b.addEventListener("click",()=>{ playSelect(); transferHost(b.dataset.id); }));
   list.querySelectorAll(".kick").forEach(b=>b.addEventListener("click",()=>{ playSelect(); kickMember(b.dataset.id); }));
   $("ruleFrame").classList.toggle("locked",!isHost()); $("ruleFrame2").classList.toggle("locked",!isHost()); $("ruleReset").style.display=isHost()?"":"none"; $("ruleNote").style.display=isHost()?"none":"";
-  const n=arr.length; $("startBtn").disabled=!(isHost()&&n>=2&&(stageKind!=="photo"||photoImg));
-  $("startNote").textContent=isHost()?(n<2?"2人以上で始められます（"+n+"/"+MAX_PLAYERS+"）":"") : "オーナーが始めるのを待っています";
+  const n=arr.length; const so=soloOK();
+  $("startBtn").disabled=!(isHost()&&((n>=2&&(stageKind!=="photo"||photoImg))||so)); $("startBtn").textContent=so?"1人でおためし":"はじめる";
+  $("startNote").textContent=isHost()?(so?"CPUが化けるので、1人でも試せます（あなたがさがす人）":(n<2?"2人以上で始められます（"+n+"/"+MAX_PLAYERS+"）":"")) : "オーナーが始めるのを待っています";
   $("debugFrame").classList.toggle("locked",!isHost());
 }
 function renderMemberOv(){
@@ -791,8 +794,8 @@ function transferHost(id){ if(!isHost()||!members.some(m=>m.id===id)) return; ho
 function kickMember(id){ if(!isHost()||id===myId) return; send("kick",{to:id}); members=members.filter(m=>m.id!==id); renderMembers(); renderMemberOv(); }
 $("copyCode").addEventListener("click",async()=>{ playSelect(); try{ await navigator.clipboard.writeText(inviteText(roomCode)); toast("招待メッセージをコピーした"); }catch(e){ toast("コピーできませんでした"); } });
 $("lobbyBack").addEventListener("click",()=>{ playSelect(); goTitle(); });
-function goTitle(){ stopTimer(); leaveChannel(); phase="title"; clearStage(); $("resultOv").classList.remove("on"); $("nameOv").classList.remove("on"); members=[]; hostId=null; showScene("titleScene"); }
-$("startBtn").addEventListener("click",()=>{ if(!isHost()) return; const n=members.length; if(n<2){ toast("2人以上で始められます"); return; } playConfirm(); hostStartGame(); });
+function goTitle(){ stopTimer(); leaveChannel(); phase="title"; soloMode=false; clearStage(); $("resultOv").classList.remove("on"); $("nameOv").classList.remove("on"); members=[]; hostId=null; showScene("titleScene"); }
+$("startBtn").addEventListener("click",()=>{ if(!isHost()) return; const n=members.length; if(n<2){ if(soloOK()){ playConfirm(); startSolo(); } else toast("2人以上で始められます"); return; } playConfirm(); hostStartGame(); });
 
 /* ルール(オーナーだけ) */
 const fmtSec=s=>String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
@@ -832,7 +835,7 @@ $("lobbyScene").addEventListener("dragleave",e=>{ dragDepth=Math.max(0,dragDepth
 window.addEventListener("dragend",()=>{ dragDepth=0; $("dropOv").classList.remove("on"); });
 $("lobbyScene").addEventListener("drop",e=>{ e.preventDefault(); dragDepth=0; $("dropOv").classList.remove("on"); if(!isHost()){ toast("ステージはオーナーだけが変えられます"); return; } const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f){ playSelect(); loadPhotoFile(f); } });
 $("photoNote").addEventListener("click",()=>{ if(isHost()) $("photoFile").click(); });
-[["cpuM",-1],["cpuP",1]].forEach(([id,d])=>$(id).addEventListener("click",()=>{ if(!isHost()){ toast("おまけ機能はオーナーだけが変えられます"); return; } if(stageKind==="photo"){ toast("ステージ「牧村が作ったゲーム集」の時だけ使えます"); return; } playSelect(); cpuN=Math.max(0,Math.min(10,cpuN+d)); renderStageSel(); }));
+[["cpuM",-1],["cpuP",1]].forEach(([id,d])=>$(id).addEventListener("click",()=>{ if(!isHost()){ toast("おまけ機能はオーナーだけが変えられます"); return; } if(stageKind==="photo"){ toast("ステージ「牧村が作ったゲーム集」の時だけ使えます"); return; } playSelect(); cpuN=Math.max(0,Math.min(10,cpuN+d)); renderStageSel(); renderMembers(); }));
 
 /* ================= ステージ ================= */
 function clearStage(){
@@ -1055,12 +1058,12 @@ function prepareGameUI(){
   $("voteWho").classList.remove("on"); $("resultOv").classList.remove("on","peek");
   $("toolWrap").classList.remove("closed"); renderToolToggle();
 }
-function startSolo(){   // デバッグ: 自分が化けて自分で探す(CPUつき)
-  online=false; members=[{id:myId,name:myName,host:true,t:joinT}]; hostId=myId; seekerId=myId; if(!colors[myId]) colors[myId]=COLORS[0];
+function startSolo(){   // 1人でおためし: 部屋につないだまま、自分が化けて自分で探す(CPUつき)
+  soloMode=true; if(!members.length) members=[{id:myId,name:myName,host:true,t:joinT}]; hostId=myId; seekerId=myId; if(!colors[myId]) colors[myId]=COLORS[0];
   beginGameAsHost(true);
 }
 function hostStartGame(){
-  if(!isHost()) return;
+  if(!isHost()) return; soloMode=false;
   seekerId=(rules.seeker!=="random"&&members.some(m=>m.id===rules.seeker))?rules.seeker:members[Math.floor(Math.random()*members.length)].id;
   beginGameAsHost(false);
 }
@@ -1213,7 +1216,7 @@ $("hideDone").addEventListener("click",()=>{
   $("hideDone").classList.toggle("done",on); $("hideDone").textContent=on?"やっぱ無し":"準備OK";
   clearTimeout(updT); act("ready",{on, h:hiderPack(mine)});
 });
-function hiderMembers(){ return (members.length?members:[{id:myId}]).filter(m=>m.id!==seekerId||!online); }
+function hiderMembers(){ return (members.length?members:[{id:myId}]).filter(m=>m.id!==seekerId||!online||soloMode); }
 function checkAllReady(){ if(phase!=="hide"||!isHost()) return; const hs=hiderMembers(); if(hs.length&&hs.every(m=>readyIds.has(m.id))) setTimeout(finishHide,350); }
 function finishHide(){
   if(phase!=="hide"||!isHost()) return;
@@ -1370,7 +1373,7 @@ let peekDown=null;   // のぞき見中: 画面のどこかを「タップ」(�
 document.addEventListener("pointerdown",e=>{ if($("resultOv").classList.contains("peek")) peekDown={x:e.clientX,y:e.clientY}; else peekDown=null; },true);
 document.addEventListener("pointerup",e=>{ if(!peekDown) return; const d=Math.hypot(e.clientX-peekDown.x,e.clientY-peekDown.y); peekDown=null; if(d<8&&$("resultOv").classList.contains("peek")){ playSelect(); $("resultOv").classList.remove("peek"); } },true);
 $("resLobby").addEventListener("click",()=>{ playSelect(); $("resultOv").classList.remove("on"); if(online){ hostToLobby(); return; } stopTimer(); clearStage(); phase="lobby"; showScene("lobbyScene"); renderMembers(); });
-function hostToLobby(){ if(!isHost()) return; stopTimer(); clearStage(); phase="lobby"; seekerId=null; showScene("lobbyScene"); $("resultOv").classList.remove("on"); renderMembers(); sendSnap(); }
+function hostToLobby(){ if(!isHost()) return; stopTimer(); clearStage(); phase="lobby"; seekerId=null; soloMode=false; showScene("lobbyScene"); $("resultOv").classList.remove("on"); renderMembers(); sendSnap(); }
 
 /* ================= スタンプ ================= */
 const STAMP_SVGS=['😭','😍','🤣'];
