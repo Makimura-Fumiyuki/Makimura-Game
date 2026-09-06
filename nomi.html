@@ -125,8 +125,8 @@
     background:none; border:none; border-bottom:1px solid rgba(255,255,255,.6); border-radius:0; padding:10px 6px 3px; outline:none; caret-color:#fff; }   /* 下線は名前のすぐ下(かなり近く) */
   .n-input::placeholder{ color:rgba(255,255,255,.4); }
   .n-input:focus{ border-bottom-color:#fff; }
-  .n-guide{ margin-top:14px; font-size:13px; font-weight:500; line-height:1.9; color:rgba(255,255,255,.9); text-align:center; }
-  .n-err{ margin-top:8px; font-size:12.5px; font-weight:700; letter-spacing:.06em; color:#ffb1a5; opacity:0; transition:opacity .5s linear; }
+  .n-guide{ margin-top:14px; font-size:clamp(9px,2.6vw,13px); font-weight:500; line-height:1.9; color:rgba(255,255,255,.9); text-align:center; white-space:nowrap; }   /* 案内文は1行 */
+  .n-err{ margin-top:8px; white-space:nowrap; font-size:clamp(8.5px,2.5vw,12.5px); font-weight:700; letter-spacing:.06em; color:#ffb1a5; opacity:0; transition:opacity .5s linear; }
   .n-err.show{ opacity:1; transition:none; }   /* 出る時はパッと・消える時(3秒後)はフェードアウト */
   /* 左上の×(ランキングの×と同仕様)=名前を更新せずに閉じる(初回の必須登録時は非表示) */
   #nameX{ position:absolute; top:calc(16px + env(safe-area-inset-top)); left:14px; width:40px; height:40px; opacity:.55;

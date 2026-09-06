@@ -475,7 +475,8 @@
   .nm-enter{ flex:none; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#fff; transition:transform .06s linear; }
   .nm-enter .key{ border:3px solid currentColor; border-radius:10px; padding:9px 24px; font-size:38px; font-weight:800; letter-spacing:1px; }
   .nm-enter:active{ transform:translateY(2px); }
-  .nm-err{ min-height:38px; font-size:30px; font-weight:800; color:#ff6a6a; letter-spacing:1px; opacity:0; transition:opacity .12s linear; }
+  .nm-err{ min-height:38px; font-size:30px; font-weight:800; color:#ff6a6a; letter-spacing:1px; opacity:0; transition:opacity .12s linear; white-space:nowrap; }
+  .nm-err.long{ font-size:15px; letter-spacing:0; }   /* 長い案内文は小さくして1行に収める */
   .nm-err.show{ opacity:1; }
   /* fresh input: a plain wrapper draws the box; the input itself is fully transparent & borderless (no native artifacts) */
   .nm-field{ width:660px; height:112px; box-sizing:border-box; background:#ffffff; border:0;   /* pure white box, no outline */
@@ -1359,7 +1360,7 @@
   const nmEnter=document.getElementById("nmEnter");
   if(nmEnter) nmEnter.addEventListener("click",()=>{ if(!nameModalOpen) return; ensureAudio(); confirmName(); });   // tap the enter key to close/confirm
   const nmErr=document.getElementById("nmErr");
-  function showNameErr(msg){ if(nmErr){ if(msg) nmErr.textContent=msg; nmErr.classList.add("show"); } }
+  function showNameErr(msg){ if(nmErr){ if(msg) nmErr.textContent=msg; nmErr.classList.toggle("long", [...(nmErr.textContent||"")].length>14); nmErr.classList.add("show"); } }
   function clearNameErr(){ if(nmErr) nmErr.classList.remove("show"); }
   async function confirmName(){
     const v=[...((nameInput.value||"").trim())].slice(0,16).join("");
