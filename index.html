@@ -76,6 +76,13 @@
   .acct-card p{ font-size:12.5px; line-height:1.7; color:rgba(32,33,31,.7); }
   .acct-card input{ width:100%; height:44px; padding:0 12px; border-radius:10px; border:1.6px solid rgba(32,33,31,.25); font-family:inherit; font-size:15px; }
   .acct-card input:focus{ outline:none; border-color:var(--teal); }
+  .acct-card label{ font-size:12px; font-weight:700; color:rgba(32,33,31,.55); margin-bottom:-6px; }
+  .acct-pw{ position:relative; }
+  .acct-pw input{ padding-right:44px; }
+  .acct-eye{ position:absolute; right:5px; top:50%; transform:translateY(-50%); width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center;
+    background:none; border:none; cursor:pointer; color:rgba(32,33,31,.45); padding:0; }
+  .acct-eye svg{ width:19px; height:19px; }
+  .acct-eye.on{ color:var(--teal); }
   .acct-row{ display:flex; gap:8px; }
   .acct-btn{ flex:1; height:42px; border:none; border-radius:999px; font-family:inherit; font-size:14px; font-weight:800; cursor:pointer; background:var(--teal); color:#fff; }
   .acct-btn.sub{ background:#fff; color:var(--teal); border:1.6px solid rgba(0,105,135,.5); }
@@ -1344,27 +1351,57 @@
     }
     async function syncAcct(at){   // ログイン直後: 行があれば取り込む・無ければこの端末のIDで作る
       const H={ apikey:SB_KEY, Authorization:"Bearer "+at, "Content-Type":"application/json" };
-      const r=await fetch(SB_URL+"/rest/v1/acct?select=nomi_uid,dox_uid,nomi_name,dox_name",{ headers:H });
+      const r=await fetch(SB_URL+"/rest/v1/acct?select=nomi_uid,dox_uid,nomi_name,dox_name,acct_name",{ headers:H });
       if(!r.ok) throw new Error("acct "+r.status);
       const rows=await r.json();
-      if(rows&&rows[0]){ const changed=adopt(rows[0]); return changed?"このアカウントの記録をこの端末に引き継ぎました":"この端末はすでにこのアカウントの記録です"; }
-      const body=deviceIds();
+      if(rows&&rows[0]){ const changed=adopt(rows[0]); if(rows[0].acct_name) lsSet("mk.name",rows[0].acct_name); return changed?"このアカウントの記録をこの端末に引き継ぎました":"この端末はすでにこのアカウントの記録です"; }
+      const body=deviceIds(); const an=lsGet("mk.name"); if(an) body.acct_name=an;
       const r2=await fetch(SB_URL+"/rest/v1/acct",{ method:"POST", headers:{ ...H, Prefer:"return=minimal" }, body:JSON.stringify(body) });
       if(!r2.ok) throw new Error("acct-create "+r2.status);
       return "アカウントを作り、この端末の記録を登録しました";
     }
-    function renderBtn(){ const s=ses(); btnTx.textContent=s&&s.email ? s.email : "アカウント"; }
+    function jwtSub(at){ try{ const p=JSON.parse(atob(at.split(".")[1].replace(/-/g,"+").replace(/_/g,"/"))); return p.sub||""; }catch(e){ return ""; } }
+    async function saveAcctName(nm){   // アカウント名を保存(各ゲームの初期名になる)
+      nm=[...(nm||"").trim()].slice(0,10).join("");
+      const at=await token(); if(!at) return "ログインしていません";
+      const sub=jwtSub(at); if(!sub) return "保存に失敗しました";
+      const r=await fetch(SB_URL+"/rest/v1/acct?user_id=eq."+sub,{ method:"PATCH", headers:{ apikey:SB_KEY, Authorization:"Bearer "+at, "Content-Type":"application/json", Prefer:"return=minimal" }, body:JSON.stringify({ acct_name:nm||null }) });
+      if(!r.ok) return "保存に失敗しました（"+r.status+"）";
+      try{ if(nm) localStorage.setItem("mk.name",nm); else localStorage.removeItem("mk.name"); }catch(e){}
+      return "";
+    }
+    const EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg>';
+    function bindEye(){   // パスワード欄の目: 押している間だけ表示
+      const eye=card.querySelector("#acctEye"), pw=card.querySelector("#acctPw"); if(!eye||!pw) return;
+      const show=e=>{ e.preventDefault(); pw.type="text"; eye.classList.add("on"); };
+      const hide=()=>{ pw.type="password"; eye.classList.remove("on"); };
+      eye.addEventListener("pointerdown",show); ["pointerup","pointercancel","pointerleave"].forEach(ev=>eye.addEventListener(ev,hide));
+      window.addEventListener("pointerup",hide);
+    }
+    function renderBtn(){ const s=ses(); btnTx.textContent=s&&s.email ? (lsGet("mk.name")||s.email) : "アカウント"; }
     function view(msg,ok){
       const s=ses();
       if(s){
-        card.innerHTML='<h2>アカウント</h2><p>ログイン中：<b id="acctEmail"></b><br>この端末は、このアカウントのノミのみ・doxの記録で遊びます。ほかの端末でも同じメールでログインすれば、同じ記録が引き継がれます</p>'
-          +'<div class="acct-msg'+(ok?" ok":"")+'" id="acctMsg"></div><div class="acct-row"><button class="acct-btn warn" id="acctOut">ログアウト</button></div><button class="acct-close" id="acctX">とじる</button>';
+        card.innerHTML='<h2>アカウント</h2><p>ログイン中：<b id="acctEmail"></b><br>この端末は、このアカウントの記録で遊びます。ほかの端末でも同じメールでログインすれば、記録を引き継げます</p>'
+          +'<label for="acctName">アカウント名（ゲームで使う初期の名前）</label><input id="acctName" maxlength="10" placeholder="アカウント名">'
+          +'<div class="acct-msg'+(ok?" ok":"")+'" id="acctMsg"></div><div class="acct-row"><button class="acct-btn" id="acctSave">名前を保存</button><button class="acct-btn warn" id="acctOut">ログアウト</button></div><button class="acct-close" id="acctX">とじる</button>';
         card.querySelector("#acctEmail").textContent=s.email||"";
+        card.querySelector("#acctName").value=lsGet("mk.name");
+        card.querySelector("#acctSave").onclick=async()=>{
+          const m=card.querySelector("#acctMsg"); m.className="acct-msg"; m.textContent="保存中…";
+          const err=await saveAcctName(card.querySelector("#acctName").value);
+          if(err){ m.textContent=err; return; }
+          renderBtn(); m.className="acct-msg ok"; m.textContent="アカウント名を保存しました（各ゲームの初期の名前になります）";
+        };
+        card.querySelector("#acctName").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing) card.querySelector("#acctSave").click(); });
         card.querySelector("#acctOut").onclick=()=>{ try{ localStorage.removeItem(KEY); }catch(e){} renderBtn(); view("ログアウトしました（この端末の記録はそのまま残ります）",true); };
       }else{
-        card.innerHTML='<h2>アカウント</h2><p>メールとパスワードで登録すると、ノミのみ・doxの記録をほかの端末でも引き継げます。アカウントが無くても、いままでどおり遊べます</p>'
-          +'<input id="acctMail" type="email" placeholder="メールアドレス" autocomplete="email"><input id="acctPw" type="password" placeholder="パスワード（6文字以上）" autocomplete="current-password">'
+        card.innerHTML='<h2>アカウント</h2><p>登録、ログインして頂くと『ノミのみ』などの記録を、他の端末へ引き継げます<br>※アカウントを登録しなくても、普通に遊べます</p>'
+          +'<input id="acctName" maxlength="10" placeholder="アカウント名（ゲームで使う初期の名前）">'
+          +'<input id="acctMail" type="email" placeholder="メールアドレス" autocomplete="email">'
+          +'<div class="acct-pw"><input id="acctPw" type="password" placeholder="パスワード（6文字以上）" autocomplete="current-password"><button type="button" class="acct-eye" id="acctEye" aria-label="押している間だけパスワードを表示">'+EYE+'</button></div>'
           +'<div class="acct-msg'+(ok?" ok":"")+'" id="acctMsg"></div><div class="acct-row"><button class="acct-btn" id="acctIn">ログイン</button><button class="acct-btn sub" id="acctUp">新規登録</button></div><button class="acct-close" id="acctX">とじる</button>';
+        card.querySelector("#acctName").value=lsGet("mk.name");
         const go=async(signup)=>{
           const email=(card.querySelector("#acctMail").value||"").trim(), pw=card.querySelector("#acctPw").value||"";
           const m=card.querySelector("#acctMsg"); m.className="acct-msg";
@@ -1375,14 +1412,19 @@
             const r=await fetch(SB_URL+(signup?"/auth/v1/signup":"/auth/v1/token?grant_type=password"),{ method:"POST", headers:{ apikey:SB_KEY, "Content-Type":"application/json" }, body:JSON.stringify({ email, password:pw }) });
             const d=await r.json();
             if(!r.ok){ const em=(d&&(d.msg||d.error_description||d.message))||""; m.textContent= /Invalid login/i.test(em)?"メールかパスワードが違います": /already/i.test(em)?"このメールは登録済みです（ログインしてください）": /Email not confirmed/i.test(em)?"メールの確認がまだです（届いたメールのリンクを押してください）":("失敗しました："+(em||r.status)); return; }
-            if(!d.access_token){ m.className="acct-msg ok"; m.textContent="確認メールを送りました。メールのリンクを押してから「ログイン」してください"; return; }
+            if(!d.access_token){ m.className="acct-msg ok"; m.textContent="確認メールを送りました。迷惑メールも確認して、リンクを押してから「ログイン」してください"; return; }
+            const nm0=[...((card.querySelector("#acctName").value||"").trim())].slice(0,10).join("");
+            if(nm0){ try{ localStorage.setItem("mk.name",nm0); }catch(e){} }
             saveSes(d,email); renderBtn();
             let note=""; try{ note=await syncAcct(d.access_token); }catch(e){ note="ログインしましたが、記録の同期に失敗しました（"+e.message+"）"; }
-            view(note,true);
+            if(nm0 && !lsGet("mk.name")) { try{ localStorage.setItem("mk.name",nm0); }catch(e){} }
+            if(nm0) await saveAcctName(nm0);
+            renderBtn(); view(note,true);
           }catch(e){ m.textContent="通信に失敗しました"; }
         };
         card.querySelector("#acctIn").onclick=()=>go(false); card.querySelector("#acctUp").onclick=()=>go(true);
         card.querySelector("#acctPw").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing) go(false); });
+        bindEye();
       }
       const mm=card.querySelector("#acctMsg"); if(mm&&msg){ mm.textContent=msg; }
       card.querySelector("#acctX").onclick=()=>ov.classList.remove("on");

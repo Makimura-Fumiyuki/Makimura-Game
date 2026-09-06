@@ -1240,6 +1240,7 @@
     }catch(e){}
   })();
   function playerName(){ try{ return (localStorage.getItem("dox.name")||"").trim(); }catch(e){ return ""; } }
+  function sharedName(n){ try{ return [...((localStorage.getItem("mk.name")||"").trim())].slice(0,n||10).join(""); }catch(e){ return ""; } }   // ハブのアカウント名=各ゲームの初期名(2026-09-05)
   function nameHistory(){ try{ return JSON.parse(localStorage.getItem("dox.names")||"[]"); }catch(e){ return []; } }
   function addNameHistory(n){ n=(n||"").trim(); if(!n) return; try{ const h=nameHistory(); if(!h.includes(n)){ h.push(n); localStorage.setItem("dox.names", JSON.stringify(h)); } }catch(e){} }
   function setPlayerName(n){ const v=[...(n||"")].slice(0,10).join("").trim(); try{ localStorage.setItem("dox.name", v); }catch(e){} addNameHistory(v); }
@@ -1312,7 +1313,7 @@
   let nameModalOpen=false, nameCb=null, nameRequired=false;
   function openNameModal(opts){
     opts=opts||{}; nameCb=opts.onDone||null; nameRequired=!!opts.required;
-    nameInput.value = playerName();
+    nameInput.value = playerName()||sharedName();   // 未登録ならハブのアカウント名を初期値に
     if(nmErr) nmErr.classList.remove("show");
     nameModal.classList.add("show"); nameModalOpen=true;
     try{ ensureAudio(); playConfirm(); }catch(e){}     // same open sound as その他

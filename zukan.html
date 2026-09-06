@@ -357,7 +357,8 @@
   function toast(m,ms){ const el=$("toast"); el.textContent=m; el.classList.add("on"); clearTimeout(toastTmr); toastTmr=setTimeout(()=>el.classList.remove("on"), ms||1800); }
   function agreed(){ try{ return localStorage.getItem("zukan.agreed")==="1"; }catch(e){ return false; } }
   function setAgreed(){ try{ localStorage.setItem("zukan.agreed","1"); }catch(e){} }
-  function savedName(){ try{ return localStorage.getItem("zukan.author")||""; }catch(e){ return ""; } }
+  function savedName(){ try{ return localStorage.getItem("zukan.author")||sharedName(16)||""; }catch(e){ return ""; } }
+  function sharedName(n){ try{ return [...((localStorage.getItem("mk.name")||"").trim())].slice(0,n||10).join(""); }catch(e){ return ""; } }   // ハブのアカウント名=各ゲームの初期名(2026-09-05)
   function saveName(n){ try{ localStorage.setItem("zukan.author",n); }catch(e){} }
   function fmtDT(s){ if(!s) return ""; const d=new Date(s); if(isNaN(d)) return ""; const p=n=>("0"+n).slice(-2);
     return d.getFullYear()+"/"+p(d.getMonth()+1)+"/"+p(d.getDate())+"　"+p(d.getHours())+":"+p(d.getMinutes()); }   // yyyy/mm/dd hh:mm(間は全角スペースで離す)

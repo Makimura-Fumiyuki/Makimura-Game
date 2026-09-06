@@ -1921,6 +1921,7 @@ let sb=null;
 function sbClient(){ if(!sb) sb=window.supabase.createClient(SB_URL, SB_KEY); return sb; }
 let code="", isHost=false, hostId=null, joinWatch=0, hbIv=0, lastPh="", nameAsked=false;
 try{ myName=(localStorage.getItem("ck.name")||"").slice(0,8); }catch(e){}
+function sharedName(n){ try{ return [...((localStorage.getItem("mk.name")||"").trim())].slice(0,n||10).join(""); }catch(e){ return ""; } }   // ハブのアカウント名=各ゲームの初期名(2026-09-05)
 const UNDEF_NM="（名前を考え中）";
 function nmOf(p){ return (p&&p.n)?p.n:UNDEF_NM; }
 function byId(id){ return players.find(p=>p.id===id); }
@@ -1935,7 +1936,7 @@ function setMyName(n){
   else{ try{ ch.send({type:"broadcast",event:"act",payload:{t:"rename",from:myId,n:myName}}); }catch(e){} }
 }
 function openNameOv(){
-  const i=$("nameInput"); i.value=myName||"なまえ";
+  const i=$("nameInput"); i.value=myName||sharedName(8)||"なまえ";
   $("nameErr").style.display="none";
   $("nameOv").classList.add("on");
   setTimeout(()=>{ i.focus(); i.select(); },60);

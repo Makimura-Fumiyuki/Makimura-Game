@@ -332,6 +332,7 @@ function loadBans(){   // 1セッション1回。失敗しても空のまま(コ
 }
 function nomiBanned(name, mode){ return (name!=null && (NOMI_BAN_NAMES.indexOf(name)>=0 || DYN_BAN_NAMES.indexOf(name)>=0)) || NOMI_BAN_MODES.indexOf(mode)>=0 || DYN_BAN_MODES.indexOf(mode)>=0; }
 function playerName(){ try{ return (localStorage.getItem("nomi.name")||"").trim(); }catch(e){ return ""; } }
+function sharedName(n){ try{ return [...((localStorage.getItem("mk.name")||"").trim())].slice(0,n||10).join(""); }catch(e){ return ""; } }   // ハブのアカウント名=各ゲームの初期名(2026-09-05)
 function setPlayerName(n){ const v=[...(n||"")].slice(0,10).join("").trim(); try{ localStorage.setItem("nomi.name",v); }catch(e){} addNameHistory(v); }
 function nameHistory(){ try{ return JSON.parse(localStorage.getItem("nomi.names")||"[]"); }catch(e){ return []; } }
 function addNameHistory(n){ n=(n||"").trim(); if(!n) return; try{ const h=nameHistory(); if(!h.includes(n)){ h.push(n); localStorage.setItem("nomi.names",JSON.stringify(h)); } }catch(e){} }
@@ -795,7 +796,7 @@ function openNameModal(req){
   nameRequired=!!req;
   $("nameX").style.display=nameRequired?"none":"";   // 初回の必須登録では×を出さない
   nameErr.classList.remove("show");
-  nameInput.value=playerName();
+  nameInput.value=playerName()||sharedName();   // 未登録ならハブのアカウント名を初期値に
   nameOk.disabled=false; nameOk.textContent="決定";
   nameOverlay.classList.add("on"); document.body.classList.add("veil");
   setTimeout(()=>{ try{ nameInput.focus(); nameInput.select(); }catch(e){} },60);

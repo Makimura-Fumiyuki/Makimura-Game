@@ -953,7 +953,8 @@ let penIdx=2;
 const PEN_W=[0.002,0.0035,0.006,0.0105,0.018];   // SIZE比。3(0.006)を中心に変化率一定の等比×1.75=5が3のちょうど3倍
 let online=false, isHost=false, sb=null, ch=null, myId=Math.random().toString(36).slice(2,10);
 let myName="", code="", hostId=null, joinWatch=0, hbIv=0, snapAt=0, snapEl=0, lastPh="";
-try{ myName=(localStorage.getItem("mate.name")||"").slice(0,8); }catch(e){}   // 前回の名前を復元(招待リンクで来た人もロビーで決められる)
+try{ myName=(localStorage.getItem("mate.name")||"").slice(0,8); }catch(e){}
+function sharedName(n){ try{ return [...((localStorage.getItem("mk.name")||"").trim())].slice(0,n||10).join(""); }catch(e){ return ""; } }   // ハブのアカウント名=各ゲームの初期名(2026-09-05)   // 前回の名前を復元(招待リンクで来た人もロビーで決められる)
 let nameAsked=false;   // ロビーに入った時に一度だけ自動で名前を聞く
 let drawBuf=[], drawFlushIv=0, armedRow=null, armedTmr=0, celebTmr=0, lastCele=null, dobonId=null;
 
@@ -1655,7 +1656,7 @@ function setMyName(n){   // なまえを決める(部屋に入ったあとに変
   else{ try{ ch.send({type:"broadcast",event:"act",payload:{t:"rename",from:myId,n:myName}}); }catch(e){} }
 }
 function openNameOv(){
-  const i=$("nameInput"); i.value=myName||"なまえ";   // 初期状態は「なまえ」を入れておく
+  const i=$("nameInput"); i.value=myName||sharedName(8)||"なまえ";   // 初期状態は「なまえ」を入れておく
   $("nameErr").style.display="none";
   $("nameOv").classList.add("on");
   setTimeout(()=>{ i.focus(); i.select(); },60);
