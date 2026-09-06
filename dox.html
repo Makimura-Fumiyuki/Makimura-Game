@@ -1278,9 +1278,11 @@
         const d=await rpc("dox_submit",{ p_uid:doxUid(), p_run:sn.run, p_name:name, p_mode:mode, p_score:sc|0, p_log:sn.log });
         if(d&&d.pid){ myPid=d.pid; try{ localStorage.setItem("dox.pid",myPid); }catch(e){} }
         if(d&&d.error==="name_taken"){ openNameModal({ required:true, onDone:()=>sbSubmit(mode, sc, sn) }); }   // 名前が他人と重なった→別の名前にして同じプレイを送り直す
+        else if(d&&d.error){ console.warn("dox_submit rejected:", d); try{ localStorage.setItem("dox.lastReject", JSON.stringify(d)); }catch(e){} }
       }catch(e){}
       return;
     }
+    if(snap && snap.best===false) return;   // 従来方式は自己ベスト更新時だけ送る
     try{ await sbPost(name, sc, mode); }catch(e){}   // rows pile up per personal best; collapseRows() folds them to one per player on read
   }
   async function sbTop(mode){                   // full history for a mode, newest first (paged 1000/req, capped at 5000 rows)
@@ -2368,7 +2370,7 @@
       const prevBest = loadBest(gameMode)[0] || 0;   // capture BEFORE recordScore
       recordScore(gameMode, score); renderBest(gameMode); bestPos.classList.add("show");   // save + show BEST 3
       // online ranking: submit ONLY a new personal best (so each player contributes just their best, per mode)
-      if(score>0 && score>prevBest){ const gm=gameMode, gs=score, sn={ run:runId, log:runLog.slice(), p:runStartP }; if(playerName()) sbSubmit(gm, gs, sn); else openNameModal({ required:true, onDone:()=>sbSubmit(gm, gs, sn) }); }   // ranking-in with no name → name is required
+      if(score>0 && (acRead!==false || score>prevBest)){ const gm=gameMode, gs=score, sn={ run:runId, log:runLog.slice(), p:runStartP, best:score>prevBest }; if(playerName()) sbSubmit(gm, gs, sn); else if(score>prevBest) openNameModal({ required:true, onDone:()=>sbSubmit(gm, gs, sn) }); }   // 新方式=毎プレイ送る(サーバーがベストを保持)。従来方式=自己ベスト更新時だけ   // ranking-in with no name → name is required
       if(newBest) scoreCrown.classList.add("show"); else scoreCrown.classList.remove("show");   // crown only on a record
       if(newBest && miconEl.down) miconEl.down.classList.add("hilite");   // draw attention to その他 (ranking) after a new best — cleared when その他 opens
       if(newBest && menuDownHint){ menuDownHint.classList.remove("dark"); menuDownHint.classList.add("show"); }   // ▼ on the centre box (white — result cursor starts centred): recommend pressing ↓
