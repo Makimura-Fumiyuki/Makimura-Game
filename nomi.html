@@ -1063,6 +1063,19 @@ $("wMe").addEventListener("click",()=>{
   (async()=>{ const t=await admSharedToken(); if(t){ admToken=t; listView(); } else loginView(); })();   // ハブでログイン済みならパスワード入力を省略
 })();
 
+/* ===== リセット世代(2026-09-05): 運営がランキングを全リセットしたら、端末に残っている数字も消す ===== */
+(async function acEpoch(){
+  try{
+    const r=await fetch(SB_URL+"/rest/v1/ac_public?key=eq.reset_epoch&select=val",{headers:SB_HEAD}); if(!r.ok) return;
+    const a=await r.json(); const ep=(a&&a[0]&&a[0].val!=null)?String(a[0].val):""; if(!ep) return;
+    let seen=""; try{ seen=localStorage.getItem("nomi.epoch")||""; }catch(e){}
+    if(seen===ep) return;
+    try{ ["nomi.count","nomi.srvTotal","nomi.pendB","nomi.pendN","nomi.pid","nomi.fleaCount","nomi.nijiCount","nomi.lastAlive","nomi.lastAliveS","nomi.rankpct"].forEach(k=>localStorage.removeItem(k)); localStorage.setItem("nomi.epoch",ep); }catch(e){}
+    count=0; srvTotal=0; pendB=0; pendN=0; myPid=""; carryOver=0; carryNiji=0; backlog=0; fleas.length=0; lastSentScore=0; renderCount();
+    if(acWrite()) acSync();   // サーバーの(リセット後の)状態をもらい直す
+  }catch(e){}
+})();
+
 window.addEventListener("pointerdown",ensureAudio,{passive:true});
 
 /* 入力欄は、内容があればタッチで全選択(全入力欄共通) */

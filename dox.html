@@ -1229,6 +1229,16 @@
     return null;
   }
   function logEv(delta){ runLog.push([Math.round(performance.now()-runT0), delta]); }
+  (async function acEpoch(){   // リセット世代: 運営がランキングを全リセットしたら、端末のBEST3も消す
+    try{
+      const r=await fetch(SB_URL+"/rest/v1/ac_public?key=eq.reset_epoch&select=val",{headers:SB_HEAD}); if(!r.ok) return;
+      const a=await r.json(); const ep=(a&&a[0]&&a[0].val!=null)?String(a[0].val):""; if(!ep) return;
+      let seen=""; try{ seen=localStorage.getItem("dox.epoch")||""; }catch(e){}
+      if(seen===ep) return;
+      ["score","speed","endless"].forEach(m=>{ try{ localStorage.removeItem("dox.best."+m); localStorage.removeItem("dox.recent."+m); }catch(e){} });
+      try{ localStorage.setItem("dox.epoch",ep); }catch(e){}
+    }catch(e){}
+  })();
   function playerName(){ try{ return (localStorage.getItem("dox.name")||"").trim(); }catch(e){ return ""; } }
   function nameHistory(){ try{ return JSON.parse(localStorage.getItem("dox.names")||"[]"); }catch(e){ return []; } }
   function addNameHistory(n){ n=(n||"").trim(); if(!n) return; try{ const h=nameHistory(); if(!h.includes(n)){ h.push(n); localStorage.setItem("dox.names", JSON.stringify(h)); } }catch(e){} }
