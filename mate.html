@@ -954,9 +954,9 @@ const PEN_W=[0.002,0.0035,0.006,0.0105,0.018];   // SIZE比。3(0.006)を中心�
 let online=false, isHost=false, sb=null, ch=null, myId=Math.random().toString(36).slice(2,10);
 let myName="", code="", hostId=null, joinWatch=0, hbIv=0, snapAt=0, snapEl=0, lastPh="";
 try{ myName=(localStorage.getItem("mate.name")||mkName()||"").slice(0,16); }catch(e){}
-/* ===== サイト共通の名前(2026-09-06) =====
-   名前はハブのアカウントが持つ(サイトで1つ・16文字・重複不可)。どこから変えても全ゲームに反映される。
-   アカウントが無い人は「ゲスト」(この端末だけの名前として自由に変えられる) */
+/* ===== 名前(2026-09-06) =====
+   ロビーで使う名前は「このゲームだけのもの」。毎回すきに変えてよく、他のゲームやランキングには反映しない。
+   初期値はハブのアカウント名(mk.name)、それも無ければ「ゲスト」 */
 const MK_GUEST="ゲスト";
 function mkSes(){ try{ return JSON.parse(localStorage.getItem("mk.acct")||"null"); }catch(e){ return null; } }
 function mkIn(){ return !!mkSes(); }
@@ -1695,11 +1695,9 @@ function openNameOv(){
   $("nameOv").classList.add("on");
   setTimeout(()=>{ i.focus(); i.select(); },60);
 }
-$("nameGo").addEventListener("click",async()=>{
+$("nameGo").addEventListener("click",()=>{
   ensureAudio(); const v=$("nameInput").value.trim();
   if(!v){ $("nameErr").textContent="空欄はご遠慮ください"; $("nameErr").style.display="block"; return; }
-  const err=await mkSetName(v);   // 名前はサイトで1つ(ログイン中はアカウント名も変わる)
-  if(err){ $("nameErr").textContent=err; $("nameErr").style.display="block"; return; }
   playSelect(); setMyName(v); $("nameOv").classList.remove("on");
 });
 $("nameInput").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing) $("nameGo").click(); });

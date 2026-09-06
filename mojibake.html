@@ -526,9 +526,9 @@ function nextColor(){ const used=Object.values(colors); for(const c of COLORS){ 
 function colorOf(id){ if(colors[id]) return colors[id]; const i=Math.max(0,members.findIndex(m=>m.id===id)); return COLORS[i%COLORS.length]; }
 function dispName(m){ return (m&&m.name)?m.name:UNDEF_NM; }
 const myId=Math.random().toString(36).slice(2,10);
-/* ===== サイト共通の名前(2026-09-06) =====
-   名前はハブのアカウントが持つ(サイトで1つ・16文字・重複不可)。どこから変えても全ゲームに反映される。
-   アカウントが無い人は「ゲスト」(この端末だけの名前として自由に変えられる) */
+/* ===== 名前(2026-09-06) =====
+   ロビーで使う名前は「このゲームだけのもの」。毎回すきに変えてよく、他のゲームやランキングには反映しない。
+   初期値はハブのアカウント名(mk.name)、それも無ければ「ゲスト」 */
 const MK_GUEST="ゲスト";
 function mkSes(){ try{ return JSON.parse(localStorage.getItem("mk.acct")||"null"); }catch(e){ return null; } }
 function mkIn(){ return !!mkSes(); }
@@ -783,10 +783,8 @@ function enterLobby(){
 }
 $("nameOv").addEventListener("click",e=>{ if(e.target===$("nameOv")&&nameDecided) $("nameOv").classList.remove("on"); });
 function openNameDlg(){ $("nameIn").value=myName||mkName()||MK_GUEST; $("nameErr").textContent=""; $("nameOv").classList.add("on"); setTimeout(()=>$("nameIn").focus(),50); }
-$("nameGo").addEventListener("click",async()=>{
+$("nameGo").addEventListener("click",()=>{
   const v=($("nameIn").value||"").trim(); if(!v){ $("nameErr").textContent="空欄はご遠慮ください"; return; }
-  const err=await mkSetName(v);   // 名前はサイトで1つ(ログイン中はアカウント名も変わる)
-  if(err){ $("nameErr").textContent=err; return; }
   myName=[...v].slice(0,16).join(""); nameDecided=true; try{ localStorage.setItem("mjb.name",myName); }catch(e){} playSelect(); $("nameOv").classList.remove("on");
   if(ch){ try{ ch.track(myPresence()); }catch(e){} } if(!online||!members.length){ members=[{id:myId,name:myName,host:true,t:joinT}]; } renderMembers();
 });
