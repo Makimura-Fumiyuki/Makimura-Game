@@ -1373,8 +1373,15 @@
     const EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg>';
     function bindEye(){   // パスワード欄の目: 押している間だけ表示
       const eye=card.querySelector("#acctEye"), pw=card.querySelector("#acctPw"); if(!eye||!pw) return;
-      const show=e=>{ e.preventDefault(); pw.type="text"; eye.classList.add("on"); };
-      const hide=()=>{ pw.type="password"; eye.classList.remove("on"); };
+      const swap=(t,on)=>{   // type を切り替えると入力カーソルが先頭に戻るので、位置を覚えて戻す
+        if(pw.type===t) return;
+        const act=(document.activeElement===pw); let a=null,b=null;
+        try{ a=pw.selectionStart; b=pw.selectionEnd; }catch(_){}
+        pw.type=t; eye.classList.toggle("on",on);
+        if(act){ try{ pw.focus(); if(a!=null) pw.setSelectionRange(a,b); }catch(_){} }
+      };
+      const show=e=>{ e.preventDefault(); swap("text",true); };   // preventDefault=入力欄からフォーカスを奪わない
+      const hide=()=>swap("password",false);
       eye.addEventListener("pointerdown",show); ["pointerup","pointercancel","pointerleave"].forEach(ev=>eye.addEventListener(ev,hide));
       window.addEventListener("pointerup",hide);
     }
@@ -1383,7 +1390,7 @@
       const s=ses();
       if(s){
         card.innerHTML='<h2>アカウント</h2><p>ログイン中：<b id="acctEmail"></b><br>この端末は、このアカウントの記録で遊びます。ほかの端末でも同じメールでログインすれば、記録を引き継げます</p>'
-          +'<label for="acctName">アカウント名（ゲームで使う初期の名前）</label><input id="acctName" maxlength="10" placeholder="アカウント名">'
+          +'<label for="acctName">アカウント名</label><input id="acctName" maxlength="10" placeholder="アカウント名">'
           +'<div class="acct-msg'+(ok?" ok":"")+'" id="acctMsg"></div><div class="acct-row"><button class="acct-btn" id="acctSave">名前を保存</button><button class="acct-btn warn" id="acctOut">ログアウト</button></div><button class="acct-close" id="acctX">とじる</button>';
         card.querySelector("#acctEmail").textContent=s.email||"";
         card.querySelector("#acctName").value=lsGet("mk.name");
@@ -1391,13 +1398,13 @@
           const m=card.querySelector("#acctMsg"); m.className="acct-msg"; m.textContent="保存中…";
           const err=await saveAcctName(card.querySelector("#acctName").value);
           if(err){ m.textContent=err; return; }
-          renderBtn(); m.className="acct-msg ok"; m.textContent="アカウント名を保存しました（各ゲームの初期の名前になります）";
+          renderBtn(); m.className="acct-msg ok"; m.textContent="アカウント名を保存しました";
         };
         card.querySelector("#acctName").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing) card.querySelector("#acctSave").click(); });
         card.querySelector("#acctOut").onclick=()=>{ try{ localStorage.removeItem(KEY); }catch(e){} renderBtn(); view("ログアウトしました（この端末の記録はそのまま残ります）",true); };
       }else{
-        card.innerHTML='<h2>アカウント</h2><p>登録、ログインして頂くと『ノミのみ』などの記録を、他の端末へ引き継げます<br>※アカウントを登録しなくても、普通に遊べます</p>'
-          +'<input id="acctName" maxlength="10" placeholder="アカウント名（ゲームで使う初期の名前）">'
+        card.innerHTML='<h2>アカウント</h2><p>アカウントを登録して頂くことで『ノミのみ』などの記録を、他の端末へ引き継げます<br>※アカウントを登録しなくても、普通に遊べます</p>'
+          +'<input id="acctName" maxlength="10" placeholder="アカウント名">'
           +'<input id="acctMail" type="email" placeholder="メールアドレス" autocomplete="email">'
           +'<div class="acct-pw"><input id="acctPw" type="password" placeholder="パスワード（6文字以上）" autocomplete="current-password"><button type="button" class="acct-eye" id="acctEye" aria-label="押している間だけパスワードを表示">'+EYE+'</button></div>'
           +'<div class="acct-msg'+(ok?" ok":"")+'" id="acctMsg"></div><div class="acct-row"><button class="acct-btn" id="acctIn">ログイン</button><button class="acct-btn sub" id="acctUp">新規登録</button></div><button class="acct-close" id="acctX">とじる</button>';
