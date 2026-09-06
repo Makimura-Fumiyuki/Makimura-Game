@@ -771,7 +771,7 @@ function renderMembers(){
   $("ruleFrame").classList.toggle("locked",!isHost()); $("ruleFrame2").classList.toggle("locked",!isHost()); $("ruleReset").style.display=isHost()?"":"none"; $("ruleNote").style.display=isHost()?"none":"";
   const n=arr.length; const so=soloOK();
   $("startBtn").disabled=!(isHost()&&((n>=2&&(stageKind!=="photo"||photoImg))||so)); $("startBtn").textContent=so?"1人でおためし":"はじめる";
-  $("startNote").textContent=isHost()?(so?"CPUが化けるので、1人でも試せます（あなたがさがす人）":(n<2?"2人以上で始められます（"+n+"/"+MAX_PLAYERS+"）":"")) : "オーナーが始めるのを待っています";
+  $("startNote").textContent=isHost()?(n<2?"2人以上で始められます（"+n+"/"+MAX_PLAYERS+"）":"") : "オーナーが始めるのを待っています";
   $("debugFrame").classList.toggle("locked",!isHost());
 }
 function renderMemberOv(){
