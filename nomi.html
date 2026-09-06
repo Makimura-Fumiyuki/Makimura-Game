@@ -906,6 +906,7 @@ async function loadWorld(){
   wTotal.textContent="-";
   try{ await loadBans(); await acProbe; }catch(e){}
   wList.innerHTML='<div class="w-state">読み込み中…</div>';
+  showWGuest();   // 未ログインの案内は一覧の中身によらず出す(まだ誰も遊んでいない時・読み込み失敗の時も)
   let raw=[];
   try{
     if(acRead){   // 新方式: サーバー確定の合計(1人1行)。pidで自分を見つける
@@ -945,7 +946,7 @@ async function loadWorld(){
   const SHOW_N=999;   // ランキングは999位まで表示
   const total=rows.reduce((s,r)=>s+r.score,0);
   wTotal.textContent=total.toLocaleString("ja-JP");
-  if(!rows.length){ wList.innerHTML='<div class="w-state">まだ誰も遊んでないよ...</div>'; return; }
+  if(!rows.length){ wList.innerHTML='<div class="w-state">まだ誰も遊んでないよ...</div>'; $("wMe").style.display="none"; return; }
   const myIdx=rows.findIndex(r=>r.mode===MYKEY);
   setRankPct((myIdx>=0 && rows.length>1) ? (myIdx/(rows.length-1)) : 1);   // 虹ノミの出やすさ=順位に連動(下位ほど高い)
   let html="";
@@ -963,8 +964,9 @@ async function loadWorld(){
   }else{
     wMe.style.display="none";
   }
-  const wg=$("wGuest"); if(wg) wg.style.display = me ? "none" : "";   // 未ログイン=アカウント登録の案内
+  showWGuest();
 }
+function showWGuest(){ const wg=$("wGuest"); if(wg) wg.style.display = playerName() ? "none" : ""; }   // 未ログイン=アカウント登録の案内
 function escHtml(s){ return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
 function closeWorld(){ worldOverlay.classList.remove("on"); document.body.classList.remove("veil"); }
 { const b=$("seBtn");
@@ -1056,7 +1058,9 @@ $("wMe").addEventListener("click",()=>{
       if(acRead){   // 新方式: nomi_acc を管理トークンで直接読む(1人1行・pid=公開ID)
         const r=await fetch(SB_URL+"/rest/v1/nomi_acc?select=pid,name,total,minted_black,minted_niji,squished_black,squished_niji,updated_at&order=total.desc&limit=3000",{ headers:{ apikey:SB_KEY, Authorization:"Bearer "+admToken } });
         if(!r.ok) throw 0;
-        raw=(await r.json()).map(x=>({ name:x.name||"（名前なし）", score:x.total|0, mode:x.pid, meta:"湧き "+(x.minted_black+x.minted_niji)+"・虹 "+x.minted_niji+"・最終 "+(x.updated_at||"").slice(0,16).replace("T"," ") }));
+        const jst=t=>{ try{ return new Date(t).toLocaleString("ja-JP",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}); }catch(e){ return ""; } };
+        raw=(await r.json()).filter(x=>x.name)   // 名前なし=アカウント未登録のゲスト。ランキングに出ないので管理一覧にも出さない
+          .map(x=>({ name:x.name, score:x.total|0, mode:x.pid, meta:"湧き "+(x.minted_black+x.minted_niji)+"・虹 "+x.minted_niji+"・最終 "+jst(x.updated_at) }));
       } else
       for(let pg=0; pg<8; pg++){   // loadWorldと同じページング(新しい順→mode=個人IDごとの最初=最新=最大)
         const r=await fetch(SB_URL+"/rest/v1/scores?mode=like.nomi:*&order=created_at.desc&limit=1000&offset="+(pg*1000)+"&select=name,score,mode",{headers:SB_HEAD});
