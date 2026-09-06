@@ -103,6 +103,9 @@
     position:relative; border:none; cursor:pointer; font-size:15px; text-align:left; color:#fff; }
   #wMe::after{ content:""; position:absolute; inset:0 28px 0 46px; border:1px solid rgba(255,255,255,.85); border-radius:9px; pointer-events:none; }
   #wMe:active{ opacity:.7; }
+  .w-guest{ margin-top:14px; flex:none; font-size:clamp(9px,2.6vw,13px); font-weight:700; letter-spacing:.06em; white-space:nowrap;
+    color:rgba(255,255,255,.8); text-decoration:none; border-bottom:1px solid rgba(255,255,255,.35); padding-bottom:2px; }
+  .w-guest:active{ opacity:.6; }
   #wMe .rk{ width:2.2em; text-align:right; font-family:var(--fnum); font-weight:500; font-size:17px; color:rgba(255,255,255,.55); flex:none; transform:translateY(-1.5px); }
   #wMe .nm{ flex:1 1 auto; min-width:0; font-weight:700; letter-spacing:.04em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   #wMe .sc{ font-family:var(--fnum); font-weight:600; font-size:18px; flex:none; transform:translateY(-1.5px); }
@@ -189,6 +192,7 @@
     <div class="w-total" id="wTotal">-</div>
     <div class="w-list" id="wList"></div>
     <button id="wMe" style="display:none"></button>
+    <a class="w-guest" id="wGuest" href="./index.html?account=1" style="display:none">「牧村が作ったゲーム集」でアカウントを登録するとランキングに反映されます</a>
   </div>
 
   <!-- 名前(黒オーバーレイに入力欄と決定だけ。注記は画面下部) -->
@@ -197,7 +201,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
     </button>
     <input class="n-input" id="nameInput" maxlength="16" autocomplete="off" spellcheck="false" placeholder="あなたの名前">
-    <div class="n-guide" id="nameGuide" style="display:none;"><a href="./index.html" style="color:#fff;">「牧村が作ったゲーム集」でアカウントを登録すると名前を変更できます</a></div>
+    <div class="n-guide" id="nameGuide" style="display:none;"><a href="./index.html?account=1" style="color:#fff;">「牧村が作ったゲーム集」でアカウントを登録すると名前を変更できます</a></div>
     <div class="n-err" id="nameErr">この名前は使われています</div>
     <button class="n-ok" id="nameOk">決定</button>
     <div class="n-note">登録した名前はオンラインランキングで他のプレイヤーに公開されます</div>
@@ -405,6 +409,7 @@ async function acSync(opts){
     if(r.status===404){ acRead=false; return; }   // 関数が無い=従来方式へ
     if(!r.ok) return;
     const d=await r.json(); if(!d||typeof d!=="object") return;
+    if(!mkIn() && d.name){ becomeGuest(); return; }   // ログアウト後: このIDはアカウントのもの → ゲストとしてやり直す
     if(d.error==="name_taken"){ acNameErr=true; }   // 名前が他人と重なった(まれ)=登録画面で伝える。点数の同期自体は済んでいる
     if(typeof d.total!=="number") return;
     pendB=Math.max(0,pendB-sb); pendN=Math.max(0,pendN-sn);   // 送ったぶんは確定へ(受理されなかった分は total に反映されない=消える)
@@ -416,6 +421,17 @@ async function acSync(opts){
     reconcileFleas();
   }catch(e){}
   finally{ acBusy=false; if(acDirty){ acDirty=false; acSync(); } }
+}
+/* ログアウト後にアカウントのIDのまま遊んでしまうのを直す(サーバーに名前がある=そのIDはアカウントのもの)。
+   新しいゲストIDにして端末の数字も消す=ランキングには出ない(記録はアカウント側に残る。ログインし直せば戻る) */
+function becomeGuest(){
+  try{
+    const a=new Uint8Array(8); crypto.getRandomValues(a);
+    localStorage.setItem("nomi.uid",[...a].map(b=>b.toString(16).padStart(2,"0")).join(""));
+    ["nomi.count","nomi.srvTotal","nomi.pendB","nomi.pendN","nomi.pid","nomi.fleaCount","nomi.nijiCount","nomi.rankpct"].forEach(k=>localStorage.removeItem(k));
+  }catch(e){}
+  srvTotal=0; pendB=0; pendN=0; myPid=""; lastSentScore=0; acTarget=null; setRankPct(1);
+  applyCount(0);
 }
 /* 端末のノミ(予測)をサーバーの生存数に合わせる。虹ノミもサーバーが決めた数だけ(黒⇄虹の見た目を差し替える) */
 function setNiji(f,on){ f.niji=!!on; f.spr = on ? NIJI_SPRITES[Math.floor(Math.random()*NIJI_SPRITES.length)] : SPRITES[Math.floor(Math.random()*SPRITES.length)]; f.nijiPhase = on? Math.random()*6 : 0; }
@@ -915,7 +931,7 @@ async function loadWorld(){
     return;
   }
   // 個人(mode=nomi:ID / 新方式=pid)ごとに最大値の行だけ残す(累計は増える一方なので最大=最新。名前も最新のもの)
-  const MYKEY = acRead ? myPid : MYMODE;
+  const MYKEY = mkIn() ? (acRead ? myPid : MYMODE) : "";   // 未ログイン=ランキングに自分はいない
   const seen=new Map();
   raw.forEach(r=>{ if(nomiBanned(r.name,r.mode)) return; if(!seen.has(r.mode)) seen.set(r.mode,{name:r.name, score:r.score|0, mode:r.mode}); });   // 除外リストの人は集計しない=ランキング非表示
   // 自分のまだ送っていない分もその場で反映(見た目上ずれないように)
@@ -947,6 +963,7 @@ async function loadWorld(){
   }else{
     wMe.style.display="none";
   }
+  const wg=$("wGuest"); if(wg) wg.style.display = me ? "none" : "";   // 未ログイン=アカウント登録の案内
 }
 function escHtml(s){ return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
 function closeWorld(){ worldOverlay.classList.remove("on"); document.body.classList.remove("veil"); }

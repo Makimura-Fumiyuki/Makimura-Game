@@ -1353,6 +1353,14 @@
         localStorage.setItem(BK, JSON.stringify(o));
       }catch(e){}
     }
+    const GAMEKEYS=["nomi.count","nomi.srvTotal","nomi.pendB","nomi.pendN","nomi.pid","nomi.fleaCount","nomi.nijiCount","nomi.lastAlive","nomi.lastAliveS","nomi.rankpct",
+      "dox.best.score","dox.best.speed","dox.best.endless","dox.recent.score","dox.recent.speed","dox.recent.endless","dox.pid"];
+    function newGuestIds(){   // 控えが無い=この端末のIDはアカウントのもの → 新しいゲストIDにして端末の数字も消す(記録はアカウント側に残る)
+      try{
+        localStorage.setItem("nomi.uid",hex16()); localStorage.setItem("dox.uid",hex16());
+        GAMEKEYS.concat(["mk.name","nomi.name","dox.name"]).forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+      }catch(e){}
+    }
     function restoreDevice(){   // ログイン前に戻す(アカウントで遊んだぶんはアカウント側に残る)
       try{
         const raw=localStorage.getItem(BK); if(raw==null) return false;
@@ -1429,8 +1437,9 @@
         card.querySelector("#acctName").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing) card.querySelector("#acctSave").click(); });
         card.querySelector("#acctOut").onclick=()=>{
           const back=restoreDevice();   // ログイン前の記録に戻す(アカウントの記録はアカウント側に残る)
+          if(!back) newGuestIds();        // 控えが無い(このアカウントを作った端末)=IDはアカウントのもの → ゲストとしてやり直す
           try{ localStorage.removeItem(KEY); }catch(e){} renderBtn();
-          view(back?"ログアウトしました（この端末は、ログインする前の記録に戻りました）":"ログアウトしました（この端末の記録はそのまま残ります）",true);
+          view(back?"ログアウトしました（この端末は、ログインする前の記録に戻りました）":"ログアウトしました（この端末はゲストに戻りました。記録はアカウントに残っています）",true);
         };
       }else{
         card.innerHTML='<h2>アカウント</h2><p>アカウントを登録して頂くことで『ノミのみ』などの記録を、他の端末へ引き継げます<br>※オンラインランキングと生き物図鑑には、アカウントの登録が必要です<br>※登録しなくても、ゲームは普通に遊べます</p>'
@@ -1468,6 +1477,10 @@
     btn.addEventListener("click",()=>{ view("",false); ov.classList.add("on"); });
     ov.addEventListener("click",e=>{ if(e.target===ov) ov.classList.remove("on"); });
     renderBtn();
+    if(/[?&]account=1/.test(location.search)){   // 各ゲームの「アカウントを登録すると…」リンクから来た時は、そのまま登録画面を開く
+      view("",false); ov.classList.add("on");
+      try{ const q=location.search.replace(/([?&])account=1&?/,"$1").replace(/[?&]$/,""); history.replaceState(null,"",location.pathname+q+location.hash); }catch(e){}
+    }
     // ログイン中なら起動時に取り込みを確認(別端末で名前が変わった等)
     (async()=>{ const at=await token(); if(at){ try{ await syncAcct(at); }catch(e){} } })();
   })();

@@ -476,6 +476,8 @@
   .nm-enter .key{ border:3px solid currentColor; border-radius:10px; padding:9px 24px; font-size:38px; font-weight:800; letter-spacing:1px; }
   .nm-enter:active{ transform:translateY(2px); }
   .nm-err{ min-height:38px; font-size:30px; font-weight:800; color:#ff6a6a; letter-spacing:1px; opacity:0; transition:opacity .12s linear; white-space:nowrap; }
+  .nm-err.tap.show{ cursor:pointer; text-decoration:underline; text-underline-offset:6px; text-decoration-color:rgba(255,106,106,.5); }
+  .nm-err.tap:active{ opacity:.6; }
   .nm-err.long{ font-size:15px; letter-spacing:0; }   /* 長い案内文は小さくして1行に収める */
   .nm-err.show{ opacity:1; }
   /* fresh input: a plain wrapper draws the box; the input itself is fully transparent & borderless (no native artifacts) */
@@ -700,6 +702,8 @@
   .rank-me .rm-l2 .best-val{ font-size:42px; }
   .rank-me .rm-l2 .best-stars .star-svg{ width:20px; height:20px; }
   .rank-me .rm-none{ font-size:32px; opacity:.7; }
+  .rank-me .rm-guest{ display:block; max-width:560px; font-size:23px; font-weight:800; line-height:1.55; color:#fff; text-decoration:underline; text-underline-offset:5px; text-decoration-color:rgba(255,255,255,.45); }
+  .rank-me .rm-guest:active{ opacity:.7; }
   /* "You!!!" tag at the upper-left of the self-rank box, mode-coloured */
   .rank-me .rm-you{ position:absolute; left:-17px; bottom:100%; margin-bottom:-3px; pointer-events:none; white-space:nowrap; }   /* upper-left, slightly overlapping the box top */
   .rank-me .rm-you .ry-txt{ display:inline-block; font-size:66px; font-weight:800; letter-spacing:1px; transform:rotate(-4deg);
@@ -1360,7 +1364,11 @@
   const nmEnter=document.getElementById("nmEnter");
   if(nmEnter) nmEnter.addEventListener("click",()=>{ if(!nameModalOpen) return; ensureAudio(); confirmName(); });   // tap the enter key to close/confirm
   const nmErr=document.getElementById("nmErr");
-  function showNameErr(msg){ if(nmErr){ if(msg) nmErr.textContent=msg; nmErr.classList.toggle("long", [...(nmErr.textContent||"")].length>14); nmErr.classList.add("show"); } }
+  function showNameErr(msg){ if(!nmErr) return; if(msg) nmErr.textContent=msg;
+    nmErr.classList.toggle("long", [...(nmErr.textContent||"")].length>14);
+    const link=/牧村が作ったゲーム集/.test(nmErr.textContent||"");   // アカウント登録の案内=押すとハブの登録画面が開く
+    nmErr.classList.toggle("tap",link); nmErr.onclick = link ? ()=>{ location.href="./index.html?account=1"; } : null;
+    nmErr.classList.add("show"); }
   function clearNameErr(){ if(nmErr) nmErr.classList.remove("show"); }
   async function confirmName(){
     const v=[...((nameInput.value||"").trim())].slice(0,16).join("");
@@ -1433,7 +1441,7 @@
   function posLabel(r){ const T=I18N[uiLang]; return (T.rankPre||"")+r+(T.rankSuf||""); }   // localized rank label, e.g. "5位" / "#5" / "第5名" / "5위"
   function setRankMe(rank, score, animDir){   // bottom-left corner: line1 = name, line2 = rank + score
     const name=playerName();
-    if(!name){ rankMeEl.innerHTML=""; return; }   // not registered yet → show nothing
+    if(!name){ rankMeEl.innerHTML='<a class="rm-guest" href="./index.html?account=1">「牧村が作ったゲーム集」でアカウントを登録するとランキングに反映されます</a>'; return; }   // 未ログイン=ランキングに載らない案内
     const you='<div class="rm-you"><span class="ry-txt" style="background-image:'+gradOf(MODE_ACCENT[rankMode])+'">You</span></div>';
     let html;
     if(!(score>0)){ html='<div class="rm-l1">'+escRank(name)+'</div><div class="rm-l2 rm-none">'+I18N[uiLang].rmNone+'</div>'; }

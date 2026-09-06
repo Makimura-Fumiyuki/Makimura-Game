@@ -164,6 +164,8 @@
     font-weight:800; font-size:clamp(9px,2.55vw,14px); padding:10px 14px; border-radius:999px; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s;
     white-space:nowrap; width:max-content; max-width:97vw; }   /* 長い案内文も1行で出す(狭い画面では文字が小さくなる) */
   .toast.on{ opacity:1; transform:translate(-50%,0); }
+  .toast.tap.on{ pointer-events:auto; cursor:pointer; text-decoration:underline; text-decoration-color:rgba(255,255,255,.45); text-underline-offset:3px; }
+  .toast.tap:active{ opacity:.7; }
 
   .loading{ text-align:center; padding:40px 0; color:rgba(51,41,31,.5); font-weight:700; }
   .home-foot{ position:fixed; left:0; right:0; bottom:0; z-index:40; display:block; text-align:center;
@@ -355,7 +357,10 @@
 
   function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
   let toastTmr=0;
-  function toast(m,ms){ const el=$("toast"); el.textContent=m; el.classList.add("on"); clearTimeout(toastTmr); toastTmr=setTimeout(()=>el.classList.remove("on"), ms||1800); }
+  function toast(m,ms){ const el=$("toast"); el.textContent=m;
+    const link=/牧村が作ったゲーム集/.test(m);   // アカウント登録の案内=押すとハブの登録画面が開く
+    el.classList.toggle("tap",link); el.onclick = link ? ()=>{ location.href="./index.html?account=1"; } : null;
+    el.classList.add("on"); clearTimeout(toastTmr); toastTmr=setTimeout(()=>{ el.classList.remove("on"); el.onclick=null; el.classList.remove("tap"); }, ms|| (link?3600:1800)); }
   function agreed(){ try{ return localStorage.getItem("zukan.agreed")==="1"; }catch(e){ return false; } }
   function setAgreed(){ try{ localStorage.setItem("zukan.agreed","1"); }catch(e){} }
   /* ===== サイト共通の名前(2026-09-06) =====
@@ -533,7 +538,7 @@
       const bd=(editing&&myEntry?myEntry.body:(myEntry?"":loadDraft()));
       const nameHtml = myName
         ? '<div class="pen-name">ペンネーム：<b>'+esc(myName)+'</b></div>'
-        : '<div class="pen-name">図鑑を投稿するには<a href="./index.html">「牧村が作ったゲーム集」</a>でアカウントの登録が必要です</div>';
+        : '<div class="pen-name">図鑑を投稿するには<a href="./index.html?account=1">「牧村が作ったゲーム集」</a>でアカウントの登録が必要です</div>';
       a.innerHTML='<div class="section-label">'+(myEntry?"図鑑を編集する":"この生き物の図鑑を書く")+'</div>'
         +'<div class="form-card">'
         +nameHtml
