@@ -1265,6 +1265,7 @@
     try{
       const r=await fetch(SB_URL+"/rest/v1/rpc/set_name",{ method:"POST", headers:{ apikey:SB_KEY, Authorization:"Bearer "+at, "Content-Type":"application/json" }, body:JSON.stringify({ p_name:nm }) });
       const d=await r.json().catch(()=>null);
+    if(!r.ok) console.warn("set_name",r.status,d);
       if(r.status===404) return "名前の変更を準備中です。少しあとでもう一度お試しください";   // サーバー側の用意がまだ(端末にだけ保存すると食い違うので保存しない)
       if(!r.ok) return "保存に失敗しました";
       if(d&&d.error==="name_taken") return "その名前は使われています";
