@@ -532,7 +532,7 @@
       const bd=(editing&&myEntry?myEntry.body:(myEntry?"":loadDraft()));
       const nameHtml = myName
         ? '<div class="pen-name">ペンネーム：<b>'+esc(myName)+'</b></div>'
-        : '<div class="pen-name">図鑑を書くには<a href="./index.html">「牧村が作ったゲーム集」</a>でアカウントの登録が必要です</div>';
+        : '<div class="pen-name">図鑑を投稿するには<a href="./index.html">「牧村が作ったゲーム集」</a>でアカウントの登録が必要です</div>';
       a.innerHTML='<div class="section-label">'+(myEntry?"図鑑を編集する":"この生き物の図鑑を書く")+'</div>'
         +'<div class="form-card">'
         +nameHtml
@@ -613,7 +613,7 @@
     if(!agreed()){ pendingSubmit=true; $("yakuOk").textContent="同意して投稿"; $("yakuOv").classList.add("on"); return; }
     const author=myName||"";
     const body=($("fBody").value||"").trim();
-    if(!author){ toast("図鑑を書くには「牧村が作ったゲーム集」でアカウントの登録が必要です"); return; }
+    if(!author){ toast("図鑑を投稿するには「牧村が作ったゲーム集」でアカウントの登録が必要です"); return; }
     if(!body){ toast("本文を書いてね"); return; }
     if([...body].length>MAXBODY){ toast("本文が長すぎます（"+MAXBODY+"字まで）"); return; }
     busy=true; $("postBtn").disabled=true; $("postBtn").textContent="送信中…";
