@@ -1342,8 +1342,31 @@
     const lsGet=k=>{ try{ return localStorage.getItem(k)||""; }catch(e){ return ""; } };
     const lsSet=(k,v)=>{ try{ if(v) localStorage.setItem(k,v); }catch(e){} };
     function deviceIds(){ let n=lsGet("nomi.uid"), d=lsGet("dox.uid"); if(!/^[0-9a-f]{16}$/.test(n)){ n=hex16(); lsSet("nomi.uid",n); } if(!/^[0-9a-f]{16}$/.test(d)){ d=hex16(); lsSet("dox.uid",d); } return { nomi_uid:n, dox_uid:d, nomi_name:lsGet("nomi.name"), dox_name:lsGet("dox.name") }; }
+    /* ログイン前の端末の状態(ID・名前・数字)を丸ごと控えておき、ログアウトで元に戻す。
+       これが無いと「他人のアカウントにログイン→ログアウト→その記録のまま名前を変えて遊ぶ」ができてしまう(2026-09-06) */
+    const BK="mk.preacct";
+    const isGameKey=k=>/^(nomi\.|dox\.)/.test(k)||k==="mk.name";
+    function snapshotDevice(){
+      try{
+        if(localStorage.getItem(BK)!=null) return;   // すでに控えてある(アカウントを切り替えた時も、最初の端末の状態を守る)
+        const o={}; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(isGameKey(k)) o[k]=localStorage.getItem(k); }
+        localStorage.setItem(BK, JSON.stringify(o));
+      }catch(e){}
+    }
+    function restoreDevice(){   // ログイン前に戻す(アカウントで遊んだぶんはアカウント側に残る)
+      try{
+        const raw=localStorage.getItem(BK); if(raw==null) return false;
+        const o=JSON.parse(raw)||{};
+        const del=[]; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(isGameKey(k)&&!(k in o)) del.push(k); }
+        del.forEach(k=>localStorage.removeItem(k));
+        Object.keys(o).forEach(k=>localStorage.setItem(k,o[k]));
+        localStorage.removeItem(BK);
+        return true;
+      }catch(e){ return false; }
+    }
     function adopt(row){   // アカウントのIDをこの端末へ(IDが変わる時は端末に残っている数字も消す=次に開いた時にサーバーの値が入る)
       const cur=deviceIds(); let changed=false;
+      if((row.nomi_uid&&row.nomi_uid!==cur.nomi_uid)||(row.dox_uid&&row.dox_uid!==cur.dox_uid)) snapshotDevice();   // 変える前に控える
       if(row.nomi_uid && row.nomi_uid!==cur.nomi_uid){ lsSet("nomi.uid",row.nomi_uid); ["nomi.count","nomi.srvTotal","nomi.pendB","nomi.pendN","nomi.pid","nomi.fleaCount","nomi.nijiCount","nomi.lastAlive","nomi.lastAliveS","nomi.rankpct"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} }); changed=true; }
       if(row.dox_uid && row.dox_uid!==cur.dox_uid){ lsSet("dox.uid",row.dox_uid); ["score","speed","endless"].forEach(m=>{ try{ localStorage.removeItem("dox.best."+m); localStorage.removeItem("dox.recent."+m); }catch(e){} }); try{ localStorage.removeItem("dox.pid"); }catch(e){} changed=true; }
       if(row.nomi_name) lsSet("nomi.name",row.nomi_name); if(row.dox_name) lsSet("dox.name",row.dox_name);
@@ -1401,7 +1424,11 @@
           renderBtn(); m.className="acct-msg ok"; m.textContent="アカウント名を保存しました";
         };
         card.querySelector("#acctName").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing) card.querySelector("#acctSave").click(); });
-        card.querySelector("#acctOut").onclick=()=>{ try{ localStorage.removeItem(KEY); }catch(e){} renderBtn(); view("ログアウトしました（この端末の記録はそのまま残ります）",true); };
+        card.querySelector("#acctOut").onclick=()=>{
+          const back=restoreDevice();   // ログイン前の記録に戻す(アカウントの記録はアカウント側に残る)
+          try{ localStorage.removeItem(KEY); }catch(e){} renderBtn();
+          view(back?"ログアウトしました（この端末は、ログインする前の記録に戻りました）":"ログアウトしました（この端末の記録はそのまま残ります）",true);
+        };
       }else{
         card.innerHTML='<h2>アカウント</h2><p>アカウントを登録して頂くことで『ノミのみ』などの記録を、他の端末へ引き継げます<br>※アカウントを登録しなくても、普通に遊べます</p>'
           +'<input id="acctName" maxlength="10" placeholder="アカウント名">'
@@ -1421,11 +1448,10 @@
             if(!r.ok){ const em=(d&&(d.msg||d.error_description||d.message))||""; m.textContent= /Invalid login/i.test(em)?"メールかパスワードが違います": /already/i.test(em)?"このメールは登録済みです（ログインしてください）": /Email not confirmed/i.test(em)?"メールの確認がまだです（届いたメールのリンクを押してください）":("失敗しました："+(em||r.status)); return; }
             if(!d.access_token){ m.className="acct-msg ok"; m.textContent="確認メールを送りました。迷惑メールも確認して、リンクを押してから「ログイン」してください"; return; }
             const nm0=[...((card.querySelector("#acctName").value||"").trim())].slice(0,10).join("");
-            if(nm0){ try{ localStorage.setItem("mk.name",nm0); }catch(e){} }
+            if(signup && nm0){ try{ localStorage.setItem("mk.name",nm0); }catch(e){} }   // 新規登録の時だけ、入力したアカウント名を使う
             saveSes(d,email); renderBtn();
             let note=""; try{ note=await syncAcct(d.access_token); }catch(e){ note="ログインしましたが、記録の同期に失敗しました（"+e.message+"）"; }
-            if(nm0 && !lsGet("mk.name")) { try{ localStorage.setItem("mk.name",nm0); }catch(e){} }
-            if(nm0) await saveAcctName(nm0);
+            if(nm0 && (signup || !lsGet("mk.name"))) await saveAcctName(nm0);   // ログインでは上書きしない(アカウント側の名前が正。名前が未登録のアカウントだけ入力を採用)
             renderBtn(); view(note,true);
           }catch(e){ m.textContent="通信に失敗しました"; }
         };
