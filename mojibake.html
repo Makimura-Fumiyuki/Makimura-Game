@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>文字化け かくれんぼ</title>
-<meta name="apple-mobile-web-app-title" content="文字化け かくれんぼ">
+<title>文字化けかくれんぼ</title>
+<meta name="apple-mobile-web-app-title" content="文字化けかくれんぼ">
 <meta name="description" content="文字に化けてかくれんぼ。webサイトに隠れたり、自分で用意した画像に隠れたり">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="牧村が作ったゲーム集">
-<meta property="og:title" content="文字化け かくれんぼ">
+<meta property="og:title" content="文字化けかくれんぼ">
 <meta property="og:description" content="文字に化けてかくれんぼ。webサイトに隠れたり、自分で用意した画像に隠れたり">
 <meta name="twitter:card" content="summary">
 <link rel="canonical" href="https://makimura-gamehub.com/mojibake">
@@ -614,7 +614,7 @@ mkDD("blurSel",BLURS.map(b=>({n:"ぼかし "+b.n,blur:b.v})),()=>readBar());   /
 const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co", SB_KEY="sb_publishable_cak3-W9Mmgahnwawreoa1Q_CVuhmkKL";
 let snapVer=0, lastVer=-1, lastSnapHost=null, hbT=0, joinChk=0, gotSnap=false, helloSent=false, photoInfo=null;
 function genCode(){ let c=""; for(let i=0;i<5;i++) c+=CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)]; return c; }
-function inviteText(c){ return "牧村が作った『文字化け かくれんぼ』を一緒に遊ぼう！\n"+location.origin+location.pathname+"?join="+c+"\n\n合言葉："+c+"\n※リンクから参加できない時に使ってね"; }
+function inviteText(c){ return "牧村が作った『文字化けかくれんぼ』を一緒に遊ぼう！\n"+location.origin+location.pathname+"?join="+c+"\n\n合言葉："+c+"\n※リンクから参加できない時に使ってね"; }
 let hostAt=0, noHostT=0;   // hostAt=オーナーになった時刻(presenceに載せる。オーナーが2人見えた時は新しい方が正)
 function myPresence(){ return { id:myId, name:nameDecided?myName:"", host:isHost(), ha:isHost()?hostAt:0, t:joinT }; }
 function send(event,payload){ if(!online||!ch) return; try{ ch.send({ type:"broadcast", event, payload }); }catch(e){} }
