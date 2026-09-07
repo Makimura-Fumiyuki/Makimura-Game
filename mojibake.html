@@ -37,9 +37,15 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 /* ロゴ=2行(2026-09-07 改名。1行目「文字化け」・2行目「かくれんぼ」は小さめ)。色ずれ+グリッチは2行まとめて掛ける */
 .logo .wm{ display:block; color:var(--ink); font-weight:900; text-shadow:3px 0 0 var(--cyan), -3px 0 0 var(--mag); animation:glitch 6s infinite; }
 /* 字間は2026-09-07に「文字化け」-13px・「かくれんぼ」-20px(牧村指示。5px/15px→さらに8px/5px。PCの最大サイズ85px/38pxを基準にemへ換算=スマホでも同じ詰まり具合になる)。text-indentは同じ値=最後の字の後ろに付く隙間を相殺して中央にそろえる */
-/* 行間も10px詰める(2026-09-07)。重なる部分は「かくれんぼ」が下=「文字化け」が前面(z-index) */
-.logo .l1{ display:block; position:relative; z-index:2; font-size:clamp(48px,12.4vw,85px); line-height:1.04; letter-spacing:-.143em; text-indent:-.143em; }
-.logo .l2{ display:block; position:relative; z-index:1; margin-top:-.183em; font-size:clamp(22px,5.6vw,38px); line-height:1.1; letter-spacing:-.327em; text-indent:-.327em; }
+/* 行間も詰める(2026-09-07・計-15px)。重なる部分は「かくれんぼ」が下=「文字化け」が前面(z-index)。
+   さらに「文字化け」は1文字ずつレイヤーを分け、左の字ほど手前(文>字>化>け) */
+.logo .l1 > span{ position:relative; }
+.logo .l1 > span:nth-child(1){ z-index:4; }
+.logo .l1 > span:nth-child(2){ z-index:3; }
+.logo .l1 > span:nth-child(3){ z-index:2; }
+.logo .l1 > span:nth-child(4){ z-index:1; }
+.logo .l1{ display:block; position:relative; z-index:2; font-size:clamp(48px,12.4vw,85px); line-height:1.04; letter-spacing:-.237em; text-indent:-.237em; }
+.logo .l2{ display:block; position:relative; z-index:1; margin-top:-.315em; font-size:clamp(22px,5.6vw,38px); line-height:1.1; letter-spacing:-.327em; text-indent:-.327em; }
 .logo .garble{ display:block; margin-top:10px; font-size:clamp(12px,3vw,16px); color:var(--gray); letter-spacing:.14em; }
 @keyframes glitch{ 0%,92%,100%{ text-shadow:3px 0 0 var(--cyan), -3px 0 0 var(--mag); transform:none; }
   94%{ text-shadow:-5px 0 0 var(--cyan), 5px 0 0 var(--mag); transform:translateX(2px) skewX(-4deg); }
@@ -317,7 +323,7 @@ button.dd{ text-align:left; min-width:96px; }
 
 <!-- ===== タイトル ===== -->
 <div class="scene on" id="titleScene">
-  <div class="logo"><span class="wm"><span class="l1">文字化け</span><span class="l2">かくれんぼ</span></span><span class="garble">譁�蟄怜喧縺� 縺九￥繧後ｓ縺ｼ</span></div>
+  <div class="logo"><span class="wm"><span class="l1"><span>文</span><span>字</span><span>化</span><span>け</span></span><span class="l2">かくれんぼ</span></span><span class="garble">譁�蟄怜喧縺� 縺九￥繧後ｓ縺ｼ</span></div>
   <div class="tagline">文字に化けて、かくれんぼ</div>
   <div class="mode-row">
     <button id="makeRoomBtn">部屋を作る<small>合言葉を発行</small></button>
