@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>とても文字化け</title>
-<meta name="apple-mobile-web-app-title" content="とても文字化け">
+<title>文字化け かくれんぼ</title>
+<meta name="apple-mobile-web-app-title" content="文字化け かくれんぼ">
 <meta name="description" content="文字に化けてかくれんぼ。webサイトに隠れたり、自分で用意した画像に隠れたり">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="牧村が作ったゲーム集">
-<meta property="og:title" content="とても文字化け">
+<meta property="og:title" content="文字化け かくれんぼ">
 <meta property="og:description" content="文字に化けてかくれんぼ。webサイトに隠れたり、自分で用意した画像に隠れたり">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjMWMxYzIyIi8+PHRleHQgeD0iMTYiIHk9IjE2LjUiIGZvbnQtc2l6ZT0iMTgiIGZvbnQtd2VpZ2h0PSI3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIiBmaWxsPSIjZmZmIiBmb250LWZhbWlseT0iJ0hpcmFnaW5vIFNhbnMnLCdOb3RvIFNhbnMgSlAnLHNhbnMtc2VyaWYiPuaWhzwvdGV4dD48L3N2Zz4=">
@@ -34,18 +34,10 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 #titleScene, #lobbyScene{ flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:20px; overflow:auto; }
 #lobbyScene{ justify-content:flex-start; padding-top:56px; padding-bottom:110px; }
 .logo{ position:relative; text-align:center; line-height:1; }
-.logo .main{ position:relative; display:block; width:3.9em; height:1.72em; margin:0 auto; font-size:clamp(48px,12.4vw,85px); font-weight:900; letter-spacing:0; color:var(--ink);
-  text-shadow:3px 0 0 var(--cyan), -3px 0 0 var(--mag); animation:glitch 6s infinite; }
-/* ロゴ=7文字を1つずつ絶対配置(牧村の参考画像を採寸。単位=大きい文字のfont-size。「とても」は約半分の大きさで文/字の上に、と→も で少し下がる) */
-.logo .g{ position:absolute; line-height:1; width:1em; text-align:center; }
-.logo .g1, .logo .g2, .logo .g3{ font-size:.5em; }
-.logo .g1{ left:calc(1.80em - 11px); top:calc(.52em + 2px); }      /* と */
-.logo .g2{ left:calc(2.60em - 11px); top:calc(.66em - 3px); }      /* て */
-.logo .g3{ left:calc(3.19em - 11px); top:calc(.60em - 4px); font-size:.54em; }   /* も(少し大きい) */
-.logo .g4{ left:.19em; top:.67em; }       /* 文 */
-.logo .g5{ left:1.075em; top:.67em; }     /* 字 */
-.logo .g6{ left:1.88em; top:.67em; }      /* 化 */
-.logo .g7{ left:2.80em; top:.67em; }      /* け */
+/* ロゴ=2行(2026-09-07 改名。1行目「文字化け」・2行目「かくれんぼ」は小さめ)。色ずれ+グリッチは2行まとめて掛ける */
+.logo .wm{ display:block; color:var(--ink); font-weight:900; text-shadow:3px 0 0 var(--cyan), -3px 0 0 var(--mag); animation:glitch 6s infinite; }
+.logo .l1{ display:block; font-size:clamp(48px,12.4vw,85px); line-height:1.04; letter-spacing:.01em; }
+.logo .l2{ display:block; margin-top:.08em; font-size:clamp(22px,5.6vw,38px); line-height:1.1; letter-spacing:.2em; text-indent:.2em; }
 .logo .garble{ display:block; margin-top:10px; font-size:clamp(12px,3vw,16px); color:var(--gray); letter-spacing:.14em; }
 @keyframes glitch{ 0%,92%,100%{ text-shadow:3px 0 0 var(--cyan), -3px 0 0 var(--mag); transform:none; }
   94%{ text-shadow:-5px 0 0 var(--cyan), 5px 0 0 var(--mag); transform:translateX(2px) skewX(-4deg); }
@@ -323,7 +315,7 @@ button.dd{ text-align:left; min-width:96px; }
 
 <!-- ===== タイトル ===== -->
 <div class="scene on" id="titleScene">
-  <div class="logo"><span class="main"><span class="g g1">と</span><span class="g g2">て</span><span class="g g3">も</span><span class="g g4">文</span><span class="g g5">字</span><span class="g g6">化</span><span class="g g7">け</span></span><span class="garble">縺ｨ縺ｦ繧よ枚蟄怜喧縺�</span></div>
+  <div class="logo"><span class="wm"><span class="l1">文字化け</span><span class="l2">かくれんぼ</span></span><span class="garble">譁�蟄怜喧縺� 縺九￥繧後ｓ縺ｼ</span></div>
   <div class="tagline">文字に化けて、かくれんぼ</div>
   <div class="mode-row">
     <button id="makeRoomBtn">部屋を作る<small>合言葉を発行</small></button>
@@ -608,7 +600,7 @@ mkDD("blurSel",BLURS.map(b=>({n:"ぼかし "+b.n,blur:b.v})),()=>readBar());   /
 const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co", SB_KEY="sb_publishable_cak3-W9Mmgahnwawreoa1Q_CVuhmkKL";
 let snapVer=0, lastVer=-1, lastSnapHost=null, hbT=0, joinChk=0, gotSnap=false, helloSent=false, photoInfo=null;
 function genCode(){ let c=""; for(let i=0;i<5;i++) c+=CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)]; return c; }
-function inviteText(c){ return "牧村が作った『とても文字化け』を一緒に遊ぼう！\n"+location.origin+location.pathname+"?join="+c+"\n\n合言葉："+c+"\n※リンクから参加できない時に使ってね"; }
+function inviteText(c){ return "牧村が作った『文字化け かくれんぼ』を一緒に遊ぼう！\n"+location.origin+location.pathname+"?join="+c+"\n\n合言葉："+c+"\n※リンクから参加できない時に使ってね"; }
 let hostAt=0, noHostT=0;   // hostAt=オーナーになった時刻(presenceに載せる。オーナーが2人見えた時は新しい方が正)
 function myPresence(){ return { id:myId, name:nameDecided?myName:"", host:isHost(), ha:isHost()?hostAt:0, t:joinT }; }
 function send(event,payload){ if(!online||!ch) return; try{ ch.send({ type:"broadcast", event, payload }); }catch(e){} }
