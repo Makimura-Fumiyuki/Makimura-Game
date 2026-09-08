@@ -217,6 +217,15 @@
   }
   .help-btn span{ width:20px; height:20px; border-radius:50%; background:var(--gold); color:#3a2a06;
     display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:900; }
+  /* 虫眼鏡(拡大縮小)。2026-09-07: 文字化けかくれんぼ/待てアートと同じUI・同じ操作(スペース/ホイールクリックで移動) */
+  #zoomBox{ position:fixed; z-index:40; right:14px; bottom:26px; display:flex; align-items:center; gap:4px; }
+  #zoomBox .zb{ width:34px; height:34px; border-radius:50%; border:none; background:rgba(253,246,231,.92); color:#22241f;
+    font-size:17px; font-weight:900; line-height:1; cursor:pointer; box-shadow:0 2px 7px rgba(0,0,0,.28); font-family:inherit; }
+  #zoomBox .zb:active{ transform:translateY(1px) scale(.94); }
+  #zoomBox .magi{ width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; color:var(--card); cursor:pointer; }
+  #zoomBox .magi svg{ width:18px; height:18px; }
+  .plate.grab{ cursor:grab; }
+  .plate.panning{ cursor:grabbing; }
   .snd-btn{
     position:fixed; right:12px; top:12px; z-index:40; display:flex; align-items:center; gap:6px;
     padding:7px 14px; border:none; border-radius:999px; cursor:pointer;
@@ -394,6 +403,11 @@
     <span class="pill" id="roundPill">1回目</span>
     <span class="timer" id="timer">00:30</span>
     <span class="pill" style="visibility:hidden;"></span>
+  </div>
+  <div id="zoomBox">
+    <button class="zb" id="zoomOut" type="button" aria-label="縮小">−</button>
+    <span class="magi" id="zoomReset" title="もとの大きさ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/></svg></span>
+    <button class="zb" id="zoomIn" type="button" aria-label="拡大">＋</button>
   </div>
   <div class="plate" id="cookiePlate">
     <canvas id="cookie"></canvas>
@@ -1423,6 +1437,41 @@ function applyZoom(){ const pl=$("cookiePlate"); const w=W*cell, h=H*cell;
   zx=Math.min(0, Math.max(w*(1-zoom), zx)); zy=Math.min(0, Math.max(h*(1-zoom), zy));   // クッキーが枠から出ない範囲
   pl.style.transformOrigin="0 0"; pl.style.transform=(zoom===1)? "" : "translate("+zx+"px,"+zy+"px) scale("+zoom+")"; }
 function resetZoom(){ zoom=1; zx=0; zy=0; applyZoom(); }
+/* 虫眼鏡ボタン・Ctrl(⌘)+ホイールで拡大縮小、ホイールクリック/スペース+ドラッグで移動(2026-09-07。ピンチと同じ zoom/zx/zy を使う) */
+function zoomAt(z1,px,py){   // px,py=枠(plate)の拡大前座標
+  const z0=zoom; z1=Math.max(1,Math.min(4,z1)); if(z1===z0) return;
+  const ox=(px-zx)/z0, oy=(py-zy)/z0;
+  zoom=z1; zx=px-ox*z1; zy=py-oy*z1; applyZoom();
+}
+function zoomBy(f){ zoomAt(zoom*f,(W*cell)/2,(H*cell)/2); }   // 枠の中心を軸に
+let panning=null, spaceHeld=false;
+function zTyping(){ const a=document.activeElement; return !!(a&&(a.tagName==="INPUT"||a.tagName==="TEXTAREA"||a.tagName==="SELECT")); }
+$("zoomIn").addEventListener("click",()=>{ playSelect(); zoomBy(1.25); });
+$("zoomOut").addEventListener("click",()=>{ playSelect(); zoomBy(1/1.25); });
+$("zoomReset").addEventListener("click",()=>{ playSelect(); resetZoom(); });
+$("cookiePlate").addEventListener("wheel",e=>{
+  if(!(e.ctrlKey||e.metaKey)) return; e.preventDefault();
+  const r=$("cookiePlate").getBoundingClientRect();
+  zoomAt(zoom*(e.deltaY<0?1.1:1/1.1), e.clientX-r.left+zx, e.clientY-r.top+zy);
+},{passive:false});
+document.addEventListener("keydown",e=>{ if(e.code==="Space"&&!zTyping()&&$("gameScene").classList.contains("on")){ e.preventDefault(); if(!spaceHeld){ spaceHeld=true; $("cookiePlate").classList.add("grab"); } } });
+document.addEventListener("keyup",e=>{ if(e.code==="Space"){ spaceHeld=false; $("cookiePlate").classList.remove("grab"); } });
+window.addEventListener("blur",()=>{ spaceHeld=false; $("cookiePlate").classList.remove("grab"); });
+$("cookiePlate").addEventListener("auxclick",e=>{ if(e.button===1) e.preventDefault(); });
+$("cookiePlate").addEventListener("pointerdown",e=>{   // capture=食べる処理より先に受ける
+  if(!(e.button===1||spaceHeld)) return;
+  e.preventDefault(); e.stopPropagation();
+  panning={ id:e.pointerId, x:e.clientX, y:e.clientY, zx0:zx, zy0:zy };
+  $("cookiePlate").classList.add("panning");
+  try{ $("cookiePlate").setPointerCapture(e.pointerId); }catch(_){ }
+},true);
+$("cookiePlate").addEventListener("pointermove",e=>{
+  if(!panning||panning.id!==e.pointerId) return;
+  zx=panning.zx0+(e.clientX-panning.x); zy=panning.zy0+(e.clientY-panning.y); applyZoom();
+},true);
+["pointerup","pointercancel"].forEach(ev=>$("cookiePlate").addEventListener(ev,e=>{
+  if(!panning||panning.id!==e.pointerId) return; panning=null; $("cookiePlate").classList.remove("panning");
+},true));
 function pinchStart(){ const a=[...ptrs.values()]; const d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)||1;
   const pr=$("cookiePlate").getBoundingClientRect(); const mx=(a[0].x+a[1].x)/2-pr.left, my=(a[0].y+a[1].y)/2-pr.top;
   pinch={ d0:d, z0:zoom, mx0:mx, my0:my, ox:(mx-zx)/zoom, oy:(my-zy)/zoom }; }
