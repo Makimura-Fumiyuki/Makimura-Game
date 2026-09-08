@@ -746,6 +746,26 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+/* ===== サイト共通の名前(2026-09-07) =====
+   ハブのアカウント名(mk.name)を対戦相手にも見せる。アカウントが無い人は「ゲスト」。
+   presenceに名前を載せて交換する(名前は対局中に変わらないのでこれで足りる) */
+const MK_GUEST="ゲスト";
+function mkSes(){ try{ return JSON.parse(localStorage.getItem("mk.acct")||"null"); }catch(e){ return null; } }
+function mkIn(){ return !!mkSes(); }
+function mkName(){ try{ return (localStorage.getItem("mk.name")||"").trim(); }catch(e){ return ""; } }
+function myAcctName(){ return mkIn()? mkName() : ""; }            // presenceで相手に渡す名前(未登録は空)
+function meLabel(){ const n=myAcctName(); return n||"自分"; }      // 自分の表示(未登録は従来どおり「自分」)
+let peerName="";
+function foeLabel(){ return peerName||MK_GUEST; }                  // あいての表示(未登録は「ゲスト」)
+let redrawNames=null;   // 対局画面の名札を描き直す(名前がpresenceで届いたら呼ぶ)
+function readPeerName(){   // presenceからあいての名前を取り込む
+  try{ if(!ch) return; const st=ch.presenceState(); let n="";
+    Object.keys(st).forEach(k=>{ const p=st[k]&&st[k][0]; if(!p||k===myId) return; if(typeof p.n==="string"&&p.n) n=p.n; });
+    const before=peerName; peerName=(n||"").slice(0,16);
+    if(peerName!==before && redrawNames) redrawNames();
+  }catch(e){}
+}
+
 (function(){
   "use strict";
   const N=13, EMPTY=0, BLACK=1, WHITE=2;
@@ -1473,12 +1493,13 @@
   function capOf(p){ return (p===BLACK)?capB:capW; }
   /* 碁笥の上のラベル: 手番の名前 + とった石の数/ノルマ */
   function renderBowlTags(){
-    const foe = (!local && !online) ? LV_NAMES[cpuLv]+"ロボ" : "あいて";   // ロボット戦は相手の碁笥に階級を常時表示
-    const lb= local ? "先手" : (human===BLACK)?"自分":foe;
-    const lw= local ? "後手" : (human===WHITE)?"自分":foe;
+    const foe = (!local && !online) ? LV_NAMES[cpuLv]+"ロボ" : (online?foeLabel():"あいて");   // ロボット戦は相手の碁笥に階級を常時表示
+    const lb= local ? "先手" : (human===BLACK)?(online?meLabel():"自分"):foe;
+    const lw= local ? "後手" : (human===WHITE)?(online?meLabel():"自分"):foe;
     document.getElementById("bowlTagB").innerHTML=lb+"<b>"+capB+"/"+capNorm+"</b>";
     document.getElementById("bowlTagW").innerHTML=lw+"<b>"+capW+"/"+capNorm+"</b>";
   }
+  redrawNames=renderBowlTags;   // 名前が届いたら名札を描き直す
   const giveupBtn=document.getElementById("giveupBtn");
   const undoBtn=document.getElementById("undoBtn");
   /* 一手戻るの演出: 下げる石が自分の碁笥へ飛んで帰る */
@@ -1557,7 +1578,7 @@
       // オンラインは相手の許可制(待った)。申し込んで返事を待つ
       undoPending=true; undoBtn.disabled=true;
       if(ch) ch.send({ type:"broadcast", event:"undoreq", payload:{} });
-      showToast("「待った」を申し込んだ。あいての返事を待て");
+      showToast("「待った」を申し込んだ。"+foeLabel()+"の返事を待て");
       return;
     }
     if(local){
@@ -1590,7 +1611,7 @@
       if(winner===0){ rTitle.textContent="引き分け"; rTitle.className="r-title"; rSub.textContent="打てる場所がなくなった"; }
       else if(local){ rTitle.textContent=(winner===BLACK?"先手":"後手")+"の勝ち！"; rTitle.className="r-title win"; rSub.textContent=subWin; playWin(); }
       else if(winner===human){ rTitle.textContent="あなたの勝ち！"; rTitle.className="r-title win"; rSub.textContent=subWin; playWin(); }
-      else { rTitle.textContent=(online?"あいての勝ち…":"ロボットの勝ち…"); rTitle.className="r-title"; rSub.textContent="次はきっと勝てる"; playLose(); }
+      else { rTitle.textContent=(online?foeLabel()+"の勝ち…":"ロボットの勝ち…"); rTitle.className="r-title"; rSub.textContent="次はきっと勝てる"; playLose(); }
       if(!local && !online){   // ロボット戦: 戦った階級と待ったの有無を表示(勝ちの自慢に)
         rSub.innerHTML += '<br><span class="r-foe">'+LV_NAMES[cpuLv]+'ロボットと対局'+(undoUsed?'（一手戻りあり）':'（待ったなし）')+'</span>';
       }
@@ -1634,11 +1655,13 @@
     isHost=asHost;
     roomWins=0; roomLosses=0; roomDraws=0; roomStreak=0;   // 新しい部屋 = 成績リセット
     ch=sbClient().channel("maigomoku_"+code, { config:{ presence:{ key:myId }, broadcast:{ self:false } } });
+    ch.on("presence",{event:"join"},()=>{ readPeerName(); });
     ch.on("presence",{event:"sync"},()=>{
+      readPeerName();
       if(isHost && !startSent && presenceCount()>=2){
         startSent=true;
         const hc=(Math.random()<0.5)?BLACK:WHITE;   // 先手(黒)はランダム
-        ch.send({ type:"broadcast", event:"start", payload:{ hc, ...rulePayload() } });
+        ch.send({ type:"broadcast", event:"start", payload:{ pn:myAcctName(), hc, ...rulePayload() } });
         beginOnline(hc);
       }
     });
@@ -1646,7 +1669,7 @@
       if(!online || presenceCount()>=2) return;
       if(over){   // 決着後の退出: 結果はそのまま、再戦だけ不可に
         online=false; peerGone=true; leaveChannel();
-        if(resultOverlay.classList.contains("on")) rSub.textContent="あいては退出しました";
+        if(resultOverlay.classList.contains("on")) rSub.textContent=foeLabel()+"は退出しました";
         return;
       }
       opponentLeft();   // 対局中の退出
@@ -1656,12 +1679,15 @@
       if(!online) return;
       if(over){
         online=false; peerGone=true; leaveChannel();
-        if(resultOverlay.classList.contains("on")) rSub.textContent="あいては退出しました";
+        if(resultOverlay.classList.contains("on")) rSub.textContent=foeLabel()+"は退出しました";
         return;
       }
       opponentLeft();
     });
+    ch.on("broadcast",{event:"nm"},({payload})=>{ if(payload&&typeof payload.pn==="string"){ peerName=payload.pn.slice(0,16); if(typeof redrawNames==="function"&&redrawNames) redrawNames(); } });   // 名前の交換(あいて→自分)
     ch.on("broadcast",{event:"start"},({payload})=>{
+      if(payload&&typeof payload.pn==="string") peerName=payload.pn.slice(0,16);   // 部屋主の名前
+      try{ ch.send({ type:"broadcast", event:"nm", payload:{ pn:myAcctName() } }); }catch(e){}   // 自分の名前を返す
       if(isHost) return;
       applyNetRules(payload);   // 部屋主のルールを受け取って揃える
       beginOnline(payload && payload.hc===BLACK ? WHITE : BLACK);
@@ -1686,14 +1712,14 @@
       if(!online||over) return;
       over=true; busy=true; setGiveupVisible(false);
       document.getElementById("confirmOverlay").classList.remove("on");
-      rTitle.textContent="あいての投了！"; rTitle.className="r-title win";
+      rTitle.textContent=foeLabel()+"の投了！"; rTitle.className="r-title win";
       rSub.textContent="あなたの勝ち"; playWin(); bumpRoomStats("win"); resultOverlay.classList.add("on");
     });
-    ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) speakStamp(payload.i|0); if(payload) spawnStamp(payload.i|0, "あいて"); });
+    ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) speakStamp(payload.i|0); if(payload) spawnStamp(payload.i|0, foeLabel()); });
     ch.on("broadcast",{event:"rematch"},()=>{
       peerRematch=true;
       if(myRematch){ if(isHost) hostRestart(); }   // 両者合意: 部屋主が先手後手を引き直して開始合図を送る
-      else if(resultOverlay.classList.contains("on")) rSub.textContent="あいてが「もう一局」を希望！";
+      else if(resultOverlay.classList.contains("on")) rSub.textContent=foeLabel()+"が「もう一局」を希望！";
     });
     ch.on("broadcast",{event:"restart"},({payload})=>{   // 再戦: 先手後手は毎回引き直し。ルールも部屋主のものに揃え直す
       if(isHost) return;
@@ -1724,7 +1750,7 @@
       showToast("「待った」は断られた");
     });
     ch.subscribe(async (status)=>{
-      if(status==="SUBSCRIBED"){ try{ await ch.track({}); }catch(e){} if(onReady) onReady(); }
+      if(status==="SUBSCRIBED"){ try{ await ch.track({ n:myAcctName() }); }catch(e){} if(onReady) onReady(); }
       else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){
         roomStatus('<div class="room-note err">通信失敗。通信環境を見直すのだ</div>');
       }
@@ -1742,7 +1768,7 @@
   }
   function opponentLeft(){
     over=true; busy=true; online=false; peerGone=true; setGiveupVisible(false);
-    rTitle.textContent="あいてが退出しました"; rTitle.className="r-title";
+    rTitle.textContent=foeLabel()+"が退出しました"; rTitle.className="r-title";
     rSub.textContent="部屋を作りなおし、再戦したまえ";
     resultOverlay.classList.add("on");
     leaveChannel();
@@ -2122,7 +2148,7 @@
       myRematch=true;
       ch.send({ type:"broadcast", event:"rematch", payload:{} });
       if(peerRematch){ if(isHost) hostRestart(); else rSub.textContent="はじまる…"; }
-      else { playSelect(); rSub.textContent="あいての「もう一局」を待っておる…"; }
+      else { playSelect(); rSub.textContent=foeLabel()+"の「もう一局」を待っておる…"; }
       return;
     }
     playStart(); startGame();
@@ -2234,7 +2260,7 @@
     const central=1-Math.abs(hx-0.5)*2;                      // 0(両端)〜1(中央)
     el.style.setProperty("--rise", "-"+(24+(1-central)*16).toFixed(0)+"vh");   // 中央は低め(盤の下側に少しかぶる程度)・両端は高め(従来通り)
     el.style.setProperty("--dx", (Math.random()*24-12).toFixed(0)+"px");
-    el.innerHTML='<span class="s-emoji">'+STAMP_SVGS[i]+'</span><span class="s-name">'+(who||"自分")+'</span>';
+    el.innerHTML='<span class="s-emoji">'+STAMP_SVGS[i]+'</span><span class="s-name">'+(who||(online?meLabel():"自分"))+'</span>';
     if(seOn && !stampMuted) playStamp(i);   // スタンプ別の効果音
     const overlayOpen=document.getElementById("resultOverlay").classList.contains("on")||document.getElementById("confirmOverlay").classList.contains("on");
     if(overlayOpen){ el.classList.add("over-dialog"); document.body.appendChild(el); }
@@ -2259,7 +2285,7 @@
   }
   function sendStamp(i){
     speakStamp(i);   // 読み上げ(やめてよぉ/すごい/わらえる)。届いたスタンプも受け側で読み上げる(2026-09-05)
-    spawnStamp(i, "自分", true);
+    spawnStamp(i, online?meLabel():"自分", true);
     if(online && ch){ try{ ch.send({ type:"broadcast", event:"stamp", payload:{ i } }); }catch(e){} }   // 相手にも届ける(ロストしても実害なし)
   }
   let stampMuted=false; try{ stampMuted=localStorage.getItem("mmk.smute")==="1"; }catch(e){}
