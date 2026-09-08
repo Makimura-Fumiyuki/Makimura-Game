@@ -286,7 +286,7 @@
   #gameScene.on ~ .home-foot{ display:none; }
 
   /* ===== スタンプ(全ゲーム共通の作り) ===== */
-  #stampBar{ position:fixed; left:50%; transform:translateX(-50%); bottom:10px; z-index:75; display:none; gap:9px; }
+  #stampBar{ position:fixed; left:58px; bottom:26px; z-index:75; display:none; gap:9px; }   /* 2026-09-07: 画面中央下→左下へ(文字化けかくれんぼと同じ位置。left:58pxは最小化ボタン(左外)のぶんの余白) */
   #stampBar.on{ display:flex; }
   .stamp-btn{ width:48px; height:48px; padding:0; border:none; border-radius:50%; cursor:pointer;
     background:rgba(253,246,231,.92); box-shadow:0 3px 0 rgba(6,26,24,.5);
