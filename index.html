@@ -1480,7 +1480,8 @@
       eye.addEventListener("pointerdown",show); ["pointerup","pointercancel","pointerleave"].forEach(ev=>eye.addEventListener(ev,hide));
       window.addEventListener("pointerup",hide);
     }
-    function renderBtn(){ const s=ses(); btnTx.textContent=s&&s.email ? (lsGet("mk.name")||s.email) : "アカウント"; }
+    const STAGE=/[?&]stage=1/.test(location.search);   // 文字化けかくれんぼのステージ=全員が同じ画面を見るので、名前は出さず「アカウント」固定
+    function renderBtn(){ const s=ses(); btnTx.textContent=(!STAGE&&s&&s.email) ? (lsGet("mk.name")||s.email) : "アカウント"; }
     function view(msg,ok){
       const s=ses();
       if(s){

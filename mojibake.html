@@ -958,7 +958,7 @@ wrapEl.addEventListener("touchcancel",()=>{ pinch=null; pinchLock=false; });
 wrapEl.addEventListener("wheel",e=>{ if(!(e.ctrlKey||e.metaKey)) return; e.preventDefault(); setZoom(zoom*(e.deltaY<0?1.1:1/1.1), e.clientX, e.clientY); },{passive:false});
 let panning=null, spaceHeld=false;
 function typing(){ const a=document.activeElement; return !!(a&&(a.tagName==="INPUT"||a.tagName==="SELECT"||a.tagName==="TEXTAREA")); }
-document.addEventListener("keydown",e=>{ if(e.code==="Space"&&!typing()&&$("gameScene").classList.contains("on")){ e.preventDefault(); if(!spaceHeld){ spaceHeld=true; wrapEl.classList.add("grab"); } } });
+document.addEventListener("keydown",e=>{ if(e.isComposing) return; if(e.code==="Space"&&!typing()&&$("gameScene").classList.contains("on")){ e.preventDefault(); if(!spaceHeld){ spaceHeld=true; wrapEl.classList.add("grab"); } } });
 document.addEventListener("keyup",e=>{ if(e.code==="Space"){ spaceHeld=false; wrapEl.classList.remove("grab"); } });
 window.addEventListener("blur",()=>{ spaceHeld=false; wrapEl.classList.remove("grab"); });
 wrapEl.addEventListener("auxclick",e=>{ if(e.button===1) e.preventDefault(); });
@@ -1026,6 +1026,12 @@ function bbox(h){   // 回転後の箱を囲む水平な矩形(ステージ座�
 }
 function placeAtts(h){ if(!h.atts||!h.atts.length) return; const vis=h.x!=null&&h.el&&h.el.style.display!=="none"&&!h.el.classList.contains("hid"); const b=vis?bbox(h):null;
   h.atts.forEach(a=>{ const hideEdit=(a.el===h.editRow&&h.el.classList.contains("unsel")); a.el.style.display=(vis&&!hideEdit)?"":"none"; if(!b) return; a.el.style.left=Math.round(b.minX-3)+"px"; a.el.style.top=Math.round(a.where==="above"?b.minY-a.gap:b.maxY+a.gap)+"px"; }); }
+function applyText(h,inp){   // 入力欄の内容を反映(変換が終わってから呼ぶ)
+  let v=inp.value.replace(/[\r\n]/g,"");
+  const cut=[...v].slice(0,MAX_LEN).join("");
+  if(cut!==v){ v=cut; inp.value=v; }   // 上限を超えた分だけ切る(変換中は切らない)
+  h.text=v; styleHider(h); pushHist("type"); sendUpd();
+}
 function makeHider(h){
   if(h.el) h.el.remove(); if(h.atts){ h.atts.forEach(a=>a.el.remove()); h.atts=[]; }
   const el=document.createElement("div"); el.className="hider"+(h===mine?" mine":""); el.dataset.id=h.id;
@@ -1034,10 +1040,15 @@ function makeHider(h){
     const fr=document.createElement("div"); fr.className="frame"; el.appendChild(fr);
     ["tl","t","tr","l","r","bl","b","br","rot"].forEach(k=>{ const d=document.createElement("div"); d.className="hd "+k; d.dataset.h=k; if(k==="rot") d.innerHTML=ROT_SVG; el.appendChild(d); });
     const row=document.createElement("div"); row.className="edit-row att";
-    row.innerHTML='<input id="txtIn" maxlength="'+MAX_LEN+'" autocomplete="off" spellcheck="false" placeholder="最低1文字"><button id="txtReset" type="button">リセット</button>';
+    row.innerHTML='<input id="txtIn" autocomplete="off" spellcheck="false" placeholder="最低1文字"><button id="txtReset" type="button">リセット</button>';   // maxlengthは付けない=IMEの変換中の文字まで数えられて日本語が打てなくなるため(下のJSで制限)
     attach(h,row,"below",14); h.editRow=row;
     const inp=row.querySelector("#txtIn"); inp.value=h.text;
-    inp.addEventListener("input",e=>{ h.text=e.target.value.replace(/[\r\n]/g,"").slice(0,MAX_LEN); styleHider(h); pushHist("type"); sendUpd(); });
+    /* 日本語入力(IME)対策: 変換中(composing)は h.text と表示だけ更新し、styleHider/placeAtts などのDOM操作はしない。
+       変換中に入力欄の周りを作り替えると、変換が中断されて「英語しか打てない」状態になる */
+    let composing=false;
+    inp.addEventListener("compositionstart",()=>{ composing=true; });
+    inp.addEventListener("compositionend",()=>{ composing=false; applyText(h,inp); });
+    inp.addEventListener("input",()=>{ if(composing){ h.text=inp.value.replace(/[\r\n]/g,""); if(h.tx) h.tx.textContent=shownText(h); return; } applyText(h,inp); });
     inp.addEventListener("keydown",e=>{ if(e.isComposing||e.keyCode===229) return;   // 日本語入力の変換確定Enterで入力欄を閉じない(ローマ字しか打てない/日本語が打てないバグの原因)
       if(e.key==="Enter"||e.key==="Escape") e.target.blur(); if((e.metaKey||e.ctrlKey)&&/^[zy]$/i.test(e.key||"")){ e.preventDefault(); if(e.key.toLowerCase()==="y"||e.shiftKey) redo(); else undo(); } });
     row.querySelector("#txtReset").addEventListener("click",()=>{ playSelect(); h.size=DEF_SIZE; h.sx=1; h.sy=1; h.rot=0; styleHider(h); pushHist(); sendUpd(); });
@@ -1162,7 +1173,7 @@ function applyHist(o){
 function undo(){ if(phase!=="hide"||!mine||hidx<=0) return; hidx--; applyHist(hist[hidx]); histTag=""; playSelect(); }
 function redo(){ if(phase!=="hide"||!mine||hidx>=hist.length-1) return; hidx++; applyHist(hist[hidx]); histTag=""; playSelect(); }
 document.addEventListener("keydown",e=>{
-  if(phase!=="hide"||!mine) return;
+  if(e.isComposing||phase!=="hide"||!mine) return;
   const mod=e.metaKey||e.ctrlKey; if(!mod) return; const k=(e.key||"").toLowerCase();
   if(k==="z"&&!e.shiftKey){ e.preventDefault(); undo(); }
   else if((k==="z"&&e.shiftKey)||k==="y"){ e.preventDefault(); redo(); }
@@ -1243,7 +1254,7 @@ wrapEl.addEventListener("dblclick",e=>{
   layoutHider(mine); playPlace(); pushHist(); flushUpd();
 });
 document.addEventListener("keydown",e=>{
-  if(phase!=="hide"||!mine||mine.x==null||typing()||!amHider()) return;
+  if(e.isComposing||phase!=="hide"||!mine||mine.x==null||typing()||!amHider()) return;
   const k=e.key; if(k!=="ArrowLeft"&&k!=="ArrowRight"&&k!=="ArrowUp"&&k!=="ArrowDown") return;
   e.preventDefault(); const st=e.shiftKey?10:1;
   if(k==="ArrowLeft") mine.x-=st; if(k==="ArrowRight") mine.x+=st; if(k==="ArrowUp") mine.y-=st; if(k==="ArrowDown") mine.y+=st;
