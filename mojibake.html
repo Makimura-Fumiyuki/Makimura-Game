@@ -356,7 +356,7 @@ button.dd{ text-align:left; min-width:96px; }
           写真をえらぶ<small>手持ちの画像で化ける</small></button>
       </div>
       <input type="file" id="photoFile" accept="image/*" style="display:none">
-      <div class="photo-note" id="photoNote" style="display:none;">写真はこの端末と部屋のメンバーの端末だけで使い、サーバーには保存されません<br><span id="fileName">ドラッグ&amp;ドロップでも選択可能です</span></div>
+      <div class="photo-note" id="photoNote" style="display:none;">写真はこの端末と部屋のメンバーの端末だけで使い、サーバーには保存されません<br><span id="fileName">ドラッグ&amp;ドロップや貼り付けでも選択可能です</span></div>
     </div>
     <div class="rule-frame" id="ruleFrame2">
       <div class="rf-title">ルール</div>
@@ -616,6 +616,12 @@ let snapVer=0, lastVer=-1, lastSnapHost=null, hbT=0, joinChk=0, gotSnap=false, h
 function genCode(){ let c=""; for(let i=0;i<5;i++) c+=CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)]; return c; }
 function inviteText(c){ return "牧村が作った『文字化けかくれんぼ』を一緒に遊ぼう！\n"+location.origin+location.pathname+"?join="+c+"\n\n合言葉："+c+"\n※リンクから参加できない時に使ってね"; }
 let hostAt=0, noHostT=0;   // hostAt=オーナーになった時刻(presenceに載せる。オーナーが2人見えた時は新しい方が正)
+/* ★対戦中にpresenceが一瞬落ちただけで「退出した」と扱わないための猶予(2026-09-07)。
+   これが無いと、スマホが一瞬バックグラウンドに回る/通信が瞬断するだけで
+   ①さがす人が消えた判定→全員ロビーへ戻される ②その人抜きで「全員そろった」と誤判定して勝手に進む が起きる。
+   mate(待てアート)・derby(俺たちダービー)と同じ考え方。ロビー中は猶予なし=抜けたらすぐ一覧から消す */
+const GONE_GRACE=20000;
+let goneAt=Object.create(null), lastPres=Object.create(null), goneT=0;
 function myPresence(){ return { id:myId, name:nameDecided?myName:"", host:isHost(), ha:isHost()?hostAt:0, t:joinT }; }
 function send(event,payload){ if(!online||!ch) return; try{ ch.send({ type:"broadcast", event, payload }); }catch(e){} }
 function leaveChannel(){
@@ -650,8 +656,22 @@ function onPresence(){
   if(!ch) return;
   const st=ch.presenceState(); const arr=[];
   Object.keys(st).forEach(k=>{ const p=st[k][0]; if(p&&p.id) arr.push({ id:p.id, name:p.name||"", host:!!p.host, ha:p.ha||0, t:p.t||0 }); });
+  const prevMembers=members.slice(), prevIds=prevMembers.map(m=>m.id);
+  const nowIds=new Set(arr.map(m=>m.id));
+  arr.forEach(m=>{ lastPres[m.id]=m; delete goneAt[m.id]; });
+  if(phase!=="lobby"&&phase!=="title"){   // 対戦中は、消えた人を猶予つきでメンバーに残す
+    const t=Date.now();
+    prevMembers.forEach(m=>{ if(!nowIds.has(m.id)&&!goneAt[m.id]) goneAt[m.id]=t; });
+    Object.keys(goneAt).forEach(id=>{
+      if(nowIds.has(id)){ delete goneAt[id]; return; }
+      if(t-goneAt[id]<GONE_GRACE&&lastPres[id]) arr.push(lastPres[id]);   // まだ猶予中=戻ってくるかもしれないので残す
+      else delete goneAt[id];                                            // 猶予切れ=本当に退出したものとして扱う
+    });
+  }else{ goneAt=Object.create(null); }
   arr.sort((a,b)=>a.t-b.t);
-  const prevIds=members.map(m=>m.id); members=arr;
+  members=arr;
+  clearTimeout(goneT);
+  if(Object.keys(goneAt).length) goneT=setTimeout(onPresence,GONE_GRACE+300);   // presenceが動かなくても猶予が切れた頃に再判定する
   const hs=arr.filter(m=>m.host);
   if(hs.length){ const h=hs.reduce((a,b)=>(b.ha||0)>(a.ha||0)?b:a); hostId=h.id; clearTimeout(noHostT); noHostT=0; }   // 2人以上がオーナーを名乗っていたら新しい方
   else if(arr.length&&!noHostT){   // 誰もオーナーでない=譲渡の途中か、オーナーの通信が一瞬切れただけの可能性→3秒待ってから繰り上げ(即・繰り上げると「勝手に譲渡」になる)
@@ -855,15 +875,15 @@ $("stPhoto").addEventListener("click",()=>{ if(!isHost()){ toast("ステージ�
 function renderStageSel(){
   $("stHub").classList.toggle("selected",stageKind==="hub"); $("stPhoto").classList.toggle("selected",stageKind==="photo");
   $("photoNote").style.display=stageKind==="photo"?"block":"none";
-  if(isHost()||!online){ $("fileName").textContent=photoImg?(photoName+"（"+photoImg.naturalWidth+"×"+photoImg.naturalHeight+"）"):"ドラッグ&ドロップでも選択可能です"; }
+  if(isHost()||!online){ $("fileName").textContent=photoImg?(photoName+"（"+photoImg.naturalWidth+"×"+photoImg.naturalHeight+"）"):"ドラッグ&ドロップや貼り付けでも選択可能です"; }
   else{ $("fileName").textContent=photoInfo?"写真選択済み":"オーナーが写真を選んでいます…"; }   // ゲストには「まだ選ばれていません」を出さない
   $("cpuV").textContent=cpuN+"人";
   $("cpuNote").style.display=stageKind==="photo"?"":"none"; $("debugFrame").classList.toggle("off",stageKind==="photo");
 }
-function loadPhotoFile(f){
+function loadPhotoFile(f,nm){
   if(!f||!/^image\//.test(f.type||"")){ toast("画像ファイルを選んでね"); return; }
   const url=URL.createObjectURL(f); const im=new Image();
-  im.onload=()=>{ photoImg=im; photoName=f.name; stageKind="photo"; renderStageSel(); renderMembers(); sendSnap(); URL.revokeObjectURL(url); };
+  im.onload=()=>{ photoImg=im; photoName=nm||f.name||"画像"; stageKind="photo"; renderStageSel(); renderMembers(); sendSnap(); URL.revokeObjectURL(url); };
   im.onerror=()=>{ $("fileName").textContent="この画像は読み込めませんでした"; };
   im.src=url;
 }
@@ -876,6 +896,18 @@ $("lobbyScene").addEventListener("dragleave",e=>{ dragDepth=Math.max(0,dragDepth
 window.addEventListener("dragend",()=>{ dragDepth=0; $("dropOv").classList.remove("on"); });
 $("lobbyScene").addEventListener("drop",e=>{ e.preventDefault(); dragDepth=0; $("dropOv").classList.remove("on"); if(!isHost()){ toast("ステージはオーナーだけが変えられます"); return; } const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f){ playSelect(); loadPhotoFile(f); } });
 $("photoNote").addEventListener("click",()=>{ if(isHost()) $("photoFile").click(); });
+/* クリップボードにコピーした画像を貼り付け(⌘V / Ctrl+V)でも選べる(オーナーだけ・ロビー中) */
+document.addEventListener("paste",e=>{
+  if(!$("lobbyScene").classList.contains("on")) return;
+  const dt=e.clipboardData; if(!dt) return;
+  let f=null;
+  if(dt.files&&dt.files.length) f=Array.prototype.slice.call(dt.files).find(x=>/^image\//.test(x.type||""));
+  if(!f&&dt.items){ for(let i=0;i<dt.items.length;i++){ const it=dt.items[i]; if(it.kind==="file"&&/^image\//.test(it.type||"")){ f=it.getAsFile(); break; } } }
+  if(!f) return;   // 画像以外の貼り付け(合言葉など)はそのまま通す
+  e.preventDefault();
+  if(!isHost()){ toast("ステージはオーナーだけが変えられます"); return; }
+  playSelect(); loadPhotoFile(f,"貼り付けた画像");
+});
 [["cpuM",-1],["cpuP",1]].forEach(([id,d])=>$(id).addEventListener("click",()=>{ if(!isHost()){ toast("おまけ機能はオーナーだけが変えられます"); return; } if(stageKind==="photo"){ toast("ステージ「牧村が作ったゲーム集」の時だけ使えます"); return; } playSelect(); cpuN=Math.max(0,Math.min(10,cpuN+d)); renderStageSel(); renderMembers(); }));
 
 /* ================= ステージ ================= */
