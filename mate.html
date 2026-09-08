@@ -440,6 +440,15 @@
   .help-btn span{ display:inline-flex; align-items:center; justify-content:center; width:17px; height:17px; border-radius:50%; background:var(--red); color:#fff; font-size:11.5px; font-weight:900; }
   .help-btn:active{ transform:translateY(1px); }
   .snd-btns{ position:fixed; right:10px; top:10px; z-index:80; }
+  /* 虫眼鏡(拡大縮小)。2026-09-07: 文字化けかくれんぼと同じUI・同じ操作(スペース/ホイールクリックで移動) */
+  #zoomBox{ position:fixed; z-index:80; right:14px; bottom:26px; display:flex; align-items:center; gap:4px; }
+  #zoomBox .zb{ width:34px; height:34px; border-radius:50%; border:none; background:rgba(255,255,255,.92); color:#5a3c1c;
+    font-size:17px; font-weight:900; line-height:1; cursor:pointer; box-shadow:0 2px 7px rgba(90,60,25,.3); font-family:inherit; }
+  #zoomBox .zb:active{ transform:translateY(1px) scale(.94); }
+  #zoomBox .magi{ width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; color:rgba(58,42,28,.75); cursor:pointer; }
+  #zoomBox .magi svg{ width:18px; height:18px; }
+  .cup-wrap.grab{ cursor:grab; }
+  .cup-wrap.panning{ cursor:grabbing; }
   .snd-btn{
     display:inline-flex; align-items:center; gap:6px; cursor:pointer;
     font-size:12.5px; font-weight:700; letter-spacing:.08em; color:rgba(58,42,28,.75);
@@ -677,6 +686,11 @@
         <span>描き手：</span><span class="p-dot" id="drawerDot"></span><span id="drawerName">ー</span>
       </div>
       <div class="drawer-topic" id="drawerTopic" style="display:none; pointer-events:none;"></div>
+    </div>
+    <div id="zoomBox">
+      <button class="zb" id="zoomOut" type="button" aria-label="縮小">−</button>
+      <span class="magi" id="zoomReset" title="もとの大きさ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/></svg></span>
+      <button class="zb" id="zoomIn" type="button" aria-label="拡大">＋</button>
     </div>
     <div class="cup-wrap" id="cupWrap">
       <div class="handle-arm" id="handleArm"><div class="cup-handle" id="cupHandle"><svg class="rot-hint" viewBox="0 0 44 64" aria-hidden="true"><g class="rh-arrow"><path d="M 18 9 A 110 110 0 0 1 18 55" fill="none" stroke="#c9a97e" stroke-width="2.4" stroke-linecap="round"/><polygon points="0,-8 -5,0 5,0" fill="#c9a97e" transform="translate(18,9) rotate(-12)"/><polygon points="0,8 -5,0 5,0" fill="#c9a97e" transform="translate(18,55) rotate(12)"/></g><circle class="rh-hub" cx="20.4" cy="32" r="4.2" fill="#c9a97e"/></svg></div></div>
@@ -1154,11 +1168,46 @@ function drawSwirl(){   // 渦(回転するレイヤーに描く=カフェオレ
 }
 
 let drawing=false, last=null, cupRot=0;
+/* ===== 虫眼鏡(拡大縮小)と画面移動(2026-09-07・文字化けかくれんぼと同じ操作) =====
+   ・−/虫眼鏡/＋ ボタン、Ctrl(⌘)+ホイールで拡大縮小
+   ・ホイールクリック、またはスペースキーを押しながらドラッグで移動 */
+let zoom=1, panX=0, panY=0, panning=null, spaceHeld=false;
+function zTyping(){ const a=document.activeElement; return !!(a&&(a.tagName==="INPUT"||a.tagName==="TEXTAREA"||a.tagName==="SELECT")); }
+function applyZoom(){
+  const w=$("cupWrap"); if(!w) return;
+  const lim=(($("cupIn").offsetWidth||0)*(zoom-1))/2;   // 画面外へ出しすぎない
+  panX=Math.max(-lim,Math.min(lim,panX)); panY=Math.max(-lim,Math.min(lim,panY));
+  w.style.transform=(zoom===1&&!panX&&!panY)?"":("translate("+panX+"px,"+panY+"px) scale("+zoom+")");
+}
+function setZoom(z){ zoom=Math.max(1,Math.min(4,Math.round(z*100)/100)); if(zoom===1){ panX=0; panY=0; } applyZoom(); }
+function resetZoom(){ zoom=1; panX=0; panY=0; applyZoom(); }
+$("zoomIn").addEventListener("click",()=>{ playSelect&&playSelect(); setZoom(zoom*1.25); });
+$("zoomOut").addEventListener("click",()=>{ playSelect&&playSelect(); setZoom(zoom/1.25); });
+$("zoomReset").addEventListener("click",()=>{ playSelect&&playSelect(); resetZoom(); });
+$("cupWrap").addEventListener("wheel",e=>{ if(!(e.ctrlKey||e.metaKey)) return; e.preventDefault(); setZoom(zoom*(e.deltaY<0?1.1:1/1.1)); },{passive:false});
+document.addEventListener("keydown",e=>{ if(e.code==="Space"&&!zTyping()&&$("gameScene").classList.contains("on")){ e.preventDefault(); if(!spaceHeld){ spaceHeld=true; $("cupWrap").classList.add("grab"); } } });
+document.addEventListener("keyup",e=>{ if(e.code==="Space"){ spaceHeld=false; $("cupWrap").classList.remove("grab"); } });
+window.addEventListener("blur",()=>{ spaceHeld=false; $("cupWrap").classList.remove("grab"); });
+$("cupWrap").addEventListener("auxclick",e=>{ if(e.button===1) e.preventDefault(); });
+$("cupWrap").addEventListener("pointerdown",e=>{   // capture=描く処理より先に受ける
+  if(!(e.button===1||spaceHeld)) return;
+  e.preventDefault(); e.stopPropagation();
+  panning={ id:e.pointerId, x:e.clientX, y:e.clientY, px:panX, py:panY };
+  $("cupWrap").classList.add("panning");
+  try{ $("cupWrap").setPointerCapture(e.pointerId); }catch(_){ }
+},true);
+$("cupWrap").addEventListener("pointermove",e=>{
+  if(!panning||panning.id!==e.pointerId) return;
+  panX=panning.px+(e.clientX-panning.x); panY=panning.py+(e.clientY-panning.y); applyZoom();
+},true);
+["pointerup","pointercancel"].forEach(ev=>$("cupWrap").addEventListener(ev,e=>{
+  if(!panning||panning.id!==e.pointerId) return; panning=null; $("cupWrap").classList.remove("panning");
+},true));
 function evPt(e){
   // 回転中のgetBoundingClientRectは外接箱が膨らむので、中心(回転で不変)+実レイアウト幅で換算する
   const el=$("cupIn"), r=el.getBoundingClientRect();
   const cx=r.left+r.width/2, cy=r.top+r.height/2;
-  const w=el.offsetWidth||r.width;
+  const w=(el.offsetWidth||r.width)*zoom;   // 拡大中は見た目の大きさで換算(ズレ防止)
   let dx=e.clientX-cx, dy=e.clientY-cy;
   if(cupRot){   // カップ回転中は座標を逆回転(描き味を一致させる)
     const ca=Math.cos(-cupRot), sa=Math.sin(-cupRot), nx=dx*ca-dy*sa, ny=dx*sa+dy*ca;
@@ -1172,7 +1221,7 @@ function applyCupRot(){
   $("handleArm").style.transform="rotate("+cupRot+"rad)";
 }
 function resetTable(){   // 同じ部屋で遊び直す時に回転を戻す。チャットは消さない(ロビーを閉じるまで残す。2026-08-05)
-  cupRot=0; applyCupRot();
+  cupRot=0; applyCupRot(); resetZoom();
   const cl=$("chatLog");
   if(cl.children.length){ const row=document.createElement("div"); row.className="ch-row chdiv"; row.textContent="── あたらしいゲーム ──"; cl.appendChild(row); cl.scrollTop=cl.scrollHeight; }
 }
@@ -1244,7 +1293,7 @@ artCv.addEventListener("pointermove",e=>{
   const w=$("cupIn").offsetWidth||1;
   const d=PEN_W[penIdx]*(erasing?2.2:1)*w;   // 表示上の太さ=論理太さ×表示スケール
   penGhost.style.width=d+"px"; penGhost.style.height=d+"px";
-  penGhost.style.left=(e.clientX-wrap.left)+"px"; penGhost.style.top=(e.clientY-wrap.top)+"px";
+  penGhost.style.left=((e.clientX-wrap.left)/zoom)+"px"; penGhost.style.top=((e.clientY-wrap.top)/zoom)+"px";   // 親が拡大されているぶんを戻す
   penGhost.classList.toggle("er", !!erasing);
   penGhost.style.display="block";
 });
@@ -1662,7 +1711,7 @@ function newLocalGame(){
   roundNo=1; dobonId=null; penIdx=2;
   drawerId=players[Math.floor(Math.random()*players.length)].id;
   drawCrema(); drawSwirl(); clearArt(); eraseLeft=0; erasing=false; stopErase(true); renderGauge(); renderPens(); resetRing();
-  cupRot=0; applyCupRot();
+  cupRot=0; applyCupRot(); resetZoom();
   $("scoreBtn").style.display = isCoop() ? "none" : "";
   gameScene.classList.remove("online");
   showScene(gameScene);
