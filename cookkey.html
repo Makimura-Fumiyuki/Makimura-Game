@@ -1985,7 +1985,7 @@ $("nameInput").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposin
 
 /* --- 部屋 --- */
 function roomStatus(html){ const a=$("roomArea"); if(a) a.innerHTML=html; }
-const GONE_GRACE=20000;
+const GONE_GRACE=300000;   // 5分(2026-09-07牧村指示)。明示の退出(bye)は即時
 let goneTmr={};
 function presentIds(){ try{ return Object.keys(ch.presenceState()||{}); }catch(e){ return []; } }
 function cancelGone(id){ if(goneTmr[id]){ clearTimeout(goneTmr[id]); delete goneTmr[id]; } }

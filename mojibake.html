@@ -620,8 +620,8 @@ let hostAt=0, noHostT=0;   // hostAt=オーナーになった時刻(presenceに�
    これが無いと、スマホが一瞬バックグラウンドに回る/通信が瞬断するだけで
    ①さがす人が消えた判定→全員ロビーへ戻される ②その人抜きで「全員そろった」と誤判定して勝手に進む が起きる。
    mate(待てアート)・derby(俺たちダービー)と同じ考え方。ロビー中は猶予なし=抜けたらすぐ一覧から消す */
-const GONE_GRACE=20000;
-let goneAt=Object.create(null), lastPres=Object.create(null), goneT=0;
+const GONE_GRACE=300000;   // 5分(2026-09-07牧村指示。mate/cookkey/derbyと同じ値)。※「タイトルにもどる」等の明示の退出は byeで即時
+let goneAt=Object.create(null), lastPres=Object.create(null), goneT=0, byeIds=new Set();
 function myPresence(){ return { id:myId, name:nameDecided?myName:"", host:isHost(), ha:isHost()?hostAt:0, t:joinT }; }
 function send(event,payload){ if(!online||!ch) return; try{ ch.send({ type:"broadcast", event, payload }); }catch(e){} }
 function leaveChannel(){
@@ -633,7 +633,7 @@ function joinRoom(code,asHost){
   if(!window.supabase){ toast("通信ライブラリが読み込めませんでした"); return; }
   sb=sb||supabase.createClient(SB_URL,SB_KEY);
   leaveChannel();
-  roomCode=code; online=true; joinT=Date.now(); hostId=asHost?myId:null; hostAt=asHost?Date.now():0; clearTimeout(noHostT); noHostT=0; members=[]; gotSnap=false; lastVer=-1; lastSnapHost=null; snapVer=0; nameDecided=false; nameAsked=false; colors={}; photoInfo=null; helloSent=false;
+  roomCode=code; online=true; joinT=Date.now(); byeIds=new Set(); hostId=asHost?myId:null; hostAt=asHost?Date.now():0; clearTimeout(noHostT); noHostT=0; members=[]; gotSnap=false; lastVer=-1; lastSnapHost=null; snapVer=0; nameDecided=false; nameAsked=false; colors={}; photoInfo=null; helloSent=false;
   ch=sb.channel("mjb-"+code,{ config:{ presence:{ key:myId } } });
   ch.on("presence",{event:"sync"},onPresence);
   ch.on("broadcast",{event:"snap"},({payload})=>{ if(payload&&!isHost()) applySnap(payload); });
@@ -645,6 +645,7 @@ function joinRoom(code,asHost){
   ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload&&payload.from!==myId){ speakStamp(payload.i|0); spawnStamp(payload.i|0, payload.n||"？", false, payload.c); } });   // 届いたスタンプも読み上げる
   ch.on("broadcast",{event:"cur"},({payload})=>{ if(payload&&payload.from!==myId&&phase==="seek") showSeekCur(payload.x,payload.y); });
   ch.on("broadcast",{event:"img"},({payload})=>{ if(payload) onImgChunk(payload); });
+  ch.on("broadcast",{event:"bye"},({payload})=>{ if(!payload||!payload.id) return; byeIds.add(payload.id); onPresence(); });   // 明示の退出=猶予(5分)を待たずにすぐ退出扱い
   ch.subscribe(async status=>{
     if(status!=="SUBSCRIBED") return;
     try{ await ch.track(myPresence()); }catch(e){}
@@ -664,6 +665,7 @@ function onPresence(){
     prevMembers.forEach(m=>{ if(!nowIds.has(m.id)&&!goneAt[m.id]) goneAt[m.id]=t; });
     Object.keys(goneAt).forEach(id=>{
       if(nowIds.has(id)){ delete goneAt[id]; return; }
+      if(byeIds.has(id)){ delete goneAt[id]; return; }                   // 自分から抜けた人は猶予なしで退出
       if(t-goneAt[id]<GONE_GRACE&&lastPres[id]) arr.push(lastPres[id]);   // まだ猶予中=戻ってくるかもしれないので残す
       else delete goneAt[id];                                            // 猶予切れ=本当に退出したものとして扱う
     });
@@ -718,6 +720,9 @@ function applySnapBody(s){
   if(prevPhase==="lobby"||prevPhase==="title"||prevPhase==="result"){ if(s.phase!=="lobby"&&s.phase!=="result") { guestStartGame(s); } }
   if(s.phase==="lobby"){ if(prevPhase!=="lobby"){ stopTimer(); clearStage(); $("resultOv").classList.remove("on"); enterLobby(); } renderRules(); renderStageSel(); renderMembers(); return; }
   syncHiders(s.hz||[]);
+  /* ★自分の箱がホストに届いていなければ送り直す(broadcastは配送保証がないので、
+     1回でも落ちると「隠れたのに存在しない=見つけられない・投票もできない」状態になる。snapを受け取りの合図として使う) */
+  if((s.phase==="hide"||s.phase==="swap")&&mine&&!isHost()&&!(s.hz||[]).some(h=>h.id===myId)&&Date.now()-lastReupd>1200){ lastReupd=Date.now(); act("upd",{h:hiderPack(mine)}); }
   if(s.phase!==prevPhase) guestPhase(s.phase, prevPhase);
   phase=s.phase;
   if(s.lastTap&&s.lastTap.seq!==lastTapSeen){ lastTapSeen=s.lastTap.seq; if(!s.lastTap.hit){ playMiss(); ripple(s.lastTap.x,s.lastTap.y); } else playFound(); }
@@ -725,7 +730,7 @@ function applySnapBody(s){
   renderAll();
   if(phase==="result") showResult();
 }
-let lastTap=null, lastTapSeen=0, resultShown=false;
+let lastTap=null, lastTapSeen=0, resultShown=false, lastReupd=0;
 function syncHiders(list){   // 自分の分は化ける中は手元が正
   const ids=new Set(list.map(h=>h.id));
   hiders=hiders.filter(h=>{ if(h===mine) return true; if(!ids.has(h.id)){ if(h.el) h.el.remove(); if(h.atts) h.atts.forEach(a=>a.el.remove()); return false; } return true; });   // 自分の箱はホストに届く前でも消さない
@@ -855,7 +860,7 @@ function transferHost(id){ if(!isHost()||!members.some(m=>m.id===id)) return; ho
 function kickMember(id){ if(!isHost()||id===myId) return; send("kick",{to:id}); members=members.filter(m=>m.id!==id); renderMembers(); renderMemberOv(); }
 $("copyCode").addEventListener("click",async()=>{ playSelect(); try{ await navigator.clipboard.writeText(inviteText(roomCode)); toast("招待メッセージをコピーした"); }catch(e){ toast("コピーできませんでした"); } });
 $("lobbyBack").addEventListener("click",()=>{ playSelect(); goTitle(); });
-function goTitle(){ stopTimer(); leaveChannel(); phase="title"; soloMode=false; clearStage(); $("resultOv").classList.remove("on"); $("nameOv").classList.remove("on"); members=[]; hostId=null; showScene("titleScene"); }
+function goTitle(){ stopTimer(); send("bye",{id:myId}); leaveChannel(); phase="title"; soloMode=false; clearStage(); $("resultOv").classList.remove("on"); $("nameOv").classList.remove("on"); members=[]; hostId=null; showScene("titleScene"); }
 $("startBtn").addEventListener("click",()=>{ if(!isHost()) return; const n=members.length; if(n<2){ if(soloOK()){ playConfirm(); startSolo(); } else toast("2人以上で始められます"); return; } playConfirm(); hostStartGame(); });
 
 /* ルール(オーナーだけ) */
@@ -1304,6 +1309,11 @@ function hiderMembers(){ return (members.length?members:[{id:myId}]).filter(m=>m
 function checkAllReady(){ if(phase!=="hide"||!isHost()) return; const hs=hiderMembers(); if(hs.length&&hs.every(m=>readyIds.has(m.id))) setTimeout(finishHide,350); }
 function finishHide(){
   if(phase!=="hide"||!isHost()) return;
+  /* ★化ける側の全員ぶん箱があることを保証する。updが1回も届かなかった人は箱が無く、
+     「隠れたのに存在しない=見つけられない・投票もできない」状態になっていた(2026-09-07修正) */
+  hiderMembers().forEach(m=>{ if(!hiders.some(h=>h.id===m.id)){
+    hiders.push({ id:m.id, name:nameOf(m.id), text:DEF_TEXT, font:FONTS[0].f, weight:400, blur:0, color:"#1c1c22", bg:"#ffffff", bgOn:true,
+                  size:DEF_SIZE, sx:1, sy:1, rot:0, x:null, y:null, cpu:false, found:false, likes:0, angry:0 }); } });
   hiders.forEach(h=>{ if(h.x==null){ h.x=Math.round(stage.w/2-60); h.y=Math.round(Math.min(stage.h-40,300)); } if(h.text==="") h.text=EMPTY_TEXT; });
   stopTimer(); playConfirm(); $("voteWho").classList.remove("on");
   if(mine&&mine.el){ mine.el.classList.remove("mine","unsel"); mine.el.querySelectorAll(".frame,.hd").forEach(x=>x.remove()); if(mine.editRow){ detach(mine,mine.editRow); mine.editRow=null; } styleHider(mine); }
@@ -1368,7 +1378,7 @@ function renderSeekStat(){
   $("giveUp").style.display=(phase==="seek"&&isSeeker())?"":"none";
 }
 function hostTap(x,y){   // ホスト: 探す人のタップを判定
-  const hit=hiders.find(h=>{ if(h.found||h.x==null) return false; const w=h.w||0, hh=h.h||0; let px=x, py=y;
+  const hit=hiders.find(h=>{ if(h.found||h.x==null) return false; const w=Math.max(h.w||0,18), hh=Math.max(h.h||0,14); let px=x, py=y;   // 寸法が届いていない箱でも必ずタップできる大きさを確保(0だと見つけられなくなる)
     if(h.rot){ const cx=h.x+w/2, cy=h.y+hh/2, a=-h.rot*Math.PI/180, dx=x-cx, dy=y-cy; px=cx+dx*Math.cos(a)-dy*Math.sin(a); py=cy+dx*Math.sin(a)+dy*Math.cos(a); }   // 回った箱は逆回転して判定
     return px>=h.x-2&&px<=h.x+w+2&&py>=h.y-2&&py<=h.y+hh+2; });
   lastTap={ seq:(lastTap?lastTap.seq:0)+1, x, y, hit:!!hit };
