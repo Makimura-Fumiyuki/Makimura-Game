@@ -230,19 +230,22 @@
   .txt-btn.deny{ color:#fff; background:var(--red); border-color:var(--red); }
 
   /* ===== チャット(スタンプもこの中に入れる) ===== */
-  #chatBox{ position:fixed; left:58px; bottom:26px; z-index:75; display:none;
+  #chatBox{ position:fixed; left:24px; bottom:26px; z-index:75; display:none;
     flex-direction:column; align-items:flex-start; gap:7px; width:min(76vw,252px); }
   #chatBox.on{ display:flex; }
   #chatBox.mini .chat-log, #chatBox.mini .chat-row, #chatBox.mini #stampBar{ display:none; }
   /* 見た目はスタンプに合わせる=枠線を使わず、白+影でまとめる。角丸は控えめ(2026-09-10)
      ※チャットは全ゲーム共通で使う予定なので、色はゲームの手番色に頼らない汎用の墨系にする */
   .chat-log{ display:flex; flex-direction:column; width:100%; max-height:126px; overflow-y:auto; overscroll-behavior:contain;
-    background:rgba(255,255,255,.92); border-radius:8px; padding:9px 12px; border:none;
+    background:rgba(255,255,255,.92); border-radius:8px; padding:9px 7px 9px 12px; border:none;
     box-shadow:0 2px 7px rgba(35,33,31,.26); font-size:12px; line-height:1.6; }
   .chat-log:empty{ display:none; }   /* まだ何も書かれていない時は空の帯を出さない */
   .chat-row{ display:flex; width:100%; gap:6px; }
-  .chat-log::-webkit-scrollbar{ width:6px; }
-  .chat-log::-webkit-scrollbar-thumb{ background:rgba(35,33,31,.22); border-radius:3px; }
+  /* スクロールバーは枠の内側に収める(透明の枠を付けて端から離す=角丸からはみ出して見えない) */
+  .chat-log::-webkit-scrollbar{ width:9px; }
+  .chat-log::-webkit-scrollbar-track{ background:transparent; }
+  .chat-log::-webkit-scrollbar-thumb{ background:rgba(35,33,31,.22); border-radius:99px;
+    border:3px solid transparent; background-clip:padding-box; }
   .c-line{ word-break:break-word; }
   .c-nm{ font-weight:900; margin-right:5px; }
   .c-nm.o{ color:var(--red); } .c-nm.x{ color:var(--blue); }
@@ -255,22 +258,22 @@
     background:rgba(255,255,255,.92); color:var(--ink); font-size:12.5px; font-weight:900; white-space:nowrap;
     box-shadow:0 2px 7px rgba(35,33,31,.26); }
   .chat-send:active{ transform:translateY(1px) scale(.96); }
-  #stampBar{ position:relative; display:none; gap:9px; }
-  /* ★2026-09-10牧村指示: スタンプと最小化(−/＋)は一旦非表示。戻す時はこの2行を消す */
-  #chatBox.on #stampBar{ display:none; }
+  /* スタンプは履歴の上・小さめ(2026-09-10。最小化(−/＋)だけ引き続き非表示) */
+  #stampBar{ position:relative; display:none; gap:7px; }
+  #chatBox.on #stampBar{ display:flex; }
   #stampMin{ display:none; }
-  .stamp-btn{ width:48px; height:48px; padding:0; border:none; border-radius:50%;
+  .stamp-btn{ width:34px; height:34px; padding:0; border:none; border-radius:50%;
     background:rgba(255,255,255,.92); box-shadow:0 2px 7px rgba(35,33,31,.26);
-    display:flex; align-items:center; justify-content:center; font-size:27px; line-height:1; }
+    display:flex; align-items:center; justify-content:center; font-size:19px; line-height:1; }
   .stamp-btn:active{ transform:translateY(1px) scale(.93); }
-  .stamp-min,.stamp-mute{ width:34px; height:34px; padding:0; border:none; border-radius:50%; position:absolute;
+  .stamp-min,.stamp-mute{ width:26px; height:26px; padding:0; border:none; border-radius:50%; position:absolute;
     background:rgba(255,255,255,.92); box-shadow:0 2px 7px rgba(35,33,31,.26);
     display:flex; align-items:center; justify-content:center; color:#666; }
-  .stamp-mute{ top:7px; }
+  .stamp-mute{ top:4px; }
   .stamp-min{ right:100%; bottom:7px; margin-right:9px; }   /* チャット枠ごと畳む(枠の左下に固定) */
-  .stamp-mute{ left:100%; margin-left:9px; }
-  .stamp-min svg{ width:15px; height:15px; }
-  .stamp-mute svg{ width:19px; height:19px; transform:translateY(1px); }
+  .stamp-mute{ left:100%; margin-left:7px; }
+  .stamp-min svg{ width:13px; height:13px; }
+  .stamp-mute svg{ width:15px; height:15px; transform:translateY(1px); }
   .stamp-mute .mute-slash{ display:none; }
   .stamp-mute.muted{ color:var(--red); }
   .stamp-mute.muted .mute-slash{ display:block; }
@@ -454,16 +457,16 @@
 
 <div id="chatBox">
   <button id="stampMin" class="stamp-min" type="button" aria-label="チャットを最小化"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="12" x2="18" y2="12"/></svg></button>
-  <div class="chat-log" id="chatLog"></div>
-  <div class="chat-row">
-    <input class="chat-in" id="chatIn" maxlength="40" autocomplete="off" placeholder="メッセージを入力">
-    <button class="chat-send" id="chatGo" type="button">送信</button>
-  </div>
   <div id="stampBar">
   <button class="stamp-btn" type="button" data-i="0" aria-label="泣き"></button>
   <button class="stamp-btn" type="button" data-i="1" aria-label="うっとり"></button>
   <button class="stamp-btn" type="button" data-i="2" aria-label="爆笑"></button>
   <button id="stampMute" class="stamp-mute" type="button" aria-label="スタンプをミュート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10.5 16.2a1.7 1.7 0 0 0 3 0"/><line class="mute-slash" x1="3.2" y1="3.2" x2="20.8" y2="20.8"/></svg></button>
+  </div>
+  <div class="chat-log" id="chatLog"></div>
+  <div class="chat-row">
+    <input class="chat-in" id="chatIn" maxlength="40" autocomplete="off" placeholder="メッセージを入力">
+    <button class="chat-send" id="chatGo" type="button">送信</button>
   </div>
 </div>
 
