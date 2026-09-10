@@ -366,7 +366,7 @@
   #chatBox{ position:fixed; left:10px; bottom:10px; z-index:85; display:none;
     flex-direction:column; align-items:flex-start; gap:7px; width:min(84vw,300px); text-align:left; }
   #chatBox.on{ display:flex; }
-  #chatBox.mini .chat-log, #chatBox.mini .chat-form{ display:none; }
+  #chatBox.mini .chat-log, #chatBox.mini .chat-row{ display:none; }
   .chat-tog{ align-self:flex-start; display:inline-flex; align-items:center; gap:5px; cursor:pointer;
     padding:5px 10px 5px 12px; border:none; border-radius:999px; box-shadow:none; font-family:inherit;
     background:rgba(35,33,31,.46); color:#fff;
@@ -412,26 +412,21 @@
   .ch-row.c-res{ display:block; align-self:stretch; box-sizing:border-box; opacity:.72; margin:5px 6px 3px; padding:4px 8px 5px;
     border:1.1px solid rgba(35,33,31,.17); border-radius:5px; text-align:center;
     font-size:11.5px; font-weight:700; letter-spacing:.06em; color:rgba(35,33,31,.8); background:none; }
-  .chat-form{ display:flex; gap:6px; width:100%; }
-  /* 枠に収まるサイズへ(共通の見た目。2026-09-10) */
-  #chatInput{ flex:1; min-width:0; width:auto; height:auto; padding:9px 12px; border-radius:8px; font-size:13px; }
-  #chatSend{ flex:none; padding:9px 14px; border-radius:8px; font-size:12.5px; font-style:normal;
-    background:linear-gradient(160deg,#b07a42,var(--brown) 55%,var(--brown-dark)); box-shadow:0 3px 0 #4c2f14; }   /* チャットは雑談=控えめ茶(1台でも同じ見た目に) */
-  #chatSend:active{ transform:translateY(1px) scale(.97); box-shadow:0 1px 0 #4c2f14; }
-  #chatInput{
-    flex:1; min-width:0; padding:11px 14px; font-size:16px; font-weight:700;
-    color:var(--ink); background:#fff; border:2px solid rgba(58,42,28,.35); border-radius:12px; outline:none;
+  .chat-row{ display:flex; gap:6px; width:100%; }
+  /* 入力欄と送信ボタンは他作品と完全に同じ見た目に(白+影・角丸8px。2026-09-10) */
+  #chatInput, #chatInput:focus{
+    flex:1; min-width:0; width:auto; height:auto; border:none; border-radius:8px; padding:9px 12px; font-family:inherit;
+    font-size:13px; font-weight:700; background:rgba(255,255,255,.92); color:#23211f; letter-spacing:normal;
+    box-shadow:0 2px 7px rgba(35,33,31,.26); outline:none;
   }
-  #chatInput:focus{ border-color:var(--brown); }
-  #chatSend{
-    flex:none; min-width:96px; padding:8px 18px; cursor:pointer; border:none; border-radius:12px;
-    font-size:17px; font-weight:900; font-style:italic; letter-spacing:.04em; white-space:nowrap; color:#fff;
-    background:linear-gradient(160deg,#f0603f,var(--red) 55%,#b93117); box-shadow:0 4px 0 #8f2510;
+  #chatInput:focus{ box-shadow:0 2px 7px rgba(35,33,31,.26), inset 0 0 0 1.6px rgba(35,33,31,.3); }
+  #chatInput::placeholder{ color:rgba(35,33,31,.45); font-weight:700; }
+  #chatSend, #chatSend.plain{
+    flex:none; min-width:0; padding:9px 14px; cursor:pointer; border:none; border-radius:8px; font-family:inherit;
+    background:rgba(255,255,255,.92); color:#23211f; font-size:12.5px; font-weight:900; font-style:normal;
+    letter-spacing:normal; white-space:nowrap; box-shadow:0 2px 7px rgba(35,33,31,.26);
   }
-  #chatSend:active{ transform:translateY(2px); box-shadow:0 1px 0 #8f2510; }
-  #chatSend.plain{ background:linear-gradient(160deg,#b07a42,var(--brown) 55%,var(--brown-dark)); box-shadow:0 4px 0 #4c2f14; font-style:normal; font-size:15px; }
-
-  #chatSend.plain:active{ box-shadow:0 1px 0 #4c2f14; }
+  #chatSend:active, #chatSend.plain:active{ transform:translateY(1px) scale(.96); box-shadow:0 2px 7px rgba(35,33,31,.26); }
   .c-rank{ font-size:11px; font-weight:800; color:var(--brown-dark); opacity:.7; margin:0 3px; }
   #mateAnsRow{ display:none; gap:8px; width:var(--uiw); margin:2px auto 0; }
   #mateAnsInput{ flex:1; min-width:0; padding:11px 14px; border:2px solid rgba(138,90,46,.4); border-radius:12px; font-size:15px; font-weight:700; background:#fff; }
@@ -470,7 +465,9 @@
   .help-btn:active{ transform:translateY(1px); }
   .snd-btns{ position:fixed; right:10px; top:10px; z-index:80; }
   /* 虫眼鏡(拡大縮小)。2026-09-07: 文字化けかくれんぼと同じUI・同じ操作(スペース/ホイールクリックで移動) */
-  #zoomBox{ position:fixed; z-index:80; right:14px; bottom:26px; display:flex; align-items:center; gap:4px; }
+  /* 虫眼鏡は画面の右下に固定(2026-09-10。#gameSceneの中に置くとsceneのtransformが基準になり一緒にスクロールしていた) */
+  #zoomBox{ position:fixed; z-index:80; right:14px; bottom:14px; display:none; align-items:center; gap:4px; }
+  #gameScene.on ~ #zoomBox{ display:flex; }
   #zoomBox .zb{ width:34px; height:34px; border-radius:50%; border:none; background:rgba(255,255,255,.92); color:#5a3c1c;
     font-size:17px; font-weight:900; line-height:1; cursor:pointer; box-shadow:0 2px 7px rgba(90,60,25,.3); font-family:inherit; }
   #zoomBox .zb:active{ transform:translateY(1px) scale(.94); }
@@ -721,11 +718,6 @@
       </div>
       <div class="drawer-topic" id="drawerTopic" style="display:none; pointer-events:none;"></div>
     </div>
-    <div id="zoomBox">
-      <button class="zb" id="zoomOut" type="button" aria-label="縮小">−</button>
-      <span class="magi" id="zoomReset" title="もとの大きさ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/></svg></span>
-      <button class="zb" id="zoomIn" type="button" aria-label="拡大">＋</button>
-    </div>
     <div class="cup-wrap" id="cupWrap">
       <div class="handle-arm" id="handleArm"><div class="cup-handle" id="cupHandle"><svg class="rot-hint" viewBox="0 0 44 64" aria-hidden="true"><g class="rh-arrow"><path d="M 18 9 A 110 110 0 0 1 18 55" fill="none" stroke="#c9a97e" stroke-width="2.4" stroke-linecap="round"/><polygon points="0,-8 -5,0 5,0" fill="#c9a97e" transform="translate(18,9) rotate(-12)"/><polygon points="0,8 -5,0 5,0" fill="#c9a97e" transform="translate(18,55) rotate(12)"/></g><circle class="rh-hub" cx="20.4" cy="32" r="4.2" fill="#c9a97e"/></svg></div></div>
       <div class="cup-in" id="cupIn"><div id="cupZoom"><canvas id="cup"></canvas><canvas id="swirlCv"></canvas><canvas id="fleckCv"></canvas><canvas id="art"></canvas></div></div>
@@ -784,6 +776,11 @@
   </div>
 
   <!-- スタンプ(気持ちを送る。対局中つねに表示) -->
+    <div id="zoomBox">
+  <button class="zb" id="zoomOut" type="button" aria-label="縮小">−</button>
+  <span class="magi" id="zoomReset" title="もとの大きさ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/></svg></span>
+  <button class="zb" id="zoomIn" type="button" aria-label="拡大">＋</button>
+</div>
 <div id="chatBox">
   <div class="chat-pop" id="chatPop"></div>
   <div id="stampBar">
@@ -794,9 +791,9 @@
     <button id="stampMute" class="stamp-mute" aria-label="スタンプをミュート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10.5 16.2a1.7 1.7 0 0 0 3 0"/><line class="mute-slash" x1="3.2" y1="3.2" x2="20.8" y2="20.8"/></svg></button>
   </div>
   <div class="chat-log" id="chatLog"></div>
-  <div class="chat-form">
-    <input id="chatInput" maxlength="20" placeholder="おしゃべりを入力" autocomplete="off">
-    <button id="chatSend">送信</button>
+  <div class="chat-row">
+    <input id="chatInput" maxlength="20" placeholder="メッセージを入力" autocomplete="off">
+    <button id="chatSend" type="button">送信</button>
   </div>
   <button class="chat-tog" id="chatTog" type="button"></button>
 </div>
@@ -1218,9 +1215,9 @@ let drawing=false, last=null, cupRot=0;
    ・ホイールクリック、またはスペースキーを押しながらドラッグで移動 */
 let zoom=1, panX=0, panY=0, panning=null, spaceHeld=false;
 function zTyping(){ const a=document.activeElement; return !!(a&&(a.tagName==="INPUT"||a.tagName==="TEXTAREA"||a.tagName==="SELECT")); }
-function applyZoom(){
-  const z=$("cupZoom"); if(!z) return;
-  const lim=(($("cupIn").offsetWidth||0)*(zoom-1))/2;   // 窓の中がすき間だらけにならない範囲
+function applyZoom(){                       /* 2026-09-10: 中身だけでなく「画面ごと」拡大する=カップまるごと大きくなる */
+  const z=$("cupWrap"); if(!z) return;
+  const lim=(($("cupIn").offsetWidth||0)*(zoom-1))/2 + 60;   // 拡大したぶん+すこし余裕を持って動かせる
   panX=Math.max(-lim,Math.min(lim,panX)); panY=Math.max(-lim,Math.min(lim,panY));
   z.style.transform=(zoom===1&&!panX&&!panY)?"":("translate("+panX+"px,"+panY+"px) scale("+zoom+")");
 }
@@ -1252,13 +1249,12 @@ function evPt(e){
   // 回転中のgetBoundingClientRectは外接箱が膨らむので、中心(回転で不変)+実レイアウト幅で換算する
   const el=$("cupIn"), r=el.getBoundingClientRect();
   const cx=r.left+r.width/2, cy=r.top+r.height/2;
-  const w=(el.offsetWidth||r.width)*zoom;   // 拡大中は見た目の大きさで換算(ズレ防止)
+  const w=(el.offsetWidth||r.width)*zoom;   // 拡大中は見た目の大きさで換算(中心・パンはrectに入っているので引かない)
   let dx=e.clientX-cx, dy=e.clientY-cy;
   if(cupRot){   // カップ回転中は座標を逆回転(描き味を一致させる)
     const ca=Math.cos(-cupRot), sa=Math.sin(-cupRot), nx=dx*ca-dy*sa, ny=dx*sa+dy*ca;
     dx=nx; dy=ny;
   }
-  dx-=panX; dy-=panY;                       // 中身をずらしているぶんを戻す(拡大は下のwで吸収)
   return { x:(dx/w+0.5)*SIZE, y:(dy/w+0.5)*SIZE };
 }
 /* 取っ手をつかんでカップを回せる(お遊び。チュートリアルなし) */
@@ -1337,9 +1333,9 @@ artCv.addEventListener("pointermove",e=>{
   if(drawing || e.pointerType==="touch" || phase!=="draw" || !isDrawer()){ hideGhost(); return; }
   const wrap=$("cupWrap").getBoundingClientRect();
   const w=$("cupIn").offsetWidth||1;
-  const d=PEN_W[penIdx]*(erasing?2.2:1)*w*zoom;   // 表示上の太さ=論理太さ×表示スケール×拡大率
+  const d=PEN_W[penIdx]*(erasing?2.2:1)*w;   // ガイドは親(cupWrap)ごと拡大されるので、太さも位置も素の値でよい
   penGhost.style.width=d+"px"; penGhost.style.height=d+"px";
-  penGhost.style.left=(e.clientX-wrap.left)+"px"; penGhost.style.top=(e.clientY-wrap.top)+"px";
+  penGhost.style.left=((e.clientX-wrap.left)/zoom)+"px"; penGhost.style.top=((e.clientY-wrap.top)/zoom)+"px";
   penGhost.classList.toggle("er", !!erasing);
   penGhost.style.display="block";
 });
@@ -2227,7 +2223,7 @@ const chatLog=$("chatLog");
 function renderChatSend(){
   $("chatSend").textContent="送信";
   $("chatSend").classList.add("plain");           // チャットは雑談(控えめ茶ボタン)
-  $("chatInput").placeholder="おしゃべりを入力";
+  $("chatInput").placeholder="メッセージを入力";
   renderAnswerArea();
 }
 const UNDEF_NM="（名前を考え中）";
@@ -2374,50 +2370,6 @@ function setMini(mini){
 $("chatTog").addEventListener("click",function(){ ensureAudio(); playSelect(); setMini(!$("chatBox").classList.contains("mini")); });
 setMini(false);
 
-/* ===== デバッグ: Mキーで「ある程度すすんだ試合」のチャットログを流し込む(一時的。公開前に削除) ===== */
-function debugChatLog(){
-  var C=["#e2472e","#2f7de2","#2f9e55","#d59a1f"];
-  var N=["あなた","ハシモト","のぞみ","まさや"];
-  function line(i,tx,isAns,ok){
-    var row=document.createElement("div"); row.className="ch-row"+(isAns?(ok?" ansrow okrow":" ansrow"):"");
-    row.innerHTML='<span class="c-dot" style="'+dotStyle(C[i])+'"></span><b></b><span class="tx"></span>';
-    row.querySelector("b").textContent=N[i]+"：";
-    row.querySelector(".tx").textContent=tx;
-    if(isAns){ var mk=document.createElement("span"); mk.className="ans-mark"+(ok?" ok":""); mk.textContent=ok?"正解":"ミス"; row.appendChild(mk); }
-    chatLog.appendChild(row);
-  }
-  function sys(tx){ var r=document.createElement("div"); r.className="ch-row sys"; r.textContent=tx; chatLog.appendChild(r); }
-  function div(tx){ var r=document.createElement("div"); r.className="ch-row chdiv"; r.textContent=tx; chatLog.appendChild(r); }
-  chatLog.innerHTML="";
-  div("── あたらしいゲーム ──");
-  sys("ハシモトがお題を考え中…");
-  line(2,"よろしくおねがいします");
-  line(1,"りんご",true,false);
-  line(3,"トマト",true,false);
-  line(2,"ボール",true,true);
-  sys("のぞみが正解（+4pt）");
-  sys("のぞみがお題を考え中…");
-  line(0,"うまい");
-  line(3,"かたつむり",true,false);
-  line(0,"ソフトクリーム",true,true);
-  sys("あなたが正解（+3pt）");
-  line(1,"それ渦巻きだったのか");
-  sys("あなたがお題を考え中…");
-  line(1,"ねこ",true,false);
-  line(2,"うさぎ",true,false);
-  line(3,"きつね",true,true);
-  sys("まさやが正解（+2pt）");
-  line(3,"みみが決め手でした");
-  { var r=document.createElement("div"); r.className="ch-row sys c-res"; r.textContent="のぞみの勝ち"; chatLog.appendChild(r); }
-  chatLog.scrollTop=chatLog.scrollHeight;
-  $("chatBox").classList.add("on"); setMini(false);
-  try{ showToast("デバッグ: 試合っぽいログを表示した",1600); }catch(e){}
-}
-document.addEventListener("keydown",function(e){
-  if(e.key!=="m"&&e.key!=="M") return;
-  var t=e.target; if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA")) return;   /* 入力中は無視 */
-  debugChatLog();
-});
 
 function nearBottom(){ return chatLog.scrollHeight - chatLog.scrollTop - chatLog.clientHeight < 40; }   // 一番下で待機している時だけ自動スクロール(LINE等と同じ挙動)
 function trimChat(stick){

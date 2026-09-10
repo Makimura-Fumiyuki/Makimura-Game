@@ -150,9 +150,9 @@
     text-shadow:0 4px 0 rgba(0,0,0,.42); }
 
   .plate{ position:relative; }   /* クッキーの周りの囲みはなし */
-  /* 虫眼鏡=「クッキーが大きくなる」のではなく「窓(#plateView)の中を拡大して覗く」形にする(2026-09-10牧村指示)。
-     窓の大きさは拡大しても変わらず、中身だけが拡大・移動する */
-  #plateView{ position:relative; overflow:hidden; }
+  /* 虫眼鏡=「画面をしっかり拡大する」形(2026-09-10夕に牧村指示で変更)。
+     窓で切らずクッキーそのものが大きくなる=まわりのUIに重なってよい */
+  #plateView{ position:relative; overflow:visible; }
   #plateZoom{ position:relative; transform-origin:0 0; }
   #cookie{ display:block; touch-action:none; cursor:crosshair; image-rendering:pixelated; }
   #carvePad{ position:absolute; inset:-16px; z-index:2; touch-action:none; cursor:crosshair; }   /* クッキーの外側まで広げた操作エリア=ふちにペンの一部がかかる位置でも食べられる・ペン枠も消えない */
@@ -222,7 +222,9 @@
   .help-btn span{ width:20px; height:20px; border-radius:50%; background:var(--gold); color:#3a2a06;
     display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:900; }
   /* 虫眼鏡(拡大縮小)。2026-09-07: 文字化けかくれんぼ/待てアートと同じUI・同じ操作(スペース/ホイールクリックで移動) */
-  #zoomBox{ position:fixed; z-index:40; right:14px; bottom:26px; display:flex; align-items:center; gap:4px; }
+  /* 虫眼鏡は画面の右下に固定(2026-09-10。#gameSceneの中に置くとsceneのtransformが基準になり一緒にスクロールしていた) */
+  #zoomBox{ position:fixed; z-index:40; right:14px; bottom:14px; display:none; align-items:center; gap:4px; }
+  #gameScene.on ~ #zoomBox{ display:flex; }
   #zoomBox .zb{ width:34px; height:34px; border-radius:50%; border:none; background:rgba(253,246,231,.92); color:#22241f;
     font-size:17px; font-weight:900; line-height:1; cursor:pointer; box-shadow:0 2px 7px rgba(0,0,0,.28); font-family:inherit; }
   #zoomBox .zb:active{ transform:translateY(1px) scale(.94); }
@@ -457,17 +459,12 @@
     <span class="timer" id="timer">00:30</span>
     <span class="pill" style="visibility:hidden;"></span>
   </div>
-  <div id="zoomBox">
-    <button class="zb" id="zoomOut" type="button" aria-label="縮小">−</button>
-    <span class="magi" id="zoomReset" title="もとの大きさ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/></svg></span>
-    <button class="zb" id="zoomIn" type="button" aria-label="拡大">＋</button>
-  </div>
   <div class="plate" id="cookiePlate">
     <div id="plateView"><div id="plateZoom">
       <canvas id="cookie"></canvas>
       <div id="penGhost"></div>
+      <div id="carvePad"></div>
     </div></div>
-    <div id="carvePad"></div>
     <div id="addFloat"></div>
   </div>
   <div class="pen-row" id="penRow">
@@ -508,6 +505,11 @@
 
 <a class="home-foot" href="./index.html">牧村が作ったゲーム集へ</a>
 
+  <div id="zoomBox">
+    <button class="zb" id="zoomOut" type="button" aria-label="縮小">−</button>
+    <span class="magi" id="zoomReset" title="もとの大きさ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/></svg></span>
+    <button class="zb" id="zoomIn" type="button" aria-label="拡大">＋</button>
+  </div>
 <div id="chatBox">
   <div class="chat-pop" id="chatPop"></div>
 <div id="stampBar">
@@ -1499,8 +1501,9 @@ function hideGhost(){ ghost.style.display="none"; }
 const ptrs=new Map(); let zoom=1, zx=0, zy=0, pinch=null, pinchLock=false;
 function viewRect(){ return $("plateView").getBoundingClientRect(); }   /* 窓=拡大しても大きさが変わらない */
 function applyZoom(){ const pz=$("plateZoom"); const w=W*cell, h=H*cell;
-  zx=Math.min(0, Math.max(w*(1-zoom), zx)); zy=Math.min(0, Math.max(h*(1-zoom), zy));   // 窓の中がすき間だらけにならない範囲
-  pz.style.transform=(zoom===1)? "" : "translate("+zx+"px,"+zy+"px) scale("+zoom+")"; }
+  const lx=w*(zoom-1)/2+80, ly=h*(zoom-1)/2+80;   // 画面ごと拡大=はみ出してよいので、ゆとりを持って動かせる
+  zx=Math.max(-w*(zoom-1)-lx, Math.min(lx, zx)); zy=Math.max(-h*(zoom-1)-ly, Math.min(ly, zy));
+  pz.style.transform=(zoom===1&&!zx&&!zy)? "" : "translate("+zx+"px,"+zy+"px) scale("+zoom+")"; }
 function resetZoom(){ zoom=1; zx=0; zy=0; applyZoom(); }
 /* 虫眼鏡ボタン・Ctrl(⌘)+ホイールで拡大縮小、ホイールクリック/スペース+ドラッグで移動(2026-09-07。ピンチと同じ zoom/zx/zy を使う) */
 function zoomAt(z1,px,py){   // px,py=窓(#plateView)の中での座標。その点を軸に拡大する
@@ -1698,7 +1701,7 @@ function enterCarveUI(){
   $("judgeBig").textContent="";
   $("roundPill").textContent=roundNo+" / "+rounds;
   resetZoom(); ptrs.clear(); pinch=null; pinchLock=false;
-  $("zoomBox").style.display="";                  /* 食べる番に戻ったら虫眼鏡を出す */
+  $("zoomBox").style.display="";                  /* 食べる番に戻ったら虫眼鏡を出す(空=CSSの出し分けに任せる) */
   $("timer").style.visibility="visible";
   doneSet=new Set(); renderDoneBtn(); renderDoneList();
   $("roleRow").style.display="none";        // 役割テキストは廃止
