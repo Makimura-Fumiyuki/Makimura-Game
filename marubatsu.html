@@ -181,7 +181,7 @@
   .cell.pop .pc{ animation:pop .26s cubic-bezier(.2,1.5,.4,1); }
   @keyframes pop{ 0%{ transform:scale(.4); } 60%{ transform:scale(1.12); } 100%{ transform:scale(1); } }
   /* 置けるマス=手番色の丸(拡縮の速さは2026-09-10に半分へ) */
-  .cell .dot{ position:absolute; width:22%; height:22%; border-radius:50%; background:currentColor; opacity:.24;
+  .cell .dot{ position:absolute; width:14.7%; height:14.7%; border-radius:50%; background:currentColor; opacity:.24;
     animation:dotPulse 2.6s ease-in-out infinite; }
   @keyframes dotPulse{ 0%,100%{ transform:scale(1); opacity:.22; } 50%{ transform:scale(1.55); opacity:.42; } }
   .cell.gd-o .dot{ color:var(--red); } .cell.gd-x .dot{ color:var(--blue); }
@@ -234,12 +234,11 @@
     flex-direction:column; align-items:flex-start; gap:7px; width:min(76vw,252px); }
   #chatBox.on{ display:flex; }
   #chatBox.mini .chat-log, #chatBox.mini .chat-row, #chatBox.mini #stampBar{ display:none; }
-  .chat-log{ display:none; width:100%; max-height:126px; overflow-y:auto; overscroll-behavior:contain;
+  .chat-log{ display:flex; flex-direction:column; width:100%; max-height:126px; overflow-y:auto; overscroll-behavior:contain;
     background:rgba(255,255,255,.92); border-radius:12px; padding:8px 10px;
     box-shadow:0 2px 7px rgba(35,33,31,.2); font-size:12px; line-height:1.6; }
-  .chat-row{ display:none; width:100%; gap:6px; }
-  #chatBox.online .chat-log, #chatBox.online .chat-row{ display:flex; }
-  .chat-log{ flex-direction:column; }
+  .chat-log:empty{ display:none; }   /* まだ何も書かれていない時は空の帯を出さない */
+  .chat-row{ display:flex; width:100%; gap:6px; }
   .chat-log::-webkit-scrollbar{ width:6px; }
   .chat-log::-webkit-scrollbar-thumb{ background:rgba(35,33,31,.22); border-radius:3px; }
   .c-line{ word-break:break-word; }
@@ -1044,7 +1043,6 @@ function foeLeft(){
 function showScene(id){
   ["titleScene","gameScene"].forEach(s=>$(s).classList.toggle("on",s===id));
   $("chatBox").classList.toggle("on",id==="gameScene");            /* スタンプは1台・ロボットでも使える */
-  $("chatBox").classList.toggle("online",mode==="online");         /* 文字のチャットはオンラインだけ */
   window.scrollTo(0,0);
 }
 function setBoardN(n){                         /* ステージの広さ(5/7/9)を切り替える */
@@ -1240,13 +1238,12 @@ function addChat(name,text,side){
   while(log.children.length>60) log.removeChild(log.firstChild);
   log.scrollTop=log.scrollHeight;
 }
-function sendChat(){
+function sendChat(){                                  /* 1台・ロボット戦でも書ける(自分の画面に残るだけ) */
   const el=$("chatIn"), t=(el.value||"").trim().slice(0,40);
   if(!t) return;
   el.value="";
-  if(mode!=="online"||!online||!ch){ toast("オンラインで遊ぶ時に使えます"); playNg(); return; }
-  addChat(meLabel(),t,mySide);
-  send("chat",{t:t,id:myId});
+  addChat(meLabel(), t, (mode==="local")?turn:mySide);
+  if(mode==="online"&&online&&ch) send("chat",{t:t,id:myId});
 }
 $("chatGo").addEventListener("click",()=>{ ensureAudio(); sendChat(); });
 $("chatIn").addEventListener("keydown",e=>{
