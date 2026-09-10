@@ -1,12 +1,39 @@
-# 紹介ページを intro/ フォルダへ移動(2026-09-05)。旧URLは新URLへ301転送(検索登録済みURL対策)
-/intro-bamiri.html /intro/intro-bamiri.html 301
-/intro-cookkey.html /intro/intro-cookkey.html 301
-/intro-dox.html /intro/intro-dox.html 301
-/intro-maigo.html /intro/intro-maigo.html 301
-/intro-maigomoku.html /intro/intro-maigomoku.html 301
-/intro-mate.html /intro/intro-mate.html 301
-/intro-mojibake.html /intro/intro-mojibake.html 301
-/intro-moku.html /intro/intro-moku.html 301
-/intro-nomi.html /intro/intro-nomi.html 301
-/intro-shogibingo.html /intro/intro-shogibingo.html 301
-/intro-zukan.html /intro/intro-zukan.html 301
+# 旧URL -> 新URL の301転送。移動したページの検索登録済みURL/共有済みリンクを壊さないため
+
+# 情報ページを info/ フォルダへ移動(2026-09-10)
+/news /info/news 301
+/news.html /info/news 301
+/guideline /info/guideline 301
+/guideline.html /info/guideline 301
+/privacy /info/privacy 301
+/privacy.html /info/privacy 301
+/contact /info/contact 301
+/contact.html /info/contact 301
+
+# 画像を img/ フォルダへ移動(2026-09-10)。og:image はSNS側にキャッシュされているので転送必須
+/icon.png /img/icon.png 301
+/MakimuraFumiyuki_IDphoto.jpg /img/MakimuraFumiyuki_IDphoto.jpg 301
+
+# 紹介ページを intro/ フォルダへ移動(2026-09-05)。転送先は拡張子なしURL=二段リダイレクトを避ける
+/intro-bamiri /intro/intro-bamiri 301
+/intro-bamiri.html /intro/intro-bamiri 301
+/intro-cookkey /intro/intro-cookkey 301
+/intro-cookkey.html /intro/intro-cookkey 301
+/intro-dox /intro/intro-dox 301
+/intro-dox.html /intro/intro-dox 301
+/intro-maigo /intro/intro-maigo 301
+/intro-maigo.html /intro/intro-maigo 301
+/intro-maigomoku /intro/intro-maigomoku 301
+/intro-maigomoku.html /intro/intro-maigomoku 301
+/intro-mate /intro/intro-mate 301
+/intro-mate.html /intro/intro-mate 301
+/intro-mojibake /intro/intro-mojibake 301
+/intro-mojibake.html /intro/intro-mojibake 301
+/intro-moku /intro/intro-moku 301
+/intro-moku.html /intro/intro-moku 301
+/intro-nomi /intro/intro-nomi 301
+/intro-nomi.html /intro/intro-nomi 301
+/intro-shogibingo /intro/intro-shogibingo 301
+/intro-shogibingo.html /intro/intro-shogibingo 301
+/intro-zukan /intro/intro-zukan 301
+/intro-zukan.html /intro/intro-zukan 301
