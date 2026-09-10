@@ -1972,7 +1972,7 @@ $("soloRule").innerHTML=ruleFrameHTML("s"); wireRuleFrame("s", null); renderTime
 /* ================= オンライン(ホスト権威+スナップショット) ================= */
 const SB_URL="https://kvgmsyognvgxqxkhvltx.supabase.co";
 const SB_KEY="sb_publishable_cak3-W9Mmgahnwawreoa1Q_CVuhmkKL";
-const CODE_CHARS="ABCDEFGHJKMNPRSTUVWXYZ23456789";   // Q/I/O/L/1/0は口頭で紛らわしいので除外
+const CODE_CHARS="ABCDEFGHJKMNPRSTUVWXYZ";   // 合言葉はアルファベットだけ=数字は使わない(2026-09-10牧村指示)。紛らわしいQ/I/O/Lも除外
 function genCode(){ let s=""; for(let i=0;i<5;i++) s+=CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)]; return s; }
 function inviteText(c){   // 招待メッセージ(2026-08-05共通テンプレ。リンク=?join=合言葉で自動入室)
   return "牧村が作った『クッKey』を一緒に遊ぼう！\n"+location.origin+location.pathname+"?join="+c+"\n\n合言葉："+c+"\n※リンクから参加できない時に使ってね";

@@ -949,7 +949,7 @@ let sb=null, ch=null, online=false, isHost=false, roomCode="", started=false;
 const myId=Math.random().toString(36).slice(2,10);
 let mySeq=0, oppSeq=0, pendMsg=null, resendT=0, joinT=0, goneT=0, againMe=false, againFoe=false;
 let seqN=0, oppN=0, oppProv=null, turnSent=false;   /* 1手を「コマ」「取り消し」「ステージ移動」の段階に分けて送る */
-const CODE_CHARS="ABCDEFGHJKMNPRSTUVWXYZ23456789";
+const CODE_CHARS="ABCDEFGHJKMNPRSTUVWXYZ";   // 合言葉はアルファベットだけ=数字は使わない(2026-09-10牧村指示)。紛らわしいQ/I/O/Lも除外
 function sbClient(){ if(!sb) sb=supabase.createClient(SB_URL,SB_KEY,{realtime:{params:{eventsPerSecond:20}}}); return sb; }
 function genCode(){ let c=""; for(let i=0;i<5;i++) c+=CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)]; return c; }
 function inviteText(c){
@@ -1397,7 +1397,7 @@ function setMini(mini){                             /* チャット欄ごと畳�
   if(!mini) hidePop();
 }
 $("chatTog").addEventListener("click",()=>{ ensureAudio(); playSelect(); setMini(!$("chatBox").classList.contains("mini")); });
-const POP_MS=4200, POP_FADE=150, POP_MAX=6;      /* 1枚あたりの表示時間 / 消える速さ / 同時に出す上限 */
+const POP_MS=4200, POP_FADE=150, POP_MAX=3;      /* 1枚あたりの表示時間 / 消える速さ / 同時に出す上限 */
 function hidePop(){ const el=$("chatPop"); [...el.children].forEach(c=>clearTimeout(c._t)); el.innerHTML=""; }
 function showPop(name,text,side){                   /* 非表示中に届いたチャットを数秒だけ出す(続けて届いたら下へ積む) */
   const el=$("chatPop");

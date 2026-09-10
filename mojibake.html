@@ -522,7 +522,7 @@ const FONTS=[
   {n:"ドットゴシック16",f:'"DotGothic16","Noto Sans JP",sans-serif'}
 ];
 const WEIGHTS=[{v:300,n:"細い"},{v:400,n:"ふつう"},{v:500,n:"やや太"},{v:700,n:"太い"},{v:900,n:"極太"}];   // 細い(300)はそのウェイトを持つフォント(Noto Sans/Serif・Zen角ゴ・Zen丸ゴ等)だけ効く
-const CODE_CHARS="ABCDEFGHJKMNPRSTUVWXYZ23456789";
+const CODE_CHARS="ABCDEFGHJKMNPRSTUVWXYZ";   // 合言葉はアルファベットだけ=数字は使わない(2026-09-10牧村指示)。紛らわしいQ/I/O/Lも除外
 const HKEYS=["text","font","weight","blur","color","bg","bgOn","size","sx","sy","rot","x","y","w","h"];
 const BLURS=[{v:0,n:"無し"},{v:0.3,n:"弱"},{v:0.6,n:"中"},{v:1,n:"強"},{v:1.6,n:"最強"}];   // 表示は「ぼかし 弱」の形式(太さも「太さ ふつう」)   // 太さの代わり(2026-09-05)。画質の悪い写真になじませる
 const COLORS=["#e3452f","#2f7de3","#2f9e55","#f39a1f","#8a5cd6","#17a2a2","#e35a9c","#8a6a3f","#5a7d2f","#c9482f","#2f5ac9","#7d7d29"];   // メンバーの色(待てアートと同じ並び)
