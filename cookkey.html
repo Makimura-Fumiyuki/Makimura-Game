@@ -150,10 +150,10 @@
     text-shadow:0 4px 0 rgba(0,0,0,.42); }
 
   .plate{ position:relative; }   /* クッキーの周りの囲みはなし */
-  /* 虫眼鏡=「画面をしっかり拡大する」形(2026-09-10夕に牧村指示で変更)。
-     窓で切らずクッキーそのものが大きくなる=まわりのUIに重なってよい */
+  /* 虫眼鏡=画面(#gameScene)ごと拡大する(2026-09-10。ブラウザの拡大と同じ感覚=UIも大きくなる)。
+     #plateView / #plateZoom はただの入れ物として残してある(transformはしない) */
   #plateView{ position:relative; overflow:visible; }
-  #plateZoom{ position:relative; transform-origin:0 0; }
+  #plateZoom{ position:relative; }
   #cookie{ display:block; touch-action:none; cursor:crosshair; image-rendering:pixelated; }
   #carvePad{ position:absolute; inset:-16px; z-index:2; touch-action:none; cursor:crosshair; }   /* クッキーの外側まで広げた操作エリア=ふちにペンの一部がかかる位置でも食べられる・ペン枠も消えない */
   #countFx{ position:fixed; left:0; right:0; top:0; height:100svh; z-index:73; display:none; align-items:center; justify-content:center; pointer-events:none; }
@@ -1499,19 +1499,21 @@ function hideGhost(){ ghost.style.display="none"; }
 
 /* ピンチで拡大縮小(スマホ)。2本指の間は削らない=誤作動防止。指が全部離れるまで削りは再開しない */
 const ptrs=new Map(); let zoom=1, zx=0, zy=0, pinch=null, pinchLock=false;
-function viewRect(){ return $("plateView").getBoundingClientRect(); }   /* 窓=拡大しても大きさが変わらない */
-function applyZoom(){ const pz=$("plateZoom"); const w=W*cell, h=H*cell;
-  const lx=w*(zoom-1)/2+80, ly=h*(zoom-1)/2+80;   // 画面ごと拡大=はみ出してよいので、ゆとりを持って動かせる
-  zx=Math.max(-w*(zoom-1)-lx, Math.min(lx, zx)); zy=Math.max(-h*(zoom-1)-ly, Math.min(ly, zy));
-  pz.style.transform=(zoom===1&&!zx&&!zy)? "" : "translate("+zx+"px,"+zy+"px) scale("+zoom+")"; }
+/* 2026-09-10: 拡大は「ブラウザの拡大」と同じ感覚=画面(#gameScene)ごと大きくする。UIも一緒に大きくなって細かく見られる */
+function applyZoom(){ const gs=$("gameScene");
+  const lim=(innerWidth+innerHeight)*(zoom-1)/2+80;   // 拡大したぶん+すこし余裕を持って動かせる
+  zx=Math.max(-lim,Math.min(lim,zx)); zy=Math.max(-lim,Math.min(lim,zy));
+  gs.style.transform=(zoom===1&&!zx&&!zy)? "" : "translate("+zx+"px,"+zy+"px) scale("+zoom+")"; }
 function resetZoom(){ zoom=1; zx=0; zy=0; applyZoom(); }
-/* 虫眼鏡ボタン・Ctrl(⌘)+ホイールで拡大縮小、ホイールクリック/スペース+ドラッグで移動(2026-09-07。ピンチと同じ zoom/zx/zy を使う) */
-function zoomAt(z1,px,py){   // px,py=窓(#plateView)の中での座標。その点を軸に拡大する
+/* 虫眼鏡ボタン・Ctrl(⌘)+ホイールで拡大縮小、ホイールクリック/スペース+ドラッグで移動(ピンチと同じ zoom/zx/zy を使う) */
+function zoomAt(z1,cxp,cyp){   // cxp,cyp=画面の座標。その点を動かさずに拡大する
   const z0=zoom; z1=Math.max(1,Math.min(4,z1)); if(z1===z0) return;
-  const ox=(px-zx)/z0, oy=(py-zy)/z0;
-  zoom=z1; zx=px-ox*z1; zy=py-oy*z1; applyZoom();
+  const r=$("gameScene").getBoundingClientRect();
+  const dx=cxp-(r.left+r.width/2), dy=cyp-(r.top+r.height/2);
+  zoom=z1; if(zoom===1){ zx=0; zy=0; } else { zx+=dx*(1-z1/z0); zy+=dy*(1-z1/z0); }
+  applyZoom();
 }
-function zoomBy(f){ zoomAt(zoom*f,(W*cell)/2,(H*cell)/2); }   // 枠の中心を軸に
+function zoomBy(f){ const r=$("gameScene").getBoundingClientRect(); zoomAt(zoom*f, r.left+r.width/2, r.top+r.height/2); }   // 画面の中心を軸に
 let panning=null, spaceHeld=false;
 function zTyping(){ const a=document.activeElement; return !!(a&&(a.tagName==="INPUT"||a.tagName==="TEXTAREA"||a.tagName==="SELECT")); }
 $("zoomIn").addEventListener("click",()=>{ playSelect(); zoomBy(1.25); });
@@ -1519,8 +1521,7 @@ $("zoomOut").addEventListener("click",()=>{ playSelect(); zoomBy(1/1.25); });
 $("zoomReset").addEventListener("click",()=>{ playSelect(); resetZoom(); });
 $("cookiePlate").addEventListener("wheel",e=>{
   if(!(e.ctrlKey||e.metaKey)) return; e.preventDefault();
-  const r=viewRect();
-  zoomAt(zoom*(e.deltaY<0?1.1:1/1.1), e.clientX-r.left, e.clientY-r.top);
+  zoomAt(zoom*(e.deltaY<0?1.1:1/1.1), e.clientX, e.clientY);
 },{passive:false});
 document.addEventListener("keydown",e=>{ if(e.code==="Space"&&!zTyping()&&$("gameScene").classList.contains("on")){ e.preventDefault(); if(!spaceHeld){ spaceHeld=true; $("cookiePlate").classList.add("grab"); } } });
 document.addEventListener("keyup",e=>{ if(e.code==="Space"){ spaceHeld=false; $("cookiePlate").classList.remove("grab"); } });
@@ -1541,12 +1542,10 @@ $("cookiePlate").addEventListener("pointermove",e=>{
   if(!panning||panning.id!==e.pointerId) return; panning=null; $("cookiePlate").classList.remove("panning");
 },true));
 function pinchStart(){ const a=[...ptrs.values()]; const d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)||1;
-  const pr=viewRect(); const mx=(a[0].x+a[1].x)/2-pr.left, my=(a[0].y+a[1].y)/2-pr.top;
-  pinch={ d0:d, z0:zoom, mx0:mx, my0:my, ox:(mx-zx)/zoom, oy:(my-zy)/zoom }; }
+  pinch={ d0:d, z0:zoom }; }
 function pinchMove(){ if(!pinch) return; const a=[...ptrs.values()]; const d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)||1;
-  const pr=viewRect(); const mx=(a[0].x+a[1].x)/2-pr.left, my=(a[0].y+a[1].y)/2-pr.top;
-  zoom=Math.max(1, Math.min(4, pinch.z0*d/pinch.d0));
-  zx=mx-pinch.ox*zoom; zy=my-pinch.oy*zoom; applyZoom(); }
+  const mx=(a[0].x+a[1].x)/2, my=(a[0].y+a[1].y)/2;                 /* 指の中点(画面座標)を軸に */
+  zoomAt(pinch.z0*d/pinch.d0, mx, my); }
 let touchPending=null;   // タッチ1本目: 2本目が来るかもしれないので70msだけ待ってから削り始める(ピンチの最初の指で削れてしまう誤作動の防止)
 function beginCarve(e){
   ensureAudio(); carving=true; lastCell=null;

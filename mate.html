@@ -1215,18 +1215,26 @@ let drawing=false, last=null, cupRot=0;
    ・ホイールクリック、またはスペースキーを押しながらドラッグで移動 */
 let zoom=1, panX=0, panY=0, panning=null, spaceHeld=false;
 function zTyping(){ const a=document.activeElement; return !!(a&&(a.tagName==="INPUT"||a.tagName==="TEXTAREA"||a.tagName==="SELECT")); }
-function applyZoom(){                       /* 2026-09-10: 中身だけでなく「画面ごと」拡大する=カップまるごと大きくなる */
-  const z=$("cupWrap"); if(!z) return;
-  const lim=(($("cupIn").offsetWidth||0)*(zoom-1))/2 + 60;   // 拡大したぶん+すこし余裕を持って動かせる
+/* 2026-09-10: 拡大は「ブラウザの拡大」と同じ感覚=画面(#gameScene)ごと大きくする。UIも一緒に大きくなって細かく見られる */
+function applyZoom(){
+  const z=$("gameScene"); if(!z) return;
+  const lim=(innerWidth+innerHeight)*(zoom-1)/2 + 60;   // 拡大したぶん+すこし余裕を持って動かせる
   panX=Math.max(-lim,Math.min(lim,panX)); panY=Math.max(-lim,Math.min(lim,panY));
   z.style.transform=(zoom===1&&!panX&&!panY)?"":("translate("+panX+"px,"+panY+"px) scale("+zoom+")");
 }
 function setZoom(z){ zoom=Math.max(1,Math.min(4,Math.round(z*100)/100)); if(zoom===1){ panX=0; panY=0; } applyZoom(); }
+function zoomAtPt(z1,cxp,cyp){             /* その点を動かさずに拡大縮小する */
+  const z0=zoom; z1=Math.max(1,Math.min(4,Math.round(z1*100)/100)); if(z1===z0) return;
+  const r=$("gameScene").getBoundingClientRect();
+  const dx=cxp-(r.left+r.width/2), dy=cyp-(r.top+r.height/2);
+  zoom=z1; if(zoom===1){ panX=0; panY=0; } else { panX+=dx*(1-z1/z0); panY+=dy*(1-z1/z0); }
+  applyZoom();
+}
 function resetZoom(){ zoom=1; panX=0; panY=0; applyZoom(); }
 $("zoomIn").addEventListener("click",()=>{ playSelect&&playSelect(); setZoom(zoom*1.25); });
 $("zoomOut").addEventListener("click",()=>{ playSelect&&playSelect(); setZoom(zoom/1.25); });
 $("zoomReset").addEventListener("click",()=>{ playSelect&&playSelect(); resetZoom(); });
-$("cupWrap").addEventListener("wheel",e=>{ if(!(e.ctrlKey||e.metaKey)) return; e.preventDefault(); setZoom(zoom*(e.deltaY<0?1.1:1/1.1)); },{passive:false});
+$("cupWrap").addEventListener("wheel",e=>{ if(!(e.ctrlKey||e.metaKey)) return; e.preventDefault(); zoomAtPt(zoom*(e.deltaY<0?1.1:1/1.1), e.clientX, e.clientY); },{passive:false});
 document.addEventListener("keydown",e=>{ if(e.code==="Space"&&!zTyping()&&$("gameScene").classList.contains("on")){ e.preventDefault(); if(!spaceHeld){ spaceHeld=true; $("cupWrap").classList.add("grab"); } } });
 document.addEventListener("keyup",e=>{ if(e.code==="Space"){ spaceHeld=false; $("cupWrap").classList.remove("grab"); } });
 window.addEventListener("blur",()=>{ spaceHeld=false; $("cupWrap").classList.remove("grab"); });
