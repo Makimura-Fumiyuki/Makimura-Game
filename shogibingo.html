@@ -393,6 +393,9 @@
   .overlay.on{ opacity:1; pointer-events:auto; }
   .overlay .r-card{ transform:scale(.6); opacity:0; transition:transform .25s cubic-bezier(.2,1.2,.4,1), opacity .2s; }
   .overlay.on .r-card{ transform:scale(1); opacity:1; }
+  /* 結果は枠外タップで隠して盤を見せる(2026-09-10・全作品共通)。もう一度どこかをタップで戻る */
+  #resultOv.on.peek{ background:rgba(20,8,45,0); }
+  #resultOv.on.peek .r-card{ opacity:0; transform:scale(.92); pointer-events:none; }
   .r-card{ background:#fff; border:none; border-radius:20px; color:var(--pp-ink);
     width:min(88vw, 420px); padding:26px 22px 24px; text-align:center;
     display:flex; flex-direction:column; gap:18px; align-items:center;
@@ -1462,7 +1465,7 @@ function gameOver(winner, reason){
   $("rTitle").textContent=nameOf(winner)+"の勝ち";
   $("rReason").textContent=reason;
   playWin();
-  setTimeout(()=>{ $("resultOv").classList.add("on"); }, 120);
+  setTimeout(()=>{ $("resultOv").classList.remove("peek"); $("resultOv").classList.add("on"); }, 120);
 }
 
 /* ================= オンライン対局 ================= */
@@ -1651,7 +1654,7 @@ function openChannel(code, asHost){
 function specFollow(payload){   // 観戦者: 再戦を最初から観る(初期盤面なのでスナップショット不要)
   sizeSel=(payload.n===9)?9:5; pureShogi=!!payload.pure; kingSafe=payload.ks!==0; fxOn=payload.fx!==0;
   lastSeqFrom={}; queuedMove=null;
-  $("resultOv").classList.remove("on");
+  $("resultOv").classList.remove("on","peek");
   initGame(); clearTimeout(freeTmr); phase="idle"; render();
   toast("次のゲームがはじまりました(観戦中)");
 }
@@ -1664,7 +1667,7 @@ function startOnline(side, n, pure, fx, ks){
   myRematch=false; peerRematch=false; queuedMove=null; lastNetMove=null;
   undoPending=false; undoIdx=-1; peerUndoIdx=-1; $("undoOv").classList.remove("on");
   mySeq=0; pendingSeq=-1; lastRecvSeq=-1;
-  $("resultOv").classList.remove("on");
+  $("resultOv").classList.remove("on","peek");
   toGame(); initGame();
   toast(mySide===0? "対局開始。あなたが先手" : "対局開始。あなたが後手");
 }
@@ -1910,6 +1913,8 @@ $("ruleBtn").addEventListener("click",()=>{
 });
 $("ruleClose").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("ruleOv").classList.remove("on"); });
 $("ruleOv").addEventListener("click",e=>{ if(e.target===$("ruleOv")) $("ruleOv").classList.remove("on"); });
+/* 結果ダイアログ: 枠外タップで盤を見せる⇔戻す(2026-09-10・全作品共通) */
+$("resultOv").addEventListener("click",e=>{ if(e.target!==$("resultOv")) return; ensureAudio(); playSelect(); $("resultOv").classList.toggle("peek"); });
 $("againBtn").addEventListener("click",()=>{
   ensureAudio(); playSelect();
   if(online&&spectating){ toast("観戦中です。次のゲームもこのまま観戦できます"); return; }
@@ -1921,9 +1926,9 @@ $("againBtn").addEventListener("click",()=>{
     return;
   }
   if(mode==="online"){ toast("タイトルから部屋を作りなおしてください"); return; }   // 相手が退出した後
-  $("resultOv").classList.remove("on"); initGame();
+  $("resultOv").classList.remove("on","peek"); initGame();
 });
-$("homeBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("resultOv").classList.remove("on"); toTitle(); });
+$("homeBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("resultOv").classList.remove("on","peek"); toTitle(); });
 
 /* ================= スタンプ(気持ちを送る。全対戦ゲーム共通の仕組み) ================= */
 const STAMP_SVGS=['😭','😍','🤣'];   // このスタンプだけは牧村さんの明示指示で絵文字を採用
