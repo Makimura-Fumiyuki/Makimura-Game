@@ -608,9 +608,9 @@
       <div>
         <div class="sec-label">手番</div>
         <div class="fuda-row" id="orderRow">
-          <button class="fuda sel" data-first="1"><span class="stone-mini b"></span>先手<small>黒で打つ</small></button>
+          <button class="fuda" data-first="1"><span class="stone-mini b"></span>先手<small>黒で打つ</small></button>
           <button class="fuda" data-first="0"><span class="stone-mini w"></span>後手<small>白で打つ</small></button>
-          <button class="fuda" data-first="r"><span class="stone-mini rnd"></span>おまかせ<small>先後ランダム</small></button>
+          <button class="fuda sel" data-first="r"><span class="stone-mini rnd"></span>おまかせ<small>先後ランダム</small></button>
         </div>
       </div>
       <button class="start-btn" id="startBtn">いざ、対局</button>
@@ -690,10 +690,10 @@
   <!-- ===== 待った(一手戻る)の確認 ===== -->
   <div id="undoOverlay">
     <div class="r-card">
-      <div class="cf-msg" id="undoMsg">「待った」を許すか？</div>
+      <div class="cf-msg" id="undoMsg">一手戻すのを許すか？</div>
       <div class="sub-btns">
-        <button class="txt-btn" id="undoYes">許す</button>
         <button class="txt-btn deny" id="undoNo">断る</button>
+        <button class="txt-btn" id="undoYes">許す</button>
       </div>
     </div>
   </div>
@@ -736,8 +736,8 @@
       <div class="r-sub" id="rSub"></div>
       <div class="r-sub" id="rStats" style="display:none"></div>
       <div class="sub-btns">
-        <button class="txt-btn" id="againBtn">もう一局</button>
         <button class="txt-btn" id="rHomeBtn">タイトルへ</button>
+        <button class="txt-btn" id="againBtn">もう一局</button>
       </div>
       <div class="sub-btns">
         <button class="txt-btn" id="ruleChgBtn">ルールを変える</button>
@@ -1579,7 +1579,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       // オンラインは相手の許可制(待った)。申し込んで返事を待つ
       undoPending=true; undoBtn.disabled=true;
       if(ch) ch.send({ type:"broadcast", event:"undoreq", payload:{} });
-      showToast("「待った」を申し込んだ。"+foeLabel()+"の返事を待て");
+      showToast("一手戻したいと伝えた。"+foeLabel()+"の返事を待て");
       return;
     }
     if(local){
@@ -1615,10 +1615,10 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       else if(winner===human){ rTitle.textContent="あなたの勝ち！"; rTitle.className="r-title win"; rSub.textContent=subWin; playWin(); }
       else { rTitle.textContent=(online?foeLabel()+"の勝ち…":"ロボットの勝ち…"); rTitle.className="r-title"; rSub.textContent="次はきっと勝てる"; playLose(); }
       if(!local && !online){   // ロボット戦: 戦った階級と待ったの有無を表示(勝ちの自慢に)
-        rSub.innerHTML += '<br><span class="r-foe">'+LV_NAMES[cpuLv]+'ロボットと対局'+(undoUsed?'（一手戻りあり）':'（待ったなし）')+'</span>';
+        rSub.innerHTML += '<br><span class="r-foe">'+LV_NAMES[cpuLv]+'ロボットと対局'+(undoUsed?'（一手戻りあり）':'（一手戻りなし）')+'</span>';
       }
       if(online) bumpRoomStats(winner===0?"draw":(winner===human?"win":"lose")); else renderRoomStats();   // この部屋での成績
-      showResultSoon();
+      document.getElementById("resultOverlay").classList.add("on");
     }, (glowEls&&glowEls.length)?1050:350);
   }
   /* 打てる場所が無くなった: とった石の数の多いほうが勝ち */
@@ -1715,7 +1715,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       over=true; busy=true; setGiveupVisible(false);
       document.getElementById("confirmOverlay").classList.remove("on");
       rTitle.textContent=foeLabel()+"の降参"; rTitle.className="r-title win";
-      rSub.textContent="あなたの勝ち"; playWin(); bumpRoomStats("win"); showResultSoon();
+      rSub.textContent="あなたの勝ち"; playWin(); bumpRoomStats("win"); document.getElementById("resultOverlay").classList.add("on");
     });
     ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) speakStamp(payload.i|0); if(payload) spawnStamp(payload.i|0, foeLabel()); });
     ch.on("broadcast",{event:"rematch"},()=>{
@@ -1744,12 +1744,12 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       if(!online||!undoPending) return;
       undoPending=false;
       undoToPlayer(human);   // 相手の応手＋自分の一手を戻し、自分の番に戻す
-      showToast("「待った」が受け入れられた");
+      showToast("一手戻すのを許してもらえた");
     });
     ch.on("broadcast",{event:"undono"},()=>{
       if(!online||!undoPending) return;
       undoPending=false; startTurn();
-      showToast("「待った」は断られた");
+      showToast("一手戻すのは断られた");
     });
     ch.subscribe(async (status)=>{
       if(status==="SUBSCRIBED"){ try{ await ch.track({ n:myAcctName() }); }catch(e){} if(onReady) onReady(); }
@@ -1772,7 +1772,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     over=true; busy=true; online=false; peerGone=true; setGiveupVisible(false);
     rTitle.textContent=foeLabel()+"が退出しました"; rTitle.className="r-title";
     rSub.textContent="部屋を作りなおし、再戦したまえ";
-    showResultSoon();
+    document.getElementById("resultOverlay").classList.add("on");
     leaveChannel();
   }
 
@@ -2129,7 +2129,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       b.classList.add("sel"); cpuLv=+b.dataset.lv;
     });
   });
-  let orderRandom=false;
+  let orderRandom=true;   /* 手番の初期は「おまかせ」(2026-09-10牧村指示・対戦全作品) */
   document.querySelectorAll("#orderRow .fuda").forEach(b=>{
     b.addEventListener("click",()=>{ ensureAudio(); playSelect();
       document.querySelectorAll("#orderRow .fuda").forEach(x=>x.classList.remove("sel"));
@@ -2164,19 +2164,13 @@ function readPeerName(){   // presenceからあいての名前を取り込む
   });
   // 降参
   const confirmOverlay=document.getElementById("confirmOverlay");
-  /* 決着してすぐ結果を出すと、どんな盤面で終わったのか分からない=決着音が鳴り終わるくらい待ってから出す(2026-09-10牧村指示・対戦全作品) */
-  var _resT=0;
-  function showResultSoon(){
-    clearTimeout(_resT);
-    _resT=setTimeout(function(){ if(over) document.getElementById("resultOverlay").classList.add("on"); }, 1100);
-  }
 
   function doResign(){
     if(over) return;
     if(online && ch) ch.send({ type:"broadcast", event:"resign", payload:{} });
     over=true; setGiveupVisible(false);
     rTitle.textContent="降参…"; rTitle.className="r-title";
-    rSub.textContent="また挑むがよい"; playLose(); if(online) bumpRoomStats("lose"); else renderRoomStats(); showResultSoon();
+    rSub.textContent="また挑むがよい"; playLose(); if(online) bumpRoomStats("lose"); else renderRoomStats(); document.getElementById("resultOverlay").classList.add("on");
   }
   /* 降参は確認ダイアログを挟まず、ボタン自体が「確定」に変わる2段階(2026-09-10牧村指示・降参のある全作品で統一) */
   var gvArm=0;
@@ -2255,7 +2249,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     if(ch) ch.send({ type:"broadcast", event:"undoyes", payload:{} });
     const foe=(human===BLACK)?WHITE:BLACK;   // 申し込んだのは相手(自分のfoe)
     undoToPlayer(foe);
-    showToast("「待った」を許した");
+    showToast("一手戻すのを許した");
   });
   document.getElementById("undoNo").addEventListener("click",()=>{
     ensureAudio(); playSelect(); undoOverlay.classList.remove("on");

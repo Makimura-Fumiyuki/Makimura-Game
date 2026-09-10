@@ -31,9 +31,12 @@
     --tc:var(--red); --tc-d:var(--red-d);
     /* 盤の寸法。--n(盤の広さ)/--cmax/--gap はJSが盤の広さに合わせて入れる */
     --n:7; --cmax:50px; --gap:5px;
-    --cell:min( calc((94vw - 56px) / var(--n)), var(--cmax) );
+    --cell:min( calc((94vw - 110px) / var(--n)), var(--cmax) );
     --step:calc(var(--cell) + var(--gap));
     --fw:calc(var(--cell)*3 + var(--gap)*2 + 8px);
+    --tri:calc(var(--cell)*0.4);
+    --box:calc(var(--tri)*1.7);
+    --off:calc(var(--tri)*0.8 + 7px);
   }
   *{ box-sizing:border-box; font-family:"Noto Sans JP","Hiragino Sans",sans-serif; -webkit-tap-highlight-color:transparent; }
   html,body{ margin:0; height:100%; }
@@ -162,7 +165,7 @@
 
   /* ===== 盤 ===== */
   .board-wrap{ position:relative; }
-  .board-pad{ padding:8px; }
+  .board-pad{ padding:calc(var(--off) + var(--box)/2 + 2px); }
   .board{ position:relative; display:grid; grid-auto-rows:var(--cell); gap:var(--gap); }
   .cell{ position:relative; border:none; padding:0; border-radius:9px; background:#e7e2d9;
     display:flex; align-items:center; justify-content:center; transition:background .18s, box-shadow .18s; }
@@ -172,31 +175,40 @@
   .cell .pc.o{ color:var(--red); } .cell .pc.x{ color:var(--blue); }
   .cell.pop .pc{ animation:pop .26s cubic-bezier(.2,1.5,.4,1); }
   @keyframes pop{ 0%{ transform:scale(.4); } 60%{ transform:scale(1.12); } 100%{ transform:scale(1); } }
-  .cell .dot{ position:absolute; width:22%; height:22%; border-radius:50%; background:currentColor; opacity:.24;
-    animation:dotPulse 1.3s ease-in-out infinite; }
-  @keyframes dotPulse{ 0%,100%{ transform:scale(1); opacity:.22; } 50%{ transform:scale(1.55); opacity:.42; } }
-  .cell.gd-o .dot{ color:var(--red); } .cell.gd-x .dot{ color:var(--blue); }
-  /* 置いたばかりのコマ=もう一度押すと取り消し */
-  /* 置いたばかりのコマ=もう一度押すと取り消し(枠線は出さず、拡縮でそれと分かる) */
-  .cell.cancelable .pc{ animation:pop .26s cubic-bezier(.2,1.5,.4,1), canPulse 1.3s ease-in-out .3s infinite; }
+  /* 置いたばかりのコマ=もう一度押すと取り消し(枠線は出さず、拡縮でそれと分かる。速さは2026-09-10に半分へ) */
+  .cell.cancelable .pc{ animation:pop .26s cubic-bezier(.2,1.5,.4,1), canPulse 2.6s ease-in-out .3s infinite; }
   @keyframes canPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(.82); } }
-  .cell.wincell{ background:#fff6cf; }
-  .cell.wincell .pc{ animation:winpulse .9s ease-in-out infinite; }
-  @keyframes winpulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.16); } }
+  /* 決着=3つを結ぶ線を左から右へ引く(いちばん上のレイヤー) */
+  .win-line{ position:absolute; z-index:9; height:9px; margin-top:-4.5px; border-radius:5px; pointer-events:none;
+    background:var(--tc); box-shadow:0 2px 7px rgba(0,0,0,.28); transform-origin:0 50%;
+    transition:transform .52s cubic-bezier(.25,.85,.35,1); }
   .frame{ position:absolute; pointer-events:none; z-index:3;
     width:var(--fw); height:var(--fw);
     left:calc(var(--fc) * var(--step) - 4px); top:calc(var(--fr) * var(--step) - 4px);
     border:3px solid var(--tc); border-radius:13px; box-shadow:0 0 0 3px rgba(0,0,0,.05);
     transition:left .22s cubic-bezier(.3,.9,.3,1), top .22s cubic-bezier(.3,.9,.3,1), border-color .2s; }
-  /* ステージの移動先を選んだら「ここに決定」を出す(1度確認を挟む。盤の上に置くと真ん中のコマを隠すので帯の中) */
-  .tb-ok{ display:none; flex:none; margin-left:2px; padding:6px 13px; border:none; border-radius:999px;
-    background:#fff; color:var(--tc); font-size:12.5px; font-weight:900; letter-spacing:.04em; white-space:nowrap;
-    box-shadow:0 2px 0 rgba(0,0,0,.18); }
-  .tb-ok.able{ display:block; }
-  .tb-ok:active{ transform:translateY(1px); box-shadow:none; }
-  /* 移動先えらび中 */
-  .board.moving .cell{ cursor:pointer; }
-  .board.previewing .frame{ border-style:dashed; }
+  /* 盤に貼りつく移動UI(3×3の四辺の外の三角。1マスずつ動かす) */
+  .mv{ position:absolute; z-index:6; border:0 none; background:none; padding:0; opacity:0; pointer-events:none;
+    display:flex; align-items:center; justify-content:center;
+    transition:left .22s cubic-bezier(.3,.9,.3,1), top .22s cubic-bezier(.3,.9,.3,1), opacity .18s; }
+  .board.moving .mv.able{ opacity:1; pointer-events:auto; }
+  .mv-tri{ width:var(--box); height:var(--box); }
+  .mv-tri i{ display:block; background:var(--tc); filter:drop-shadow(0 2px 3px rgba(0,0,0,.2)); animation:tribob 1.4s ease-in-out infinite; }
+  .mv-tri.u i,.mv-tri.d i{ width:var(--tri); height:calc(var(--tri)*.86); }
+  .mv-tri.l i,.mv-tri.r i{ width:calc(var(--tri)*.86); height:var(--tri); }
+  .mv-tri.u i{ clip-path:polygon(50% 0,100% 100%,0 100%); animation-name:tribobU; }
+  .mv-tri.d i{ clip-path:polygon(0 0,100% 0,50% 100%); animation-name:tribobD; }
+  .mv-tri.l i{ clip-path:polygon(100% 0,100% 100%,0 50%); animation-name:tribobL; }
+  .mv-tri.r i{ clip-path:polygon(0 0,0 100%,100% 50%); animation-name:tribobR; }
+  @keyframes tribobU{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-3px); } }
+  @keyframes tribobD{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(3px); } }
+  @keyframes tribobL{ 0%,100%{ transform:translateX(0); } 50%{ transform:translateX(-3px); } }
+  @keyframes tribobR{ 0%,100%{ transform:translateX(0); } 50%{ transform:translateX(3px); } }
+  .mv-tri:active i{ transform:scale(.86); }
+  .mv-tri.u{ left:calc(var(--cx) - var(--box)/2); top:calc(var(--fy) - var(--off) - var(--box)/2); }
+  .mv-tri.d{ left:calc(var(--cx) - var(--box)/2); top:calc(var(--fy) + var(--fw) + var(--off) - var(--box)/2); }
+  .mv-tri.l{ left:calc(var(--fx) - var(--off) - var(--box)/2); top:calc(var(--cy) - var(--box)/2); }
+  .mv-tri.r{ left:calc(var(--fx) + var(--fw) + var(--off) - var(--box)/2); top:calc(var(--cy) - var(--box)/2); }
   .board.moving .cell.in{ background:#fffdf6; }
 
   .sub-btns{ display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
@@ -249,7 +261,7 @@
   @keyframes rIn{ from{ opacity:0; transform:scale(.9); } to{ opacity:1; transform:none; } }
   .r-card .sub-btns{ width:100%; }
   .r-card .txt-btn{ flex:1 1 0; min-width:120px; }
-  .r-mark{ width:50px; height:50px; }
+  #ruleOv .rule-box{ background:transparent; border:none; padding:0; }   /* ダイアログ内は枠を消してスッキリ */
   .r-title{ font-size:clamp(23px,6.2vw,33px); font-weight:900; letter-spacing:.1em; }
   .r-sub{ font-size:13.5px; color:var(--sub); letter-spacing:.08em; font-weight:700; }
   .help-card{ width:min(92vw,430px); max-height:82vh; overflow-y:auto; background:var(--bg); border-radius:18px;
@@ -328,17 +340,17 @@
     <div>
       <div class="sec-label">ロボットの強さ</div>
       <div class="lv-row" id="lvRow">
-        <button class="fuda" type="button" data-lv="0">よわい<small>お手柔らかに</small></button>
-        <button class="fuda sel" type="button" data-lv="1">ふつう<small>いい勝負</small></button>
-        <button class="fuda" type="button" data-lv="2">つよい<small>勝てたら名人</small></button>
+        <button class="fuda" type="button" data-lv="0">入門<small>お手柔らかに</small></button>
+        <button class="fuda sel" type="button" data-lv="1">中級<small>いい勝負</small></button>
+        <button class="fuda" type="button" data-lv="2">上級<small>勝てたら名人</small></button>
       </div>
     </div>
     <div>
       <div class="sec-label">手番</div>
       <div class="lv-row" id="orderRow">
-        <button class="fuda sel" type="button" data-side="o"><span class="mini-mk o" data-mk="o"></span>先手<small>◯で置く</small></button>
+        <button class="fuda" type="button" data-side="o"><span class="mini-mk o" data-mk="o"></span>先手<small>◯で置く</small></button>
         <button class="fuda b" type="button" data-side="x"><span class="mini-mk x" data-mk="x"></span>後手<small>×で置く</small></button>
-        <button class="fuda" type="button" data-side="?">おまかせ<small>順番はランダム</small></button>
+        <button class="fuda sel" type="button" data-side="?">おまかせ<small>順番はランダム</small></button>
       </div>
     </div>
     <button class="start-btn" id="startCpu" type="button">はじめる</button>
@@ -381,11 +393,14 @@
   <div class="turn-bar" id="turnBar">
     <span class="tb-mark" id="tbMark"></span>
     <span class="tb-tx" id="tbTx"></span>
-    <button class="tb-ok" id="mvOk" type="button">ここに決定</button>
   </div>
   <div class="board-wrap"><div class="board-pad">
     <div class="board" id="board">
       <div class="frame" id="frame"></div>
+      <button class="mv mv-tri u" id="mvU" type="button" data-d="u" aria-label="ステージを上へ"><i></i></button>
+      <button class="mv mv-tri d" id="mvD" type="button" data-d="d" aria-label="ステージを下へ"><i></i></button>
+      <button class="mv mv-tri l" id="mvL" type="button" data-d="l" aria-label="ステージを左へ"><i></i></button>
+      <button class="mv mv-tri r" id="mvR" type="button" data-d="r" aria-label="ステージを右へ"><i></i></button>
     </div>
   </div></div>
   <div class="sub-btns">
@@ -405,13 +420,22 @@
 </div>
 
 <div class="ov" id="resultOv"><div class="r-card">
-  <div class="r-mark" id="rMark"></div>
   <div class="r-title" id="rTitle"></div>
   <div class="r-sub" id="rSub"></div>
   <div class="sub-btns">
-    <button class="txt-btn deny" id="rAgain" type="button">もう一回</button>
     <button class="txt-btn" id="rBack" type="button">タイトルへ</button>
+    <button class="txt-btn" id="rAgain" type="button">もう一回</button>
   </div>
+  <div class="sub-btns" style="margin-top:-8px">
+    <button class="txt-btn" id="rRule" type="button">ルールを変える</button>
+  </div>
+</div></div>
+
+<!-- タイトルに戻らずルールを変える(バミリバーシと同じ仕組み) -->
+<div class="ov" id="ruleOv"><div class="r-card">
+  <div class="r-title" style="font-size:20px">ルールを変える</div>
+  <div id="ruleSlot" style="width:100%"></div>
+  <button class="txt-btn" id="ruleOk" type="button">これでよし</button>
 </div></div>
 
 <div class="ov" id="helpOv"><div class="help-card">
@@ -420,20 +444,19 @@
   <ul>
     <li>光っている<b>3×3のステージ</b>の中で、先に自分のコマを3つ並べたら勝ち。</li>
     <li><b>◯が先手</b>。盤は5×5／7×7／9×9から選べるが、遊ぶのはいつも3×3だけ。</li>
-    <li>自分の番は、3×3の空いているマスに<b>コマを1つ置く</b>。持ちゴマの数に上限はない。</li>
+    <li>自分の番は、盤の空いているマスに<b>コマを1つ置く</b>。<b>3×3の外にも置ける</b>し、持ちゴマの数に上限もない。</li>
     <li>置いたコマを<b>もう一度押すと取り消せる</b>（ステージを動かすまでなら置き直しできる）。</li>
   </ul>
   <p class="h-sec b">ステージを動かす</p>
   <ul>
-    <li>コマを置いたあと、盤の<b>好きなマスを押す</b>と、そこを真ん中にしてステージが動く。</li>
-    <li>そのまま<b>「ここに決定」</b>を押すと確定。別のマスを押せば選び直せる。</li>
-    <li><b>動かさないことはできない</b>。毎ターン、どこかへ必ず動かす。</li>
+    <li>コマを置いたあと、3×3の外に出ている<b>三角を押して、ステージを1マス動かす</b>（矢印キーでもよい）。</li>
+    <li><b>動かさないことはできない</b>。毎ターン、上下左右のどこかへ必ず1マス動かす。</li>
   </ul>
   <p class="h-sec k">ここが勝負</p>
   <ul>
     <li>ステージを動かした結果、<b>あいての3つが揃ってしまったらあいての勝ち</b>。動かす前によく見ること。</li>
-    <li>ステージの外に出たコマは、そのままでは並びに数えられない。もう一度ステージの中に入ってくると復活する。</li>
-    <li>3×3が全部うまった番は、コマを置かずにステージを動かすだけになる。</li>
+    <li>ステージの外に置いたコマは、そのままでは並びに数えられない。ステージが来ると効いてくる。</li>
+    <li>盤が全部うまったら引き分け。</li>
   </ul>
   <button class="txt-btn close" id="helpClose" type="button">とじる</button>
 </div></div>
@@ -478,12 +501,13 @@ function winsIn(s){
   return out;
 }
 const WMAX=()=>N-WIN;                       /* ステージの左上が取れる最大 */
-const winPos=s=>{                           /* 動かせる先=いまの場所以外の全部 */
-  const a=[], M=WMAX();
-  for(let r=0;r<=M;r++) for(let c=0;c<=M;c++){ if(r===s.wr&&c===s.wc) continue; a.push([r,c]); }
+const DIRS={ u:[-1,0], d:[1,0], l:[0,-1], r:[0,1] };
+const canSh=(s,d)=>{ const v=DIRS[d], r=s.wr+v[0], c=s.wc+v[1]; return r>=0&&r<=WMAX()&&c>=0&&c<=WMAX(); };
+const winPos=s=>{                           /* 動かせる先=上下左右に1マス(動かさないは無し) */
+  const a=[];
+  for(const d of ["u","d","l","r"]) if(canSh(s,d)){ const v=DIRS[d]; a.push([s.wr+v[0],s.wc+v[1]]); }
   return a;
 };
-const clampW=v=>Math.max(0,Math.min(WMAX(),v));
 function hasLine(s,q){                      /* いまのステージの中でqが3つ並んでいるか(速い版) */
   const b=s.b, wr=s.wr, wc=s.wc;
   for(let r=0;r<WIN;r++){ const o=(wr+r)*N+wc; if(b[o]===q&&b[o+1]===q&&b[o+2]===q) return true; }
@@ -492,10 +516,22 @@ function hasLine(s,q){                      /* いまのステージの中でq�
   const d1=wr*N+wc+WIN-1;  if(b[d1]===q&&b[d1+N-1]===q&&b[d1+2*N-2]===q) return true;
   return false;
 }
-const emptyW=s=>{ const a=[]; for(let i=0;i<N*N;i++) if(inW(s,i)&&!s.b[i]) a.push(i); return a; };
+const emptyAll=s=>{ const a=[]; for(let i=0;i<N*N;i++) if(!s.b[i]) a.push(i); return a; };
+/* 置く候補=いまの3×3+そのまわり1マス(=次に遊びうる5×5)。ここ以外に置いても次の1手には効かないので読みからは外す */
+function placeCands(s){
+  const inn=[], out=[];
+  const r0=Math.max(0,s.wr-1), c0=Math.max(0,s.wc-1);
+  const r1=Math.min(N-1,s.wr+WIN), c1=Math.min(N-1,s.wc+WIN);
+  for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++){
+    const i=r*N+c; if(s.b[i]) continue;
+    (inW(s,i)?inn:out).push(i);
+  }
+  const a=inn.concat(out);                    /* 3×3の中を先に見る=αβが効きやすい */
+  return a.length? a : emptyAll(s).slice(0,8);
+}
 const cloneS=s=>({ b:s.b.slice(), wr:s.wr, wc:s.wc });
 function genTurns(s,p){                       /* 1手=「置くマス」+「ステージの移動先」(動かさないは無し) */
-  const out=[], em=emptyW(s), ws=winPos(s);
+  const out=[], em=placeCands(s), ws=winPos(s);
   if(!em.length){ for(const w of ws) out.push({to:null,wr:w[0],wc:w[1]}); return out; }
   for(const t of em) for(const w of ws) out.push({to:t,wr:w[0],wc:w[1]});
   return out;
@@ -511,15 +547,12 @@ function applyT(s,p,t){                       /* 盤を進めて勝者を返す(
   return null;
 }
 function hasWin(s,q){                         /* qが「次の1手で勝てる」か(clone無しの速い判定) */
-  const sr=s.wr, sc=s.wc, M=WMAX();
-  const em=emptyW(s), places = em.length? em : [null];
+  const sr=s.wr, sc=s.wc, ws=winPos(s);
+  const em=placeCands(s), places = em.length? em : [null];
   for(const i of places){
     if(i!=null){ s.b[i]=q; if(hasLine(s,q)){ s.b[i]=null; return true; } }
     let win=false;
-    for(let r=0;r<=M&&!win;r++) for(let c=0;c<=M&&!win;c++){
-      if(r===sr&&c===sc) continue;
-      s.wr=r; s.wc=c; if(hasLine(s,q)) win=true;
-    }
+    for(const w of ws){ s.wr=w[0]; s.wc=w[1]; if(hasLine(s,q)){ win=true; break; } }
     s.wr=sr; s.wc=sc;
     if(i!=null) s.b[i]=null;
     if(win) return true;
@@ -568,9 +601,6 @@ let mode="local", mySide="o", cpuSide="x", cpuLv=1, sideWish="o";
 let turn="o", phase="place", over=null, endReason="", winCells=[], hist=[], turnNo=1;
 let skipNote=false, curT=null, thinking=false, cpuT=[];
 let lastPlaced=null;                        /* 置いたばかりのマス=もう一度押すと取り消し */
-let resT=0;
-let noPlace=0;                              /* コマを置かない番(3×3が満杯)が続いた回数=千日手よけ */
-let pw=null;                                /* ステージの移動先の仮位置{wr,wc}=「ここに決定」を押すまで確定しない */
 
 /* ===== 盤の組み立て・描画 ===== */
 let cells=[];
@@ -583,7 +613,7 @@ function buildBoard(){                      /* 盤の広さが変わるたびに
   for(let i=0;i<N*N;i++){
     const el=document.createElement("button");
     el.type="button"; el.className="cell"; el.dataset.i=i;
-    el.innerHTML='<span class="dot" hidden></span><span class="pc"></span>';
+    el.innerHTML='<span class="pc"></span>';
     el.addEventListener("click",()=>{ ensureAudio(); onCell(i); });
     b.insertBefore(el,$("frame")); cells.push(el);
   }
@@ -593,35 +623,27 @@ function pop(i){ cells[i].classList.remove("pop"); void cells[i].offsetWidth; ce
 const myMove=()=>!over&&!thinking&&(mode==="local"||turn===mySide);
 const labelOf=p=>{
   if(mode==="online") return p===mySide?(myAcctName()||"あなた"):foeLabel();
-  if(mode==="cpu")   return p===mySide?(myAcctName()||"あなた"):["よわい","ふつう","つよい"][cpuLv];
+  if(mode==="cpu")   return p===mySide?(myAcctName()||"あなた"):["入門","中級","上級"][cpuLv];
   return p==="o"?"先手":"後手";
 };
 function render(){
   const moving=!over&&phase==="shift"&&myMove();
-  const showDrop=!over&&phase==="place"&&myMove();
-  const vw=(moving&&pw)?pw:S;                  /* 表示は仮位置=動かした結果がそのまま見える */
   for(let i=0;i<N*N;i++){
-    const el=cells[i], v=S.b[i], on=inW(vw,i);
-    el.classList.toggle("in",on);
-    el.classList.toggle("wincell",winCells.indexOf(i)>=0);
+    const el=cells[i], v=S.b[i];
+    el.classList.toggle("in",inW(S,i));
     el.classList.toggle("cancelable",!over&&phase==="shift"&&myMove()&&i===lastPlaced);
     const pc=el.querySelector(".pc");
     if(pc.dataset.v!==(v||"")){ pc.innerHTML=v?(v==="o"?SVG_O:SVG_X):""; pc.dataset.v=v||""; }
     pc.className="pc"+(v?" "+v:"");
-    const dot=el.querySelector(".dot"), want=showDrop&&on&&!v;
-    dot.hidden=!want;
-    el.classList.toggle("gd-o",want&&turn==="o");
-    el.classList.toggle("gd-x",want&&turn==="x");
   }
   const bd=$("board");
-  bd.style.setProperty("--fr",vw.wr); bd.style.setProperty("--fc",vw.wc);
-  bd.style.setProperty("--fx","calc("+vw.wc+" * var(--step) - 4px)");
-  bd.style.setProperty("--fy","calc("+vw.wr+" * var(--step) - 4px)");
-  bd.style.setProperty("--cx","calc("+(vw.wc+1)+" * var(--step) + var(--cell)/2)");
-  bd.style.setProperty("--cy","calc("+(vw.wr+1)+" * var(--step) + var(--cell)/2)");
+  bd.style.setProperty("--fr",S.wr); bd.style.setProperty("--fc",S.wc);
+  bd.style.setProperty("--fx","calc("+S.wc+" * var(--step) - 4px)");
+  bd.style.setProperty("--fy","calc("+S.wr+" * var(--step) - 4px)");
+  bd.style.setProperty("--cx","calc("+(S.wc+1)+" * var(--step) + var(--cell)/2)");
+  bd.style.setProperty("--cy","calc("+(S.wr+1)+" * var(--step) + var(--cell)/2)");
   bd.classList.toggle("moving",moving);
-  bd.classList.toggle("previewing",!!(moving&&pw));
-  $("mvOk").classList.toggle("able",!!(moving&&pw));
+  ["u","d","l","r"].forEach(d=>$("mv"+d.toUpperCase()).classList.toggle("able",canSh(S,d)));
   /* 手番の色(赤=◯/青=×)を枠・三角・帯・結果カードに流す */
   const tc=(over&&over!=="draw")?over:turn;
   const gs=$("gameScene");
@@ -645,7 +667,7 @@ function render(){
   else if(over){ tx="<b>"+(over==="o"?"◯":"×")+"の勝ち</b>"; }
   else if(thinking){ tx="<b>"+labelOf(turn)+"</b>　考えています…"; }
   else if(!myMove()){ tx="<b>"+labelOf(turn)+"</b>　の番を待っています…"; }
-  else if(phase==="shift"){ tx=pw?"<b>ここでいい？</b>":(skipNote?"置く場所がないので<b>ステージだけ動かす</b>":"<b>ステージを動かす</b>"); }
+  else if(phase==="shift"){ tx="<b>ステージを動かす</b>"; }
   else{ tx="<b>コマを置く</b>"; }
   $("tbTx").innerHTML=tx;
   $("tbMark").innerHTML=over?"":mark(turn);
@@ -657,22 +679,43 @@ function render(){
 }
 
 /* ===== 1手の進行 ===== */
-function snap(){ return { b:S.b.slice(), wr:S.wr, wc:S.wc, turn, phase, turnNo, skipNote, noPlace }; }
+function snap(){ return { b:S.b.slice(), wr:S.wr, wc:S.wc, turn, phase, turnNo, skipNote }; }
 function pushHist(){ hist.push(snap()); if(hist.length>240) hist.shift(); }
 function loadSnap(s){
   S={ b:s.b.slice(), wr:s.wr, wc:s.wc };
-  turn=s.turn; phase=s.phase; turnNo=s.turnNo; skipNote=s.skipNote; noPlace=s.noPlace|0;
-  over=null; endReason=""; winCells=[]; lastPlaced=null; pw=null;
+  turn=s.turn; phase=s.phase; turnNo=s.turnNo; skipNote=s.skipNote;
+  over=null; endReason=""; winCells=[]; lastPlaced=null; clearWinLine();
+}
+function clearWinLine(){ document.querySelectorAll(".win-line").forEach(el=>el.remove()); }
+function drawWinLine(line,done){               /* 3つを結ぶ線を左から右へ引き、引き切ったら結果へ */
+  clearWinLine();
+  const a=cells[line[0]], b=cells[line[line.length-1]];
+  if(!a||!b){ done(); return; }
+  let x1=a.offsetLeft+a.offsetWidth/2, y1=a.offsetTop+a.offsetHeight/2;
+  let x2=b.offsetLeft+b.offsetWidth/2, y2=b.offsetTop+b.offsetHeight/2;
+  if(x2<x1||(x2===x1&&y2<y1)){ const tx=x1,ty=y1; x1=x2; y1=y2; x2=tx; y2=ty; }   /* いつも左(上)から右(下)へ */
+  let len=Math.hypot(x2-x1,y2-y1);
+  const ang=Math.atan2(y2-y1,x2-x1)*180/Math.PI, pad=a.offsetWidth*0.26;
+  if(len>0){ const ux=(x2-x1)/len, uy=(y2-y1)/len; x1-=ux*pad; y1-=uy*pad; len+=pad*2; }
+  const el=document.createElement("div");
+  el.className="win-line";
+  el.style.left=x1+"px"; el.style.top=y1+"px"; el.style.width=len+"px";
+  el.style.transform="rotate("+ang+"deg) scaleX(0)";
+  $("board").appendChild(el);
+  void el.offsetWidth;
+  el.style.transform="rotate("+ang+"deg) scaleX(1)";
+  setTimeout(done,600);
 }
 function finish(p,ws,reason){
   over=p; endReason=reason||"3つ揃った";
   winCells=ws?[...new Set(ws.reduce((a,w)=>a.concat(w.cells),[]))]:[];
   const iWon=(mode==="local")||p===mySide;
   if(iWon) playWin(); else playLose();
-  render(); showResult();
+  render();
+  if(ws&&ws.length) drawWinLine(ws[0].cells,showResult); else showResult();
 }
 function finishDraw(){                         /* 盤が全部うまったら引き分け */
-  over="draw"; endReason=(S.b.indexOf(null)<0)?"盤が全部うまった":"コマが置かれないまま続いた"; winCells=[];
+  over="draw"; endReason="盤が全部うまった"; winCells=[];
   playUndo(); render(); showResult();
 }
 function doPiece(to){
@@ -681,7 +724,7 @@ function doPiece(to){
   const w=winsIn(S).filter(x=>x.p===turn);
   if(w.length){ curT={to:to,wr:S.wr,wc:S.wc}; sendStage(true); finish(turn,w); return; }
   curT={to:to,wr:null,wc:null};
-  phase="shift"; skipNote=false; pw=null;
+  phase="shift"; skipNote=false;
   sendStage(false);                            /* ★置いた瞬間に相手へ送る=すぐ反映される */
   render();
 }
@@ -691,22 +734,19 @@ function cancelPiece(){                        /* 置いたコマの取り消し
   curT={to:null,wr:null,wc:null}; sendStage(false); curT=null;   /* 取り消しも相手へ */
   playUndo(); render();
 }
-function previewW(i){                          /* 押したマスを真ん中にしてステージを仮移動 */
-  const r=clampW(Math.floor(i/N)-1), c=clampW(i%N-1);
-  if(r===S.wr&&c===S.wc){ toast("いまと同じ場所には動かせません"); playNg(); return; }
-  const same=pw&&pw.wr===r&&pw.wc===c;
-  pw={wr:r,wc:c};
-  if(same){ doShift(r,c); return; }            /* 同じ所をもう一度=決定 */
-  playSelect(); render();
-}
 function doShift(wr,wc){
   pushHist();
   S.wr=wr; S.wc=wc; playShift();
-  if(!curT) curT={to:null,wr:null,wc:null};    /* 3×3が満杯でコマを置いていない番もある */
+  if(!curT) curT={to:null,wr:null,wc:null};
   curT.wr=wr; curT.wc=wc; sendStage(true);
-  lastPlaced=null; pw=null;
+  lastPlaced=null;
   render();
   setTimeout(endTurn,240);
+}
+function onShiftBtn(d){                        /* 三角・矢印キー=1マス動かす */
+  if(over||thinking||phase!=="shift"||!myMove()) return;
+  if(!canSh(S,d)){ playNg(); return; }
+  const v=DIRS[d]; doShift(S.wr+v[0],S.wc+v[1]);
 }
 function endTurn(){
   const ws=winsIn(S);
@@ -716,12 +756,8 @@ function endTurn(){
     const foe=ws.filter(w=>w.p!==turn);
     return finish(foe[0].p,foe,"ステージを動かして、あいての3つが揃った");
   }
-  noPlace=(curT&&curT.to==null)? noPlace+1 : 0;
-  curT=null; lastPlaced=null; pw=null; turn=other(turn); phase="place"; turnNo++;
-  skipNote=!emptyW(S).length;
-  if(skipNote) phase="shift";
-  if(S.b.indexOf(null)<0) return finishDraw();
-  if(noPlace>=20) return finishDraw();         /* 置かずに動くだけが続いたら引き分け(止まらなくなるのを防ぐ) */
+  curT=null; lastPlaced=null; turn=other(turn); phase="place"; turnNo++; skipNote=false;
+  if(S.b.indexOf(null)<0) return finishDraw();  /* 盤が全部うまったら引き分け */
   render();
   if(mode==="cpu"&&turn===cpuSide) cpuGo();
 }
@@ -729,29 +765,16 @@ function onCell(i){
   if(over||thinking) return;
   if(!myMove()){ toast("あいての番です"); playNg(); return; }
   if(phase==="shift"){
-    if(!pw&&i===lastPlaced){ cancelPiece(); return; }   /* 置いたコマをもう一度押すと取り消し */
-    previewW(i); return;                                /* それ以外=ステージの移動先えらび */
+    if(i===lastPlaced){ cancelPiece(); return; }        /* 置いたコマをもう一度押すと取り消し */
+    toast("いまはステージを動かす番"); playNg(); return;
   }
-  if(!inW(S,i)){ toast("光っている3×3の中に置いてね"); playNg(); return; }
   if(S.b[i]){ toast("そこには置けません"); playNg(); return; }
-  doPiece(i);
-}
-function confirmShift(){                       /* 「ここに決定」 */
-  if(over||thinking||phase!=="shift"||!myMove()||!pw) return;
-  doShift(pw.wr,pw.wc);
-}
-function nudgeW(dr,dc){                        /* 矢印キーで仮位置を1マスずつ */
-  if(over||thinking||phase!=="shift"||!myMove()) return;
-  const base=pw||S;
-  const r=clampW(base.wr+dr), c=clampW(base.wc+dc);
-  if(r===S.wr&&c===S.wc){ playNg(); return; }
-  if(pw&&pw.wr===r&&pw.wc===c) return;
-  pw={wr:r,wc:c}; playSelect(); render();
+  doPiece(i);                                           /* コマは盤のどこにでも置ける */
 }
 function undo(){                               /* 一手戻る=コマ+ステージ移動をまるごと1手ぶん */
   if(mode==="online"){ toast("オンラインでは使えません"); playNg(); return; }
   if(!hist.length){ toast("戻せる手がありません"); playNg(); return; }
-  cpuT.forEach(clearTimeout); cpuT=[]; thinking=false; curT=null; pw=null;
+  cpuT.forEach(clearTimeout); cpuT=[]; thinking=false; curT=null; clearWinLine();
   let g=0;
   do{ loadSnap(hist.pop()); }while(hist.length&&phase!=="place"&&g++<8);
   if(mode==="cpu"){
@@ -775,17 +798,7 @@ function evalS(s,p){
   for(let i=0;i<N*N;i++) if(inW(s,i)&&s.b[i]===p) sc+=1;
   return sc;
 }
-function genTurnsAI(s,p){                     /* 読み用=移動先を「近く8か所+遠くを何か所か」に絞る(全部だと分岐が多すぎる) */
-  const M=WMAX(), em=emptyW(s), seen=new Set(), ws=[];
-  const push=(r,c)=>{ if(r<0||c<0||r>M||c>M) return; if(r===s.wr&&c===s.wc) return;
-    const k=r*64+c; if(seen.has(k)) return; seen.add(k); ws.push([r,c]); };
-  for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++) push(s.wr+dr,s.wc+dc);
-  for(let k=0;k<6;k++) push((Math.random()*(M+1))|0,(Math.random()*(M+1))|0);
-  const out=[];
-  if(!em.length){ for(const w of ws) out.push({to:null,wr:w[0],wc:w[1]}); return out; }
-  for(const t of em) for(const w of ws) out.push({to:t,wr:w[0],wc:w[1]});
-  return out;
-}
+const genTurnsAI=(s,p)=>genTurns(s,p);        /* 読みも同じ候補(移動は4方向・置くのは5×5の中だけ) */
 function search(s,p,depth,alpha,beta){
   const turns=genTurnsAI(s,p);
   if(!turns.length) return 0;
@@ -822,7 +835,7 @@ function pickTurn(s,p,lv){
   });
   if(lv===0){ const pool=(Math.random()<.5&&safe.length)?safe:cand0; return rnd(pool); }
   const cands=safe.length?safe:cand0;
-  const depth=lv===1?2:3;   /* ステージが好きな所へ動く=分岐が増えたので、つよいは3手先 */
+  const depth=lv===1?2:3;
   nodes=0;
   let best=-99999, bag=[];
   for(const t of cands){
@@ -995,7 +1008,7 @@ function setBoardN(n){                         /* ステージの広さ(5/7/9)�
 function newGame(){
   setBoardN(boardN);
   S=newS(); turn="o"; phase="place"; over=null; endReason=""; winCells=[];
-  hist=[]; turnNo=1; skipNote=false; curT=null; thinking=false; lastPlaced=null; pw=null; noPlace=0;
+  hist=[]; turnNo=1; skipNote=false; curT=null; thinking=false; lastPlaced=null; clearWinLine();
   cpuT.forEach(clearTimeout); cpuT=[]; resetGive();
   render();
   if(mode==="cpu"&&turn===cpuSide) cpuGo();
@@ -1004,7 +1017,7 @@ function goTitle(){
   if(online&&started) send("bye",{id:myId});
   leaveChannel();
   cpuT.forEach(clearTimeout); cpuT=[]; thinking=false; resetGive();
-  over=null; $("resultOv").classList.remove("on");
+  over=null; $("resultOv").classList.remove("on"); $("ruleOv").classList.remove("on"); clearWinLine();
   $("codeShowBox").classList.remove("on"); $("codeInBox").classList.remove("on");
   $("makeRoomBtn").classList.remove("sel"); $("joinRoomBtn").classList.remove("sel");
   $("codeErr").textContent="";
@@ -1013,15 +1026,13 @@ function goTitle(){
 function showResult(){
   const drawn=(over==="draw");
   const won=(mode==="local"||drawn)?null:(over===mySide);
-  $("rMark").innerHTML=drawn?"":mark(over);
   $("rTitle").textContent=drawn?"引き分け"
     :((mode==="local")?((over==="o"?"◯":"×")+"の勝ち")
     :(won?"あなたの勝ち":(mode==="cpu"?"ロボットの勝ち":foeLabel()+"の勝ち")));
   $("rSub").textContent=endReason;
-  $("rAgain").textContent="もう一度";
+  $("rAgain").textContent="もう一回";
   $("rAgain").disabled=(mode==="online"&&!started);
-  /* 決着音が鳴り終わるくらい待ってから出す(どんな盤面で終わったか見えるように) */
-  clearTimeout(resT); resT=setTimeout(()=>{ if(over) $("resultOv").classList.add("on"); },1100);
+  $("resultOv").classList.add("on");
 }
 function tryRematch(){                          /* 両者が「もう一度」を押したら部屋主が新しい対局を配る */
   if(!(againMe&&againFoe)) return;
@@ -1045,6 +1056,17 @@ function placeRuleBox(){                       /* ルール枠は選ばれた遊
   else t.insertBefore(box,t.querySelector(".start-btn"));
   $("ruleNote").textContent = (mode==="online") ? "※部屋を作った側のルールで遊びます" : "";
 }
+function openRuleOv(){                         /* タイトルに戻らずルールを変える(バミリバーシと同じ) */
+  if(mode==="online"&&!isHost){ toast("部屋を作った側だけ変えられます"); playNg(); return; }
+  const box=$("ruleBox"); $("ruleSlot").appendChild(box); box.style.display="flex";
+  $("ruleNote").textContent="";
+  $("ruleOv").classList.add("on");
+}
+$("rRule").addEventListener("click",()=>{ ensureAudio(); playSelect(); openRuleOv(); });
+$("ruleOk").addEventListener("click",()=>{
+  ensureAudio(); playSelect(); $("ruleOv").classList.remove("on"); placeRuleBox();
+  toast("次の対局から新しいルールで遊ぶ");
+});
 $("modeRow").addEventListener("click",e=>{
   const b=e.target.closest(".fuda"); if(!b) return;
   ensureAudio(); playSelect();
@@ -1115,7 +1137,10 @@ $("codeGo").addEventListener("click",()=>{ ensureAudio(); playSelect(); tryJoin(
 $("codeInput").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing){ e.preventDefault(); tryJoin(); } });
 
 /* ===== ゲーム画面の操作 ===== */
-$("mvOk").addEventListener("click",e=>{ e.stopPropagation(); ensureAudio(); confirmShift(); });
+$("board").addEventListener("click",e=>{
+  const b=e.target.closest(".mv"); if(!b) return;
+  ensureAudio(); onShiftBtn(b.dataset.d);
+});
 $("undoBtn").addEventListener("click",()=>{ ensureAudio(); undo(); });
 let giveArm=0;
 function resetGive(){ giveArm=0; const b=$("giveBtn"); if(b){ b.textContent="降参"; b.classList.remove("deny"); } }
@@ -1146,9 +1171,8 @@ $("helpClose").addEventListener("click",()=>{ playSelect(); $("helpOv").classLis
 $("helpOv").addEventListener("click",e=>{ if(e.target===$("helpOv")) $("helpOv").classList.remove("on"); });
 window.addEventListener("keydown",e=>{
   if(over||phase!=="shift"||!myMove()) return;
-  const k={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]}[e.key];
-  if(k){ e.preventDefault(); ensureAudio(); nudgeW(k[0],k[1]); return; }
-  if(e.key==="Enter"&&pw){ e.preventDefault(); ensureAudio(); confirmShift(); }
+  const k={ArrowUp:"u",ArrowDown:"d",ArrowLeft:"l",ArrowRight:"r"}[e.key];
+  if(!k) return; e.preventDefault(); ensureAudio(); onShiftBtn(k);
 });
 window.addEventListener("pointerdown",ensureAudio,{passive:true});
 window.addEventListener("pagehide",()=>{ if(online&&started) send("bye",{id:myId}); });

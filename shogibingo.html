@@ -547,9 +547,9 @@
       <div>
         <div class="sec-label">手番</div>
         <div class="opt-row" id="orderRow">
-          <button class="obtn sel" data-first="1">先手</button>
+          <button class="obtn" data-first="1">先手</button>
           <button class="obtn" data-first="0">後手</button>
-          <button class="obtn" data-first="r">おまかせ</button>
+          <button class="obtn sel" data-first="r">おまかせ</button>
         </div>
       </div>
       <button class="start-btn" id="startBtn">はじめる</button>
@@ -589,8 +589,8 @@
   <div class="r-card">
     <div class="cf-msg">成りますか？</div>
     <div class="sub-btns">
-      <button class="txt-btn" id="promYes">成る</button>
       <button class="txt-btn" id="promNo">成らない</button>
+      <button class="txt-btn" id="promYes">成る</button>
     </div>
   </div>
 </div>
@@ -612,8 +612,8 @@
     <div class="r-title" id="rTitle"></div>
     <div class="r-reason" id="rReason"></div>
     <div class="sub-btns">
-      <button class="txt-btn" id="againBtn">もう一回</button>
       <button class="txt-btn" id="homeBtn">タイトルへ</button>
+      <button class="txt-btn" id="againBtn">もう一回</button>
     </div>
     <div class="sub-btns" style="margin-top:-8px;">
       <button class="txt-btn" id="ruleBtn">ルール変更</button>
@@ -658,8 +658,8 @@
   <div class="r-card">
     <div class="cf-msg">あいてが一手戻したいそうです</div>
     <div class="sub-btns">
-      <button class="txt-btn" id="undoYes">いいよ</button>
       <button class="txt-btn deny" id="undoNo">だめ</button>
+      <button class="txt-btn" id="undoYes">いいよ</button>
     </div>
   </div>
 </div>
@@ -1462,8 +1462,7 @@ function gameOver(winner, reason){
   $("rTitle").textContent=nameOf(winner)+"の勝ち";
   $("rReason").textContent=reason;
   playWin();
-  /* 決着音が鳴り終わるくらい待ってから結果を出す(どんな盤面で終わったか見えるように。2026-09-10牧村指示) */
-  setTimeout(()=>{ if(phase==="over") $("resultOv").classList.add("on"); }, 1100);
+  setTimeout(()=>{ $("resultOv").classList.add("on"); }, 120);
 }
 
 /* ================= オンライン対局 ================= */
