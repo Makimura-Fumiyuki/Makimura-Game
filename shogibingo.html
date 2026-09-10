@@ -1462,7 +1462,8 @@ function gameOver(winner, reason){
   $("rTitle").textContent=nameOf(winner)+"の勝ち";
   $("rReason").textContent=reason;
   playWin();
-  setTimeout(()=>$("resultOv").classList.add("on"), 120);
+  /* 決着音が鳴り終わるくらい待ってから結果を出す(どんな盤面で終わったか見えるように。2026-09-10牧村指示) */
+  setTimeout(()=>{ if(phase==="over") $("resultOv").classList.add("on"); }, 1100);
 }
 
 /* ================= オンライン対局 ================= */
@@ -1787,13 +1788,14 @@ $("stampCheck").addEventListener("click",()=>{
 });
 /* 降参は確認ダイアログを挟まず、ボタン自体が「確定」に変わる2段階(2026-09-10牧村指示・降参のある全作品で統一) */
 var gvArm=0;
-function resetGv(){ clearTimeout(gvArm); gvArm=0; const b=$("giveupBtn"); if(b){ b.textContent="降参"; b.classList.remove("deny"); } }
+document.addEventListener("pointerdown",function(e){ if(gvArm&&!(e.target.closest&&e.target.closest("#giveupBtn"))) resetGv(); },true);
+function resetGv(){ gvArm=0; const b=$("giveupBtn"); if(b){ b.textContent="降参"; b.classList.remove("deny"); } }
 $("giveupBtn").addEventListener("click",()=>{
   ensureAudio();
   if(phase!=="idle"||spectating) return;
-  if(!gvArm){                                     /* 1回目=「確定」に変わる・3秒でもどる */
+  if(!gvArm){                                     /* 1回目=「確定」に変わる・ほかを押すと解除 */
     playSelect(); const b=$("giveupBtn"); b.textContent="確定"; b.classList.add("deny");
-    gvArm=setTimeout(resetGv,3000); return;
+    gvArm=1; return;
   }
   resetGv();
   const loser = mode==="cpu"? humanSide : (online? mySide : turn);

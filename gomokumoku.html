@@ -1316,7 +1316,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
         rSub.innerHTML += '<br><span class="r-foe">'+LV_NAMES[cpuLv]+'ロボットと対局'+(undoUsed?'（一手戻りあり）':'（待ったなし）')+'</span>';
       }
       if(online) bumpRoomStats(winner===0?"draw":(winner===human?"win":"lose")); else renderRoomStats();   // この部屋での成績
-      resultOverlay.classList.add("on");
+      showResultSoon();
     }, line?900:300);
   }
 
@@ -1407,7 +1407,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       over=true; busy=true; setGiveupVisible(false);
       document.getElementById("confirmOverlay").classList.remove("on");
       rTitle.textContent=foeLabel()+"の降参"; rTitle.className="r-title win";
-      rSub.textContent="あなたの勝ち"; playWin(); bumpRoomStats("win"); resultOverlay.classList.add("on");
+      rSub.textContent="あなたの勝ち"; playWin(); bumpRoomStats("win"); showResultSoon();
     });
     ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) speakStamp(payload.i|0); if(payload) spawnStamp(payload.i|0, foeLabel()); });
     ch.on("broadcast",{event:"rematch"},()=>{
@@ -1464,7 +1464,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     over=true; busy=true; online=false; peerGone=true; setGiveupVisible(false);
     rTitle.textContent=foeLabel()+"が退出しました"; rTitle.className="r-title";
     rSub.textContent="部屋を作りなおし、再戦したまえ";
-    resultOverlay.classList.add("on");
+    showResultSoon();
     leaveChannel();
   }
 
@@ -1995,22 +1995,30 @@ function readPeerName(){   // presenceからあいての名前を取り込む
   });
   // 降参
   const confirmOverlay=document.getElementById("confirmOverlay");
+  /* 決着してすぐ結果を出すと、どんな盤面で終わったのか分からない=決着音が鳴り終わるくらい待ってから出す(2026-09-10牧村指示・対戦全作品) */
+  var _resT=0;
+  function showResultSoon(){
+    clearTimeout(_resT);
+    _resT=setTimeout(function(){ if(over) document.getElementById("resultOverlay").classList.add("on"); }, 1100);
+  }
+
   function doResign(){
     if(over) return;
     if(online && ch) ch.send({ type:"broadcast", event:"resign", payload:{} });
     over=true; setGiveupVisible(false);
     rTitle.textContent="降参…"; rTitle.className="r-title";
-    rSub.textContent="また挑むがよい"; playLose(); if(online) bumpRoomStats("lose"); else renderRoomStats(); resultOverlay.classList.add("on");
+    rSub.textContent="また挑むがよい"; playLose(); if(online) bumpRoomStats("lose"); else renderRoomStats(); showResultSoon();
   }
   /* 降参は確認ダイアログを挟まず、ボタン自体が「確定」に変わる2段階(2026-09-10牧村指示・降参のある全作品で統一) */
   var gvArm=0;
-  function resetGv(){ clearTimeout(gvArm); gvArm=0; var b=document.getElementById("giveupBtn"); if(b){ b.textContent="降参"; b.classList.remove("deny"); } }
+  document.addEventListener("pointerdown",function(e){ if(gvArm&&!(e.target.closest&&e.target.closest("#giveupBtn"))) resetGv(); },true);
+  function resetGv(){ gvArm=0; var b=document.getElementById("giveupBtn"); if(b){ b.textContent="降参"; b.classList.remove("deny"); } }
   document.getElementById("giveupBtn").addEventListener("click",()=>{
     if(over) return; ensureAudio();
-    if(!gvArm){                                   /* 1回目=「確定」に変わる・3秒でもどる */
+    if(!gvArm){                                   /* 1回目=「確定」に変わる・ほかを押すと解除 */
       playSelect();
       var b=document.getElementById("giveupBtn"); b.textContent="確定"; b.classList.add("deny");
-      gvArm=setTimeout(resetGv,3000); return;
+      gvArm=1; return;
     }
     resetGv(); doResign();
   });

@@ -31,12 +31,9 @@
     --tc:var(--red); --tc-d:var(--red-d);
     /* 盤の寸法。--n(盤の広さ)/--cmax/--gap はJSが盤の広さに合わせて入れる */
     --n:7; --cmax:50px; --gap:5px;
-    --cell:min( calc((94vw - 110px) / var(--n)), var(--cmax) );
+    --cell:min( calc((94vw - 56px) / var(--n)), var(--cmax) );
     --step:calc(var(--cell) + var(--gap));
     --fw:calc(var(--cell)*3 + var(--gap)*2 + 8px);
-    --tri:calc(var(--cell)*0.4);
-    --box:calc(var(--tri)*1.7);
-    --off:calc(var(--tri)*0.8 + 7px);
   }
   *{ box-sizing:border-box; font-family:"Noto Sans JP","Hiragino Sans",sans-serif; -webkit-tap-highlight-color:transparent; }
   html,body{ margin:0; height:100%; }
@@ -74,9 +71,9 @@
   /* ===== タイトル ===== */
   .t-wrap{ text-align:center; }
   .t-main{ line-height:1.06; }
-  .t-main .l1{ display:block; font-size:clamp(19px,5vw,32px); font-weight:900; letter-spacing:.2em;
-    text-indent:.2em; color:var(--ink); opacity:.9; }
-  .t-main .l2{ display:block; margin-top:4px; font-size:clamp(34px,9.4vw,62px); font-weight:900;
+  .t-main .l1{ display:block; font-size:clamp(19px,5vw,32px); font-weight:900; letter-spacing:.04em;
+    text-indent:.04em; color:var(--ink); opacity:.9; }
+  .t-main .l2{ display:block; margin-top:-1px; font-size:clamp(34px,9.4vw,62px); font-weight:900;
     letter-spacing:.01em; white-space:nowrap; text-shadow:0 2px 0 rgba(255,255,255,.8); }
   .t-main .mk{ color:var(--red); } .t-main .bt{ color:var(--blue); }
   .t-sub{ margin-top:14px; font-size:clamp(12px,3.4vw,16px); color:var(--sub); letter-spacing:.14em; font-weight:700; }
@@ -145,10 +142,6 @@
   .err-note{ margin-top:8px; font-size:12px; font-weight:700; color:var(--red); letter-spacing:.04em; min-height:16px; }
 
   /* ===== 対局の上部 ===== */
-  .rule-tags{ display:flex; gap:10px; justify-content:center; width:min(94vw,400px); }
-  .rule-tag{ flex:1 1 0; min-width:0; padding:5px 0 6px; border-radius:7px; text-align:center; white-space:nowrap;
-    font-size:clamp(11.5px,3.2vw,14px); font-weight:700; letter-spacing:.08em; color:var(--sub);
-    background:rgba(255,255,255,.8); border:1.6px solid var(--line); }
   .players{ display:flex; gap:10px; width:min(94vw,400px); }
   .pcard{ flex:1 1 0; min-width:0; background:rgba(255,255,255,.8); border:1.8px solid var(--line);
     border-radius:11px; padding:8px 10px; display:flex; align-items:center; gap:8px;
@@ -166,12 +159,10 @@
     transition:background .2s, box-shadow .2s; }
   .turn-bar.gray{ background:var(--ink); box-shadow:0 3px 0 #000; }
   .turn-bar .tb-mark{ width:21px; height:21px; flex:none; color:#fff; }
-  .turn-bar .tb-col{ display:flex; flex-direction:column; align-items:center; gap:1px; min-width:0; }
-  .turn-bar .tb-note{ font-size:10px; font-weight:700; letter-spacing:.02em; opacity:.82; white-space:nowrap; }
 
   /* ===== 盤 ===== */
   .board-wrap{ position:relative; }
-  .board-pad{ padding:calc(var(--off) + var(--box)/2 + 2px); }
+  .board-pad{ padding:8px; }
   .board{ position:relative; display:grid; grid-auto-rows:var(--cell); gap:var(--gap); }
   .cell{ position:relative; border:none; padding:0; border-radius:9px; background:#e7e2d9;
     display:flex; align-items:center; justify-content:center; transition:background .18s, box-shadow .18s; }
@@ -181,11 +172,14 @@
   .cell .pc.o{ color:var(--red); } .cell .pc.x{ color:var(--blue); }
   .cell.pop .pc{ animation:pop .26s cubic-bezier(.2,1.5,.4,1); }
   @keyframes pop{ 0%{ transform:scale(.4); } 60%{ transform:scale(1.12); } 100%{ transform:scale(1); } }
-  .cell .dot{ position:absolute; width:22%; height:22%; border-radius:50%; background:currentColor; opacity:.24; }
+  .cell .dot{ position:absolute; width:22%; height:22%; border-radius:50%; background:currentColor; opacity:.24;
+    animation:dotPulse 1.3s ease-in-out infinite; }
+  @keyframes dotPulse{ 0%,100%{ transform:scale(1); opacity:.22; } 50%{ transform:scale(1.55); opacity:.42; } }
   .cell.gd-o .dot{ color:var(--red); } .cell.gd-x .dot{ color:var(--blue); }
   /* 置いたばかりのコマ=もう一度押すと取り消し */
-  .cell.cancelable{ box-shadow:inset 0 0 0 2.5px var(--tc); animation:canPulse 1.1s ease-in-out infinite; }
-  @keyframes canPulse{ 0%,100%{ box-shadow:inset 0 0 0 2.5px var(--tc); } 50%{ box-shadow:inset 0 0 0 2.5px rgba(0,0,0,.12); } }
+  /* 置いたばかりのコマ=もう一度押すと取り消し(枠線は出さず、拡縮でそれと分かる) */
+  .cell.cancelable .pc{ animation:pop .26s cubic-bezier(.2,1.5,.4,1), canPulse 1.3s ease-in-out .3s infinite; }
+  @keyframes canPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(.82); } }
   .cell.wincell{ background:#fff6cf; }
   .cell.wincell .pc{ animation:winpulse .9s ease-in-out infinite; }
   @keyframes winpulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.16); } }
@@ -194,28 +188,16 @@
     left:calc(var(--fc) * var(--step) - 4px); top:calc(var(--fr) * var(--step) - 4px);
     border:3px solid var(--tc); border-radius:13px; box-shadow:0 0 0 3px rgba(0,0,0,.05);
     transition:left .22s cubic-bezier(.3,.9,.3,1), top .22s cubic-bezier(.3,.9,.3,1), border-color .2s; }
-  /* 盤に貼りつく移動UI(3×3の四辺の外の三角) */
-  .mv{ position:absolute; z-index:6; border:0 none; background:none; padding:0; opacity:0; pointer-events:none;
-    display:flex; align-items:center; justify-content:center;
-    transition:left .22s cubic-bezier(.3,.9,.3,1), top .22s cubic-bezier(.3,.9,.3,1), opacity .18s; }
-  .board.moving .mv.able{ opacity:1; pointer-events:auto; }
-  .mv-tri{ width:var(--box); height:var(--box); }
-  .mv-tri i{ display:block; background:var(--tc); filter:drop-shadow(0 2px 3px rgba(0,0,0,.2)); animation:tribob 1.4s ease-in-out infinite; }
-  .mv-tri.u i,.mv-tri.d i{ width:var(--tri); height:calc(var(--tri)*.86); }
-  .mv-tri.l i,.mv-tri.r i{ width:calc(var(--tri)*.86); height:var(--tri); }
-  .mv-tri.u i{ clip-path:polygon(50% 0,100% 100%,0 100%); animation-name:tribobU; }
-  .mv-tri.d i{ clip-path:polygon(0 0,100% 0,50% 100%); animation-name:tribobD; }
-  .mv-tri.l i{ clip-path:polygon(100% 0,100% 100%,0 50%); animation-name:tribobL; }
-  .mv-tri.r i{ clip-path:polygon(0 0,0 100%,100% 50%); animation-name:tribobR; }
-  @keyframes tribobU{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-3px); } }
-  @keyframes tribobD{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(3px); } }
-  @keyframes tribobL{ 0%,100%{ transform:translateX(0); } 50%{ transform:translateX(-3px); } }
-  @keyframes tribobR{ 0%,100%{ transform:translateX(0); } 50%{ transform:translateX(3px); } }
-  .mv-tri:active i{ transform:scale(.86); }
-  .mv-tri.u{ left:calc(var(--cx) - var(--box)/2); top:calc(var(--fy) - var(--off) - var(--box)/2); }
-  .mv-tri.d{ left:calc(var(--cx) - var(--box)/2); top:calc(var(--fy) + var(--fw) + var(--off) - var(--box)/2); }
-  .mv-tri.l{ left:calc(var(--fx) - var(--off) - var(--box)/2); top:calc(var(--cy) - var(--box)/2); }
-  .mv-tri.r{ left:calc(var(--fx) + var(--fw) + var(--off) - var(--box)/2); top:calc(var(--cy) - var(--box)/2); }
+  /* ステージの移動先を選んだら「ここに決定」を出す(1度確認を挟む。盤の上に置くと真ん中のコマを隠すので帯の中) */
+  .tb-ok{ display:none; flex:none; margin-left:2px; padding:6px 13px; border:none; border-radius:999px;
+    background:#fff; color:var(--tc); font-size:12.5px; font-weight:900; letter-spacing:.04em; white-space:nowrap;
+    box-shadow:0 2px 0 rgba(0,0,0,.18); }
+  .tb-ok.able{ display:block; }
+  .tb-ok:active{ transform:translateY(1px); box-shadow:none; }
+  /* 移動先えらび中 */
+  .board.moving .cell{ cursor:pointer; }
+  .board.previewing .frame{ border-style:dashed; }
+  .board.moving .cell.in{ background:#fffdf6; }
 
   .sub-btns{ display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
   .txt-btn{ padding:9px 20px; font-size:14.5px; font-weight:700; letter-spacing:.1em; color:var(--ink);
@@ -295,7 +277,6 @@
   .home-foot:hover{ color:var(--ink); }
   @media(hover:hover){
     .fuda:hover{ transform:translateY(-3px); }
-    .txt-btn:not(:disabled):hover{ background:#fff; }
     .help-btn:hover,.snd-btn:hover{ background:#fff; }
     .rc-btn:hover{ border-color:var(--sub); }
   }
@@ -393,25 +374,18 @@
 
 <!-- ===== 対局 ===== -->
 <div class="scene" id="gameScene">
-  <div class="rule-tags">
-    <div class="rule-tag" id="tagTurns"></div>
-    <div class="rule-tag" id="tagMode"></div>
-  </div>
   <div class="players">
     <div class="pcard o" id="cardO"><span class="pm" id="pmO"></span><span class="pn" id="pnO"></span><span class="pr" id="prO"></span></div>
     <div class="pcard x" id="cardX"><span class="pm" id="pmX"></span><span class="pn" id="pnX"></span><span class="pr" id="prX"></span></div>
   </div>
   <div class="turn-bar" id="turnBar">
     <span class="tb-mark" id="tbMark"></span>
-    <span class="tb-col"><span class="tb-tx" id="tbTx"></span><span class="tb-note" id="tbNote"></span></span>
+    <span class="tb-tx" id="tbTx"></span>
+    <button class="tb-ok" id="mvOk" type="button">ここに決定</button>
   </div>
   <div class="board-wrap"><div class="board-pad">
     <div class="board" id="board">
       <div class="frame" id="frame"></div>
-      <button class="mv mv-tri u" id="mvU" type="button" data-d="u" aria-label="ステージを上へ"><i></i></button>
-      <button class="mv mv-tri d" id="mvD" type="button" data-d="d" aria-label="ステージを下へ"><i></i></button>
-      <button class="mv mv-tri l" id="mvL" type="button" data-d="l" aria-label="ステージを左へ"><i></i></button>
-      <button class="mv mv-tri r" id="mvR" type="button" data-d="r" aria-label="ステージを右へ"><i></i></button>
     </div>
   </div></div>
   <div class="sub-btns">
@@ -451,9 +425,9 @@
   </ul>
   <p class="h-sec b">ステージを動かす</p>
   <ul>
-    <li>コマを置いたあと、3×3のまわりに出る<b>三角</b>を押して、その向きへステージを1マス動かす。</li>
-    <li><b>動かさないことはできない</b>。毎ターン、どこかへ必ず1マス動かす。</li>
-    <li>ステージが盤からはみ出す向きには動かせない（その三角は出ない）。</li>
+    <li>コマを置いたあと、盤の<b>好きなマスを押す</b>と、そこを真ん中にしてステージが動く。</li>
+    <li>そのまま<b>「ここに決定」</b>を押すと確定。別のマスを押せば選び直せる。</li>
+    <li><b>動かさないことはできない</b>。毎ターン、どこかへ必ず動かす。</li>
   </ul>
   <p class="h-sec k">ここが勝負</p>
   <ul>
@@ -474,7 +448,6 @@ let boardN=7;                               /* ルールで選んだ広さ(初�
 const SIZE_CSS={5:{cmax:"62px",gap:"6px"},7:{cmax:"50px",gap:"5px"},9:{cmax:"40px",gap:"4px"}};
 const SVG_O='<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="5.4" stroke-linecap="round"><circle cx="20" cy="20" r="13"/></svg>';
 const SVG_X='<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="5.4" stroke-linecap="round"><path d="M9.5 9.5 30.5 30.5M30.5 9.5 9.5 30.5"/></svg>';
-const DIRS={ u:[-1,0], d:[1,0], l:[0,-1], r:[0,1] };
 const other=p=>p==="o"?"x":"o";
 const mark=p=>'<span style="display:block;width:100%;height:100%" class="pc '+p+'">'+(p==="o"?SVG_O:SVG_X)+'</span>';
 
@@ -504,14 +477,27 @@ function winsIn(s){
   for(const l of linesOf(s)){ const a=s.b[l[0]]; if(a&&s.b[l[1]]===a&&s.b[l[2]]===a) out.push({p:a,cells:l}); }
   return out;
 }
-const canSh=(s,d)=>{ const v=DIRS[d]; const r=s.wr+v[0], c=s.wc+v[1]; return r>=0&&r<=N-WIN&&c>=0&&c<=N-WIN; };
+const WMAX=()=>N-WIN;                       /* ステージの左上が取れる最大 */
+const winPos=s=>{                           /* 動かせる先=いまの場所以外の全部 */
+  const a=[], M=WMAX();
+  for(let r=0;r<=M;r++) for(let c=0;c<=M;c++){ if(r===s.wr&&c===s.wc) continue; a.push([r,c]); }
+  return a;
+};
+const clampW=v=>Math.max(0,Math.min(WMAX(),v));
+function hasLine(s,q){                      /* いまのステージの中でqが3つ並んでいるか(速い版) */
+  const b=s.b, wr=s.wr, wc=s.wc;
+  for(let r=0;r<WIN;r++){ const o=(wr+r)*N+wc; if(b[o]===q&&b[o+1]===q&&b[o+2]===q) return true; }
+  for(let c=0;c<WIN;c++){ const o=wr*N+wc+c; if(b[o]===q&&b[o+N]===q&&b[o+2*N]===q) return true; }
+  const d0=wr*N+wc;        if(b[d0]===q&&b[d0+N+1]===q&&b[d0+2*N+2]===q) return true;
+  const d1=wr*N+wc+WIN-1;  if(b[d1]===q&&b[d1+N-1]===q&&b[d1+2*N-2]===q) return true;
+  return false;
+}
 const emptyW=s=>{ const a=[]; for(let i=0;i<N*N;i++) if(inW(s,i)&&!s.b[i]) a.push(i); return a; };
 const cloneS=s=>({ b:s.b.slice(), wr:s.wr, wc:s.wc });
-function genTurns(s,p){                       /* 1手=「置くマス」+「ステージの動かし方」(動かさないは無し) */
-  const out=[], em=emptyW(s), dirs=[];
-  for(const d of ["u","d","l","r"]) if(canSh(s,d)) dirs.push(d);
-  if(!em.length){ for(const d of dirs) out.push({to:null,d:d}); return out; }
-  for(const t of em) for(const d of dirs) out.push({to:t,d:d});
+function genTurns(s,p){                       /* 1手=「置くマス」+「ステージの移動先」(動かさないは無し) */
+  const out=[], em=emptyW(s), ws=winPos(s);
+  if(!em.length){ for(const w of ws) out.push({to:null,wr:w[0],wc:w[1]}); return out; }
+  for(const t of em) for(const w of ws) out.push({to:t,wr:w[0],wc:w[1]});
   return out;
 }
 function applyT(s,p,t){                       /* 盤を進めて勝者を返す(いなければnull) */
@@ -519,10 +505,26 @@ function applyT(s,p,t){                       /* 盤を進めて勝者を返す(
     s.b[t.to]=p;
     if(winsIn(s).some(w=>w.p===p)) return p;
   }
-  const v=DIRS[t.d]; s.wr+=v[0]; s.wc+=v[1];
+  s.wr=t.wr; s.wc=t.wc;
   const ws=winsIn(s);
   if(ws.length) return ws.some(w=>w.p===p) ? p : ws[0].p;
   return null;
+}
+function hasWin(s,q){                         /* qが「次の1手で勝てる」か(clone無しの速い判定) */
+  const sr=s.wr, sc=s.wc, M=WMAX();
+  const em=emptyW(s), places = em.length? em : [null];
+  for(const i of places){
+    if(i!=null){ s.b[i]=q; if(hasLine(s,q)){ s.b[i]=null; return true; } }
+    let win=false;
+    for(let r=0;r<=M&&!win;r++) for(let c=0;c<=M&&!win;c++){
+      if(r===sr&&c===sc) continue;
+      s.wr=r; s.wc=c; if(hasLine(s,q)) win=true;
+    }
+    s.wr=sr; s.wc=sc;
+    if(i!=null) s.b[i]=null;
+    if(win) return true;
+  }
+  return false;
 }
 
 /* ===== 音 ===== */
@@ -566,6 +568,9 @@ let mode="local", mySide="o", cpuSide="x", cpuLv=1, sideWish="o";
 let turn="o", phase="place", over=null, endReason="", winCells=[], hist=[], turnNo=1;
 let skipNote=false, curT=null, thinking=false, cpuT=[];
 let lastPlaced=null;                        /* 置いたばかりのマス=もう一度押すと取り消し */
+let resT=0;
+let noPlace=0;                              /* コマを置かない番(3×3が満杯)が続いた回数=千日手よけ */
+let pw=null;                                /* ステージの移動先の仮位置{wr,wc}=「ここに決定」を押すまで確定しない */
 
 /* ===== 盤の組み立て・描画 ===== */
 let cells=[];
@@ -588,14 +593,15 @@ function pop(i){ cells[i].classList.remove("pop"); void cells[i].offsetWidth; ce
 const myMove=()=>!over&&!thinking&&(mode==="local"||turn===mySide);
 const labelOf=p=>{
   if(mode==="online") return p===mySide?(myAcctName()||"あなた"):foeLabel();
-  if(mode==="cpu")   return p===mySide?(myAcctName()||"あなた"):("ロボット（"+["よわい","ふつう","つよい"][cpuLv]+"）");
+  if(mode==="cpu")   return p===mySide?(myAcctName()||"あなた"):["よわい","ふつう","つよい"][cpuLv];
   return p==="o"?"先手":"後手";
 };
 function render(){
   const moving=!over&&phase==="shift"&&myMove();
   const showDrop=!over&&phase==="place"&&myMove();
+  const vw=(moving&&pw)?pw:S;                  /* 表示は仮位置=動かした結果がそのまま見える */
   for(let i=0;i<N*N;i++){
-    const el=cells[i], v=S.b[i], on=inW(S,i);
+    const el=cells[i], v=S.b[i], on=inW(vw,i);
     el.classList.toggle("in",on);
     el.classList.toggle("wincell",winCells.indexOf(i)>=0);
     el.classList.toggle("cancelable",!over&&phase==="shift"&&myMove()&&i===lastPlaced);
@@ -608,13 +614,14 @@ function render(){
     el.classList.toggle("gd-x",want&&turn==="x");
   }
   const bd=$("board");
-  bd.style.setProperty("--fr",S.wr); bd.style.setProperty("--fc",S.wc);
-  bd.style.setProperty("--fx","calc("+S.wc+" * var(--step) - 4px)");
-  bd.style.setProperty("--fy","calc("+S.wr+" * var(--step) - 4px)");
-  bd.style.setProperty("--cx","calc("+(S.wc+1)+" * var(--step) + var(--cell)/2)");
-  bd.style.setProperty("--cy","calc("+(S.wr+1)+" * var(--step) + var(--cell)/2)");
+  bd.style.setProperty("--fr",vw.wr); bd.style.setProperty("--fc",vw.wc);
+  bd.style.setProperty("--fx","calc("+vw.wc+" * var(--step) - 4px)");
+  bd.style.setProperty("--fy","calc("+vw.wr+" * var(--step) - 4px)");
+  bd.style.setProperty("--cx","calc("+(vw.wc+1)+" * var(--step) + var(--cell)/2)");
+  bd.style.setProperty("--cy","calc("+(vw.wr+1)+" * var(--step) + var(--cell)/2)");
   bd.classList.toggle("moving",moving);
-  ["u","d","l","r"].forEach(d=>$("mv"+d.toUpperCase()).classList.toggle("able",canSh(S,d)));
+  bd.classList.toggle("previewing",!!(moving&&pw));
+  $("mvOk").classList.toggle("able",!!(moving&&pw));
   /* 手番の色(赤=◯/青=×)を枠・三角・帯・結果カードに流す */
   const tc=(over&&over!=="draw")?over:turn;
   const gs=$("gameScene");
@@ -638,14 +645,11 @@ function render(){
   else if(over){ tx="<b>"+(over==="o"?"◯":"×")+"の勝ち</b>"; }
   else if(thinking){ tx="<b>"+labelOf(turn)+"</b>　考えています…"; }
   else if(!myMove()){ tx="<b>"+labelOf(turn)+"</b>　の番を待っています…"; }
-  else if(phase==="shift"){ tx=skipNote?"置く場所がないので<b>ステージだけ動かす</b>":"<b>ステージを1マス動かす</b>"; }
+  else if(phase==="shift"){ tx=pw?"<b>ここでいい？</b>":(skipNote?"置く場所がないので<b>ステージだけ動かす</b>":"<b>ステージを動かす</b>"); }
   else{ tx="<b>コマを置く</b>"; }
   $("tbTx").innerHTML=tx;
-  $("tbNote").textContent=(!over&&phase==="shift"&&myMove()&&lastPlaced!=null)?"置いたコマを押すと取り消し":"";
   $("tbMark").innerHTML=over?"":mark(turn);
   $("turnBar").classList.toggle("gray",over==="draw");
-  $("tagTurns").textContent=over?"対局おわり":(turnNo+"手目");
-  $("tagMode").textContent=N+"×"+N+"・"+((mode==="online")?"オンライン":(mode==="cpu")?("ロボット "+["よわい","ふつう","つよい"][cpuLv]):"1台で遊ぶ");
 
   $("undoBtn").disabled=(mode==="online")||!!over||thinking||!hist.length;
   $("giveBtn").disabled=!!over;
@@ -653,12 +657,12 @@ function render(){
 }
 
 /* ===== 1手の進行 ===== */
-function snap(){ return { b:S.b.slice(), wr:S.wr, wc:S.wc, turn, phase, turnNo, skipNote }; }
+function snap(){ return { b:S.b.slice(), wr:S.wr, wc:S.wc, turn, phase, turnNo, skipNote, noPlace }; }
 function pushHist(){ hist.push(snap()); if(hist.length>240) hist.shift(); }
 function loadSnap(s){
   S={ b:s.b.slice(), wr:s.wr, wc:s.wc };
-  turn=s.turn; phase=s.phase; turnNo=s.turnNo; skipNote=s.skipNote;
-  over=null; endReason=""; winCells=[]; lastPlaced=null;
+  turn=s.turn; phase=s.phase; turnNo=s.turnNo; skipNote=s.skipNote; noPlace=s.noPlace|0;
+  over=null; endReason=""; winCells=[]; lastPlaced=null; pw=null;
 }
 function finish(p,ws,reason){
   over=p; endReason=reason||"3つ揃った";
@@ -668,31 +672,39 @@ function finish(p,ws,reason){
   render(); showResult();
 }
 function finishDraw(){                         /* 盤が全部うまったら引き分け */
-  over="draw"; endReason="盤が全部うまった"; winCells=[];
+  over="draw"; endReason=(S.b.indexOf(null)<0)?"盤が全部うまった":"コマが置かれないまま続いた"; winCells=[];
   playUndo(); render(); showResult();
 }
 function doPiece(to){
   pushHist();
   S.b[to]=turn; lastPlaced=to; pop(to); playPlace();
   const w=winsIn(S).filter(x=>x.p===turn);
-  if(w.length){ curT={to:to,d:"c"}; sendStage(true); finish(turn,w); return; }
-  curT={to:to,d:null};
-  phase="shift"; skipNote=false;
+  if(w.length){ curT={to:to,wr:S.wr,wc:S.wc}; sendStage(true); finish(turn,w); return; }
+  curT={to:to,wr:null,wc:null};
+  phase="shift"; skipNote=false; pw=null;
   sendStage(false);                            /* ★置いた瞬間に相手へ送る=すぐ反映される */
   render();
 }
 function cancelPiece(){                        /* 置いたコマの取り消し(ステージを動かすまで) */
   if(over||thinking||phase!=="shift"||lastPlaced==null||!hist.length) return;
   loadSnap(hist.pop());
-  curT={to:null,d:null}; sendStage(false); curT=null;   /* 取り消しも相手へ */
+  curT={to:null,wr:null,wc:null}; sendStage(false); curT=null;   /* 取り消しも相手へ */
   playUndo(); render();
 }
-function doShift(d){
+function previewW(i){                          /* 押したマスを真ん中にしてステージを仮移動 */
+  const r=clampW(Math.floor(i/N)-1), c=clampW(i%N-1);
+  if(r===S.wr&&c===S.wc){ toast("いまと同じ場所には動かせません"); playNg(); return; }
+  const same=pw&&pw.wr===r&&pw.wc===c;
+  pw={wr:r,wc:c};
+  if(same){ doShift(r,c); return; }            /* 同じ所をもう一度=決定 */
+  playSelect(); render();
+}
+function doShift(wr,wc){
   pushHist();
-  const v=DIRS[d]; S.wr+=v[0]; S.wc+=v[1]; playShift();
-  if(!curT) curT={to:null,d:null};             /* 3×3が満杯でコマを置いていない番もある */
-  curT.d=d; sendStage(true);
-  lastPlaced=null;
+  S.wr=wr; S.wc=wc; playShift();
+  if(!curT) curT={to:null,wr:null,wc:null};    /* 3×3が満杯でコマを置いていない番もある */
+  curT.wr=wr; curT.wc=wc; sendStage(true);
+  lastPlaced=null; pw=null;
   render();
   setTimeout(endTurn,240);
 }
@@ -704,10 +716,12 @@ function endTurn(){
     const foe=ws.filter(w=>w.p!==turn);
     return finish(foe[0].p,foe,"ステージを動かして、あいての3つが揃った");
   }
-  curT=null; lastPlaced=null; turn=other(turn); phase="place"; turnNo++;
+  noPlace=(curT&&curT.to==null)? noPlace+1 : 0;
+  curT=null; lastPlaced=null; pw=null; turn=other(turn); phase="place"; turnNo++;
   skipNote=!emptyW(S).length;
   if(skipNote) phase="shift";
   if(S.b.indexOf(null)<0) return finishDraw();
+  if(noPlace>=20) return finishDraw();         /* 置かずに動くだけが続いたら引き分け(止まらなくなるのを防ぐ) */
   render();
   if(mode==="cpu"&&turn===cpuSide) cpuGo();
 }
@@ -715,22 +729,29 @@ function onCell(i){
   if(over||thinking) return;
   if(!myMove()){ toast("あいての番です"); playNg(); return; }
   if(phase==="shift"){
-    if(i===lastPlaced){ cancelPiece(); return; }        /* もう一度押すと取り消し */
-    toast("いまはステージを動かす番"); playNg(); return;
+    if(!pw&&i===lastPlaced){ cancelPiece(); return; }   /* 置いたコマをもう一度押すと取り消し */
+    previewW(i); return;                                /* それ以外=ステージの移動先えらび */
   }
   if(!inW(S,i)){ toast("光っている3×3の中に置いてね"); playNg(); return; }
   if(S.b[i]){ toast("そこには置けません"); playNg(); return; }
   doPiece(i);
 }
-function onShiftBtn(d){
+function confirmShift(){                       /* 「ここに決定」 */
+  if(over||thinking||phase!=="shift"||!myMove()||!pw) return;
+  doShift(pw.wr,pw.wc);
+}
+function nudgeW(dr,dc){                        /* 矢印キーで仮位置を1マスずつ */
   if(over||thinking||phase!=="shift"||!myMove()) return;
-  if(!canSh(S,d)){ playNg(); return; }
-  doShift(d);
+  const base=pw||S;
+  const r=clampW(base.wr+dr), c=clampW(base.wc+dc);
+  if(r===S.wr&&c===S.wc){ playNg(); return; }
+  if(pw&&pw.wr===r&&pw.wc===c) return;
+  pw={wr:r,wc:c}; playSelect(); render();
 }
 function undo(){                               /* 一手戻る=コマ+ステージ移動をまるごと1手ぶん */
   if(mode==="online"){ toast("オンラインでは使えません"); playNg(); return; }
   if(!hist.length){ toast("戻せる手がありません"); playNg(); return; }
-  cpuT.forEach(clearTimeout); cpuT=[]; thinking=false; curT=null;
+  cpuT.forEach(clearTimeout); cpuT=[]; thinking=false; curT=null; pw=null;
   let g=0;
   do{ loadSnap(hist.pop()); }while(hist.length&&phase!=="place"&&g++<8);
   if(mode==="cpu"){
@@ -754,8 +775,19 @@ function evalS(s,p){
   for(let i=0;i<N*N;i++) if(inW(s,i)&&s.b[i]===p) sc+=1;
   return sc;
 }
+function genTurnsAI(s,p){                     /* 読み用=移動先を「近く8か所+遠くを何か所か」に絞る(全部だと分岐が多すぎる) */
+  const M=WMAX(), em=emptyW(s), seen=new Set(), ws=[];
+  const push=(r,c)=>{ if(r<0||c<0||r>M||c>M) return; if(r===s.wr&&c===s.wc) return;
+    const k=r*64+c; if(seen.has(k)) return; seen.add(k); ws.push([r,c]); };
+  for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++) push(s.wr+dr,s.wc+dc);
+  for(let k=0;k<6;k++) push((Math.random()*(M+1))|0,(Math.random()*(M+1))|0);
+  const out=[];
+  if(!em.length){ for(const w of ws) out.push({to:null,wr:w[0],wc:w[1]}); return out; }
+  for(const t of em) for(const w of ws) out.push({to:t,wr:w[0],wc:w[1]});
+  return out;
+}
 function search(s,p,depth,alpha,beta){
-  const turns=genTurns(s,p);
+  const turns=genTurnsAI(s,p);
   if(!turns.length) return 0;
   let best=-99999;
   for(const t of turns){
@@ -781,15 +813,16 @@ function pickTurn(s,p,lv){
   const wins=turns.filter(t=>{ const ns=cloneS(s); return applyT(ns,p,t)===p; });
   if(wins.length&&(lv>0||Math.random()<.5)) return rnd(wins);
   /* あいてにすぐ勝ちを渡す手は避ける */
-  const safe=turns.filter(t=>{
+  const cand0=genTurnsAI(s,p);
+  const safe=cand0.filter(t=>{
     const ns=cloneS(s), w=applyT(ns,p,t);
     if(w&&w!==p) return false;
     if(w===p) return true;
-    return !genTurns(ns,other(p)).some(t2=>{ const n2=cloneS(ns); return applyT(n2,other(p),t2)===other(p); });
+    return !hasWin(ns,other(p));
   });
-  if(lv===0){ const pool=(Math.random()<.5&&safe.length)?safe:turns; return rnd(pool); }
-  const cands=safe.length?safe:turns;
-  const depth=lv===1?2:4;   /* 持ちゴマ無制限で分岐が減ったので、つよいは4手先まで読める(実測66ms) */
+  if(lv===0){ const pool=(Math.random()<.5&&safe.length)?safe:cand0; return rnd(pool); }
+  const cands=safe.length?safe:cand0;
+  const depth=lv===1?2:3;   /* ステージが好きな所へ動く=分岐が増えたので、つよいは3手先 */
   nodes=0;
   let best=-99999, bag=[];
   for(const t of cands){
@@ -813,7 +846,7 @@ function cpuGo(){
     if(!t){ endTurn(); return; }
     if(t.to!=null) doPiece(t.to); else { phase="shift"; render(); }
     if(over) return;
-    cpuT.push(setTimeout(()=>{ if(!over&&phase==="shift") doShift(t.d); }, 560));
+    cpuT.push(setTimeout(()=>{ if(!over&&phase==="shift") doShift(t.wr,t.wc); }, 560));
   }, 460));
 }
 
@@ -840,7 +873,7 @@ function sendStage(final){                     /* 同じseqのまま n を増や
   if(mode!=="online"||!curT||turn!==mySide) return;
   if(!turnSent){ mySeq++; seqN=0; turnSent=true; }
   seqN++;
-  pendMsg={ seq:mySeq, n:seqN, to:curT.to, d:final?curT.d:null, id:myId };
+  pendMsg={ seq:mySeq, n:seqN, to:curT.to, wr:final?curT.wr:null, wc:final?curT.wc:null, id:myId };
   if(final) turnSent=false;
   sendNow(); clearInterval(resendT); resendT=setInterval(sendNow,1400);   /* 届かないことがあるので確認が来るまで送り直す */
 }
@@ -855,11 +888,11 @@ function applyStage(m){
     if(w.length){ oppSeq=m.seq; oppN=0; oppProv=null; finish(turn,w); return; }
   }
   render();
-  if(m.d==null) return;                        /* まだステージを動かしていない=途中経過 */
+  if(m.wr==null) return;                       /* まだステージを動かしていない=途中経過 */
   oppSeq=m.seq; oppN=0; oppProv=null;
   setTimeout(()=>{
     if(over) return;
-    if(m.d!=="c"&&DIRS[m.d]){ const v=DIRS[m.d]; S.wr+=v[0]; S.wc+=v[1]; playShift(); }
+    if(m.wr!==S.wr||m.wc!==S.wc){ S.wr=m.wr; S.wc=m.wc; playShift(); }
     render(); setTimeout(endTurn,240);
   },420);
 }
@@ -962,7 +995,7 @@ function setBoardN(n){                         /* ステージの広さ(5/7/9)�
 function newGame(){
   setBoardN(boardN);
   S=newS(); turn="o"; phase="place"; over=null; endReason=""; winCells=[];
-  hist=[]; turnNo=1; skipNote=false; curT=null; thinking=false; lastPlaced=null;
+  hist=[]; turnNo=1; skipNote=false; curT=null; thinking=false; lastPlaced=null; pw=null; noPlace=0;
   cpuT.forEach(clearTimeout); cpuT=[]; resetGive();
   render();
   if(mode==="cpu"&&turn===cpuSide) cpuGo();
@@ -987,7 +1020,8 @@ function showResult(){
   $("rSub").textContent=endReason;
   $("rAgain").textContent="もう一度";
   $("rAgain").disabled=(mode==="online"&&!started);
-  $("resultOv").classList.add("on");
+  /* 決着音が鳴り終わるくらい待ってから出す(どんな盤面で終わったか見えるように) */
+  clearTimeout(resT); resT=setTimeout(()=>{ if(over) $("resultOv").classList.add("on"); },1100);
 }
 function tryRematch(){                          /* 両者が「もう一度」を押したら部屋主が新しい対局を配る */
   if(!(againMe&&againFoe)) return;
@@ -1007,7 +1041,7 @@ function again(){
 function placeRuleBox(){                       /* ルール枠は選ばれた遊びかたの中へ移して表示(bamiri方式) */
   const box=$("ruleBox"), t=$(mode+"Setup");
   box.style.display="flex";
-  if(mode==="online") t.insertBefore(box,$("roomArea"));
+  if(mode==="online") t.insertBefore(box,t.querySelector(".room-btns"));
   else t.insertBefore(box,t.querySelector(".start-btn"));
   $("ruleNote").textContent = (mode==="online") ? "※部屋を作った側のルールで遊びます" : "";
 }
@@ -1081,19 +1115,18 @@ $("codeGo").addEventListener("click",()=>{ ensureAudio(); playSelect(); tryJoin(
 $("codeInput").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing){ e.preventDefault(); tryJoin(); } });
 
 /* ===== ゲーム画面の操作 ===== */
-$("board").addEventListener("click",e=>{
-  const b=e.target.closest(".mv"); if(!b) return;
-  ensureAudio(); onShiftBtn(b.dataset.d);
-});
+$("mvOk").addEventListener("click",e=>{ e.stopPropagation(); ensureAudio(); confirmShift(); });
 $("undoBtn").addEventListener("click",()=>{ ensureAudio(); undo(); });
 let giveArm=0;
-function resetGive(){ clearTimeout(giveArm); giveArm=0; const b=$("giveBtn"); if(b){ b.textContent="降参"; b.classList.remove("deny"); } }
+function resetGive(){ giveArm=0; const b=$("giveBtn"); if(b){ b.textContent="降参"; b.classList.remove("deny"); } }
+/* 「確定」中にほかの所を押したら解除する(時間では戻さない。2026-09-10牧村指示・全作品共通) */
+document.addEventListener("pointerdown",e=>{ if(giveArm&&!(e.target.closest&&e.target.closest("#giveBtn"))) resetGive(); },true);
 $("giveBtn").addEventListener("click",()=>{
   ensureAudio();
   if(over) return;
-  if(!giveArm){                                   /* 1回目=「確定」に変わる・2回目=決定(3秒でもどる) */
+  if(!giveArm){                                   /* 1回目=「確定」に変わる・2回目で決定(ほかを押すと解除) */
     playSelect(); $("giveBtn").textContent="確定"; $("giveBtn").classList.add("deny");
-    giveArm=setTimeout(resetGive,3000);
+    giveArm=1;
     return;
   }
   resetGive();
@@ -1113,8 +1146,9 @@ $("helpClose").addEventListener("click",()=>{ playSelect(); $("helpOv").classLis
 $("helpOv").addEventListener("click",e=>{ if(e.target===$("helpOv")) $("helpOv").classList.remove("on"); });
 window.addEventListener("keydown",e=>{
   if(over||phase!=="shift"||!myMove()) return;
-  const k={ArrowUp:"u",ArrowDown:"d",ArrowLeft:"l",ArrowRight:"r"}[e.key];
-  if(!k) return; e.preventDefault(); ensureAudio(); onShiftBtn(k);
+  const k={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]}[e.key];
+  if(k){ e.preventDefault(); ensureAudio(); nudgeW(k[0],k[1]); return; }
+  if(e.key==="Enter"&&pw){ e.preventDefault(); ensureAudio(); confirmShift(); }
 });
 window.addEventListener("pointerdown",ensureAudio,{passive:true});
 window.addEventListener("pagehide",()=>{ if(online&&started) send("bye",{id:myId}); });

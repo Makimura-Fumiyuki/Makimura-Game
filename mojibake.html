@@ -1392,10 +1392,11 @@ function tagWho(h){ if(h.el.querySelector(".frame2")) return; const f=document.c
 function ripple(x,y){ const r=document.createElement("div"); r.className="ripple"; r.style.left=x+"px"; r.style.top=y+"px"; $("hideLayer").appendChild(r); setTimeout(()=>r.remove(),1500); }
 /* ギブアップも降参と同じ2段階(ボタンが「確定」に変わる。2026-09-10牧村指示) */
 var gvArm=0;
-function resetGvUp(){ clearTimeout(gvArm); gvArm=0; const b=$("giveUp"); if(b) b.textContent="ギブアップ"; }
+function resetGvUp(){ gvArm=0; const b=$("giveUp"); if(b) b.textContent="ギブアップ"; }
+document.addEventListener("pointerdown",e=>{ if(gvArm&&!(e.target.closest&&e.target.closest("#giveUp"))) resetGvUp(); },true);
 $("giveUp").addEventListener("click",()=>{
   if(!isSeeker()) return; 
-  if(!gvArm){ playSelect(); $("giveUp").textContent="確定"; gvArm=setTimeout(resetGvUp,3000); return; }
+  if(!gvArm){ playSelect(); $("giveUp").textContent="確定"; gvArm=1; return; }
   resetGvUp(); playSelect(); act("giveup",{});
 });
 
