@@ -788,7 +788,8 @@ function finish(p,ws,reason){
   const iWon=(mode==="local")||p===mySide;
   if(iWon) playWin(); else playLose();
   render();
-  if(ws&&ws.length) drawWinLine(ws[0].cells,showResult); else showResult();
+  /* 3つ目を置いた手ごたえを見せてから線を引く(0.1秒あける。2026-09-10牧村指示) */
+  if(ws&&ws.length) setTimeout(()=>drawWinLine(ws[0].cells,showResult),100); else showResult();
 }
 function finishDraw(){                         /* 盤が全部うまったら引き分け */
   over="draw"; endReason=(S.b.indexOf(null)<0)?"盤が全部うまった":"コマが置かれないまま続いた"; winCells=[];
