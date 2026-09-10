@@ -234,9 +234,10 @@
     flex-direction:column; align-items:flex-start; gap:7px; width:min(76vw,252px); }
   #chatBox.on{ display:flex; }
   #chatBox.mini .chat-log, #chatBox.mini .chat-row, #chatBox.mini #stampBar{ display:none; }
-  /* 見た目はスタンプに合わせる=枠線を使わず、白+影でまとめる */
+  /* 見た目はスタンプに合わせる=枠線を使わず、白+影でまとめる。角丸は控えめ(2026-09-10)
+     ※チャットは全ゲーム共通で使う予定なので、色はゲームの手番色に頼らない汎用の墨系にする */
   .chat-log{ display:flex; flex-direction:column; width:100%; max-height:126px; overflow-y:auto; overscroll-behavior:contain;
-    background:rgba(255,255,255,.92); border-radius:15px; padding:9px 12px; border:none;
+    background:rgba(255,255,255,.92); border-radius:8px; padding:9px 12px; border:none;
     box-shadow:0 2px 7px rgba(35,33,31,.26); font-size:12px; line-height:1.6; }
   .chat-log:empty{ display:none; }   /* まだ何も書かれていない時は空の帯を出さない */
   .chat-row{ display:flex; width:100%; gap:6px; }
@@ -245,17 +246,19 @@
   .c-line{ word-break:break-word; }
   .c-nm{ font-weight:900; margin-right:5px; }
   .c-nm.o{ color:var(--red); } .c-nm.x{ color:var(--blue); }
-  .chat-in{ flex:1; min-width:0; border:none; border-radius:999px; padding:9px 15px;
+  .chat-in{ flex:1; min-width:0; border:none; border-radius:8px; padding:9px 12px;
     font-size:13px; font-weight:700; background:rgba(255,255,255,.92); color:var(--ink);
     box-shadow:0 2px 7px rgba(35,33,31,.26); }
   .chat-in::placeholder{ color:var(--sub); font-weight:700; }
-  .chat-in:focus{ outline:none; box-shadow:0 2px 7px rgba(35,33,31,.26), inset 0 0 0 2px var(--tc); }
-  .chat-send{ flex:none; padding:9px 15px; border:none; border-radius:999px;
+  .chat-in:focus{ outline:none; box-shadow:0 2px 7px rgba(35,33,31,.26), inset 0 0 0 1.6px rgba(35,33,31,.3); }
+  .chat-send{ flex:none; padding:9px 14px; border:none; border-radius:8px;
     background:rgba(255,255,255,.92); color:var(--ink); font-size:12.5px; font-weight:900; white-space:nowrap;
     box-shadow:0 2px 7px rgba(35,33,31,.26); }
   .chat-send:active{ transform:translateY(1px) scale(.96); }
   #stampBar{ position:relative; display:none; gap:9px; }
-  #chatBox.on #stampBar{ display:flex; }
+  /* ★2026-09-10牧村指示: スタンプと最小化(−/＋)は一旦非表示。戻す時はこの2行を消す */
+  #chatBox.on #stampBar{ display:none; }
+  #stampMin{ display:none; }
   .stamp-btn{ width:48px; height:48px; padding:0; border:none; border-radius:50%;
     background:rgba(255,255,255,.92); box-shadow:0 2px 7px rgba(35,33,31,.26);
     display:flex; align-items:center; justify-content:center; font-size:27px; line-height:1; }
