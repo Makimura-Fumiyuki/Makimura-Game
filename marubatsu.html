@@ -288,7 +288,11 @@
   .chat-log::-webkit-scrollbar-thumb{ background:rgba(35,33,31,.22); border-radius:99px;
     border:3px solid transparent; background-clip:padding-box; }
   .c-line{ word-break:break-word; }
-  .c-line.c-sys{ opacity:.55; font-size:11.5px; text-align:center; }   /* システムのお知らせ(対局開始・勝敗) */
+  .c-line.c-sys{ opacity:.55; font-size:11.5px; text-align:center; }   /* システムのお知らせ(対局の区切り) */
+  /* 勝敗だけは枠で囲んで、ふつうの発言と見分けがつくようにする(2026-09-10。色はゲームに依存させない汎用の墨) */
+  .c-line.c-res{ align-self:center; opacity:1; margin:4px 0 2px; padding:4px 13px 5px;
+    border:1.6px solid rgba(35,33,31,.38); border-radius:6px;
+    font-size:12px; font-weight:900; letter-spacing:.08em; color:var(--ink); }
   .c-nm{ font-weight:900; margin-right:5px; }
   .c-nm.o{ color:var(--red); } .c-nm.x{ color:var(--blue); }
   .chat-in{ flex:1; min-width:0; border:none; border-radius:8px; padding:9px 12px;
@@ -1127,7 +1131,7 @@ function showResult(){
   $("resultOv").classList.remove("peek"); $("resultOv").classList.add("on");
   if(!resultLogged){                            /* 勝敗をチャットに残す(1局につき1回) */
     resultLogged=true;
-    addSys(winnerLabel());
+    addSys(winnerLabel(),"c-res");   /* 勝敗は枠付きで目立たせる */
   }
 }
 function tryRematch(){                          /* 両者が「もう一度」を押したら部屋主が新しい対局を配る */
@@ -1312,9 +1316,9 @@ function addChat(name,text,side){
   while(log.children.length>60) log.removeChild(log.firstChild);
   log.scrollTop=log.scrollHeight;
 }
-function addSys(tx){                                  /* システムのお知らせをチャットに残す(待てアートのaddSysと同じ考え方) */
+function addSys(tx,cls){                              /* システムのお知らせをチャットに残す(待てアートのaddSysと同じ考え方) */
   const log=$("chatLog");
-  const d=document.createElement("div"); d.className="c-line c-sys"; d.textContent=tx;
+  const d=document.createElement("div"); d.className="c-line c-sys"+(cls?" "+cls:""); d.textContent=tx;
   log.appendChild(d);
   while(log.children.length>60) log.removeChild(log.firstChild);
   log.scrollTop=log.scrollHeight;
