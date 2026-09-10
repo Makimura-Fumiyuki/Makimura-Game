@@ -1608,6 +1608,9 @@ function showResult(st, showAgain){
     }
   }
   $("rTitle").textContent=title;
+  /* ゲームの終了もチャットに残す(開始の「── あたらしいゲーム ──」と対) */
+  addSys("── ゲーム終了 ── " + (co ? "お題を"+Math.max(0,roundNo-1)+"個 達成"
+                                   : (st.length ? (st[0].n||UNDEF_NM)+" の勝ち" : "")));
   const list=$("rankList"); list.innerHTML="";
   st.forEach((s,idx)=>{
     const row=document.createElement("div");

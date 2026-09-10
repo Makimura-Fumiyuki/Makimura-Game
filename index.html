@@ -125,6 +125,8 @@
   .c-thumb.t-nomi{ background:#ffffff; }
   .c-thumb.t-shogibingo{ background:#4a2490; }
   .c-thumb.t-marubatsu{ background:#f5f3ef; }
+  /* ゲーム名の×は◯より小さく見えるので表示だけ拡大する(文字は×のまま=U+00D7。2026-09-10) */
+  .mk-x{ font-size:1.25em; line-height:0; }
   .c-thumb.t-moku{ background:#f3ead7; }
   .c-thumb.t-maigo{ background:#f3ead7; }
   .c-thumb.t-maigomoku{ background:#f3ead7; }
@@ -458,31 +460,32 @@
       <a class="card" href="./marubatsu.html">
         <div class="c-bar"></div>
         <div class="c-thumb t-marubatsu">
-          <!-- ステうご◯×ゲーム: 盤の上に3×3の「ステージ」枠。中に◯×、枠の外に移動の三角 -->
+          <!-- ステうご◯×ゲーム: 盤の上に3×3の「ステージ」枠。中に◯×、枠の外の4方向に移動の三角(枠から3px離す) -->
           <svg viewBox="0 0 260 132" xmlns="http://www.w3.org/2000/svg">
-            <g stroke="rgba(35,33,31,.16)" stroke-width="1.2" fill="none">
-              <path d="M67.5 3.5h125M67.5 28.5h125M67.5 53.5h125M67.5 78.5h125M67.5 103.5h125M67.5 128.5h125"/>
-              <path d="M67.5 3.5v125M92.5 3.5v125M117.5 3.5v125M142.5 3.5v125M167.5 3.5v125M192.5 3.5v125"/>
+            <g stroke="rgba(35,33,31,.16)" stroke-width="1.5" fill="none">
+              <path d="M14.5 -16.5h231M14.5 16.5h231M14.5 49.5h231M14.5 82.5h231M14.5 115.5h231M14.5 148.5h231"/>
+              <path d="M14.5 -16.5v165M47.5 -16.5v165M80.5 -16.5v165M113.5 -16.5v165M146.5 -16.5v165M179.5 -16.5v165M212.5 -16.5v165M245.5 -16.5v165"/>
             </g>
-            <rect x="92.5" y="28.5" width="75" height="75" fill="#fffdfa"/>
-            <g stroke="rgba(35,33,31,.16)" stroke-width="1.2" fill="none">
-              <path d="M117.5 28.5v75M142.5 28.5v75M92.5 53.5h75M92.5 78.5h75"/>
+            <rect x="80.5" y="16.5" width="99" height="99" fill="#fffdfa"/>
+            <g stroke="rgba(35,33,31,.16)" stroke-width="1.5" fill="none">
+              <path d="M113.5 16.5v99M146.5 16.5v99M80.5 49.5h99M80.5 82.5h99"/>
             </g>
-            <rect x="92.5" y="28.5" width="75" height="75" fill="none" stroke="#23211f" stroke-width="3.4"/>
-            <g fill="none" stroke="#e5322d" stroke-width="5" stroke-linecap="round">
-              <circle cx="105" cy="41" r="8.6"/><circle cx="130" cy="66" r="8.6"/>
+            <rect x="80.5" y="16.5" width="99" height="99" fill="none" stroke="#23211f" stroke-width="4.2"/>
+            <g fill="none" stroke="#e5322d" stroke-width="5.3" stroke-linecap="round">
+              <circle cx="97" cy="33" r="9.1"/><circle cx="130" cy="66" r="9.1"/>
             </g>
-            <g fill="none" stroke="#2b6fd6" stroke-width="5" stroke-linecap="round">
-              <path d="M147.4 33.4l15.2 15.2M162.6 33.4l-15.2 15.2"/>
-              <path d="M97.4 83.4l15.2 15.2M112.6 83.4l-15.2 15.2"/>
+            <g fill="none" stroke="#2b6fd6" stroke-width="5.3" stroke-linecap="round">
+              <path d="M155 25l16 16M171 25l-16 16"/>
+              <path d="M89 91l16 16M105 91l-16 16"/>
             </g>
             <g fill="#23211f">
-              <path d="M179.5 66l-12-6v12z"/><path d="M130 16.5l6 12h-12z"/>
+              <path d="M130 .5l7 13h-14z"/><path d="M130 131.5l7-13h-14z"/>
+              <path d="M64.5 66l13-7v14z"/><path d="M195.5 66l-13-7v14z"/>
             </g>
           </svg>
         </div>
         <div class="c-body">
-          <div class="c-name">ステうご◯×ゲーム
+          <div class="c-name">ステうご◯<span class="mk-x">×</span>ゲーム
             <span class="c-players"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="7.2" r="4.2"/><path d="M9 13.4c-4.4 0-8 2.5-8 6.1V21h16v-1.5c0-3.6-3.6-6.1-8-6.1z"/><circle cx="17.5" cy="8.2" r="3.3"/><path d="M17.5 13.2c-.8 0-1.6.1-2.3.3 1.9 1.3 3.1 3.2 3.1 5.5V21H23v-1.3c0-3-2.5-5.5-5.5-5.5z"/></svg>1〜2人</span>
           </div>
           <div class="c-desc">

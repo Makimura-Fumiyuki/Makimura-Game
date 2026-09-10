@@ -171,7 +171,6 @@
     transition:border-color .15s, box-shadow .15s, background .15s, opacity .15s; }
   .pcard .pm{ width:22px; height:22px; flex:none; }
   .pcard .pn{ font-size:12.5px; font-weight:900; white-space:nowrap; min-width:0; overflow:hidden; text-overflow:ellipsis; }
-  .pcard .pr{ margin-left:auto; padding-left:6px; flex:none; font-size:10.5px; font-weight:700; color:var(--sub); white-space:nowrap; }
   .pcard.off{ opacity:.45; }
   .pcard.act.o{ border-color:var(--red); background:var(--red-bg); box-shadow:0 0 0 3px rgba(229,50,45,.14); }
   .pcard.act.x{ border-color:var(--blue); background:var(--blue-bg); box-shadow:0 0 0 3px rgba(43,111,214,.14); }
@@ -245,14 +244,13 @@
   .txt-btn.deny{ color:#fff; background:var(--red); border-color:var(--red); }
 
   /* ===== チャット(スタンプもこの中に入れる) ===== */
-  #chatBox{ position:fixed; left:24px; bottom:26px; z-index:75; display:none;
+  #chatBox{ position:fixed; left:10px; bottom:10px; z-index:75; display:none;
     flex-direction:column; align-items:flex-start; gap:7px; width:min(84vw,300px); }
   #chatBox.on{ display:flex; }
   #chatBox.mini .chat-log, #chatBox.mini .chat-row, #chatBox.mini #stampBar{ display:none; }
-  /* 上の段=左にスタンプ・右に表示/非表示ボタン(反対側に置いて役割を分ける) */
-  .chat-head{ display:flex; width:100%; align-items:center; gap:8px; }
-  /* 表示/非表示だけは他のボタン(白+影+角丸8px)と作りを変える=墨のピル・影なし */
-  .chat-tog{ margin-left:auto; display:inline-flex; align-items:center; gap:5px;
+  /* 表示/非表示ボタンは枠のいちばん下・左端=非表示にすると画面の左下の角に残る(2026-09-10) */
+  /* 他のボタン(白+影+角丸8px)と作りを変える=墨のピル・影なし */
+  .chat-tog{ align-self:flex-start; display:inline-flex; align-items:center; gap:5px;
     padding:5px 10px 5px 12px; border:none; border-radius:999px; box-shadow:none;
     background:rgba(35,33,31,.74); color:#fff;
     font-size:11px; font-weight:900; letter-spacing:.02em; white-space:nowrap; }
@@ -279,6 +277,7 @@
   .chat-log::-webkit-scrollbar-thumb{ background:rgba(35,33,31,.22); border-radius:99px;
     border:3px solid transparent; background-clip:padding-box; }
   .c-line{ word-break:break-word; }
+  .c-line.c-sys{ opacity:.55; font-size:11.5px; text-align:center; }   /* システムのお知らせ(対局開始・勝敗) */
   .c-nm{ font-weight:900; margin-right:5px; }
   .c-nm.o{ color:var(--red); } .c-nm.x{ color:var(--blue); }
   .chat-in{ flex:1; min-width:0; border:none; border-radius:8px; padding:9px 12px;
@@ -464,8 +463,8 @@
 <!-- ===== 対局 ===== -->
 <div class="scene" id="gameScene">
   <div class="players">
-    <div class="pcard o" id="cardO"><span class="pm" id="pmO"></span><span class="pn" id="pnO"></span><span class="pr" id="prO"></span></div>
-    <div class="pcard x" id="cardX"><span class="pm" id="pmX"></span><span class="pn" id="pnX"></span><span class="pr" id="prX"></span></div>
+    <div class="pcard o" id="cardO"><span class="pm" id="pmO"></span><span class="pn" id="pnO"></span></div>
+    <div class="pcard x" id="cardX"><span class="pm" id="pmX"></span><span class="pn" id="pnX"></span></div>
   </div>
   <div class="turn-bar" id="turnBar">
     <span class="tb-mark" id="tbMark"></span>
@@ -490,20 +489,18 @@
 
 <div id="chatBox">
   <div class="chat-pop" id="chatPop"></div>
-  <div class="chat-head">
   <div id="stampBar">
   <button class="stamp-btn" type="button" data-i="0" aria-label="泣き"></button>
   <button class="stamp-btn" type="button" data-i="1" aria-label="うっとり"></button>
   <button class="stamp-btn" type="button" data-i="2" aria-label="爆笑"></button>
   <button id="stampMute" class="stamp-mute" type="button" aria-label="スタンプをミュート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10.5 16.2a1.7 1.7 0 0 0 3 0"/><line class="mute-slash" x1="3.2" y1="3.2" x2="20.8" y2="20.8"/></svg></button>
   </div>
-  <button class="chat-tog" id="chatTog" type="button"></button>
-  </div>
   <div class="chat-log" id="chatLog"></div>
   <div class="chat-row">
     <input class="chat-in" id="chatIn" maxlength="40" autocomplete="off" placeholder="メッセージを入力">
     <button class="chat-send" id="chatGo" type="button">送信</button>
   </div>
+  <button class="chat-tog" id="chatTog" type="button"></button>
 </div>
 
 <div class="ov" id="resultOv"><div class="r-card">
@@ -674,6 +671,7 @@ const playLose  =()=>{ note(392,196,.5,"triangle",.14); note(262,131,.6,"sine",.
 let S=newS();
 let mode="local", mySide="o", cpuSide="x", cpuLv=1, sideWish="o";
 let turn="o", phase="place", over=null, endReason="", winCells=[], hist=[], turnNo=1;
+var resultLogged=false;                          /* 勝敗のログは1局に1回だけ */
 let skipNote=false, curT=null, thinking=false, cpuT=[];
 let lastPlaced=null;                        /* 置いたばかりのマス=もう一度押すと取り消し */
 let noPlace=0;                              /* コマを置かない番(3×3が満杯)が続いた回数=千日手よけ */
@@ -739,8 +737,6 @@ function render(){
     c.classList.toggle("off",!!act&&act!==p);
     $("pm"+K).innerHTML=mark(p);
     $("pn"+K).textContent=labelOf(p);
-    let n=0; for(let i=0;i<N*N;i++) if(S.b[i]===p) n++;
-    $("pr"+K).textContent="盤に"+n+"個";
   });
 
   let tx="";                                   /* 印=手番 / 文字=やること(印と重ねて言わない) */
@@ -1102,6 +1098,8 @@ function newGame(){
   S=newS(); turn="o"; phase="place"; over=null; endReason=""; winCells=[];
   hist=[]; turnNo=1; skipNote=false; curT=null; thinking=false; lastPlaced=null; noPlace=0; clearWinLine();
   cpuT.forEach(clearTimeout); cpuT=[]; resetGive();
+  resultLogged=false;
+  if($("chatLog").children.length) addSys("── あたらしい対局 ──");
   render();
   if(mode==="cpu"&&turn===cpuSide) cpuGo();
 }
@@ -1126,6 +1124,10 @@ function showResult(){
   $("rAgain").textContent="もう一回";
   $("rAgain").disabled=(mode==="online"&&!started);
   $("resultOv").classList.remove("peek"); $("resultOv").classList.add("on");
+  if(!resultLogged){                            /* 勝敗をチャットに残す(1局につき1回) */
+    resultLogged=true;
+    addSys($("rTitle").textContent + (endReason?"（"+endReason+"）":""));
+  }
 }
 function tryRematch(){                          /* 両者が「もう一度」を押したら部屋主が新しい対局を配る */
   if(!(againMe&&againFoe)) return;
@@ -1285,6 +1287,13 @@ function addChat(name,text,side){
   while(log.children.length>60) log.removeChild(log.firstChild);
   log.scrollTop=log.scrollHeight;
 }
+function addSys(tx){                                  /* システムのお知らせをチャットに残す(待てアートのaddSysと同じ考え方) */
+  const log=$("chatLog");
+  const d=document.createElement("div"); d.className="c-line c-sys"; d.textContent=tx;
+  log.appendChild(d);
+  while(log.children.length>60) log.removeChild(log.firstChild);
+  log.scrollTop=log.scrollHeight;
+}
 function sendChat(){                                  /* 1台・ロボット戦でも書ける(自分の画面に残るだけ) */
   const el=$("chatIn"), t=(el.value||"").trim().slice(0,40);
   if(!t) return;
@@ -1359,8 +1368,8 @@ function setMini(mini){                             /* チャット欄ごと畳�
   if(!mini) hidePop();
 }
 $("chatTog").addEventListener("click",()=>{ ensureAudio(); playSelect(); setMini(!$("chatBox").classList.contains("mini")); });
-setMini(false);                                     /* 起動時にラベルと目のアイコンを入れる */
 let popT=0, popT2=0;
+setMini(false);                                     /* 起動時にラベルと目のアイコンを入れる(popT宣言より後で呼ぶ=TDZ回避) */
 function hidePop(){ clearTimeout(popT); clearTimeout(popT2); const el=$("chatPop"); el.classList.remove("on","out"); }
 function showPop(name,text,side){                   /* 非表示中に届いたチャットを数秒だけ出す */
   const el=$("chatPop");
