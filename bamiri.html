@@ -339,6 +339,7 @@
   .cf-msg{ font-size:clamp(19px,5.2vw,26px); font-weight:900; letter-spacing:.08em; }
   .r-card .sub-btns{ width:100%; }
   .r-card .txt-btn{ flex:1 1 0; min-width:120px; }
+  #gameScene .sub-btns .txt-btn.deny{ color:#fff; background:var(--red); border-color:var(--red); }   /* 降参の2段階目「確定」 */
   .r-card .txt-btn.deny{ color:#fff; background:var(--red); border-color:var(--red); }   /* 「断る」は右+赤で強調(2026-08-10・全対戦ゲーム共通) */
   /* 部屋を抜けずにルール変更するダイアログ(結果画面の上に出す) */
   #ruleOverlay{ position:fixed; inset:0; z-index:80; display:flex; align-items:center; justify-content:center;
@@ -550,7 +551,7 @@
     <button class="snd-btn" id="seBtn"><svg viewBox="0 0 25 24"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor"/><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M15 9.4c1.3 1.3 1.3 3.9 0 5.2"/><path d="M17.6 7.6c2.2 2.2 2.2 6.6 0 8.8"/><path d="M20.2 5.8c3.1 3.1 3.1 9.3 0 12.4"/></g></svg>効果音</button>
   </div>
 
-  <!-- 降参の確認 -->
+  <!-- 旧・降参の確認(未使用。降参はボタン自体が「確定」に変わる方式へ) -->
   <div id="confirmOverlay">
     <div class="r-card">
       <div class="cf-msg">本当に降参する？</div>
@@ -1204,6 +1205,7 @@ function readPeerName(){
     undoToPlayer(human);
   });
   function setGiveupVisible(v){
+    resetGv();
     giveupBtn.style.visibility=v?"":"hidden";
     undoBtn.style.visibility=v?"":"hidden";
   }
@@ -1314,9 +1316,17 @@ function readPeerName(){
     if(online) bumpRoomStats("lose"); else renderRoomStats();   // 自分の降参=負け
     resultOverlay.classList.add("on");
   }
-  giveupBtn.addEventListener("click",()=>{ if(over||phase!=="play") return; ensureAudio(); playSelect(); confirmOverlay.classList.add("on"); });
-  document.getElementById("cfYes").addEventListener("click",()=>{ ensureAudio(); confirmOverlay.classList.remove("on"); doResign(); });
-  document.getElementById("cfNo").addEventListener("click",()=>{ ensureAudio(); playSelect(); confirmOverlay.classList.remove("on"); });
+  /* 降参は確認ダイアログを挟まず、ボタン自体が「確定」に変わる2段階(2026-09-10牧村指示・降参のある全作品で統一) */
+  var gvArm=0;
+  function resetGv(){ clearTimeout(gvArm); gvArm=0; if(giveupBtn){ giveupBtn.textContent="降参"; giveupBtn.classList.remove("deny"); } }
+  giveupBtn.addEventListener("click",()=>{
+    if(over||phase!=="play") return; ensureAudio();
+    if(!gvArm){                                   /* 1回目=「確定」に変わる・3秒でもどる */
+      playSelect(); giveupBtn.textContent="確定"; giveupBtn.classList.add("deny");
+      gvArm=setTimeout(resetGv,3000); return;
+    }
+    resetGv(); doResign();
+  });
   confirmOverlay.addEventListener("click",(e)=>{ if(e.target===confirmOverlay){ ensureAudio(); playSelect(); confirmOverlay.classList.remove("on"); } });
 
   /* ---------- オンライン対戦 (Supabase Realtime / 合言葉方式) ---------- */

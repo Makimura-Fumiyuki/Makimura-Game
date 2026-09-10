@@ -400,6 +400,7 @@
   .cf-msg{ font-size:clamp(19px,5vw,25px); font-weight:900; letter-spacing:.06em; }
   .r-card .sub-btns{ width:100%; margin-top:0; }
   .r-card .txt-btn{ flex:1 1 0; min-width:110px; color:var(--pp-ink); background:#f1edf8; border:none; box-shadow:0 4px 0 rgba(20,8,45,.25); }
+  #gameScene > .sub-btns .txt-btn.deny{ color:#fff; background:#e3452f; border-color:#e3452f; }   /* 降参の2段階目「確定」 */
   .r-card .txt-btn.deny{ color:#fff; background:#e3452f; box-shadow:0 4px 0 #9c2716; }   /* 「だめ」は右+赤で強調(2026-08-10・全対戦ゲーム共通) */
   .r-card .txt-btn:active{ transform:translateY(3px); box-shadow:0 1px 0 rgba(20,8,45,.25); }
   .r-title{ font-size:32px; font-weight:900; animation:rPop .5s cubic-bezier(.2,1.4,.4,1); }
@@ -594,7 +595,7 @@
   </div>
 </div>
 
-<!-- 降参確認 -->
+<!-- 旧・降参確認(未使用。降参はボタン自体が「確定」に変わる方式へ) -->
 <div class="overlay" id="cfOv">
   <div class="r-card">
     <div class="cf-msg">本当に降参する？</div>
@@ -1028,6 +1029,7 @@ function updateBtns(){
   const busy = phase!=="idle" || (mode==="cpu"&&turn!==humanSide);
   $("undoBtn").disabled = busy || !hist.length || phase==="over" || undoPending;
   $("giveupBtn").disabled = phase!=="idle" || spectating;
+  if($("giveupBtn").disabled) resetGv();
   { const b=$("stampCheck"), ck=canCallCheck();   // 王手している側だけ、そのスタンプ枠が「王手」ボタンに変わる(ふだんは🤣)
     if(ck!==(b.dataset.ck==="1")){
       b.dataset.ck=ck?"1":"0";
@@ -1783,14 +1785,21 @@ $("stampCheck").addEventListener("click",()=>{
   showCheckFx();
   if(online&&ch){ try{ ch.send({ type:"broadcast", event:"check", payload:{} }); }catch(e){} }   // あいての画面にも出す
 });
-$("giveupBtn").addEventListener("click",()=>{ ensureAudio(); playSelect(); if(phase!=="idle"||spectating) return; $("cfOv").classList.add("on"); });
-$("cfYes").addEventListener("click",()=>{
-  ensureAudio(); playSelect(); $("cfOv").classList.remove("on");
+/* 降参は確認ダイアログを挟まず、ボタン自体が「確定」に変わる2段階(2026-09-10牧村指示・降参のある全作品で統一) */
+var gvArm=0;
+function resetGv(){ clearTimeout(gvArm); gvArm=0; const b=$("giveupBtn"); if(b){ b.textContent="降参"; b.classList.remove("deny"); } }
+$("giveupBtn").addEventListener("click",()=>{
+  ensureAudio();
+  if(phase!=="idle"||spectating) return;
+  if(!gvArm){                                     /* 1回目=「確定」に変わる・3秒でもどる */
+    playSelect(); const b=$("giveupBtn"); b.textContent="確定"; b.classList.add("deny");
+    gvArm=setTimeout(resetGv,3000); return;
+  }
+  resetGv();
   const loser = mode==="cpu"? humanSide : (online? mySide : turn);
   if(online&&ch){ try{ ch.send({ type:"broadcast", event:"resign", payload:{} }); }catch(e){} }
   gameOver(1-loser, nameOf(loser)+"が降参した");
 });
-$("cfNo").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("cfOv").classList.remove("on"); });
 
 /* ================= 画面遷移 ================= */
 function showSetup(m){

@@ -241,6 +241,9 @@
   @keyframes hubPulse{ 0%,100%{ transform:scale(1); opacity:.8; } 50%{ transform:scale(1.35); opacity:1; } }
   .cup-in{ position:relative; width:100%; height:100%; border-radius:50%; overflow:hidden;
     box-shadow:inset 0 4px 12px rgba(60,30,5,.4); }
+  /* 虫眼鏡=「カップが大きくなる」のではなく「カップの中(窓)を拡大して覗く」形にする(2026-09-10牧村指示)。
+     カップ・タイマーリング・取っ手の大きさは変わらず、絵だけが拡大・移動する */
+  #cupZoom{ position:absolute; inset:0; }
   #cup,#swirlCv,#fleckCv,#art{ position:absolute; inset:0; width:100%; height:100%; display:block; }
   #swirlCv{ animation:swirlSpin 26s linear infinite; }
   @keyframes swirlSpin{ to{ transform:rotate(360deg); } }
@@ -694,7 +697,7 @@
     </div>
     <div class="cup-wrap" id="cupWrap">
       <div class="handle-arm" id="handleArm"><div class="cup-handle" id="cupHandle"><svg class="rot-hint" viewBox="0 0 44 64" aria-hidden="true"><g class="rh-arrow"><path d="M 18 9 A 110 110 0 0 1 18 55" fill="none" stroke="#c9a97e" stroke-width="2.4" stroke-linecap="round"/><polygon points="0,-8 -5,0 5,0" fill="#c9a97e" transform="translate(18,9) rotate(-12)"/><polygon points="0,8 -5,0 5,0" fill="#c9a97e" transform="translate(18,55) rotate(12)"/></g><circle class="rh-hub" cx="20.4" cy="32" r="4.2" fill="#c9a97e"/></svg></div></div>
-      <div class="cup-in" id="cupIn"><canvas id="cup"></canvas><canvas id="swirlCv"></canvas><canvas id="fleckCv"></canvas><canvas id="art"></canvas></div>
+      <div class="cup-in" id="cupIn"><div id="cupZoom"><canvas id="cup"></canvas><canvas id="swirlCv"></canvas><canvas id="fleckCv"></canvas><canvas id="art"></canvas></div></div>
       <div id="penGhost"></div>
       <svg class="tring" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <g fill="none" stroke-width="3.0" stroke-linecap="butt" stroke="#2f9e55" stroke-opacity=".55">
@@ -839,8 +842,8 @@
       <div class="r-sub" id="rCount" style="display:none;"></div>
       <div class="r-sub" id="rWaitNote" style="display:none;">部屋主の「もう一回」を待っています…</div>
       <div class="sub-btns">
-        <button class="txt-btn" id="rHomeBtn">タイトルに戻る</button>
         <button class="txt-btn emph" id="againBtn">もう一回</button>
+        <button class="txt-btn" id="rHomeBtn">タイトルに戻る</button>
       </div>
     </div>
   </div>
@@ -1174,10 +1177,10 @@ let drawing=false, last=null, cupRot=0;
 let zoom=1, panX=0, panY=0, panning=null, spaceHeld=false;
 function zTyping(){ const a=document.activeElement; return !!(a&&(a.tagName==="INPUT"||a.tagName==="TEXTAREA"||a.tagName==="SELECT")); }
 function applyZoom(){
-  const w=$("cupWrap"); if(!w) return;
-  const lim=(($("cupIn").offsetWidth||0)*(zoom-1))/2;   // 画面外へ出しすぎない
+  const z=$("cupZoom"); if(!z) return;
+  const lim=(($("cupIn").offsetWidth||0)*(zoom-1))/2;   // 窓の中がすき間だらけにならない範囲
   panX=Math.max(-lim,Math.min(lim,panX)); panY=Math.max(-lim,Math.min(lim,panY));
-  w.style.transform=(zoom===1&&!panX&&!panY)?"":("translate("+panX+"px,"+panY+"px) scale("+zoom+")");
+  z.style.transform=(zoom===1&&!panX&&!panY)?"":("translate("+panX+"px,"+panY+"px) scale("+zoom+")");
 }
 function setZoom(z){ zoom=Math.max(1,Math.min(4,Math.round(z*100)/100)); if(zoom===1){ panX=0; panY=0; } applyZoom(); }
 function resetZoom(){ zoom=1; panX=0; panY=0; applyZoom(); }
@@ -1213,6 +1216,7 @@ function evPt(e){
     const ca=Math.cos(-cupRot), sa=Math.sin(-cupRot), nx=dx*ca-dy*sa, ny=dx*sa+dy*ca;
     dx=nx; dy=ny;
   }
+  dx-=panX; dy-=panY;                       // 中身をずらしているぶんを戻す(拡大は下のwで吸収)
   return { x:(dx/w+0.5)*SIZE, y:(dy/w+0.5)*SIZE };
 }
 /* 取っ手をつかんでカップを回せる(お遊び。チュートリアルなし) */
@@ -1291,9 +1295,9 @@ artCv.addEventListener("pointermove",e=>{
   if(drawing || e.pointerType==="touch" || phase!=="draw" || !isDrawer()){ hideGhost(); return; }
   const wrap=$("cupWrap").getBoundingClientRect();
   const w=$("cupIn").offsetWidth||1;
-  const d=PEN_W[penIdx]*(erasing?2.2:1)*w;   // 表示上の太さ=論理太さ×表示スケール
+  const d=PEN_W[penIdx]*(erasing?2.2:1)*w*zoom;   // 表示上の太さ=論理太さ×表示スケール×拡大率
   penGhost.style.width=d+"px"; penGhost.style.height=d+"px";
-  penGhost.style.left=((e.clientX-wrap.left)/zoom)+"px"; penGhost.style.top=((e.clientY-wrap.top)/zoom)+"px";   // 親が拡大されているぶんを戻す
+  penGhost.style.left=(e.clientX-wrap.left)+"px"; penGhost.style.top=(e.clientY-wrap.top)+"px";
   penGhost.classList.toggle("er", !!erasing);
   penGhost.style.display="block";
 });

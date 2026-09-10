@@ -1143,7 +1143,7 @@ function prepareGameUI(){
   zoom=1; $("gameScene").classList.remove("seek","voting","resulted","vdone"); resultShown=false; hideSeekCur();
   $("hideBar").style.display=amHider()?"":"none"; $("seekBar").style.display="none"; $("toolWrap").style.display=amHider()?"":"none";
   $("hideDone").style.display=amHider()?"":"none"; $("hideDone").classList.remove("done"); $("hideDone").textContent="準備OK"; $("hideDone").disabled=true;
-  $("giveUp").style.display="none"; $("voteDone").style.display="none"; $("voteDone").classList.remove("done"); $("voteDone").textContent="投票完了";
+  $("giveUp").style.display="none"; resetGvUp(); $("voteDone").style.display="none"; $("voteDone").classList.remove("done"); $("voteDone").textContent="投票完了";
   $("voteWho").classList.remove("on"); $("resultOv").classList.remove("on","peek");
   $("toolWrap").classList.remove("closed"); renderToolToggle();
 }
@@ -1390,7 +1390,14 @@ function hostTap(x,y){   // ホスト: 探す人のタップを判定
 }
 function tagWho(h){ if(h.el.querySelector(".frame2")) return; const f=document.createElement("div"); f.className="frame2"; h.el.appendChild(f); }   // 名前は出さない(隠れ方で評価するため。名前は結果ダイアログで)
 function ripple(x,y){ const r=document.createElement("div"); r.className="ripple"; r.style.left=x+"px"; r.style.top=y+"px"; $("hideLayer").appendChild(r); setTimeout(()=>r.remove(),1500); }
-$("giveUp").addEventListener("click",()=>{ if(!isSeeker()) return; playSelect(); act("giveup",{}); });
+/* ギブアップも降参と同じ2段階(ボタンが「確定」に変わる。2026-09-10牧村指示) */
+var gvArm=0;
+function resetGvUp(){ clearTimeout(gvArm); gvArm=0; const b=$("giveUp"); if(b) b.textContent="ギブアップ"; }
+$("giveUp").addEventListener("click",()=>{
+  if(!isSeeker()) return; 
+  if(!gvArm){ playSelect(); $("giveUp").textContent="確定"; gvArm=setTimeout(resetGvUp,3000); return; }
+  resetGvUp(); playSelect(); act("giveup",{});
+});
 
 /* ================= 投票タイム ================= */
 const LIKE_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11v9H4v-9z"/><path d="M7 11l4-7c1.5 0 2.5 1 2.5 2.5V10h5a2 2 0 0 1 2 2.3l-1.2 6A2 2 0 0 1 17.3 20H7"/></svg>';
@@ -1398,7 +1405,7 @@ const ANGRY_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
 function endSeek(reason){   // ホスト
   if(phase!=="seek"||!isHost()) return; phase="ending"; stopTimer(); endReason=reason;
   seekerWin=(reason==="all");
-  $("toolWrap").style.display="none"; $("giveUp").style.display="none";
+  $("toolWrap").style.display="none"; $("giveUp").style.display="none"; resetGvUp();
   playEndSound(); showMid("ゲーム終了",1500); sendSnap();
   setTimeout(()=>{ revealAll(); showMid("隠れ方を評価しよう",1500); setTimeout(startVote,1500); },1500);
 }
@@ -1408,7 +1415,7 @@ function startVote(){   // ホスト
   startTimer(VOTE_SEC,"隠れ方を評価しよう",()=>{ if(phase==="vote") showResultHost(); });
 }
 function enterVoteUI(){
-  revealAll(); hiders.forEach(h=>{ if(h.el) h.el.classList.toggle("own",h.id===myId); }); $("toolWrap").style.display="none"; $("giveUp").style.display="none"; $("voteDone").style.display=""; $("gameScene").classList.add("voting"); renderWho(voteDoneIds);
+  revealAll(); hiders.forEach(h=>{ if(h.el) h.el.classList.toggle("own",h.id===myId); }); $("toolWrap").style.display="none"; $("giveUp").style.display="none"; resetGvUp(); $("voteDone").style.display=""; $("gameScene").classList.add("voting"); renderWho(voteDoneIds);
   hiders.forEach(h=>{
     if(h.id===myId||h.voteRow) return;
     const row=document.createElement("div"); row.className="vote-row att";

@@ -223,7 +223,7 @@
     background:var(--shu); color:#fff; font-size:11px; font-weight:700;
   }
   .help-btn:active{ transform:translateY(1px); }
-  /* あそびかた説明のオーバーレイ(投了確認と同じ挙動) */
+  /* あそびかた説明のオーバーレイ(結果ダイアログと同じ挙動) */
   #helpOverlay, #undoOverlay{
     position:fixed; inset:0; z-index:60; display:flex;
     align-items:center; justify-content:center;
@@ -410,7 +410,7 @@
     border:1px solid rgba(51,47,42,.35); border-radius:7px;
   }
   .txt-btn:active{ transform:translateY(1px); }
-  #gameScene .sub-btns .txt-btn{ min-width:132px; text-align:center; }   /* 一手戻る/投了の幅をそろえる(2026-08-01・全対戦ゲーム共通) */
+  #gameScene .sub-btns .txt-btn{ min-width:132px; text-align:center; }   /* 一手戻る/降参の幅をそろえる(2026-08-01・全対戦ゲーム共通) */
   .txt-btn:disabled{ opacity:.35; cursor:default; pointer-events:none; }   /* 相手の思考中などはグレーアウト */
 
   /* ===== 結果 ===== */
@@ -421,7 +421,7 @@
     opacity:0; pointer-events:none; transition:opacity .3s linear;
   }
   #resultOverlay.on{ opacity:1; pointer-events:auto; }
-  /* 投了の確認ダイアログ(結果ダイアログと同じ作法) */
+  /* 旧・投了の確認ダイアログ(2026-09-10に降参の2段階ボタンへ変更したので現在は開かれない) */
   /* ルール変更ダイアログ(結果画面から・部屋を抜けずに) */
   #ruleOverlay{
     position:fixed; inset:0; z-index:65; display:flex;
@@ -448,6 +448,7 @@
   .cf-msg{ font-size:clamp(20px,5.4vw,28px); letter-spacing:.1em; }
   .r-card .sub-btns{ width:100%; }
   .r-card .txt-btn{ flex:1 1 0; min-width:120px; }
+  #gameScene .sub-btns .txt-btn.deny{ color:#fff; background:var(--shu); border-color:var(--shu); }   /* 降参の2段階目「確定」 */
   .r-card .txt-btn.deny{ color:#fff; background:var(--shu); border-color:var(--shu); }   /* 「断る」は右+赤で強調(2026-08-10・全対戦ゲーム共通) */
   .r-card{
     background:var(--washi); border:3px solid var(--sumi); border-radius:12px;
@@ -599,7 +600,7 @@
     <div class="board-wrap"><div id="board"></div></div>
     <div class="sub-btns">
       <button class="txt-btn" id="undoBtn">一手戻る</button>
-      <button class="txt-btn" id="giveupBtn">投了</button>
+      <button class="txt-btn" id="giveupBtn">降参</button>
     </div>
     <!-- 碁笥(碁石入れ): 黒=左下 / 白=右下。手番側がゆれる -->
     <div class="bowl-tag bk-t" id="bowlTagB"></div>
@@ -656,7 +657,7 @@
     </div>
   </div>
 
-  <!-- ===== 投了の確認 ===== -->
+  <!-- ===== 旧・投了の確認(未使用。降参はボタン自体が「確定」に変わる方式へ) ===== -->
   <div id="confirmOverlay">
     <div class="r-card">
       <div class="cf-msg">まことに投了する？</div>
@@ -1295,13 +1296,14 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       undoToPlayer(human);   // ロボットの応手＋自分の一手を戻す
     }
   });
-  function setGiveupVisible(v){   // 終局後は投了・一手戻るを隠す(盤面眺めモードで違和感が出るため)
+  function setGiveupVisible(v){   // 終局後は降参・一手戻るを隠す(盤面眺めモードで違和感が出るため)
+    resetGv();
     giveupBtn.style.visibility = v ? "" : "hidden";
     undoBtn.style.visibility = v ? "" : "hidden";
   }
   function finish(winner,line){
     over=true; busy=true; setGiveupVisible(false); markLast(null);
-    document.getElementById("confirmOverlay").classList.remove("on");   // 開きっぱなしの投了確認を閉じる
+    document.getElementById("confirmOverlay").classList.remove("on");   // 開きっぱなしの確認ダイアログを閉じる
     // 勝利の瞬間: 決め手の石ぜんぶを同時に金色にふくらませる(同時に付けるので点滅の位相もそろう)
     if(line) setTimeout(()=>{ line.forEach(([r,c])=>{ const el=stones[r][c]; if(el){ el.classList.remove("gold","shine","tame","long","last"); el.classList.add("win-gold"); } }); }, 150);
     setTimeout(()=>{
@@ -1404,7 +1406,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       if(!online||over) return;
       over=true; busy=true; setGiveupVisible(false);
       document.getElementById("confirmOverlay").classList.remove("on");
-      rTitle.textContent=foeLabel()+"の投了！"; rTitle.className="r-title win";
+      rTitle.textContent=foeLabel()+"の降参"; rTitle.className="r-title win";
       rSub.textContent="あなたの勝ち"; playWin(); bumpRoomStats("win"); resultOverlay.classList.add("on");
     });
     ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) speakStamp(payload.i|0); if(payload) spawnStamp(payload.i|0, foeLabel()); });
@@ -1991,21 +1993,27 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     ensureAudio(); playSelect();
     resultOverlay.classList.toggle("peek");
   });
-  // 投了: 確認ダイアログを挟む
+  // 降参
   const confirmOverlay=document.getElementById("confirmOverlay");
   function doResign(){
     if(over) return;
     if(online && ch) ch.send({ type:"broadcast", event:"resign", payload:{} });
     over=true; setGiveupVisible(false);
-    rTitle.textContent="投了…"; rTitle.className="r-title";
+    rTitle.textContent="降参…"; rTitle.className="r-title";
     rSub.textContent="また挑むがよい"; playLose(); if(online) bumpRoomStats("lose"); else renderRoomStats(); resultOverlay.classList.add("on");
   }
+  /* 降参は確認ダイアログを挟まず、ボタン自体が「確定」に変わる2段階(2026-09-10牧村指示・降参のある全作品で統一) */
+  var gvArm=0;
+  function resetGv(){ clearTimeout(gvArm); gvArm=0; var b=document.getElementById("giveupBtn"); if(b){ b.textContent="降参"; b.classList.remove("deny"); } }
   document.getElementById("giveupBtn").addEventListener("click",()=>{
-    if(over) return; ensureAudio(); playSelect();
-    confirmOverlay.classList.add("on");
+    if(over) return; ensureAudio();
+    if(!gvArm){                                   /* 1回目=「確定」に変わる・3秒でもどる */
+      playSelect();
+      var b=document.getElementById("giveupBtn"); b.textContent="確定"; b.classList.add("deny");
+      gvArm=setTimeout(resetGv,3000); return;
+    }
+    resetGv(); doResign();
   });
-  document.getElementById("cfYes").addEventListener("click",()=>{ ensureAudio(); confirmOverlay.classList.remove("on"); doResign(); });
-  document.getElementById("cfNo").addEventListener("click",()=>{ ensureAudio(); playSelect(); confirmOverlay.classList.remove("on"); });
   confirmOverlay.addEventListener("click",(e)=>{ if(e.target===confirmOverlay){ ensureAudio(); playSelect(); confirmOverlay.classList.remove("on"); } });
 
   /* ---------- ルール変更(結果画面から・部屋を抜けずに) ---------- */
@@ -2090,7 +2098,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     const nm=who||(online?meLabel():"自分");
     el.innerHTML='<span class="s-emoji">'+STAMP_SVGS[i]+'</span><span class="s-name">'+nm+'</span>';
     if(seOn && !stampMuted) playStamp(i);   // スタンプ別の効果音
-    // ダイアログ表示中(結果・投了確認)は前面に出して見えるようにする
+    // ダイアログ表示中は前面に出して見えるようにする
     const overlayOpen=document.getElementById("resultOverlay").classList.contains("on")||document.getElementById("confirmOverlay").classList.contains("on");
     if(overlayOpen){ el.classList.add("over-dialog"); document.body.appendChild(el); }
     else{ (document.getElementById("gameScene")||document.body).appendChild(el); }   // 碁笥/駒と同じ重なり文脈に入れる(盤より前・碁石入れより後ろ)
