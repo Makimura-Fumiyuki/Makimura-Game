@@ -58,7 +58,7 @@
   #titleScene{ padding:7vh 20px 150px; gap:28px; }
   #gameScene{ padding:14px 10px 34px; gap:12px; justify-content:center; justify-content:safe center; }
   /* 画面が狭い/低い時は下に余白を足して、チャット枠のぶんだけ余分にスクロールできるようにする */
-  @media (max-width:820px), (max-height:820px){ #gameScene{ padding-bottom:210px; } }
+  @media (max-width:820px), (max-height:820px){ #gameScene{ padding-top:90px; padding-bottom:210px; } }   /* 上は「あそびかた」「効果音」ボタンのぶんだけ余分にスクロールできる(2026-09-10) */
 
   /* ===== 固定ボタン ===== */
   .help-btn,.snd-btn{ display:inline-flex; align-items:center; gap:6px;
@@ -148,21 +148,30 @@
   .start-btn:active{ transform:translateY(3px); box-shadow:0 2px 0 var(--red-d); }
   .room-btns{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
   .room-area{ display:flex; flex-direction:column; align-items:center; gap:14px; min-height:20px; text-align:center; }
-  .code-box{ display:none; width:min(92vw,340px); background:var(--card);
-    border:1.8px solid var(--line); border-radius:13px; padding:14px 16px; text-align:center; }
-  .code-box.on{ display:block; }
-  .code-lab{ font-size:11.5px; font-weight:700; letter-spacing:.16em; color:var(--sub); }
-  .code-txt{ margin-top:5px; font-size:31px; font-weight:900; letter-spacing:.22em; font-variant-numeric:tabular-nums; }
-  .code-row{ display:flex; align-items:center; gap:8px; margin-top:10px; }
-  .code-input{ flex:1; min-width:0; border:1.8px solid var(--line); border-radius:9px; padding:11px 12px;
-    font-size:19px; font-weight:900; letter-spacing:.2em; text-align:center; text-transform:uppercase; background:#fff; color:var(--ink); }
-  .code-input:focus{ outline:none; border-color:var(--blue); }
-  .icn-btn{ flex:none; width:38px; height:38px; border:none; background:none; color:var(--sub);
-    display:flex; align-items:center; justify-content:center; }
-  .icn-btn svg{ width:20px; height:20px; }
-  .icn-btn:active{ transform:translateY(1px); }
-  .wait-note{ margin-top:9px; font-size:12px; font-weight:700; color:var(--sub); letter-spacing:.06em; }
-  .err-note{ margin-top:8px; font-size:12px; font-weight:700; color:var(--red); letter-spacing:.04em; min-height:16px; }
+  /* オンライン: 合言葉まわり(碁石系列・バミリバーシと同じ作り=枠なしの縦積み。2026-09-10に既存作へそろえた) */
+  .room-note{ font-size:12.5px; font-weight:700; letter-spacing:.12em; color:var(--sub); }
+  .room-note.err{ color:var(--red); }
+  @keyframes waitDots{ 0%,100%{ opacity:.4; } 50%{ opacity:1; } }
+  .room-wait{ animation:waitDots 1.6s ease-in-out infinite; }
+  /* 合言葉そのものが「押すとコピー」のボタン */
+  .code-show{ display:inline-flex; align-items:center; gap:12px; margin-top:-6px;
+    background:#fff; border:2.2px solid var(--red); border-radius:12px; padding:6px 20px 8px 16px; cursor:pointer;
+    transition:transform .12s ease, box-shadow .15s ease; }
+  .code-show:hover{ box-shadow:0 3px 10px rgba(229,50,45,.24); }
+  .code-show:active{ transform:scale(.97); }
+  .code-show .cs-code{ font-size:clamp(34px,9vw,44px); font-weight:900; letter-spacing:.22em; text-indent:.22em;
+    color:var(--red); font-variant-numeric:tabular-nums; line-height:1.15; }
+  .code-show .cs-copy{ width:24px; height:24px; flex:none; fill:none; stroke:var(--red); stroke-width:2; opacity:.7; }
+  .code-input{ width:230px; padding:10px 6px; text-align:center; font-family:inherit; font-weight:900;
+    font-size:26px; letter-spacing:.25em; text-indent:.25em; text-transform:uppercase;
+    color:var(--ink); background:#fff; border:2px solid var(--line); border-radius:8px; outline:none;
+    line-height:1.2; caret-color:var(--ink); }   /* スマホ(WebKit)でletter-spacing付き入力欄のカーソルが消える癖への対策 */
+  .code-input:focus{ border-color:rgba(35,33,31,.55); }
+  .code-row{ display:flex; align-items:center; gap:10px; }
+  .paste-btn{ flex:none; display:flex; align-items:center; justify-content:center; cursor:pointer;
+    padding:4px; background:none; border:none; color:var(--sub); }   /* 枠なし・アイコンのみ */
+  .paste-btn svg{ width:26px; height:26px; }
+  .paste-btn:active{ transform:translateY(1px); }
 
   /* ===== 対局の上部 ===== */
   .players{ display:flex; gap:10px; width:min(94vw,400px); }
@@ -258,11 +267,13 @@
   .chat-tog svg{ width:14px; height:14px; flex:none; }
   .chat-tog:active{ transform:translateY(1px); }
   /* 非表示中に届いたチャットは数秒だけポップアップ */
-  .chat-pop{ display:none; max-width:100%; background:rgba(255,255,255,.96); border-radius:8px;
+  /* 続けて届いたら下に積み上がる(古いものが上・新しいものが下=送られた順に読める。2026-09-10) */
+  .chat-pop{ display:flex; flex-direction:column; align-items:flex-start; gap:5px; width:100%; }
+  .chat-pop:empty{ display:none; }
+  .pop-line{ max-width:100%; background:rgba(255,255,255,.96); border-radius:8px;
     padding:8px 11px; box-shadow:0 2px 9px rgba(35,33,31,.3); font-size:12px; line-height:1.55;
-    word-break:break-word; }
-  .chat-pop.on{ display:block; animation:popIn .18s cubic-bezier(.2,1.2,.4,1); }
-  .chat-pop.out{ opacity:0; transition:opacity .35s linear; }
+    word-break:break-word; animation:popIn .18s cubic-bezier(.2,1.2,.4,1); }
+  .pop-line.out{ opacity:0; transition:opacity .14s linear; }   /* 消える時はすばやく */
   @keyframes popIn{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
   /* 見た目はスタンプに合わせる=枠線を使わず、白+影でまとめる。角丸は控えめ(2026-09-10)
      ※チャットは全ゲーム共通で使う予定なので、色はゲームの手番色に頼らない汎用の墨系にする */
@@ -438,25 +449,7 @@
       <button class="fuda" id="makeRoomBtn" type="button">部屋を作る</button>
       <button class="fuda b" id="joinRoomBtn" type="button">部屋に入る</button>
     </div>
-    <div class="room-area" id="roomArea">
-      <div class="code-box" id="codeShowBox">
-        <div class="code-lab">あいてに おしえる 合言葉</div>
-        <div class="code-txt" id="codeText">-----</div>
-        <div class="code-row" style="justify-content:center">
-          <button class="txt-btn" id="copyBtn" type="button">招待メッセージをコピー</button>
-        </div>
-        <div class="wait-note" id="waitNote">あいてを待っています…</div>
-      </div>
-      <div class="code-box" id="codeInBox">
-        <div class="code-lab">合言葉を いれる</div>
-        <div class="code-row">
-          <button class="icn-btn" id="pasteBtn" type="button" aria-label="合言葉を貼り付け"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h2"/></svg></button>
-          <input class="code-input" id="codeInput" maxlength="5" autocomplete="off" spellcheck="false" placeholder="合言葉">
-          <button class="txt-btn" id="codeGo" type="button" style="min-width:76px;padding:11px 10px">入室</button>
-        </div>
-        <div class="err-note" id="codeErr"></div>
-      </div>
-    </div>
+    <div class="room-area" id="roomArea"></div>
   </div>
 </div>
 
@@ -788,8 +781,8 @@ function finish(p,ws,reason){
   const iWon=(mode==="local")||p===mySide;
   if(iWon) playWin(); else playLose();
   render();
-  /* 3つ目を置いた手ごたえを見せてから線を引く(0.1秒あける。2026-09-10牧村指示) */
-  if(ws&&ws.length) setTimeout(()=>drawWinLine(ws[0].cells,showResult),100); else showResult();
+  /* 3つ目を置いた手ごたえを見せてから線を引く(0.3秒あける。2026-09-10牧村指示) */
+  if(ws&&ws.length) setTimeout(()=>drawWinLine(ws[0].cells,showResult),300); else showResult();
 }
 function finishDraw(){                         /* 盤が全部うまったら引き分け */
   over="draw"; endReason=(S.b.indexOf(null)<0)?"盤が全部うまった":"コマが置かれないまま続いた"; winCells=[];
@@ -1049,7 +1042,7 @@ function joinRoom(code,asHost){
   ch.subscribe(async st=>{
     if(st!=="SUBSCRIBED") return;
     try{ await ch.track({ id:myId, n:myAcctName(), host:asHost, t:Date.now() }); }catch(e){}
-    if(!asHost){ send("nm",{pn:myAcctName()}); setTimeout(()=>{ if(!started){ $("codeErr").textContent="部屋が見つかりません（合言葉をたしかめてね）"; leaveChannel(); } },4500); }
+    if(!asHost){ send("nm",{pn:myAcctName()}); setTimeout(()=>{ if(!started){ roomNote("部屋が見つかりません。合言葉をたしかめてね","err"); leaveChannel(); } },4500); }
   });
 }
 let _hs="o";
@@ -1110,9 +1103,8 @@ function goTitle(){
   leaveChannel();
   cpuT.forEach(clearTimeout); cpuT=[]; thinking=false; resetGive();
   over=null; $("resultOv").classList.remove("on","peek"); $("ruleOv").classList.remove("on"); clearWinLine();
-  $("codeShowBox").classList.remove("on"); $("codeInBox").classList.remove("on");
+  roomStatus("");
   $("makeRoomBtn").classList.remove("sel"); $("joinRoomBtn").classList.remove("sel");
-  $("codeErr").textContent="";
   showScene("titleScene");
 }
 const LV_NAMES=["初級","中級","上級"];
@@ -1178,7 +1170,7 @@ $("modeRow").addEventListener("click",e=>{
   [...$("modeRow").children].forEach(x=>x.classList.toggle("sel",x===b));
   ["local","cpu","online"].forEach(k=>$(k+"Setup").classList.toggle("on",k===mode));
   placeRuleBox();
-  if(mode!=="online") leaveChannel();
+  if(mode!=="online"){ leaveChannel(); roomStatus(""); $("makeRoomBtn").classList.remove("sel"); $("joinRoomBtn").classList.remove("sel"); }
 });
 $("sizeRow").addEventListener("click",e=>{
   const b=e.target.closest(".rc-btn"); if(!b) return;
@@ -1209,36 +1201,60 @@ $("startCpu").addEventListener("click",()=>{
   showScene("gameScene"); newGame();
   toast("あなたは "+(mySide==="o"?"◯（先攻）":"×（後攻）"));
 });
+function roomStatus(html){ $("roomArea").innerHTML=html||""; }
+function roomNote(tx,cls){                      /* 合言葉まわりのひとこと(状態・エラー) */
+  const n=$("codeErr"); if(!n) return;
+  n.textContent=tx||""; n.className="room-note"+(cls?" "+cls:"");
+}
+const PASTE_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3.4c0-.8.6-1.4 1.4-1.4h3.2c.8 0 1.4.6 1.4 1.4v1.1"/><path d="M9 10.5h6M9 14.5h6"/></svg>';
+const COPY_SVG='<svg class="cs-copy" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>';
 $("makeRoomBtn").addEventListener("click",()=>{
   ensureAudio(); playSelect();
   $("makeRoomBtn").classList.add("sel"); $("joinRoomBtn").classList.remove("sel");
-  $("codeInBox").classList.remove("on"); $("codeShowBox").classList.add("on");
-  const c=genCode(); $("codeText").textContent=c; $("waitNote").textContent="あいてを待っています…";
+  const c=genCode();
+  roomStatus('<div class="room-note">合言葉（'+(window.__TAPW||"タップ")+'でコピー）</div>'
+    +'<div class="code-show" id="codeShow">'+COPY_SVG+'<span class="cs-code" id="codeText">'+c+'</span></div>'
+    +'<div class="room-note room-wait" id="hostNote">あいてを待っています…</div>');
+  $("codeShow").addEventListener("click",async()=>{           /* 合言葉を押すと招待メッセージをコピー */
+    ensureAudio(); playSelect();
+    let ok=true;
+    try{ await navigator.clipboard.writeText(inviteText(c)); }catch(e){ ok=false; }
+    const n=$("hostNote"); if(!n) return;
+    n.textContent = ok?"招待メッセージをコピーした":"コピーできませんでした。手で伝えてね";
+    n.className = "room-note"+(ok?"":" err");
+    setTimeout(()=>{ if(n.isConnected&&!started){ n.textContent="あいてを待っています…"; n.className="room-note room-wait"; } },2200);
+  });
   joinRoom(c,true);
 });
 $("joinRoomBtn").addEventListener("click",()=>{
   ensureAudio(); playSelect();
   $("joinRoomBtn").classList.add("sel"); $("makeRoomBtn").classList.remove("sel");
-  $("codeShowBox").classList.remove("on"); $("codeInBox").classList.add("on");
-  $("codeErr").textContent=""; leaveChannel();
+  leaveChannel();
+  roomStatus('<div class="code-row">'
+    +'<button class="paste-btn" id="pasteBtn" type="button" aria-label="合言葉を貼り付け">'+PASTE_SVG+'</button>'
+    +'<input class="code-input" id="codeInput" maxlength="5" autocomplete="off" spellcheck="false" placeholder="合言葉">'
+    +'</div>'
+    +'<button class="txt-btn" id="codeGo" type="button">入室</button>'
+    +'<div class="room-note" id="codeErr"></div>');
+  $("pasteBtn").addEventListener("click",async()=>{
+    ensureAudio();
+    try{
+      const t=await navigator.clipboard.readText();
+      const c=(t||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,5);
+      if(c){ $("codeInput").value=c; roomNote("貼り付けた"); }
+      else roomNote("コピーした合言葉が見つかりません","err");
+    }catch(e){ roomNote("貼り付けできません。手で入れてね","err"); }
+  });
+  $("codeGo").addEventListener("click",()=>{ ensureAudio(); playSelect(); tryJoin(); });
+  $("codeInput").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing){ e.preventDefault(); tryJoin(); } });
   setTimeout(()=>{ try{ $("codeInput").focus(); }catch(e){} },80);
 });
-$("copyBtn").addEventListener("click",async()=>{
-  ensureAudio(); playSelect();
-  try{ await navigator.clipboard.writeText(inviteText($("codeText").textContent)); toast("招待メッセージをコピーした"); }
-  catch(e){ toast("コピーできませんでした"); }
-});
-$("pasteBtn").addEventListener("click",async()=>{
-  try{ const t=await navigator.clipboard.readText(); $("codeInput").value=(t||"").trim().toUpperCase().slice(0,5); }
-  catch(e){ toast("貼り付けできませんでした"); }
-});
 function tryJoin(){
-  const c=($("codeInput").value||"").trim().toUpperCase();
-  if(c.length<4){ $("codeErr").textContent="合言葉を入れてね"; playNg(); return; }
-  $("codeErr").textContent="さがしています…"; joinRoom(c,false);
+  const el=$("codeInput"); if(!el) return;
+  const c=(el.value||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(c.length<4){ roomNote("合言葉を入れてね","err"); playNg(); return; }
+  roomNote("部屋をさがしています…","room-wait"); joinRoom(c,false);
 }
-$("codeGo").addEventListener("click",()=>{ ensureAudio(); playSelect(); tryJoin(); });
-$("codeInput").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing){ e.preventDefault(); tryJoin(); } });
 
 /* ===== ゲーム画面の操作 ===== */
 $("board").addEventListener("click",e=>{
@@ -1377,19 +1393,21 @@ function setMini(mini){                             /* チャット欄ごと畳�
   if(!mini) hidePop();
 }
 $("chatTog").addEventListener("click",()=>{ ensureAudio(); playSelect(); setMini(!$("chatBox").classList.contains("mini")); });
-let popT=0, popT2=0;
-setMini(false);                                     /* 起動時にラベルと目のアイコンを入れる(popT宣言より後で呼ぶ=TDZ回避) */
-function hidePop(){ clearTimeout(popT); clearTimeout(popT2); const el=$("chatPop"); el.classList.remove("on","out"); }
-function showPop(name,text,side){                   /* 非表示中に届いたチャットを数秒だけ出す */
+const POP_MS=4200, POP_FADE=150, POP_MAX=6;      /* 1枚あたりの表示時間 / 消える速さ / 同時に出す上限 */
+function hidePop(){ const el=$("chatPop"); [...el.children].forEach(c=>clearTimeout(c._t)); el.innerHTML=""; }
+function showPop(name,text,side){                   /* 非表示中に届いたチャットを数秒だけ出す(続けて届いたら下へ積む) */
   const el=$("chatPop");
-  el.innerHTML="";
+  const d=document.createElement("div"); d.className="pop-line";
   const n=document.createElement("span"); n.className="c-nm"+(side?" "+side:""); n.textContent=name+"：";
   const t=document.createElement("span"); t.textContent=text;
-  el.appendChild(n); el.appendChild(t);
-  clearTimeout(popT); clearTimeout(popT2);
-  el.classList.remove("out"); el.classList.add("on");
-  popT=setTimeout(()=>{ el.classList.add("out"); popT2=setTimeout(()=>el.classList.remove("on","out"),380); },4200);
+  d.appendChild(n); d.appendChild(t); el.appendChild(d);
+  while(el.children.length>POP_MAX){ const o=el.firstChild; clearTimeout(o._t); el.removeChild(o); }
+  d._t=setTimeout(()=>{                            /* 1枚ずつ自分の時間で消える */
+    d.classList.add("out");
+    d._t=setTimeout(()=>{ if(d.parentNode) d.parentNode.removeChild(d); },POP_FADE+40);
+  },POP_MS);
 }
+setMini(false);                                  /* 起動時にラベルと目のアイコンを入れる(hidePopの定義より後で呼ぶ) */
 document.querySelectorAll(".mini-mk").forEach(el=>{ el.innerHTML=el.dataset.mk==="o"?SVG_O:SVG_X; });
 
 let toastT=0;

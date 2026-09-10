@@ -203,7 +203,7 @@
   /* ===== 対局画面 ===== */
   #gameScene{ padding:12px 10px 30px; gap:10px; justify-content:center; }
   /* 画面が狭い/低い時は下に余白を足して、スタンプ/チャットのぶんだけ余分にスクロールできるようにする(2026-09-10) */
-  @media (max-width:820px), (max-height:820px){ #gameScene{ padding-bottom:210px; } }
+  @media (max-width:820px), (max-height:820px){ #gameScene{ padding-top:90px; padding-bottom:210px; } }   /* 上は「あそびかた」「効果音」ボタンのぶんだけ余分にスクロールできる(2026-09-10) */
   /* 現在ルールの表示(上部・2枚): ボタンに見えない「貼り紙」風。2枚は同サイズ */
   .rule-tags{ display:flex; gap:12px; justify-content:center; width:min(94vw, 380px); }
   .rule-tag{
