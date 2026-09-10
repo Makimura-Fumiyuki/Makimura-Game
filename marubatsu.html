@@ -248,13 +248,13 @@
     flex-direction:column; align-items:flex-start; gap:7px; width:min(84vw,300px); }
   #chatBox.on{ display:flex; }
   #chatBox.mini .chat-log, #chatBox.mini .chat-row, #chatBox.mini #stampBar{ display:none; }
-  /* 表示/非表示ボタンは枠のいちばん下・左端=非表示にすると画面の左下の角に残る(2026-09-10) */
-  /* 他のボタン(白+影+角丸8px)と作りを変える=墨のピル・影なし */
+  /* 表示/非表示ボタン。他のボタン(白+影+角丸8px)と作りを変える=墨のピル・影なし
+     表示中=履歴の右上／非表示中=枠のいちばん下・左端(=画面の左下の角に残る)。2026-09-10 */
   .chat-tog{ align-self:flex-start; display:inline-flex; align-items:center; gap:5px;
     padding:5px 10px 5px 12px; border:none; border-radius:999px; box-shadow:none;
-    background:rgba(35,33,31,.74); color:#fff;
+    background:rgba(35,33,31,.46); color:#fff;
     font-size:11px; font-weight:900; letter-spacing:.02em; white-space:nowrap; }
-  #chatBox.mini .chat-tog{ background:rgba(35,33,31,.46); }   /* 非表示中は少し薄く */
+  #chatBox:not(.mini) .chat-tog{ position:absolute; right:0; top:4px; align-self:auto; }
   .chat-tog svg{ width:14px; height:14px; flex:none; }
   .chat-tog:active{ transform:translateY(1px); }
   /* 非表示中に届いたチャットは数秒だけポップアップ */
@@ -1114,6 +1114,14 @@ function goTitle(){
   $("codeErr").textContent="";
   showScene("titleScene");
 }
+const LV_NAMES=["初級","中級","上級"];
+function winnerLabel(){                         /* チャットのログは「◯◯の勝ち」に固定(理由は書かない=汎用の形) */
+  if(over==="draw") return "引き分け";
+  if(mode==="local") return (over==="o"?"◯":"×")+"の勝ち";
+  if(over===mySide)  return (myAcctName()||"あなた")+"の勝ち";
+  if(mode==="cpu")   return "ロボット（"+LV_NAMES[cpuLv]+"）の勝ち";
+  return foeLabel()+"の勝ち";
+}
 function showResult(){
   const drawn=(over==="draw");
   const won=(mode==="local"||drawn)?null:(over===mySide);
@@ -1126,7 +1134,7 @@ function showResult(){
   $("resultOv").classList.remove("peek"); $("resultOv").classList.add("on");
   if(!resultLogged){                            /* 勝敗をチャットに残す(1局につき1回) */
     resultLogged=true;
-    addSys($("rTitle").textContent + (endReason?"（"+endReason+"）":""));
+    addSys(winnerLabel());
   }
 }
 function tryRematch(){                          /* 両者が「もう一度」を押したら部屋主が新しい対局を配る */
