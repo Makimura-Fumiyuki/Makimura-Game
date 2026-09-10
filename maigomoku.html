@@ -515,6 +515,56 @@
   .stamp-min svg{ width:15px; height:15px; }
   .stamp-min:active{ transform:translateY(1px) scale(.93); }
   #stampBar.mini .stamp-btn, #stampBar.mini .stamp-mute{ visibility:hidden; }   /* 最小化中も幅は保つ=＋ボタンが−と同じ位置に残る */
+  /* ===== チャット(2026-09-10。全ゲーム共通・スタンプもこの枠の中。色はゲームに依存させない) ===== */
+  #stampBar{ position:relative; left:auto; bottom:auto; z-index:auto; display:flex; gap:7px; }
+  #chatBox.mini #stampBar{ display:none; }
+  #stampMin{ display:none; }
+  #stampBar .stamp-btn{ width:34px; height:34px; font-size:19px; }
+  #stampBar .stamp-mute{ width:26px; height:26px; top:4px; }
+  /* 碁笥(左下の絶対配置)に重ならないよう、この作品だけチャット枠を碁笥の上に置く */
+  #chatBox{ position:fixed; left:10px; bottom:calc(28px + clamp(62px,17vw,102px)); z-index:58; display:none;
+    flex-direction:column; align-items:flex-start; gap:7px; width:min(84vw,300px); text-align:left; }
+  #chatBox.on{ display:flex; }
+  #chatBox.mini .chat-log, #chatBox.mini .chat-row{ display:none; }
+  .chat-tog{ align-self:flex-start; display:inline-flex; align-items:center; gap:5px; cursor:pointer;
+    padding:5px 10px 5px 12px; border:none; border-radius:999px; box-shadow:none; font-family:inherit;
+    background:rgba(35,33,31,.46); color:#fff;
+    font-size:11px; font-weight:900; letter-spacing:.02em; white-space:nowrap; }
+  #chatBox:not(.mini) .chat-tog{ position:absolute; right:0; top:8px; align-self:auto; }
+  .chat-tog svg{ width:14px; height:14px; flex:none; }
+  .chat-tog:active{ transform:translateY(1px); }
+  .chat-pop{ display:flex; flex-direction:column; align-items:flex-start; gap:5px; width:100%; }
+  .chat-pop:empty{ display:none; }
+  .pop-line{ max-width:100%; background:rgba(255,255,255,.96); border-radius:8px; color:#23211f;
+    padding:8px 11px; box-shadow:0 2px 9px rgba(35,33,31,.3); font-size:12px; line-height:1.55;
+    word-break:break-word; animation:popIn .18s cubic-bezier(.2,1.2,.4,1); }
+  .pop-line.out{ opacity:0; transition:opacity .14s linear; }
+  @keyframes popIn{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
+  .chat-log{ display:flex; flex-direction:column; width:100%; max-height:126px; overflow-y:auto; overscroll-behavior:contain;
+    background:rgba(255,255,255,.92); border-radius:8px; padding:9px 7px 9px 12px; border:none; color:#23211f;
+    box-shadow:0 2px 7px rgba(35,33,31,.26); font-size:12px; line-height:1.6; }
+  .chat-log:empty{ display:none; }
+  .chat-log::-webkit-scrollbar{ width:9px; }
+  .chat-log::-webkit-scrollbar-track{ background:transparent; }
+  .chat-log::-webkit-scrollbar-thumb{ background:rgba(35,33,31,.22); border-radius:99px;
+    border:3px solid transparent; background-clip:padding-box; }
+  .chat-row{ display:flex; width:100%; gap:6px; }
+  .c-line{ word-break:break-word; }
+  .c-line.c-sys{ opacity:.55; font-size:11.5px; text-align:center; }
+  .c-line.c-res{ align-self:stretch; box-sizing:border-box; opacity:.72; margin:5px 6px 3px; padding:4px 8px 5px;
+    border:1.1px solid rgba(35,33,31,.17); border-radius:5px;
+    font-size:11.5px; font-weight:700; letter-spacing:.06em; color:rgba(35,33,31,.8); }
+  .c-nm{ font-weight:900; margin-right:5px; color:rgba(35,33,31,.9); }
+  .chat-in{ flex:1; min-width:0; border:none; border-radius:8px; padding:9px 12px; font-family:inherit;
+    font-size:13px; font-weight:700; background:rgba(255,255,255,.92); color:#23211f;
+    box-shadow:0 2px 7px rgba(35,33,31,.26); }
+  .chat-in::placeholder{ color:rgba(35,33,31,.45); font-weight:700; }
+  .chat-in:focus{ outline:none; box-shadow:0 2px 7px rgba(35,33,31,.26), inset 0 0 0 1.6px rgba(35,33,31,.3); }
+  .chat-send{ flex:none; padding:9px 14px; border:none; border-radius:8px; cursor:pointer; font-family:inherit;
+    background:rgba(255,255,255,.92); color:#23211f; font-size:12.5px; font-weight:900; white-space:nowrap;
+    box-shadow:0 2px 7px rgba(35,33,31,.26); }
+  .chat-send:active{ transform:translateY(1px) scale(.96); }
+
   .stamp-mute svg{ width:19px; height:19px; transform:translateY(1px); }   /* ベルを1px下げる */
   .stamp-mute .mute-slash{ display:none; }
   .stamp-mute.muted{ color:#d23b30; }
@@ -724,6 +774,8 @@
 
   <!-- ===== 結果 ===== -->
   <!-- オンライン中のスタンプ(気持ちを送る。押すと画面下から浮き上がる) -->
+<div id="chatBox">
+  <div class="chat-pop" id="chatPop"></div>
   <div id="stampBar">
     <button id="stampMin" class="stamp-min" aria-label="スタンプを最小化"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="12" x2="18" y2="12"/></svg></button>
     <button class="stamp-btn" data-i="0" aria-label="泣き"></button>
@@ -731,6 +783,13 @@
     <button class="stamp-btn" data-i="2" aria-label="爆笑"></button>
     <button id="stampMute" class="stamp-mute" aria-label="スタンプをミュート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10.5 16.2a1.7 1.7 0 0 0 3 0"/><line class="mute-slash" x1="3.2" y1="3.2" x2="20.8" y2="20.8"/></svg></button>
   </div>
+  <div class="chat-log" id="chatLog"></div>
+  <div class="chat-row">
+    <input class="chat-in" id="chatIn" maxlength="40" autocomplete="off" placeholder="メッセージを入力">
+    <button class="chat-send" id="chatGo" type="button">送信</button>
+  </div>
+  <button class="chat-tog" id="chatTog" type="button"></button>
+</div>
 
   <div id="resultOverlay">
     <div class="r-card">
@@ -990,6 +1049,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
   }
 
   function startGame(){
+    resultLogged=false; if(document.getElementById("chatLog").children.length) addSys("── あたらしい対局 ──");
     board=[]; for(let r=0;r<N;r++){ board.push(new Array(N).fill(EMPTY)); }
     stones=[]; for(let r=0;r<N;r++){ stones.push(new Array(N).fill(null)); }
     cells.forEach(row=>row.forEach(d=>{ d.innerHTML=""; d.classList.remove("taken"); }));
@@ -998,7 +1058,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     clearTimeout(moveResendTimer); moveResendTimer=0; mySeq=0; lastRecvSeq=0; pendingSeq=0;
     undoBtn.style.display = "";   // 一手戻るは全モードで使える(オンラインは相手の許可制)
     markLast(null);
-    { const sb=document.getElementById("stampBar"); if(sb) sb.classList.add("on"); }   // スタンプはオンライン以外(1台・ロボット)でも使える
+    { const sb=document.getElementById("chatBox"); if(sb) sb.classList.add("on"); }   // スタンプはオンライン以外(1台・ロボット)でも使える
     { const rcb=document.getElementById("ruleChgBtn"); if(rcb) rcb.style.display=(!online||isHost)?"":"none"; }   // ルール変更はオンラインでは部屋主だけ
     tagWin.innerHTML=winLen+"並べる<span class=\"conn\">"+(winMode==="and"?"and":"or")+"</span>"+capNorm+"個かこむ";   // 2つの勝ち方(どちらか=or / 両方=and)。or/andは前後を詰める
     if(maigoProb===0){   // 消えるなし
@@ -1620,7 +1680,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
         rSub.innerHTML += '<br><span class="r-foe">'+LV_NAMES[cpuLv]+'ロボットと対局'+(undoUsed?'（一手戻りあり）':'（一手戻りなし）')+'</span>';
       }
       if(online) bumpRoomStats(winner===0?"draw":(winner===human?"win":"lose")); else renderRoomStats();   // この部屋での成績
-      document.getElementById("resultOverlay").classList.add("on");
+      logResult(); document.getElementById("resultOverlay").classList.add("on");
     }, (glowEls&&glowEls.length)?1050:350);
   }
   /* 打てる場所が無くなった: とった石の数の多いほうが勝ち */
@@ -1726,9 +1786,10 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       over=true; busy=true; setGiveupVisible(false);
       document.getElementById("confirmOverlay").classList.remove("on");
       rTitle.textContent=foeLabel()+"の降参"; rTitle.className="r-title win";
-      rSub.textContent="あなたの勝ち"; playWin(); bumpRoomStats("win"); document.getElementById("resultOverlay").classList.add("on");
+      rSub.textContent="あなたの勝ち"; playWin(); bumpRoomStats("win"); logResult(); document.getElementById("resultOverlay").classList.add("on");
     });
     ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) speakStamp(payload.i|0); if(payload) spawnStamp(payload.i|0, foeLabel()); });
+    ch.on("broadcast",{event:"chat"},({payload})=>{ if(payload&&payload.t) recvChat(foeLabel(), String(payload.t).slice(0,40)); });
     ch.on("broadcast",{event:"rematch"},()=>{
       peerRematch=true;
       if(myRematch){ if(isHost) hostRestart(); }   // 両者合意: 部屋主が先手後手を引き直して開始合図を送る
@@ -1783,7 +1844,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     over=true; busy=true; online=false; peerGone=true; setGiveupVisible(false);
     rTitle.textContent=foeLabel()+"が退出しました"; rTitle.className="r-title";
     rSub.textContent="部屋を作りなおし、再戦したまえ";
-    document.getElementById("resultOverlay").classList.add("on");
+    logResult(); document.getElementById("resultOverlay").classList.add("on");
     leaveChannel();
   }
 
@@ -2181,7 +2242,8 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     if(online && ch) ch.send({ type:"broadcast", event:"resign", payload:{} });
     over=true; setGiveupVisible(false);
     rTitle.textContent="降参…"; rTitle.className="r-title";
-    rSub.textContent="また挑むがよい"; playLose(); if(online) bumpRoomStats("lose"); else renderRoomStats(); document.getElementById("resultOverlay").classList.add("on");
+    rSub.textContent="また挑むがよい"; playLose(); if(online) bumpRoomStats("lose"); else renderRoomStats();
+    addSys((online?foeLabel():(local?"あいて":("ロボット（"+LV_NAMES[cpuLv]+"）")))+"の勝ち（あなたの降参）","c-res"); resultLogged=true; document.getElementById("resultOverlay").classList.add("on");
   }
   /* 降参は確認ダイアログを挟まず、ボタン自体が「確定」に変わる2段階(2026-09-10牧村指示・降参のある全作品で統一) */
   var gvArm=0;
@@ -2272,6 +2334,75 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     '😍',
     '🤣'
   ];
+
+/* ===== チャット(2026-09-10。全ゲーム共通の作り。ステうごから移植) ===== */
+var POP_MS=4200, POP_FADE=150, POP_MAX=3;
+var EYE_OPEN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.8 12S5.5 5.4 12 5.4 22.2 12 22.2 12 18.5 18.6 12 18.6 1.8 12 1.8 12z"/><circle cx="12" cy="12" r="3.1"/></svg>';
+var EYE_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.8 12S5.5 5.4 12 5.4 22.2 12 22.2 12 18.5 18.6 12 18.6 1.8 12 1.8 12z"/><circle cx="12" cy="12" r="3.1"/><line x1="3.6" y1="3.6" x2="20.4" y2="20.4"/></svg>';
+function logResult(){                                /* 勝敗をチャットに1回だけ残す */
+  if(resultLogged) return; resultLogged=true;
+  var t=document.getElementById("rTitle");
+  addSys(String((t&&t.textContent)||"").replace(/[！!…]/g,""),"c-res");
+}
+var resultLogged=false;
+function chatDing(){ try{ playSelect(); }catch(e){} }
+function addChat(name,text,color){                   /* 本文は必ずtextContent(HTMLを書かれても壊れない) */
+  var log=document.getElementById("chatLog"); if(!log) return;
+  var d=document.createElement("div"); d.className="c-line";
+  var n=document.createElement("span"); n.className="c-nm"; if(color) n.style.color=color;
+  n.textContent=name+"：";
+  var t=document.createElement("span"); t.textContent=text;
+  d.appendChild(n); d.appendChild(t); log.appendChild(d);
+  while(log.children.length>60) log.removeChild(log.firstChild);
+  log.scrollTop=log.scrollHeight;
+}
+function addSys(tx,cls){                             /* システムのお知らせ(区切り・勝敗) */
+  var log=document.getElementById("chatLog"); if(!log) return;
+  var d=document.createElement("div"); d.className="c-line c-sys"+(cls?" "+cls:""); d.textContent=tx;
+  log.appendChild(d);
+  while(log.children.length>60) log.removeChild(log.firstChild);
+  log.scrollTop=log.scrollHeight;
+}
+function clearChat(){ var l=document.getElementById("chatLog"); if(l) l.innerHTML=""; var i=document.getElementById("chatIn"); if(i) i.value=""; hidePop(); }
+function hidePop(){ var el=document.getElementById("chatPop"); if(!el) return; [].slice.call(el.children).forEach(function(c){ clearTimeout(c._t); }); el.innerHTML=""; }
+function showPop(name,text,color){                   /* 非表示中に届いたチャットを数秒だけ(続けて届いたら下へ積む) */
+  var el=document.getElementById("chatPop"); if(!el) return;
+  var d=document.createElement("div"); d.className="pop-line";
+  var n=document.createElement("span"); n.className="c-nm"; if(color) n.style.color=color;
+  n.textContent=name+"：";
+  var t=document.createElement("span"); t.textContent=text;
+  d.appendChild(n); d.appendChild(t); el.appendChild(d);
+  while(el.children.length>POP_MAX){ var o=el.firstChild; clearTimeout(o._t); el.removeChild(o); }
+  d._t=setTimeout(function(){
+    d.classList.add("out");
+    d._t=setTimeout(function(){ if(d.parentNode) d.parentNode.removeChild(d); },POP_FADE+40);
+  },POP_MS);
+}
+function setMini(mini){
+  var box=document.getElementById("chatBox"); if(!box) return;
+  box.classList.toggle("mini",mini);
+  document.getElementById("chatTog").innerHTML="<span>"+(mini?"チャット欄 表示":"チャット欄 非表示")+"</span>"+(mini?EYE_OPEN:EYE_OFF);
+  if(!mini) hidePop();
+}
+function recvChat(name,text,color){                  /* 相手から届いた時 */
+  addChat(name,text,color); chatDing();
+  if(document.getElementById("chatBox").classList.contains("mini")) showPop(name,text,color);
+}
+function sendChat(){
+  var el=document.getElementById("chatIn"); if(!el) return;
+  var t=(el.value||"").trim().slice(0,40); if(!t) return;
+  el.value="";
+  addChat(meLabel(), t, "");
+  if(online&&ch){ try{ ch.send({ type:"broadcast", event:"chat", payload:{ t:t } }); }catch(e){} }   /* ロストしても実害なし */
+}
+document.getElementById("chatTog").addEventListener("click",function(){ try{ ensureAudio(); playSelect(); }catch(e){}
+  setMini(!document.getElementById("chatBox").classList.contains("mini")); });
+document.getElementById("chatGo").addEventListener("click",function(){ try{ ensureAudio(); }catch(e){} sendChat(); });
+document.getElementById("chatIn").addEventListener("keydown",function(e){
+  if(e.key!=="Enter"||e.isComposing||e.keyCode===229) return;   /* 日本語変換中のEnterで送らない */
+  e.preventDefault(); try{ ensureAudio(); }catch(e2){} sendChat();
+});
+setMini(false);
   function spawnStamp(i, who, self){
     if(stampMuted && !self) return;   // ミュート中でも自分が押したスタンプは自分の画面に出す(押した手ごたえ用・音は鳴らさない)
     i=Math.max(0, Math.min(2, i|0));
@@ -2333,7 +2464,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
   });
 
   function goTitle(){
-    { const sb=document.getElementById("stampBar"); if(sb) sb.classList.remove("on"); }   // タイトルに戻ったらスタンプバーを隠す
+    { const sb=document.getElementById("chatBox"); if(sb) sb.classList.remove("on"); } clearChat();   // タイトルに戻ったらスタンプバーを隠す
     over=true; stopVictory();
     if(online && ch){ try{ ch.send({ type:"broadcast", event:"bye", payload:{} }); }catch(e){} }   // あいてに「退出したよ」を明示的に伝える
     document.getElementById("confirmOverlay").classList.remove("on");

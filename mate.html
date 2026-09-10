@@ -363,22 +363,41 @@
   .main-btn.red:active{ box-shadow:0 1px 0 #8f2510; }
 
   /* チャット(オンライン) */
-  #chatBox{ display:none; flex-direction:column; gap:8px; width:var(--uiw); }
-  #gameScene.online #chatBox{ display:flex; }
+  /* ===== チャット(2026-09-10に画面左下の共通スタイルへ移設。スタンプもこの枠の中) ===== */
+  #chatBox{ position:fixed; left:10px; bottom:10px; z-index:85; display:none;
+    flex-direction:column; align-items:flex-start; gap:7px; width:min(84vw,300px); text-align:left; }
+  #chatBox.on{ display:flex; }
+  #chatBox.mini .chat-log, #chatBox.mini .chat-form{ display:none; }
+  #chatBox:not(.online) .chat-form{ display:none; }   /* 文字チャットはオンラインだけ(スタンプは1台でも使える) */
+  .chat-tog{ align-self:flex-start; display:inline-flex; align-items:center; gap:5px; cursor:pointer;
+    padding:5px 10px 5px 12px; border:none; border-radius:999px; box-shadow:none; font-family:inherit;
+    background:rgba(35,33,31,.46); color:#fff;
+    font-size:11px; font-weight:900; letter-spacing:.02em; white-space:nowrap; }
+  #chatBox:not(.mini) .chat-tog{ position:absolute; right:0; top:8px; align-self:auto; }
+  .chat-tog svg{ width:14px; height:14px; flex:none; }
+  .chat-tog:active{ transform:translateY(1px); }
+  .chat-pop{ display:flex; flex-direction:column; align-items:flex-start; gap:5px; width:100%; }
+  .chat-pop:empty{ display:none; }
+  .pop-line{ max-width:100%; background:rgba(255,255,255,.96); border-radius:8px; color:#23211f;
+    padding:8px 11px; box-shadow:0 2px 9px rgba(35,33,31,.3); font-size:12px; line-height:1.55;
+    word-break:break-word; animation:popIn .18s cubic-bezier(.2,1.2,.4,1); }
+  .pop-line.out{ opacity:0; transition:opacity .14s linear; }
+  @keyframes popIn{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
   .chat-log{
-    height:118px; min-height:64px; max-height:60vh; resize:vertical; overflow-y:auto; background:rgba(255,255,255,.72);   /* 右下をつかんで縦幅を変えられる(生き物図鑑の記入欄と同じ) */
-    border:1.6px solid rgba(58,42,28,.22); border-radius:12px; padding:8px 10px;
-    display:flex; flex-direction:column; gap:4px;
+    width:100%; max-height:126px; overflow-y:auto; overscroll-behavior:contain; background:rgba(255,255,255,.92);
+    border:none; border-radius:8px; padding:9px 7px 9px 12px; box-shadow:0 2px 7px rgba(35,33,31,.26);
+    display:flex; flex-direction:column; gap:3px;
   }
-  .chat-log::-webkit-scrollbar{ width:8px; }
-  .chat-log::-webkit-scrollbar-track{ background:rgba(138,90,46,.1); border-radius:8px; margin:4px; }
-  .chat-log::-webkit-scrollbar-thumb{ background:rgba(138,90,46,.42); border-radius:8px; border:2px solid transparent; background-clip:padding-box; }
+  .chat-log:empty{ display:none; }
+  .chat-log::-webkit-scrollbar{ width:9px; }
+  .chat-log::-webkit-scrollbar-track{ background:transparent; }
+  .chat-log::-webkit-scrollbar-thumb{ background:rgba(35,33,31,.22); border-radius:99px; border:3px solid transparent; background-clip:padding-box; }
   .chat-log::-webkit-scrollbar-thumb:hover{ background:rgba(138,90,46,.6); background-clip:padding-box; }
   /* 右下の拡大グリップは自前で描く=スクロールバーの有無で見た目が変わらない(2026-08-10) */
   .chat-log::-webkit-scrollbar-corner{ background:transparent; }
   .chat-log::-webkit-resizer{ background:transparent url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><g stroke='rgba(138,90,46,.55)' stroke-width='1.4' stroke-linecap='round'><line x1='13' y1='5' x2='5' y2='13'/><line x1='13' y1='9.5' x2='9.5' y2='13'/></g></svg>") no-repeat right bottom; }
-  .ch-row{ display:flex; align-items:baseline; gap:6px; font-size:13.5px; font-weight:700; line-height:1.55; text-align:left; border-radius:8px; padding:2px 6px; }
-  .ch-row .c-dot{ width:11px; height:11px; border-radius:50%; flex:none; align-self:center; }
+  .ch-row{ display:flex; align-items:baseline; gap:5px; font-size:12px; font-weight:700; line-height:1.6; text-align:left; border-radius:6px; padding:1px 4px; }
+  .ch-row .c-dot{ width:9px; height:9px; border-radius:50%; flex:none; align-self:center; }
   .ch-row b{ color:var(--brown-dark); font-weight:900; flex:none; }
   .ch-row .tx{ overflow-wrap:anywhere; }
   .ch-row.sys{ opacity:.55; font-size:12px; }
@@ -391,7 +410,7 @@
   .ch-row .ans-mark.ok{ color:#2f9e55; }
   .ch-row.ansrow.okrow{ border-color:rgba(47,158,85,.55); background:rgba(238,250,242,.75); }   /* 正解の回答=緑 */
   .ch-row.chdiv{ justify-content:center; color:rgba(90,60,25,.5); font-size:11px; font-weight:900; background:none; border:none; }
-  .chat-form{ display:flex; gap:8px; }
+  .chat-form{ display:flex; gap:6px; width:100%; }
   #chatInput{
     flex:1; min-width:0; padding:11px 14px; font-size:16px; font-weight:700;
     color:var(--ink); background:#fff; border:2px solid rgba(58,42,28,.35); border-radius:12px; outline:none;
@@ -466,8 +485,13 @@
   .score-btn:active{ transform:translateY(1px); }
   #gameScene.on ~ .score-btn{ display:inline-flex; }
   /* ===== スタンプ(気持ちを送る。オンライン=登録名+アイコン色 / 1台=絵文字のみ。derby移植) ===== */
-  #stampBar{ position:fixed; left:58px; bottom:26px; z-index:85; display:none; flex-direction:row; gap:9px; }   /* 2026-09-07: 画面中央下→左下へ(文字化けかくれんぼと同じ位置。left:58pxは最小化ボタン(左外)のぶんの余白) */
-  #gameScene.on ~ #stampBar{ display:flex; }
+  /* チャット枠に入れたのでスタンプバーは枠内の1行に(2026-09-10) */
+  #stampBar{ position:relative; left:auto; bottom:auto; z-index:auto; display:flex; flex-direction:row; gap:7px; }
+  #chatBox.mini #stampBar{ display:none; }
+  #stampMin{ display:none; }
+  #stampBar .stamp-btn{ width:34px; height:34px; font-size:19px; }
+  #stampBar .stamp-mute{ width:26px; height:26px; top:4px; }
+  #gameScene.on ~ #chatBox{ display:flex; }
   .stamp-btn{ width:48px; height:48px; padding:0; border:none; border-radius:50%; cursor:pointer;
     background:rgba(255,255,255,.9); box-shadow:0 2px 7px rgba(90,60,25,.3);
     display:flex; align-items:center; justify-content:center; font-size:27px; line-height:1; }
@@ -750,16 +774,11 @@
       </div>
       <div id="haltedLine"></div>
     </div>
-    <div id="chatBox">
-      <div class="chat-log" id="chatLog"></div>
-      <div class="chat-form">
-        <input id="chatInput" maxlength="20" placeholder="おしゃべりを入力" autocomplete="off">
-        <button id="chatSend">送信</button>
-      </div>
-    </div>
   </div>
 
   <!-- スタンプ(気持ちを送る。対局中つねに表示) -->
+<div id="chatBox">
+  <div class="chat-pop" id="chatPop"></div>
   <div id="stampBar">
     <button id="stampMin" class="stamp-min" aria-label="スタンプを最小化"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="12" x2="18" y2="12"/></svg></button>
     <button class="stamp-btn" data-i="0" aria-label="泣き"></button>
@@ -767,6 +786,13 @@
     <button class="stamp-btn" data-i="2" aria-label="爆笑"></button>
     <button id="stampMute" class="stamp-mute" aria-label="スタンプをミュート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10.5 16.2a1.7 1.7 0 0 0 3 0"/><line class="mute-slash" x1="3.2" y1="3.2" x2="20.8" y2="20.8"/></svg></button>
   </div>
+  <div class="chat-log" id="chatLog"></div>
+  <div class="chat-form">
+    <input id="chatInput" maxlength="20" placeholder="おしゃべりを入力" autocomplete="off">
+    <button id="chatSend">送信</button>
+  </div>
+  <button class="chat-tog" id="chatTog" type="button"></button>
+</div>
 
   <button class="help-btn" id="helpBtn"><span>?</span>あそびかた</button>
   <div class="snd-btns">
@@ -1046,7 +1072,7 @@ function goTitle(){
   stopTimer(); stopErase(true); pourStop(); stopDrawFlush(); clearTimeout(celebTmr); clearTimeout(topicTmr);
   leaveChannel();
   spectating=false;
-  phase="title"; nameAsked=false; gameScene.classList.remove("online");
+  phase="title"; nameAsked=false; gameScene.classList.remove("online"); $("chatBox").classList.remove("online");
   document.querySelectorAll(".overlay").forEach(o=>o.classList.remove("on","peek"));
   resetTable();
   $("chatLog").innerHTML="";   // チャットは部屋を出る時だけ消す
@@ -1729,7 +1755,7 @@ function newLocalGame(){
   drawCrema(); drawSwirl(); clearArt(); eraseLeft=0; erasing=false; stopErase(true); renderGauge(); renderPens(); resetRing();
   cupRot=0; applyCupRot(); resetZoom();
   $("scoreBtn").style.display = isCoop() ? "none" : "";
-  gameScene.classList.remove("online");
+  gameScene.classList.remove("online"); $("chatBox").classList.remove("online");
   showScene(gameScene);
   openTopic();
 }
@@ -1832,7 +1858,7 @@ function openChannel(c, onReady){
     if(!payload || payload.to!==myId || isHost || spectating) return;
     spectating=true; online=true;
     clearTimeout(joinWatch);
-    gameScene.classList.add("online");
+    gameScene.classList.add("online"); $("chatBox").classList.add("online");
     showScene(gameScene);
     showToast("とちゅうから観戦しています");
     addSys("観戦モードで入室（絵はここからの続きだけ見えます）");
@@ -2069,14 +2095,14 @@ function closeGameOverlays(){
   clearTimeout(topicTmr);
   stopAnsTicker();
   $("answerBox").style.display="none"; $("mateAnsRow").style.display="none"; $("mateAnsNote").style.display="none"; $("chatLog").style.display="";
-  { const cf=document.querySelector("#chatBox .chat-form"); if(cf) cf.style.display="flex"; }
+  $("chatBox").classList.add("online");   /* 文字チャットはオンラインだけ */
 }
 function enterTopicAll(){
   closeGameOverlays();
   stopTimer(); stopErase(true); pourStop(); stopDrawFlush(); drawing=false;
   myHalted=false; curAns=null;
   $("scoreBtn").style.display = isCoop() ? "none" : "";
-  gameScene.classList.add("online");
+  gameScene.classList.add("online"); $("chatBox").classList.add("online");
   showScene(gameScene);
   $("cupWrap").classList.toggle("no-rotate", drawerId!==myId);
   if(drawerId!==myId) $("cupWrap").classList.remove("erasing");
@@ -2118,7 +2144,7 @@ function resumeDrawUI(){   // 回答フェーズから描画へ戻る(ペン/消
 function enterAnswerAll(){
   closeGameOverlays();
   stopTimer(); stopDrawFlush(); pourStop(); drawing=false;
-  gameScene.classList.add("online"); showScene(gameScene);
+  gameScene.classList.add("online"); $("chatBox").classList.add("online"); showScene(gameScene);
   ansJudgedSeen=false;
   spawnMateFx();   // 画面中央に大きく「待て!」(吹き出し+音)
   renderAnswerArea(); startAnsTicker();
@@ -2314,7 +2340,78 @@ function addChat(id, n, tx, isAns, ok){
   playChat();
   const stick=nearBottom();
   chatLog.appendChild(row); trimChat(stick);
+  if($("chatBox").classList.contains("mini")) showPop(n, tx + (isAns?(ok?"（正解）":"（ミス）"):""), (p&&p.c)||"");
 }
+/* ===== チャット枠の表示/非表示とポップアップ(2026-09-10。全ゲーム共通の作り) ===== */
+var POP_MS=4200, POP_FADE=150, POP_MAX=3;
+var EYE_OPEN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.8 12S5.5 5.4 12 5.4 22.2 12 22.2 12 18.5 18.6 12 18.6 1.8 12 1.8 12z"/><circle cx="12" cy="12" r="3.1"/></svg>';
+var EYE_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.8 12S5.5 5.4 12 5.4 22.2 12 22.2 12 18.5 18.6 12 18.6 1.8 12 1.8 12z"/><circle cx="12" cy="12" r="3.1"/><line x1="3.6" y1="3.6" x2="20.4" y2="20.4"/></svg>';
+function hidePop(){ var el=$("chatPop"); if(!el) return; [].slice.call(el.children).forEach(function(c){ clearTimeout(c._t); }); el.innerHTML=""; }
+function showPop(name,text,color){                   /* 畳んでいる間に届いた発言を数秒だけ(下へ積む) */
+  var el=$("chatPop"); if(!el) return;
+  var d=document.createElement("div"); d.className="pop-line";
+  var n=document.createElement("span"); n.style.fontWeight="900"; if(color) n.style.color=color;
+  n.textContent=(name||"？")+"：";
+  var t=document.createElement("span"); t.textContent=text;
+  d.appendChild(n); d.appendChild(t); el.appendChild(d);
+  while(el.children.length>POP_MAX){ var o=el.firstChild; clearTimeout(o._t); el.removeChild(o); }
+  d._t=setTimeout(function(){ d.classList.add("out");
+    d._t=setTimeout(function(){ if(d.parentNode) d.parentNode.removeChild(d); },POP_FADE+40); },POP_MS);
+}
+function setMini(mini){
+  var box=$("chatBox"); if(!box) return;
+  box.classList.toggle("mini",mini);
+  $("chatTog").innerHTML="<span>"+(mini?"チャット欄 表示":"チャット欄 非表示")+"</span>"+(mini?EYE_OPEN:EYE_OFF);
+  if(!mini) hidePop();
+}
+$("chatTog").addEventListener("click",function(){ ensureAudio(); playSelect(); setMini(!$("chatBox").classList.contains("mini")); });
+setMini(false);
+
+/* ===== デバッグ: Mキーで「ある程度すすんだ試合」のチャットログを流し込む(一時的。公開前に削除) ===== */
+function debugChatLog(){
+  var C=["#e2472e","#2f7de2","#2f9e55","#d59a1f"];
+  var N=["あなた","ハシモト","のぞみ","まさや"];
+  function line(i,tx,isAns,ok){
+    var row=document.createElement("div"); row.className="ch-row"+(isAns?(ok?" ansrow okrow":" ansrow"):"");
+    row.innerHTML='<span class="c-dot" style="'+dotStyle(C[i])+'"></span><b></b><span class="tx"></span>';
+    row.querySelector("b").textContent=N[i]+"：";
+    row.querySelector(".tx").textContent=tx;
+    if(isAns){ var mk=document.createElement("span"); mk.className="ans-mark"+(ok?" ok":""); mk.textContent=ok?"正解":"ミス"; row.appendChild(mk); }
+    chatLog.appendChild(row);
+  }
+  function sys(tx){ var r=document.createElement("div"); r.className="ch-row sys"; r.textContent=tx; chatLog.appendChild(r); }
+  function div(tx){ var r=document.createElement("div"); r.className="ch-row chdiv"; r.textContent=tx; chatLog.appendChild(r); }
+  chatLog.innerHTML="";
+  div("── あたらしいゲーム ──");
+  sys("ハシモトがお題を考え中…");
+  line(2,"よろしくおねがいします");
+  line(1,"りんご",true,false);
+  line(3,"トマト",true,false);
+  line(2,"ボール",true,true);
+  sys("のぞみが正解（+4pt）");
+  sys("のぞみがお題を考え中…");
+  line(0,"うまい");
+  line(3,"かたつむり",true,false);
+  line(0,"ソフトクリーム",true,true);
+  sys("あなたが正解（+3pt）");
+  line(1,"それ渦巻きだったのか");
+  sys("あなたがお題を考え中…");
+  line(1,"ねこ",true,false);
+  line(2,"うさぎ",true,false);
+  line(3,"きつね",true,true);
+  sys("まさやが正解（+2pt）");
+  line(3,"みみが決め手でした");
+  div("── ゲーム終了 ── のぞみ の勝ち");
+  chatLog.scrollTop=chatLog.scrollHeight;
+  $("chatBox").classList.add("on"); setMini(false);
+  toast("デバッグ: 試合っぽいログを表示した");
+}
+document.addEventListener("keydown",function(e){
+  if(e.key!=="m"&&e.key!=="M") return;
+  var t=e.target; if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA")) return;   /* 入力中は無視 */
+  debugChatLog();
+});
+
 function nearBottom(){ return chatLog.scrollHeight - chatLog.scrollTop - chatLog.clientHeight < 40; }   // 一番下で待機している時だけ自動スクロール(LINE等と同じ挙動)
 function trimChat(stick){
   while(chatLog.children.length>60) chatLog.removeChild(chatLog.firstChild);
