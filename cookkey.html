@@ -2437,14 +2437,14 @@ function playStamp(i){
   else{ const sq=[900,680,850,640,800,600,760,560]; sq.forEach((f,k)=>note(f, t+k*0.072, 0.07, 0.26, "triangle"));
     note(400, t+sq.length*0.072, 0.16, 0.24, "triangle"); }
 }
-let stampMuted=false; try{ stampMuted=localStorage.getItem("ck.smute")==="1"; }catch(e){}
+let stampMuted=false;   /* ★毎回ミュートOFFで始める(2026-09-10牧村指示。前回ONのまま次回も止まる、を無くす=保存しない) */
 
 /* ===== チャット(2026-09-10。全ゲーム共通の作り。ステうごから移植) ===== */
 var POP_MS=4200, POP_FADE=150, POP_MAX=3;
 var EYE_OPEN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.8 12S5.5 5.4 12 5.4 22.2 12 22.2 12 18.5 18.6 12 18.6 1.8 12 1.8 12z"/><circle cx="12" cy="12" r="3.1"/></svg>';
 var EYE_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.8 12S5.5 5.4 12 5.4 22.2 12 22.2 12 18.5 18.6 12 18.6 1.8 12 1.8 12z"/><circle cx="12" cy="12" r="3.1"/><line x1="3.6" y1="3.6" x2="20.4" y2="20.4"/></svg>';
 var endLogged=false;
-function logEnd(){ if(endLogged) return; endLogged=true; addSys("── ゲーム終了 ── 一致度合計 "+Math.round(rateSum)+"%","c-res"); }
+function logEnd(){ if(endLogged) return; endLogged=true; addSys("合計 "+Math.round(rateSum)+"%","c-res"); }
 function myChatColor(){ try{ var i=players.findIndex(function(x){return x.id===myId;}); return i>=0?PCOL[i%PCOL.length]:""; }catch(e){ return ""; } }
 function chatDing(){ try{ playSelect(); }catch(e){} }
 function addChat(name,text,color){                   /* 本文は必ずtextContent(HTMLを書かれても壊れない) */
@@ -2548,7 +2548,7 @@ document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{
 (function(){
   const mb=$("stampMute");
   const rndr=()=>mb.classList.toggle("muted", stampMuted); rndr();
-  mb.addEventListener("click",()=>{ stampMuted=!stampMuted; try{ localStorage.setItem("ck.smute", stampMuted?"1":"0"); }catch(e){} rndr(); });
+  mb.addEventListener("click",()=>{ stampMuted=!stampMuted; rndr(); });
   const sb=$("stampBar"), mn=$("stampMin");
   const MINSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="12" x2="18" y2="12"/></svg>';
   const PLUSSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="12" x2="18" y2="12"/><line x1="12" y1="6" x2="12" y2="18"/></svg>';

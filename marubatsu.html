@@ -1350,7 +1350,7 @@ $("chatIn").addEventListener("keydown",e=>{
 /* ===== スタンプ(全対戦作品と同じ作り・チャット枠の中) ===== */
 const STAMP_SVGS=['😭','😍','🤣'];
 const STAMP_WORDS=["やめてよぉ","すごぉい","わろたぁ"];
-let stampMuted=false; try{ stampMuted=localStorage.getItem("mbt.smute")==="1"; }catch(e){}
+let stampMuted=false;   /* ★毎回ミュートOFFで始める(2026-09-10牧村指示。前回ONのまま次回も止まる、を無くす=保存しない) */
 let stampTTSVoice=null, stampTTSWarm=false;
 const meLabel=()=>(mode==="local")?"自分":(myAcctName()||"あなた");
 function playStamp(i){                              /* 0泣く / 1うっとり / 2爆笑 */
@@ -1397,7 +1397,7 @@ document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{
 });
 (function(){
   const mb=$("stampMute"), rn=()=>mb.classList.toggle("muted",stampMuted); rn();
-  mb.addEventListener("click",()=>{ stampMuted=!stampMuted; try{ localStorage.setItem("mbt.smute",stampMuted?"1":"0"); }catch(e){} rn(); });
+  mb.addEventListener("click",()=>{ stampMuted=!stampMuted; rn(); });
 })();
 /* 目のアイコン(文字の右)。開いた目=これから表示する / 斜線=これから非表示にする */
 const EYE_OPEN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.8 12S5.5 5.4 12 5.4 22.2 12 22.2 12 18.5 18.6 12 18.6 1.8 12 1.8 12z"/><circle cx="12" cy="12" r="3.1"/></svg>';

@@ -2440,10 +2440,10 @@ setMini(false);
     spawnStamp(i, online?meLabel():"自分", true);
     if(online && ch){ try{ ch.send({ type:"broadcast", event:"stamp", payload:{ i } }); }catch(e){} }   // 相手にも届ける(ロストしても実害なし)
   }
-  let stampMuted=false; try{ stampMuted=localStorage.getItem("mmk.smute")==="1"; }catch(e){}
+  let stampMuted=false;   /* ★毎回ミュートOFFで始める(2026-09-10牧村指示。前回ONのまま次回も止まる、を無くす=保存しない) */
   (function(){ const mb=document.getElementById("stampMute"); if(!mb) return;
     const rndr=()=>mb.classList.toggle("muted", stampMuted); rndr();
-    mb.addEventListener("click",()=>{ stampMuted=!stampMuted; try{ localStorage.setItem("mmk.smute", stampMuted?"1":"0"); }catch(e){} rndr(); });
+    mb.addEventListener("click",()=>{ stampMuted=!stampMuted; rndr(); });
 
 /* スタンプ最小化(2026-08-05・全対戦ゲーム共通): 泣きスタンプの左の−で畳む/＋で開く */
 (function(){

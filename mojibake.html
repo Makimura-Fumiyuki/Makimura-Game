@@ -1521,7 +1521,7 @@ function showResult(){
   hiders.forEach(h=>{ if(h.voteRow){ detach(h,h.voteRow); h.voteRow=null; } h.el&&h.el.classList.remove("vsel"); }); $("gameScene").classList.remove("voting");
   $("voteDone").style.display="none"; $("voteWho").classList.remove("on");
   if(resultShown) return; resultShown=true;   // snapは2.5秒ごとに届くので、ここから下は1ゲームに1回だけ(音が無限に鳴るバグの修正)
-  addSys("── ゲーム終了 ──","c-res");
+
   playFinish();
   $("gameScene").classList.add("resulted");
   hiders.forEach(h=>{ if(!h.el) return; h.el.classList.remove("vsel","voted","own");
@@ -1529,6 +1529,7 @@ function showResult(){
     let t=h.tallyEl; if(!t){ t=document.createElement("div"); t.className="tally att"; h.tallyEl=t; attach(h,t,"below",8); }
     t.innerHTML='<span class="vp like">'+LIKE_SVG+'<b>'+h.likes+'</b></span><span class="vp angry">'+ANGRY_SVG+'<b>'+h.angry+'</b></span>'; });
   const wb=$("winBanner"); wb.className="win-banner"+(seekerWin?" seeker":""); wb.textContent=(seekerWin?"探す側の勝ち":"化ける側の勝ち");
+  addSys(seekerWin?"探す側の勝ち":"隠れる側の勝ち","c-res");   /* 勝敗をチャットにも残す(2026-09-10) */
   const list=$("resList"); list.innerHTML="";
   const sorted=hiders.slice().sort((a,b)=>(b.likes-b.angry)-(a.likes-a.angry)||(a.found?1:0)-(b.found?1:0));
   let rank=0, prev=null;
@@ -1555,7 +1556,7 @@ function playStamp(i){
   else if(i===1){ note(523,t,0.34,0.22,"sine"); note(784,t+0.11,0.38,0.24,"sine"); note(1047,t+0.24,0.62,0.2,"sine"); note(1568,t+0.34,0.55,0.1,"triangle"); note(2349,t+0.46,0.5,0.06,"sine"); }
   else{ const sq=[900,680,850,640,800,600,760,560]; sq.forEach((f,k)=>note(f, t+k*0.072, 0.07, 0.26, "triangle")); note(400, t+sq.length*0.072, 0.16, 0.24, "triangle"); }
 }
-let stampMuted=false; try{ stampMuted=localStorage.getItem("mjb.smute")==="1"; }catch(e){}
+let stampMuted=false;   /* ★毎回ミュートOFFで始める(2026-09-10牧村指示。前回ONのまま次回も止まる、を無くす=保存しない) */
 
 /* ===== チャット(2026-09-10。全ゲーム共通の作り。ステうごから移植) ===== */
 var POP_MS=4200, POP_FADE=150, POP_MAX=3;
@@ -1652,7 +1653,7 @@ function sendStamp(i){ speakStamp(i); const nm=nameDecided||!online?myName:UNDEF
 document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{ const i=+b.dataset.i; b.innerHTML=STAMP_SVGS[i]; b.addEventListener("click",()=>{ ensureAudio(); sendStamp(i); }); });
 (function(){
   const mb=$("stampMute"); const rndr=()=>mb.classList.toggle("muted", stampMuted); rndr();
-  mb.addEventListener("click",()=>{ stampMuted=!stampMuted; try{ localStorage.setItem("mjb.smute", stampMuted?"1":"0"); }catch(e){} rndr(); });
+  mb.addEventListener("click",()=>{ stampMuted=!stampMuted; rndr(); });
   const sb=$("stampBar"), mn=$("stampMin");
   const MINSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="12" x2="18" y2="12"/></svg>';
   const PLUSSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="12" x2="18" y2="12"/><line x1="12" y1="6" x2="12" y2="18"/></svg>';

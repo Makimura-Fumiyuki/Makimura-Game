@@ -1113,7 +1113,14 @@
   /* いいね済みか(このブラウザの記録)。もう一度押すと取り消せる(トグル) */
   function likedKey(id){ return "gmk.liked."+id; }
   function hasLiked(id){ try{ return localStorage.getItem(likedKey(id))==="1"; }catch(e){ return false; } }
-  function setLiked(id,v){ try{ if(v) localStorage.setItem(likedKey(id),"1"); else localStorage.removeItem(likedKey(id)); }catch(e){} }
+  function setLiked(id,v){ try{ if(v) localStorage.setItem(likedKey(id),"1"); else localStorage.removeItem(likedKey(id)); }catch(e){}
+    try{ if(window.__mkLikesChanged) window.__mkLikesChanged(); }catch(e){} }   /* ログイン中はアカウントへも保存(2026-09-10) */
+  window.__mkLikedIds=function(){ return GAMES.filter(function(g){ return g.id && hasLiked(g.id); }).map(function(g){ return g.id; }); };
+  window.__mkApplyLikes=function(ids){   /* アカウントの内容で端末のお気に入りを置き換える */
+    var set={}; (ids||[]).forEach(function(i){ set[i]=1; });
+    GAMES.forEach(function(g){ if(!g.id) return; try{ if(set[g.id]) localStorage.setItem(likedKey(g.id),"1"); else localStorage.removeItem(likedKey(g.id)); }catch(e){} });
+    try{ render(); }catch(e){}
+  };
   /* ---- 並び替え ---- */
   const byRelease=(a,b)=>new Date(b.release)-new Date(a.release);          // 新しいものが左
   const byPop=(a,b)=>((b.likes||0)-(a.likes||0))||byRelease(a,b);          // 人気順=いいねが多い順
@@ -1431,11 +1438,43 @@
       const r=await fetch(SB_URL+"/rest/v1/acct?select=nomi_uid,dox_uid,nomi_name,dox_name,acct_name",{ headers:H });
       if(!r.ok) throw new Error("acct "+r.status);
       const rows=await r.json();
-      if(rows&&rows[0]){ const changed=adopt(rows[0]); if(rows[0].acct_name) lsSet("mk.name",rows[0].acct_name); return changed?"このアカウントの記録をこの端末に引き継ぎました":"ログイン完了"; }
+      if(rows&&rows[0]){ const changed=adopt(rows[0]); if(rows[0].acct_name) lsSet("mk.name",rows[0].acct_name); syncLikes(); return changed?"このアカウントの記録をこの端末に引き継ぎました":"ログイン完了"; }
       const body=deviceIds(); const an=lsGet("mk.name"); if(an) body.acct_name=an;
       const r2=await fetch(SB_URL+"/rest/v1/acct",{ method:"POST", headers:{ ...H, Prefer:"return=minimal" }, body:JSON.stringify(body) });
       if(!r2.ok) throw new Error("acct-create "+r2.status);
+      pushLikes();   /* この端末のお気に入りもアカウントへ */
       return "アカウントを作り、この端末の記録を登録しました";
+    }
+    /* ---- お気に入り(ハブのいいね)をアカウントで共有する(2026-09-10牧村指示) ----
+       acctテーブルの likes 列(text=カンマ区切り)に入れる。列が無い間は何もしない=端末ごとの従来動作のまま */
+    let likesOK=true, likesT=0;
+    function likesFromRow(row){
+      if(!row || row.likes===undefined) return null;
+      return String(row.likes||"").split(",").map(function(x){ return x.trim(); }).filter(Boolean);
+    }
+    async function pushLikes(){                       /* 端末のお気に入り → アカウントへ */
+      if(!likesOK) return;
+      const at=await token(); if(!at) return;
+      const ids=(window.__mkLikedIds?window.__mkLikedIds():[]).join(",");
+      try{
+        const r=await fetch(SB_URL+"/rest/v1/acct",{ method:"PATCH",
+          headers:{ apikey:SB_KEY, Authorization:"Bearer "+at, "Content-Type":"application/json", Prefer:"return=minimal" },
+          body:JSON.stringify({ likes:ids }) });
+        if(!r.ok && (r.status===400||r.status===404)) likesOK=false;   /* likes列がまだ無い */
+      }catch(e){}
+    }
+    window.__mkLikesChanged=function(){ if(!ses()) return; clearTimeout(likesT); likesT=setTimeout(pushLikes,600); };   /* 連打をまとめる */
+    async function syncLikes(){                       /* 起動時/ログイン時: アカウント側を正とする(無ければ端末のを上げる) */
+      if(!likesOK) return;
+      const at=await token(); if(!at) return;
+      try{
+        const r=await fetch(SB_URL+"/rest/v1/acct?select=likes",{ headers:{ apikey:SB_KEY, Authorization:"Bearer "+at } });
+        if(!r.ok){ if(r.status===400||r.status===404) likesOK=false; return; }
+        const rows=await r.json(); const row=rows&&rows[0];
+        if(!row || row.likes===undefined){ likesOK=false; return; }
+        if(row.likes===null || row.likes===""){ await pushLikes(); return; }   /* まだ登録が無い=この端末のを上げる */
+        if(window.__mkApplyLikes) window.__mkApplyLikes(likesFromRow(row));
+      }catch(e){}
     }
     function jwtSub(at){ try{ const p=JSON.parse(atob(at.split(".")[1].replace(/-/g,"+").replace(/_/g,"/"))); return p.sub||""; }catch(e){ return ""; } }
     async function saveAcctName(nm){   // アカウント名を保存(各ゲームの初期名になる)
@@ -1529,7 +1568,7 @@
       try{ const q=location.search.replace(/([?&])account=1&?/,"$1").replace(/[?&]$/,""); history.replaceState(null,"",location.pathname+q+location.hash); }catch(e){}
     }
     // ログイン中なら起動時に取り込みを確認(別端末で名前が変わった等)
-    (async()=>{ const at=await token(); if(at){ try{ await syncAcct(at); }catch(e){} } })();
+    (async()=>{ const at=await token(); if(at){ try{ await syncAcct(at); }catch(e){} try{ await syncLikes(); }catch(e){} } })();   /* お気に入りもアカウントから取り込む */
   })();
 
   /* ===== 文字化け(mojibake.html)のステージとして iframe 表示される時(?stage=1) =====
