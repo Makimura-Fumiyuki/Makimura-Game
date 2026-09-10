@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>ステうご◯×ゲーム</title>
 <meta name="apple-mobile-web-app-title" content="ステうご◯×ゲーム">
-<meta name="description" content="3×3のマルバツに「ステージごと動かす」を足した対戦ゲーム。コマを置いたら、遊ぶ3×3を盤の中で1マス動かせる">
+<meta name="description" content="3×3のステージが動かせる◯×ゲーム。相手の虚を衝いて3つ揃えよう">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="牧村が作ったゲーム集">
 <meta property="og:title" content="ステうご◯×ゲーム">
-<meta property="og:description" content="3×3のマルバツに「ステージごと動かす」を足した対戦ゲーム。コマを置いたら、遊ぶ3×3を盤の中で1マス動かせる">
+<meta property="og:description" content="3×3のステージが動かせる◯×ゲーム。相手の虚を衝いて3つ揃えよう">
 <meta name="twitter:card" content="summary">
 <link rel="canonical" href="https://makimura-gamehub.com/marubatsu">
 <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjZTA1MDNhIi8+PGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iOCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMuNiIvPjwvc3ZnPg==">
@@ -246,13 +246,18 @@
 
   /* ===== チャット(スタンプもこの中に入れる) ===== */
   #chatBox{ position:fixed; left:24px; bottom:26px; z-index:75; display:none;
-    flex-direction:column; align-items:flex-start; gap:7px; width:min(76vw,252px); }
+    flex-direction:column; align-items:flex-start; gap:7px; width:min(84vw,300px); }
   #chatBox.on{ display:flex; }
   #chatBox.mini .chat-log, #chatBox.mini .chat-row, #chatBox.mini #stampBar{ display:none; }
-  /* 表示/非表示は文字のボタン(枠の上) */
-  .chat-tog{ align-self:flex-start; padding:6px 12px; border:none; border-radius:8px;
-    background:rgba(255,255,255,.92); box-shadow:0 2px 7px rgba(35,33,31,.26);
-    font-size:11.5px; font-weight:900; letter-spacing:.06em; color:var(--sub); white-space:nowrap; }
+  /* 上の段=左にスタンプ・右に表示/非表示ボタン(反対側に置いて役割を分ける) */
+  .chat-head{ display:flex; width:100%; align-items:center; gap:8px; }
+  /* 表示/非表示だけは他のボタン(白+影+角丸8px)と作りを変える=墨のピル・影なし */
+  .chat-tog{ margin-left:auto; display:inline-flex; align-items:center; gap:5px;
+    padding:5px 10px 5px 12px; border:none; border-radius:999px; box-shadow:none;
+    background:rgba(35,33,31,.74); color:#fff;
+    font-size:11px; font-weight:900; letter-spacing:.02em; white-space:nowrap; }
+  #chatBox.mini .chat-tog{ background:rgba(35,33,31,.46); }   /* 非表示中は少し薄く */
+  .chat-tog svg{ width:14px; height:14px; flex:none; }
   .chat-tog:active{ transform:translateY(1px); }
   /* 非表示中に届いたチャットは数秒だけポップアップ */
   .chat-pop{ display:none; max-width:100%; background:rgba(255,255,255,.96); border-radius:8px;
@@ -485,12 +490,14 @@
 
 <div id="chatBox">
   <div class="chat-pop" id="chatPop"></div>
-  <button class="chat-tog" id="chatTog" type="button">チャット欄 非表示</button>
+  <div class="chat-head">
   <div id="stampBar">
   <button class="stamp-btn" type="button" data-i="0" aria-label="泣き"></button>
   <button class="stamp-btn" type="button" data-i="1" aria-label="うっとり"></button>
   <button class="stamp-btn" type="button" data-i="2" aria-label="爆笑"></button>
   <button id="stampMute" class="stamp-mute" type="button" aria-label="スタンプをミュート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10.5 16.2a1.7 1.7 0 0 0 3 0"/><line class="mute-slash" x1="3.2" y1="3.2" x2="20.8" y2="20.8"/></svg></button>
+  </div>
+  <button class="chat-tog" id="chatTog" type="button"></button>
   </div>
   <div class="chat-log" id="chatLog"></div>
   <div class="chat-row">
@@ -1343,12 +1350,16 @@ document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{
   const mb=$("stampMute"), rn=()=>mb.classList.toggle("muted",stampMuted); rn();
   mb.addEventListener("click",()=>{ stampMuted=!stampMuted; try{ localStorage.setItem("mbt.smute",stampMuted?"1":"0"); }catch(e){} rn(); });
 })();
+/* 目のアイコン(文字の右)。開いた目=これから表示する / 斜線=これから非表示にする */
+const EYE_OPEN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.8 12S5.5 5.4 12 5.4 22.2 12 22.2 12 18.5 18.6 12 18.6 1.8 12 1.8 12z"/><circle cx="12" cy="12" r="3.1"/></svg>';
+const EYE_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.8 12S5.5 5.4 12 5.4 22.2 12 22.2 12 18.5 18.6 12 18.6 1.8 12 1.8 12z"/><circle cx="12" cy="12" r="3.1"/><line x1="3.6" y1="3.6" x2="20.4" y2="20.4"/></svg>';
 function setMini(mini){                             /* チャット欄ごと畳む(文字のボタン) */
   $("chatBox").classList.toggle("mini",mini);
-  $("chatTog").textContent = mini ? "チャット欄 表示" : "チャット欄 非表示";
+  $("chatTog").innerHTML = "<span>" + (mini ? "チャット欄 表示" : "チャット欄 非表示") + "</span>" + (mini ? EYE_OPEN : EYE_OFF);
   if(!mini) hidePop();
 }
 $("chatTog").addEventListener("click",()=>{ ensureAudio(); playSelect(); setMini(!$("chatBox").classList.contains("mini")); });
+setMini(false);                                     /* 起動時にラベルと目のアイコンを入れる */
 let popT=0, popT2=0;
 function hidePop(){ clearTimeout(popT); clearTimeout(popT2); const el=$("chatPop"); el.classList.remove("on","out"); }
 function showPop(name,text,side){                   /* 非表示中に届いたチャットを数秒だけ出す */
