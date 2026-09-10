@@ -1326,6 +1326,15 @@ function readPeerName(){   // presenceからあいての名前を取り込む
   const roomArea=document.getElementById("roomArea");
   const CODE_CHARS="ABCDEFGHJKMNPRSTUVWXYZ";   // 合言葉はアルファベットだけ=数字は使わない(2026-09-10牧村指示)。紛らわしいQ/I/O/Lも除外
   function genCode(){ let s=""; for(let i=0;i<5;i++) s+=CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)]; return s; }
+  function pickCode(t){                            /* 招待メッセージを丸ごと貼っても合言葉だけ取り出す(2026-09-10修正) */
+    t=String(t||"");
+    var m=/[?&]join=([A-Za-z0-9]{4,6})/.exec(t);   /* ①リンクの ?join= を最優先 */
+    if(m) return m[1].toUpperCase();
+    var u=t.toUpperCase();
+    m=/合言葉[：:\s]*([A-Z0-9]{4,6})/.exec(u);      /* ②「合言葉：ABCDE」の行 */
+    if(m) return m[1];
+    return u.replace(/[^A-Z0-9]/g,"");             /* ③合言葉だけを貼った時は今までどおり */
+  }
   function inviteText(c){   // 招待メッセージ(2026-08-05共通テンプレ。リンク=?join=合言葉で自動入室)
     return "牧村が作った『五もくもく並べ』を一緒に遊ぼう！\n"+location.origin+location.pathname+"?join="+c+"\n\n合言葉："+c+"\n※リンクから参加できない時に使ってね";
   }
@@ -1503,7 +1512,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       ensureAudio(); playSelect();
       try{
         const t=await navigator.clipboard.readText();
-        const code=(t||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,5);
+        const code=pickCode(t).slice(0,5);
         if(code){ inp.value=code; note.textContent="貼り付けた"; note.className="room-note"; }
         else { note.textContent="コピーした合言葉が見つからぬ"; note.className="room-note err"; }
       }catch(e){ note.textContent="貼り付けできぬ。すまぬが手入力を頼む"; note.className="room-note err"; }

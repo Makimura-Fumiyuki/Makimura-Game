@@ -289,10 +289,12 @@
     border:3px solid transparent; background-clip:padding-box; }
   .c-line{ word-break:break-word; }
   .c-line.c-sys{ opacity:.55; font-size:11.5px; text-align:center; }   /* システムのお知らせ(対局の区切り) */
-  /* 勝敗だけは枠で囲んで、ふつうの発言と見分けがつくようにする(2026-09-10。色はゲームに依存させない汎用の墨) */
-  .c-line.c-res{ align-self:center; opacity:1; margin:4px 0 2px; padding:4px 13px 5px;
-    border:1.6px solid rgba(35,33,31,.38); border-radius:6px;
-    font-size:12px; font-weight:900; letter-spacing:.08em; color:var(--ink); }
+  /* 勝敗だけは枠で囲んで、ふつうの発言と見分けがつくようにする(2026-09-10。色はゲームに依存させない汎用の墨)
+     ★ボタンに見えないように「うすい線・うすい文字・履歴より少し狭い固定幅」にする(中身の長さで幅を変えない) */
+  .c-line.c-res{ align-self:stretch; box-sizing:border-box; opacity:.72;
+    margin:5px 6px 3px; padding:4px 8px 5px;
+    border:1.1px solid rgba(35,33,31,.17); border-radius:5px;
+    font-size:11.5px; font-weight:700; letter-spacing:.06em; color:var(--sub); }
   .c-nm{ font-weight:900; margin-right:5px; }
   .c-nm.o{ color:var(--red); } .c-nm.x{ color:var(--blue); }
   .chat-in{ flex:1; min-width:0; border:none; border-radius:8px; padding:9px 12px;
@@ -952,6 +954,15 @@ let seqN=0, oppN=0, oppProv=null, turnSent=false;   /* 1手を「コマ」「取
 const CODE_CHARS="ABCDEFGHJKMNPRSTUVWXYZ";   // 合言葉はアルファベットだけ=数字は使わない(2026-09-10牧村指示)。紛らわしいQ/I/O/Lも除外
 function sbClient(){ if(!sb) sb=supabase.createClient(SB_URL,SB_KEY,{realtime:{params:{eventsPerSecond:20}}}); return sb; }
 function genCode(){ let c=""; for(let i=0;i<5;i++) c+=CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)]; return c; }
+function pickCode(t){                            /* 招待メッセージを丸ごと貼っても合言葉だけ取り出す(2026-09-10修正) */
+  t=String(t||"");
+  var m=/[?&]join=([A-Za-z0-9]{4,6})/.exec(t);   /* ①リンクの ?join= を最優先 */
+  if(m) return m[1].toUpperCase();
+  var u=t.toUpperCase();
+  m=/合言葉[：:\s]*([A-Z0-9]{4,6})/.exec(u);      /* ②「合言葉：ABCDE」の行 */
+  if(m) return m[1];
+  return u.replace(/[^A-Z0-9]/g,"");             /* ③合言葉だけを貼った時は今までどおり */
+}
 function inviteText(c){
   return "牧村が作った『ステうご◯×ゲーム』を一緒に遊ぼう！\n"+location.origin+location.pathname+"?join="+c+"\n\n合言葉："+c+"\n※リンクから参加できない時に使ってね";
 }
@@ -1244,7 +1255,7 @@ $("joinRoomBtn").addEventListener("click",()=>{
     ensureAudio();
     try{
       const t=await navigator.clipboard.readText();
-      const c=(t||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,5);
+      const c=pickCode(t).slice(0,5);
       if(c){ $("codeInput").value=c; roomNote("貼り付けた"); }
       else roomNote("コピーした合言葉が見つかりません","err");
     }catch(e){ roomNote("貼り付けできません。手で入れてね","err"); }
