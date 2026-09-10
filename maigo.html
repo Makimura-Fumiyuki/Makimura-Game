@@ -547,9 +547,9 @@
     <div>
       <div class="sec-label">あそびかた</div>
       <div class="fuda-row" id="modeRow">
-        <button class="fuda" data-mode="local">1台で遊ぶ<small>近くの友と対局</small></button>
-        <button class="fuda" data-mode="friend">オンラインで遊ぶ<small>遠くの友と対局</small></button>
-        <button class="fuda" data-mode="robot">ひとりで遊ぶ<small>ロボットと対局</small></button>
+        <button class="fuda" data-mode="local">1台で遊ぶ</button>
+        <button class="fuda" data-mode="friend">オンラインで遊ぶ</button>
+        <button class="fuda" data-mode="robot">ひとりで遊ぶ</button>
       </div>
     </div>
 
@@ -583,19 +583,19 @@
     <!-- ロボット対局の設定(あそびかた選択後に出現) -->
     <div class="setup" id="cpuSetup">
       <div>
-        <div class="sec-label">つよさ</div>
+        <div class="sec-label">ロボットの強さ</div>
         <div class="fuda-row" id="lvRow">
-          <button class="fuda" data-lv="0">初級<small>お手柔らかに</small></button>
-          <button class="fuda sel" data-lv="1">中級<small>いい勝負</small></button>
-          <button class="fuda" data-lv="2">上級<small>勝てたら侍</small></button>
+          <button class="fuda" data-lv="0">初級</button>
+          <button class="fuda sel" data-lv="1">中級</button>
+          <button class="fuda" data-lv="2">上級</button>
         </div>
       </div>
       <div>
         <div class="sec-label">手番</div>
         <div class="fuda-row" id="orderRow">
-          <button class="fuda" data-first="1"><span class="stone-mini b"></span>先手<small>黒で打つ</small></button>
-          <button class="fuda" data-first="0"><span class="stone-mini w"></span>後手<small>白で打つ</small></button>
-          <button class="fuda sel" data-first="r"><span class="stone-mini rnd"></span>おまかせ<small>先後ランダム</small></button>
+          <button class="fuda sel" data-first="r"><span class="stone-mini rnd"></span>おまかせ</button>
+          <button class="fuda" data-first="1"><span class="stone-mini b"></span>先手</button>
+          <button class="fuda" data-first="0"><span class="stone-mini w"></span>後手</button>
         </div>
       </div>
       <button class="start-btn" id="startBtn">いざ、対局</button>
@@ -609,8 +609,8 @@
     <!-- 友と遊ぶ(オンライン): 合言葉方式 -->
     <div class="setup" id="friendSetup">
       <div class="fuda-row">
-        <button class="fuda" id="makeRoomBtn">部屋を作る<small>合言葉を発行</small></button>
-        <button class="fuda" id="joinRoomBtn">部屋に入る<small>合言葉で入室</small></button>
+        <button class="fuda" id="makeRoomBtn">部屋を作る</button>
+        <button class="fuda" id="joinRoomBtn">部屋に入る</button>
       </div>
       <div class="room-area" id="roomArea"></div>
     </div>
@@ -1386,7 +1386,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
   function capOf(p){ return (p===BLACK)?capB:capW; }
   /* 碁笥の上のラベル: 手番の名前 + とった石の数/ノルマ */
   function renderBowlTags(){
-    const foe = (!local && !online) ? LV_NAMES[cpuLv]+"ロボ" : (online?foeLabel():"あいて");   // ロボット戦は相手の碁笥に階級を常時表示
+    const foe = (!local && !online) ? "ロボット" : (online?foeLabel():"あいて");   // ロボット戦は相手の碁笥に階級を常時表示
     const lb= local ? "先手" : (human===BLACK)?(online?meLabel():"自分"):foe;
     const lw= local ? "後手" : (human===WHITE)?(online?meLabel():"自分"):foe;
     document.getElementById("bowlTagB").innerHTML=lb+"<b>"+capB+"/"+normNum+"</b>";

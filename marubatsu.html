@@ -343,9 +343,9 @@
   <div>
     <div class="sec-label">あそびかた</div>
     <div class="fuda-row" id="modeRow">
-      <button class="fuda sel" type="button" data-mode="local">1台で遊ぶ<small>近くの友と対戦</small></button>
-      <button class="fuda b" type="button" data-mode="online">オンラインで遊ぶ<small>遠くの友と対戦</small></button>
-      <button class="fuda" type="button" data-mode="cpu">ひとりで遊ぶ<small>ロボットと対戦</small></button>
+      <button class="fuda sel" type="button" data-mode="local">1台で遊ぶ</button>
+      <button class="fuda b" type="button" data-mode="online">オンラインで遊ぶ</button>
+      <button class="fuda" type="button" data-mode="cpu">ひとりで遊ぶ</button>
     </div>
   </div>
 
@@ -375,17 +375,17 @@
     <div>
       <div class="sec-label">ロボットの強さ</div>
       <div class="lv-row" id="lvRow">
-        <button class="fuda" type="button" data-lv="0">入門<small>お手柔らかに</small></button>
-        <button class="fuda sel" type="button" data-lv="1">中級<small>いい勝負</small></button>
-        <button class="fuda" type="button" data-lv="2">上級<small>勝てたら名人</small></button>
+        <button class="fuda" type="button" data-lv="0">初級</button>
+        <button class="fuda sel" type="button" data-lv="1">中級</button>
+        <button class="fuda" type="button" data-lv="2">上級</button>
       </div>
     </div>
     <div>
       <div class="sec-label">手番</div>
       <div class="lv-row" id="orderRow">
-        <button class="fuda" type="button" data-side="o"><span class="mini-mk o" data-mk="o"></span>先手<small>◯で置く</small></button>
-        <button class="fuda b" type="button" data-side="x"><span class="mini-mk x" data-mk="x"></span>後手<small>×で置く</small></button>
-        <button class="fuda sel" type="button" data-side="?">おまかせ<small>順番はランダム</small></button>
+        <button class="fuda sel" type="button" data-side="?">おまかせ</button>
+        <button class="fuda" type="button" data-side="o"><span class="mini-mk o" data-mk="o"></span>先手</button>
+        <button class="fuda b" type="button" data-side="x"><span class="mini-mk x" data-mk="x"></span>後手</button>
       </div>
     </div>
     <button class="start-btn" id="startCpu" type="button">はじめる</button>
@@ -394,8 +394,8 @@
   <!-- オンラインで遊ぶ -->
   <div class="setup" id="onlineSetup">
     <div class="room-btns">
-      <button class="fuda" id="makeRoomBtn" type="button">部屋を作る<small>合言葉を発行</small></button>
-      <button class="fuda b" id="joinRoomBtn" type="button">部屋に入る<small>合言葉で入室</small></button>
+      <button class="fuda" id="makeRoomBtn" type="button">部屋を作る</button>
+      <button class="fuda b" id="joinRoomBtn" type="button">部屋に入る</button>
     </div>
     <div class="room-area" id="roomArea">
       <div class="code-box" id="codeShowBox">
@@ -654,7 +654,7 @@ function pop(i){ cells[i].classList.remove("pop"); void cells[i].offsetWidth; ce
 const myMove=()=>!over&&!thinking&&(mode==="local"||turn===mySide);
 const labelOf=p=>{
   if(mode==="online") return p===mySide?(myAcctName()||"あなた"):foeLabel();
-  if(mode==="cpu")   return p===mySide?(myAcctName()||"あなた"):["入門","中級","上級"][cpuLv];
+  if(mode==="cpu")   return p===mySide?(myAcctName()||"あなた"):"ロボット";
   return p==="o"?"先手":"後手";
 };
 function render(){
