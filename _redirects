@@ -15,8 +15,6 @@
 /MakimuraFumiyuki_IDphoto.jpg /img/MakimuraFumiyuki_IDphoto.jpg 301
 
 # 紹介ページを intro/ フォルダへ移動(2026-09-05)。転送先は拡張子なしURL=二段リダイレクトを避ける
-/intro-bamiri /intro/intro-bamiri 301
-/intro-bamiri.html /intro/intro-bamiri 301
 /intro-cookkey /intro/intro-cookkey 301
 /intro-cookkey.html /intro/intro-cookkey 301
 /intro-dox /intro/intro-dox 301
