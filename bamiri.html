@@ -497,9 +497,9 @@
       <div>
         <div class="sec-label">手番</div>
         <div class="lv-row" id="orderRow">
-          <button class="fuda sel" data-first="r"><span class="stone-mini rnd"></span>おまかせ</button>
-          <button class="fuda" data-first="1"><span class="stone-mini b"></span>先手</button>
-          <button class="fuda" data-first="0"><span class="stone-mini w"></span>後手</button>
+          <button class="fuda sel" data-first="r">おまかせ</button>
+          <button class="fuda" data-first="1">先攻</button>
+          <button class="fuda" data-first="0">後攻</button>
         </div>
       </div>
       <button class="start-btn" id="startBtn">開演</button>
@@ -576,8 +576,8 @@
   <!-- 1台対戦: バミリ仕込みの交代 -->
   <div id="handoffOverlay">
     <div class="r-card">
-      <div class="cf-msg" id="handoffMsg">後手に交代！</div>
-      <div class="r-sub" id="handoffSub">先手のバミリは秘密。見ないでね</div>
+      <div class="cf-msg" id="handoffMsg">後攻に交代！</div>
+      <div class="r-sub" id="handoffSub">先攻のバミリは秘密。見ないでね</div>
       <div class="sub-btns">
         <button class="txt-btn" id="handoffGo">交代した</button>
       </div>
@@ -824,8 +824,8 @@ function readPeerName(){
     redrawNames=function(){   // アカウント名を使う(未登録のあいては「ゲスト」・自分は従来どおり「自分」)
       const me=online?meLabel():"自分", foe=online?foeLabel():"あいて";
       const b=document.getElementById("scoreTagB"), w=document.getElementById("scoreTagW"); if(!b||!w) return;
-      b.textContent= local ? "先手" : (human===BLACK)?me:foe;
-      w.textContent= local ? "後手" : (human===WHITE)?me:foe;
+      b.textContent= local ? "先攻" : (human===BLACK)?me:foe;
+      w.textContent= local ? "後攻" : (human===WHITE)?me:foe;
     };
     redrawNames();
     titleScene.classList.remove("on"); gameScene.classList.add("on");
@@ -854,7 +854,7 @@ function readPeerName(){
     setTurnLabel();
   }
   function tapeOwnerLabel(){
-    if(local) return (tapeTurn===BLACK?"先手":"後手");
+    if(local) return (tapeTurn===BLACK?"先攻":"後攻");
     return "あなた";
   }
   function refreshTapePhase(){
@@ -894,8 +894,8 @@ function readPeerName(){
         // 後手の仕込みへ交代(先手のバミリは画面から隠す)
         tapeTurn=WHITE;
         cells.forEach(d=>{ const t=d.querySelector(".tape-mark"); if(t) t.remove(); });
-        document.getElementById("handoffMsg").textContent="後手に交代！";
-        document.getElementById("handoffSub").textContent="先手のバミリは秘密。見ないでね";
+        document.getElementById("handoffMsg").textContent="後攻に交代！";
+        document.getElementById("handoffSub").textContent="先攻のバミリは秘密。見ないでね";
         document.getElementById("handoffOverlay").classList.add("on");
         return;
       }
@@ -1242,8 +1242,8 @@ function readPeerName(){
 
   /* 結果カードのスコア: 黒白それぞれの上に「自分/あいて」(1台対戦は「先手/後手」) */
   function scoreHTML(b,w){
-    const whoB = local ? "先手" : (human===BLACK ? (online?meLabel():"自分") : (online?foeLabel():"あいて"));
-    const whoW = local ? "後手" : (human===WHITE ? (online?meLabel():"自分") : (online?foeLabel():"あいて"));
+    const whoB = local ? "先攻" : (human===BLACK ? (online?meLabel():"自分") : (online?foeLabel():"あいて"));
+    const whoW = local ? "後攻" : (human===WHITE ? (online?meLabel():"自分") : (online?foeLabel():"あいて"));
     return '<div class="rs-col"><span class="rs-who">'+whoB+'</span><div class="rs-row"><span class="mini b"></span>'+b+'</div></div>'
       +'<span class="rs-dash">－</span>'
       +'<div class="rs-col"><span class="rs-who">'+whoW+'</span><div class="rs-row">'+w+'<span class="mini w"></span></div></div>';
@@ -1293,7 +1293,7 @@ function readPeerName(){
     rScore.innerHTML=scoreHTML(b,w);
     setTimeout(()=>{
       if(winner===0){ rTitle.textContent="引き分け"; rTitle.className="r-title"; rSub.textContent="どちらも譲らぬ名勝負"; }
-      else if(local){ rTitle.textContent=(winner===BLACK?"先手":"後手")+"の勝ち！"; rTitle.className="r-title win"; rSub.textContent="おみごと！"; playWin(); burstDiscs(winner); }
+      else if(local){ rTitle.textContent=(winner===BLACK?"先攻":"後攻")+"の勝ち！"; rTitle.className="r-title win"; rSub.textContent="おみごと！"; playWin(); burstDiscs(winner); }
       else if(winner===human){ rTitle.textContent="あなたの勝ち！"; rTitle.className="r-title win"; rSub.textContent="おみごと！"; playWin(); burstDiscs(winner); }
       else{ rTitle.textContent=(online?foeLabel()+"の勝ち…":"ロボットの勝ち…"); rTitle.className="r-title"; rSub.textContent="次はきっと勝てる"; playLose(); }
       if(online) bumpRoomStats(winner===0?"draw":(winner===human?"win":"lose")); else renderRoomStats();   // この部屋での成績
@@ -1312,7 +1312,7 @@ function readPeerName(){
     const {b,w}=countDiscs();
     rScore.innerHTML=scoreHTML(b,w);
     rTitle.textContent="降参…"; rTitle.className="r-title";
-    rSub.textContent = local ? ((turn===BLACK?"先手":"後手")+"の降参") : "次はきっと勝てる";
+    rSub.textContent = local ? ((turn===BLACK?"先攻":"後攻")+"の降参") : "次はきっと勝てる";
     playLose();
     if(online) bumpRoomStats("lose"); else renderRoomStats();   // 自分の降参=負け
     document.getElementById("resultOverlay").classList.add("on");

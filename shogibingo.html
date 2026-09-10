@@ -551,8 +551,8 @@
         <div class="sec-label">手番</div>
         <div class="opt-row" id="orderRow">
           <button class="obtn sel" data-first="r">おまかせ</button>
-          <button class="obtn" data-first="1">先手</button>
-          <button class="obtn" data-first="0">後手</button>
+          <button class="obtn" data-first="1">先攻</button>
+          <button class="obtn" data-first="0">後攻</button>
         </div>
       </div>
       <button class="start-btn" id="startBtn">はじめる</button>
@@ -855,8 +855,8 @@ function initGame(){
   render();
   if(mode==="cpu"&&turn===cpuSide()) freeTmr=setTimeout(cpuThink,650);
 }
-function nameOf(o){ if(mode==="cpu") return o===humanSide?"あなた":"ロボット"; if(online) return spectating?(o===0?"先手":"後手"):(o===mySide?(myAcctName()||"あなた"):foeLabel()); return o===0?"先手":"後手"; }   // オンラインはアカウント名(未登録のあいては「ゲスト」)
-function capLabel(o){ if(mode==="cpu") return o===humanSide?"自分":"ロボット"; if(online) return spectating?(o===0?"先手":"後手"):(o===mySide?meLabel():foeLabel()); return o===0?"先手":"後手"; }
+function nameOf(o){ if(mode==="cpu") return o===humanSide?"あなた":"ロボット"; if(online) return spectating?(o===0?"先攻":"後攻"):(o===mySide?(myAcctName()||"あなた"):foeLabel()); return o===0?"先攻":"後攻"; }   // オンラインはアカウント名(未登録のあいては「ゲスト」)
+function capLabel(o){ if(mode==="cpu") return o===humanSide?"自分":"ロボット"; if(online) return spectating?(o===0?"先攻":"後攻"):(o===mySide?meLabel():foeLabel()); return o===0?"先攻":"後攻"; }
 
 /* ================= 駒の動き ================= */
 const GOLDM=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]];
@@ -1669,7 +1669,7 @@ function startOnline(side, n, pure, fx, ks){
   mySeq=0; pendingSeq=-1; lastRecvSeq=-1;
   $("resultOv").classList.remove("on","peek");
   toGame(); initGame();
-  toast(mySide===0? "対局開始。あなたが先手" : "対局開始。あなたが後手");
+  toast(mySide===0? "対局開始。あなたが先攻" : "対局開始。あなたが後攻");
 }
 function hostRestart(){   // 部屋主: 先手後手を引き直して再戦
   const hs=Math.random()<0.5?0:1;

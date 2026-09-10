@@ -567,9 +567,9 @@
       <div>
         <div class="sec-label">手番</div>
         <div class="fuda-row" id="orderRow">
-          <button class="fuda sel" data-first="r"><span class="stone-mini rnd"></span>おまかせ</button>
-          <button class="fuda" data-first="1"><span class="stone-mini b"></span>先手</button>
-          <button class="fuda" data-first="0"><span class="stone-mini w"></span>後手</button>
+          <button class="fuda sel" data-first="r">おまかせ</button>
+          <button class="fuda" data-first="1">先攻</button>
+          <button class="fuda" data-first="0">後攻</button>
         </div>
       </div>
       <button class="start-btn" id="startBtn">いざ、対局</button>
@@ -958,8 +958,8 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       const foe = (!local && !online) ? "ロボット" : (online?foeLabel():"あいて");
       const me = online ? meLabel() : "自分";
       const b=document.getElementById("bowlTagB"), w=document.getElementById("bowlTagW"); if(!b||!w) return;
-      b.textContent= local ? "先手" : (human===BLACK)?me:foe;
-      w.textContent= local ? "後手" : (human===WHITE)?me:foe;
+      b.textContent= local ? "先攻" : (human===BLACK)?me:foe;
+      w.textContent= local ? "後攻" : (human===WHITE)?me:foe;
     };
     readPeerName(); redrawNames();
     setTimeout(()=>{ readPeerName(); if(redrawNames) redrawNames(); },800);   // 名前が少し遅れて届いた時の描き直し
@@ -1309,7 +1309,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     setTimeout(()=>{
       if(winner!==0) burstStones(winner);   // 勝利陣営の碁笥から碁石が吹き上がる
       if(winner===0){ rTitle.textContent="引き分け"; rTitle.className="r-title"; rSub.textContent="盤が埋まってしまった"; }
-      else if(local){ rTitle.textContent=(winner===BLACK?"先手":"後手")+"の勝ち！"; rTitle.className="r-title win"; rSub.textContent="みごと"+KAN[winLen]+"つ並べた"; playWin(); }
+      else if(local){ rTitle.textContent=(winner===BLACK?"先攻":"後攻")+"の勝ち！"; rTitle.className="r-title win"; rSub.textContent="みごと"+KAN[winLen]+"つ並べた"; playWin(); }
       else if(winner===human){ rTitle.textContent="あなたの勝ち！"; rTitle.className="r-title win"; rSub.textContent="みごと"+KAN[winLen]+"つ並べた"; playWin(); }
       else { rTitle.textContent=(online?foeLabel()+"の勝ち…":"ロボットの勝ち…"); rTitle.className="r-title"; rSub.textContent="次はきっと勝てる"; playLose(); }
       if(!local && !online){   // ロボット戦: 戦った階級と待ったの有無を表示(勝ちの自慢に)

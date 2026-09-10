@@ -234,9 +234,10 @@
     flex-direction:column; align-items:flex-start; gap:7px; width:min(76vw,252px); }
   #chatBox.on{ display:flex; }
   #chatBox.mini .chat-log, #chatBox.mini .chat-row, #chatBox.mini #stampBar{ display:none; }
+  /* 見た目はスタンプに合わせる=枠線を使わず、白+影でまとめる */
   .chat-log{ display:flex; flex-direction:column; width:100%; max-height:126px; overflow-y:auto; overscroll-behavior:contain;
-    background:rgba(255,255,255,.92); border-radius:12px; padding:8px 10px;
-    box-shadow:0 2px 7px rgba(35,33,31,.2); font-size:12px; line-height:1.6; }
+    background:rgba(255,255,255,.92); border-radius:15px; padding:9px 12px; border:none;
+    box-shadow:0 2px 7px rgba(35,33,31,.26); font-size:12px; line-height:1.6; }
   .chat-log:empty{ display:none; }   /* まだ何も書かれていない時は空の帯を出さない */
   .chat-row{ display:flex; width:100%; gap:6px; }
   .chat-log::-webkit-scrollbar{ width:6px; }
@@ -244,12 +245,15 @@
   .c-line{ word-break:break-word; }
   .c-nm{ font-weight:900; margin-right:5px; }
   .c-nm.o{ color:var(--red); } .c-nm.x{ color:var(--blue); }
-  .chat-in{ flex:1; min-width:0; border:1.8px solid var(--line); border-radius:9px; padding:8px 10px;
-    font-size:13px; font-weight:700; background:#fff; color:var(--ink); }
-  .chat-in:focus{ outline:none; border-color:var(--tc); }
-  .chat-send{ flex:none; padding:8px 13px; border:none; border-radius:9px;
-    background:var(--ink); color:#fff; font-size:12.5px; font-weight:900; white-space:nowrap; }
-  .chat-send:active{ transform:translateY(1px); }
+  .chat-in{ flex:1; min-width:0; border:none; border-radius:999px; padding:9px 15px;
+    font-size:13px; font-weight:700; background:rgba(255,255,255,.92); color:var(--ink);
+    box-shadow:0 2px 7px rgba(35,33,31,.26); }
+  .chat-in::placeholder{ color:var(--sub); font-weight:700; }
+  .chat-in:focus{ outline:none; box-shadow:0 2px 7px rgba(35,33,31,.26), inset 0 0 0 2px var(--tc); }
+  .chat-send{ flex:none; padding:9px 15px; border:none; border-radius:999px;
+    background:rgba(255,255,255,.92); color:var(--ink); font-size:12.5px; font-weight:900; white-space:nowrap;
+    box-shadow:0 2px 7px rgba(35,33,31,.26); }
+  .chat-send:active{ transform:translateY(1px) scale(.96); }
   #stampBar{ position:relative; display:none; gap:9px; }
   #chatBox.on #stampBar{ display:flex; }
   .stamp-btn{ width:48px; height:48px; padding:0; border:none; border-radius:50%;
@@ -383,8 +387,8 @@
       <div class="sec-label">手番</div>
       <div class="lv-row" id="orderRow">
         <button class="fuda sel" type="button" data-side="?">おまかせ</button>
-        <button class="fuda" type="button" data-side="o"><span class="mini-mk o" data-mk="o"></span>先手</button>
-        <button class="fuda b" type="button" data-side="x"><span class="mini-mk x" data-mk="x"></span>後手</button>
+        <button class="fuda" type="button" data-side="o">先攻</button>
+        <button class="fuda b" type="button" data-side="x">後攻</button>
       </div>
     </div>
     <button class="start-btn" id="startCpu" type="button">はじめる</button>
@@ -484,7 +488,7 @@
   <p class="h-sec">基本ルール</p>
   <ul>
     <li>光っている<b>3×3のステージ</b>の中で、先に自分のコマを3つ並べたら勝ち。</li>
-    <li><b>◯が先手</b>。盤は5×5／7×7／9×9から選べるが、遊ぶのはいつも3×3だけ。</li>
+    <li><b>◯が先攻</b>。盤は5×5／7×7／9×9から選べるが、遊ぶのはいつも3×3だけ。</li>
     <li>自分の番は、3×3の空いているマスに<b>コマを1つ置く</b>。持ちゴマの数に上限はない。</li>
     <li>置いたコマを<b>もう一度押すと取り消せる</b>（ステージを動かすまでなら置き直しできる）。</li>
   </ul>
@@ -654,7 +658,7 @@ const myMove=()=>!over&&!thinking&&(mode==="local"||turn===mySide);
 const labelOf=p=>{
   if(mode==="online") return p===mySide?(myAcctName()||"あなた"):foeLabel();
   if(mode==="cpu")   return p===mySide?(myAcctName()||"あなた"):"ロボット";
-  return p==="o"?"先手":"後手";
+  return p==="o"?"先攻":"後攻";
 };
 function render(){
   const moving=!over&&phase==="shift"&&myMove();
@@ -955,7 +959,7 @@ function startOnlineGame(hs,bn){
   mySide=isHost?hs:other(hs);
   if(bn) setBoardN(bn);                        /* 盤の広さは部屋を作った側のルール */
   newGame(); showScene("gameScene"); $("resultOv").classList.remove("on","peek");
-  toast("あなたは "+(mySide==="o"?"◯（先手）":"×（後手）"));
+  toast("あなたは "+(mySide==="o"?"◯（先攻）":"×（後攻）"));
 }
 function joinRoom(code,asHost){
   leaveChannel();
@@ -1149,7 +1153,7 @@ $("startCpu").addEventListener("click",()=>{
   mySide = sideWish==="?" ? (Math.random()<.5?"o":"x") : sideWish;
   cpuSide=other(mySide);
   showScene("gameScene"); newGame();
-  toast("あなたは "+(mySide==="o"?"◯（先手）":"×（後手）"));
+  toast("あなたは "+(mySide==="o"?"◯（先攻）":"×（後攻）"));
 });
 $("makeRoomBtn").addEventListener("click",()=>{
   ensureAudio(); playSelect();
