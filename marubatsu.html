@@ -395,7 +395,6 @@
 <div class="scene on" id="titleScene">
   <div class="t-wrap">
     <div class="t-main"><span class="l1"><span>ス</span><span>テ</span><span>う</span><span>ご</span></span><span class="l2"><span class="lmk o mini-mk" data-mk="o"></span><span class="lmk x mini-mk" data-mk="x"></span>ゲーム</span></div>
-    <div class="t-sub">ーステージ動かせますー</div>
   </div>
 
   <div>
@@ -694,9 +693,11 @@ function buildBoard(){                      /* 盤の広さが変わるたびに
 buildBoard();
 function pop(i){ cells[i].classList.remove("pop"); void cells[i].offsetWidth; cells[i].classList.add("pop"); }
 const myMove=()=>!over&&!thinking&&(mode==="local"||turn===mySide);
+const LV_NAMES=["初級","中級","上級"];
+const robotName=()=>"ロボット（"+LV_NAMES[cpuLv]+"）";   /* インゲームの相手の名前(強さを括弧で) */
 const labelOf=p=>{
   if(mode==="online") return p===mySide?(myAcctName()||"あなた"):foeLabel();
-  if(mode==="cpu")   return p===mySide?(myAcctName()||"あなた"):"ロボット";
+  if(mode==="cpu")   return p===mySide?(myAcctName()||"あなた"):robotName();   /* インゲームは「ロボット（上級）」で統一 */
   return p==="o"?"先攻":"後攻";
 };
 function render(){
@@ -1122,12 +1123,11 @@ function goTitle(){
   $("makeRoomBtn").classList.remove("sel"); $("joinRoomBtn").classList.remove("sel");
   showScene("titleScene");
 }
-const LV_NAMES=["初級","中級","上級"];
 function winnerLabel(){                         /* チャットのログは「◯◯の勝ち」に固定(理由は書かない=汎用の形) */
   if(over==="draw") return "引き分け";
   if(mode==="local") return (over==="o"?"◯":"×")+"の勝ち";
   if(over===mySide)  return (myAcctName()||"あなた")+"の勝ち";
-  if(mode==="cpu")   return "ロボット（"+LV_NAMES[cpuLv]+"）の勝ち";
+  if(mode==="cpu")   return robotName()+"の勝ち";
   return foeLabel()+"の勝ち";
 }
 function showResult(){
@@ -1135,7 +1135,7 @@ function showResult(){
   const won=(mode==="local"||drawn)?null:(over===mySide);
   $("rTitle").textContent=drawn?"引き分け"
     :((mode==="local")?((over==="o"?"◯":"×")+"の勝ち")
-    :(won?"あなたの勝ち":(mode==="cpu"?"ロボットの勝ち":foeLabel()+"の勝ち")));
+    :(won?"あなたの勝ち":(mode==="cpu"?robotName()+"の勝ち":foeLabel()+"の勝ち")));
   $("rSub").textContent=endReason;
   $("rAgain").textContent="もう一回";
   $("rAgain").disabled=(mode==="online"&&!started);

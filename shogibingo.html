@@ -864,8 +864,10 @@ function initGame(){
   render();
   if(mode==="cpu"&&turn===cpuSide()) freeTmr=setTimeout(cpuThink,650);
 }
-function nameOf(o){ if(mode==="cpu") return o===humanSide?"あなた":"ロボット"; if(online) return spectating?(o===0?"先攻":"後攻"):(o===mySide?(myAcctName()||"あなた"):foeLabel()); return o===0?"先攻":"後攻"; }   // オンラインはアカウント名(未登録のあいては「ゲスト」)
-function capLabel(o){ if(mode==="cpu") return o===humanSide?"自分":"ロボット"; if(online) return spectating?(o===0?"先攻":"後攻"):(o===mySide?meLabel():foeLabel()); return o===0?"先攻":"後攻"; }
+const LV_NAMES=["初級","中級","上級"];
+const robotName=()=>"ロボット（"+LV_NAMES[cpuLv]+"）";   /* インゲームの相手の名前(強さを括弧で) */
+function nameOf(o){ if(mode==="cpu") return o===humanSide?"あなた":robotName(); if(online) return spectating?(o===0?"先攻":"後攻"):(o===mySide?(myAcctName()||"あなた"):foeLabel()); return o===0?"先攻":"後攻"; }   // オンラインはアカウント名(未登録のあいては「ゲスト」)
+function capLabel(o){ if(mode==="cpu") return o===humanSide?"自分":robotName(); if(online) return spectating?(o===0?"先攻":"後攻"):(o===mySide?meLabel():foeLabel()); return o===0?"先攻":"後攻"; }
 
 /* ================= 駒の動き ================= */
 const GOLDM=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]];

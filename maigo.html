@@ -1388,7 +1388,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
   function capOf(p){ return (p===BLACK)?capB:capW; }
   /* 碁笥の上のラベル: 手番の名前 + とった石の数/ノルマ */
   function renderBowlTags(){
-    const foe = (!local && !online) ? "ロボット" : (online?foeLabel():"あいて");   // ロボット戦は相手の碁笥に階級を常時表示
+    const foe = (!local && !online) ? ("ロボット（"+LV_NAMES[cpuLv]+"）") : (online?foeLabel():"あいて");   // ロボット戦は相手の碁笥に階級を常時表示
     const lb= local ? "先攻" : (human===BLACK)?(online?meLabel():"自分"):foe;
     const lw= local ? "後攻" : (human===WHITE)?(online?meLabel():"自分"):foe;
     document.getElementById("bowlTagB").innerHTML=lb+"<b>"+capB+"/"+normNum+"</b>";
@@ -1501,7 +1501,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       if(winner===0){ rTitle.textContent="引き分け"; rTitle.className="r-title"; rSub.textContent="打てる場所がなくなった"; }
       else if(local){ rTitle.textContent=(winner===BLACK?"先攻":"後攻")+"の勝ち！"; rTitle.className="r-title win"; rSub.textContent=subWin; playWin(); }
       else if(winner===human){ rTitle.textContent="あなたの勝ち！"; rTitle.className="r-title win"; rSub.textContent=subWin; playWin(); }
-      else { rTitle.textContent=(online?foeLabel()+"の勝ち…":"ロボットの勝ち…"); rTitle.className="r-title"; rSub.textContent="次はきっと勝てる"; playLose(); }
+      else { rTitle.textContent=(online?foeLabel()+"の勝ち…":("ロボット（"+LV_NAMES[cpuLv]+"）の勝ち…")); rTitle.className="r-title"; rSub.textContent="次はきっと勝てる"; playLose(); }
       if(!local && !online){   // ロボット戦: 戦った階級と待ったの有無を表示(勝ちの自慢に)
         rSub.innerHTML += '<br><span class="r-foe">'+LV_NAMES[cpuLv]+'ロボットと対局'+(undoUsed?'（一手戻りあり）':'（一手戻りなし）')+'</span>';
       }
