@@ -39,7 +39,7 @@
   .scene.on{ opacity:1; pointer-events:auto; transform:translateY(0); }
   #titleScene{ padding:11vh 20px 150px; gap:26px; }
   #lobbyScene{ padding:60px 20px 60px; gap:16px; }
-  #gameScene{ padding:90px 10px 200px; gap:10px; justify-content:flex-start; }   /* 上は「あそびかた」「効果音」ボタンのぶんだけ余分にスクロールできる(2026-09-10) */
+  #gameScene{ padding:150px 10px 290px; gap:10px; justify-content:flex-start; }   /* 上は「あそびかた」「効果音」ボタンのぶんだけ余分にスクロールできる(2026-09-10) */
 
   /* ===== タイトルロゴ: コーヒーカップに「アート」、その上に待て！バースト ===== */
   .logo{ text-align:center; user-select:none; }
@@ -2376,7 +2376,7 @@ function setMini(mini){
   if(!mini) hidePop();
 }
 $("chatTog").addEventListener("click",function(){ ensureAudio(); playSelect(); setMini(!$("chatBox").classList.contains("mini")); });
-setMini(false);
+setMini(true);   /* ★毎回「チャット欄 表示」の畳んだ状態で始める(2026-09-14牧村指示)。届いた発言はポップアップで出る */
 
 
 function nearBottom(){ return chatLog.scrollHeight - chatLog.scrollTop - chatLog.clientHeight < 40; }   // 一番下で待機している時だけ自動スクロール(LINE等と同じ挙動)

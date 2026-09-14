@@ -149,7 +149,7 @@
   }
 
   /* ===== ゲーム画面 ===== */
-  #gameScene{ position:relative; min-height:100vh; flex-direction:column; align-items:center; padding:90px 8px 210px; gap:5px; }
+  #gameScene{ position:relative; min-height:100vh; flex-direction:column; align-items:center; padding:150px 8px 290px; gap:5px; }
 
 
   /* ===== ビンゴカード盤(フラット単色=黄色いカード・直角) ===== */
@@ -2080,7 +2080,7 @@ document.getElementById("chatIn").addEventListener("keydown",function(e){
   if(e.key!=="Enter"||e.isComposing||e.keyCode===229) return;   /* 日本語変換中のEnterで送らない */
   e.preventDefault(); try{ ensureAudio(); }catch(e2){} sendChat();
 });
-setMini(false);
+setMini(true);   /* ★毎回「チャット欄 表示」の畳んだ状態で始める(2026-09-14牧村指示)。届いた発言はポップアップで出る */
 function spawnStamp(i, who, self){
   if(stampMuted && !self) return;   // ミュート中でも自分が押したスタンプは自分の画面に出す(押した手ごたえ用・音は鳴らさない)
   i=Math.max(0, Math.min(2, i|0));

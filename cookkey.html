@@ -48,7 +48,7 @@
   .scene.on{ display:flex; animation:sceneIn .34s cubic-bezier(.2,.8,.3,1); }
   @keyframes sceneIn{ 0%{ opacity:0; transform:translateY(18px); } 100%{ opacity:1; transform:none; } }
   #gameScene, #lobbyScene{ padding-top:54px; }
-  #gameScene{ padding-top:90px; padding-bottom:210px; }   /* 上は「あそびかた」「効果音」ボタンのぶんだけ余分にスクロールできる(2026-09-10) */   /* 下端のスタンプバーとボタンが重ならない分だけスクロールできる */   /* 左上の「あそびかた」右上の「効果音」と重ならないように */
+  #gameScene{ padding-top:150px; padding-bottom:290px; }   /* 上は「あそびかた」「効果音」ボタンのぶんだけ余分にスクロールできる(2026-09-10) */   /* 下端のスタンプバーとボタンが重ならない分だけスクロールできる */   /* 左上の「あそびかた」右上の「効果音」と重ならないように */
 
   /* ===== タイトル ===== */
   .logo{ margin:5vh 0 2px; display:flex; align-items:baseline; justify-content:center; gap:2px; }
@@ -2505,7 +2505,7 @@ document.getElementById("chatIn").addEventListener("keydown",function(e){
   if(e.key!=="Enter"||e.isComposing||e.keyCode===229) return;   /* 日本語変換中のEnterで送らない */
   e.preventDefault(); try{ ensureAudio(); }catch(e2){} sendChat();
 });
-setMini(false);
+setMini(true);   /* ★毎回「チャット欄 表示」の畳んだ状態で始める(2026-09-14牧村指示)。届いた発言はポップアップで出る */
 function spawnStamp(i, who, self){
   if(stampMuted && !self) return;   // ミュート中でも自分が押したスタンプは自分の画面に出す(押した手ごたえ用・音は鳴らさない)
   i=Math.max(0,Math.min(2,i|0));

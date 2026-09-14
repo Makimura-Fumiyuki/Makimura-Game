@@ -131,7 +131,7 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 #stageWrap::-webkit-scrollbar-track{ background:transparent; }
 #stageWrap::-webkit-scrollbar-thumb{ background:rgba(28,28,34,.35); border-radius:5px; border:2px solid transparent; background-clip:padding-box; }
 #stageWrap::-webkit-scrollbar-corner{ background:transparent; }
-#stageScaler{ position:relative; margin:180px auto 280px; }   /* 上下左右に余白=UIに隠れる端までスクロールできる */
+#stageScaler{ position:relative; margin:240px auto 360px; }   /* 上下左右に余白=UIに隠れる端までスクロールできる */
 #stage{ position:absolute; left:0; top:0; transform-origin:0 0; background:#fff; }
 #stage iframe, #stage canvas{ display:block; border:0; pointer-events:none; }
 #hideLayer{ position:absolute; inset:0; }
@@ -1360,7 +1360,10 @@ wrapEl.addEventListener("dblclick",e=>{
   layoutHider(mine); playPlace(); pushHist(); flushUpd();
 });
 document.addEventListener("keydown",e=>{
-  if(e.isComposing||phase!=="hide"||!mine||mine.x==null||typing()||!amHider()) return;
+  /* ★入力欄に文字を打っている間も「Shift+矢印」だけは箱を動かせる(2026-09-14牧村指示)。
+     単独の矢印は文字カーソルの移動に残す=打ち間違いを直せなくなるのを防ぐ */
+  if(e.isComposing||phase!=="hide"||!mine||mine.x==null||!amHider()) return;
+  if(typing()&&!e.shiftKey) return;
   const k=e.key; if(k!=="ArrowLeft"&&k!=="ArrowRight"&&k!=="ArrowUp"&&k!=="ArrowDown") return;
   e.preventDefault(); const st=e.shiftKey?10:1;
   if(k==="ArrowLeft") mine.x-=st; if(k==="ArrowRight") mine.x+=st; if(k==="ArrowUp") mine.y-=st; if(k==="ArrowDown") mine.y+=st;
@@ -1619,7 +1622,7 @@ document.getElementById("chatIn").addEventListener("keydown",function(e){
   if(e.key!=="Enter"||e.isComposing||e.keyCode===229) return;   /* 日本語変換中のEnterで送らない */
   e.preventDefault(); try{ ensureAudio(); }catch(e2){} sendChat();
 });
-setMini(false);
+setMini(true);   /* ★毎回「チャット欄 表示」の畳んだ状態で始める(2026-09-14牧村指示)。届いた発言はポップアップで出る */
 function spawnStamp(i, who, self, col){
   if(stampMuted && !self) return;
   i=Math.max(0,Math.min(2,i|0));
