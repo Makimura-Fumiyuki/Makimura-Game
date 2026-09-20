@@ -68,7 +68,6 @@
   /* ===== タイトル ===== */
   .t-wrap{ text-align:center; display:flex; flex-direction:column; align-items:center; gap:4px; }
   .t-logo{ width:clamp(180px,48vw,250px); height:auto; display:block; margin-bottom:-10px; }   /* タイトルの手も自由に動かせる */
-  .t-hint{ font-size:11.5px; font-weight:700; letter-spacing:.14em; color:var(--sub); margin-top:-2px; }
   .t-main{ line-height:1.06; }
   .t-main .l1{ display:block; font-size:clamp(19px,5vw,30px); font-weight:900; letter-spacing:.12em; text-indent:.12em; color:var(--a); }
   .t-main .l2{ display:block; margin-top:2px; font-size:clamp(34px,9.4vw,60px); font-weight:900;
@@ -135,20 +134,13 @@
   .dots{ display:flex; gap:5px; flex:none; color:var(--sc); }
   .dots i{ width:10px; height:10px; border-radius:50%; border:2px solid currentColor; opacity:.35; display:block; transition:background .2s, opacity .2s, transform .2s; }
   .dots i.on{ background:currentColor; opacity:1; transform:scale(1.2); }
-  /* 手=枠も背景もなし。輪郭線もなし(影で浮かせる) */
-  .hand{ width:100%; height:auto; display:block; touch-action:none; overflow:visible;
-    filter:drop-shadow(0 10px 16px rgba(110,60,20,.16)); }
+  /* 手=枠・背景・影・輪郭線なし。手のひらと指は同じ色(境目のないシルエット) */
+  .hand{ width:100%; height:auto; display:block; touch-action:none; overflow:visible; }
   .side .hand{ width:min(100%,340px); }
   .hand.mine{ cursor:grab; }
   .hand .fg{ fill:none; stroke:var(--skin); stroke-linecap:round; stroke-linejoin:round; }
-  .hand .palm{ fill:var(--skin-d); }
-  .hand .fg-sh{ fill:none; stroke:rgba(120,70,30,.13); stroke-linecap:round; stroke-linejoin:round; }   /* 指の下のうすい影=輪郭線の代わり */
-  .hand .hd{ fill:rgba(255,255,255,.92); stroke:var(--sc,var(--tc)); stroke-width:3.5; }
+  .hand .palm{ fill:var(--skin); }
   .hand .hd-hit{ fill:transparent; cursor:grab; }
-  .hand .hd.on{ fill:var(--sc,var(--tc)); stroke:#fff; }
-  .hand .hd-ring{ fill:none; stroke:var(--sc,var(--tc)); stroke-width:2; stroke-dasharray:5 6; opacity:.45; animation:ringSpin 6s linear infinite; }
-  @keyframes ringSpin{ to{ stroke-dashoffset:-110; } }
-  .hand.locked .hd,.hand.locked .hd-ring{ opacity:.3; }
   .hand.locked .hd-hit{ cursor:default; }
   .shape-word{ font-size:clamp(24px,7.4vw,42px); font-weight:900; letter-spacing:.14em; text-indent:.14em; line-height:1.1; margin-top:-6px;
     color:var(--sc); transition:color .15s, transform .15s; }
@@ -157,12 +149,15 @@
   @keyframes chipPop{ 0%{ transform:scale(.7); } 60%{ transform:scale(1.14); } 100%{ transform:scale(1); } }
   /* デバッグ(手のためし) */
   body.dbg .side.foe, body.dbg .round-tag{ display:none; }
-  .dbg-panel{ display:none; width:min(94vw,420px); background:rgba(255,255,255,.9); border-radius:12px; padding:10px 14px; font-size:12.5px; line-height:1.8; font-weight:700; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,.08); }
+  /* デバッグ表は画面に固定・文字色も変えない(動くと見づらい) */
+  .dbg-panel{ display:none; position:fixed; right:10px; top:56px; z-index:60; width:250px; background:rgba(255,255,255,.94); border-radius:10px;
+    padding:10px 12px; font-size:12px; line-height:1.75; font-weight:700; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,.1); }
   body.dbg .dbg-panel{ display:block; }
   .dbg-panel table{ width:100%; border-collapse:collapse; }
-  .dbg-panel td{ padding:1px 6px; white-space:nowrap; }
-  .dbg-panel td.v{ font-variant-numeric:tabular-nums; text-align:right; }
-  .dbg-panel .bent{ color:var(--a); } .dbg-panel .ext{ color:var(--b); } .dbg-panel .mid{ color:var(--sub); }
+  .dbg-panel td{ padding:1px 4px; white-space:nowrap; }
+  .dbg-panel td.v{ font-variant-numeric:tabular-nums; text-align:right; width:44px; }
+  .dbg-panel td.j{ width:48px; }
+  .dbg-panel .note{ margin-top:6px; font-size:11px; color:var(--sub); line-height:1.6; }
   .dbg-link{ background:none; border:none; font-size:12px; font-weight:700; letter-spacing:.08em; color:var(--sub); text-decoration:underline; }
   /* 中央の演出(ラウンド開始・勝ち) */
   .fx{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
@@ -313,7 +308,6 @@
 <div class="scene on" id="titleScene">
   <div class="t-wrap">
     <svg class="t-logo hand mine" id="logoHand" viewBox="0 0 300 360"></svg>
-    <div class="t-hint">指先をつまんで動かしてみよう</div>
     <div class="t-main"><span class="l1">手作り</span><span class="l2">じゃんけん</span></div>
   </div>
 
@@ -356,12 +350,12 @@
     <div class="side me" id="sideMe">
       <div class="who"><span class="nm" id="pnMe">あなた</span><span class="dots" id="dotsMe"><i></i><i></i><i></i></span></div>
       <svg class="hand mine" id="handMe" viewBox="0 0 300 360"></svg>
-      <div class="shape-word" id="shMe">パー</div>
+      <div class="shape-word" id="shMe">パァ</div>
     </div>
     <div class="side foe" id="sideFoe">
       <div class="who"><span class="nm" id="pnFoe">あいて</span><span class="dots" id="dotsFoe"><i></i><i></i><i></i></span></div>
       <svg class="hand" id="handFoe" viewBox="0 0 300 360"></svg>
-      <div class="shape-word" id="shFoe">パー</div>
+      <div class="shape-word" id="shFoe">パァ</div>
     </div>
     <div class="fx" id="fx"><div class="big" id="fxBig"></div><div class="small" id="fxSmall"></div></div>
   </div>
@@ -403,22 +397,22 @@
   <h2>あそびかた</h2>
   <p class="h-sec">基本ルール</p>
   <ul>
-    <li>グー・チョキ・パーを選ぶんじゃなくて、<b>指をつまんで手の形を自分で作る</b>じゃんけん。</li>
-    <li>自分の手の<b>指先</b>を、手のひらのほうへ引くと曲がる。外へ引っぱると伸びる。</li>
+    <li>グゥ・チョ・パァを選ぶんじゃなくて、<b>指先をつまんで手の形を自分で作る</b>じゃんけん。</li>
+    <li>指先は付け根を中心に<b>どの方向へも自由に動く</b>。付け根に近づけると曲げ、遠くへ伸ばすと伸ばし。</li>
     <li>あいての手の形はずっと見えている。<b>あいての形に勝てる形を先に完成させた瞬間、その場で勝ち</b>。</li>
     <li>先に<b>3本</b>取ったほうが勝ち。</li>
   </ul>
   <p class="h-sec b">手の形の見かた</p>
   <ul>
-    <li>見るのは<b>人差し指・中指・薬指・小指の4本</b>。親指は動かせるけれど、形には数えない。</li>
-    <li><b>パー</b>＝4本とも伸ばす　<b>グー</b>＝4本とも曲げる　<b>チョキ</b>＝人差し指と中指だけ伸ばす。</li>
+    <li>5本の指それぞれを「伸ばし」か「曲げ」で見る。</li>
+    <li><b>パァ</b>＝5本とも伸ばす　<b>グゥ</b>＝5本とも曲げる　<b>チョ</b>＝人差し指と中指だけ伸ばす。</li>
     <li>それ以外の形は「どれでもない」。勝ちも負けもつかない。</li>
-    <li>毎ラウンド、両方の手はパーから始まる。</li>
+    <li>毎ラウンド、両方の手はパァから始まる。3カウントの間も指は動かせる。</li>
   </ul>
   <p class="h-sec k">ここが勝負</p>
   <ul>
     <li>同じ形どうし（あいこ）の間は何も起きない。そのまま動かし続けられる。</li>
-    <li>あいてがパーのまま、あなたがチョキを完成させたら勝ち。逆に、あいてがパーなのにグーを完成させたら負け。</li>
+    <li>あいてがパァのまま、あなたがチョを完成させたら勝ち。逆に、あいてがパァなのにグゥを完成させたら負け。</li>
     <li>形を変える途中で、うっかり別の形が完成することもある。指の順番を考えよう。</li>
   </ul>
   <button class="txt-btn close" id="helpClose" type="button">とじる</button>
@@ -439,130 +433,104 @@ let peerName="";
 const foeLabel=()=>peerName||MK_GUEST;
 
 /* ===== 手の形(幾何) =====
-   右手・手のひらを正面に。指1本は「曲げ具合 c(0=伸ばし〜1=曲げ)」と「開き角 g(度・伸ばした向きからの左右のずれ)」の2つの数で表す。
-   指先をつまむと、付け根から見たポインタの向きで g、付け根からの距離(軸方向)で c が決まる=上下左右に自由に動く */
+   右手・手のひらを正面に。指1本は「指先の位置(x,y)」だけで表す。付け根を中心に360°どこへでも動き、
+   付け根からの距離にだけ上限 L(5指共通)がある。付け根と指先はただの直線でつなぐ(関節の表現はしない) */
 const P={x:162,y:236};                                   /* 手のひらの中心 */
-const FINGERS=[                                          /* 0=親指 1=人差し指 2=中指 3=薬指 4=小指。sp=開ける角度(±度) */
-  { n:"親指",   b:{x:84,y:228},  L:74,  a:-138, w:37, sp:34 },
-  { n:"人差し指", b:{x:108,y:150}, L:104, a:-100, w:33, sp:22 },
-  { n:"中指",   b:{x:147,y:140}, L:112, a:-92,  w:35, sp:16 },
-  { n:"薬指",   b:{x:184,y:146}, L:104, a:-84,  w:32, sp:16 },
-  { n:"小指",   b:{x:218,y:162}, L:84,  a:-74,  w:27, sp:24 },
+const L=100;                                             /* 指の長さ=伸び縮みの上限(5指共通・暫定) */
+const FINGERS=[                                          /* 0=親指 1=人差し指 2=中指 3=薬指 4=小指。b=付け根・a=伸ばした向き(度)・w=太さ */
+  { n:"親指",   b:{x:98,y:232},  a:-140, w:37 },
+  { n:"人差し指", b:{x:108,y:150}, a:-100, w:33 },
+  { n:"中指",   b:{x:147,y:140}, a:-92,  w:35 },
+  { n:"薬指",   b:{x:184,y:146}, a:-84,  w:32 },
+  { n:"小指",   b:{x:218,y:162}, a:-74,  w:27 },
 ];
 const rad=d=>d*Math.PI/180;
 const clamp=(v,lo,hi)=>v<lo?lo:(v>hi?hi:v);
-function fingerPts(f,c,g){                               /* 曲げ具合 c・開き角 g → 付け根/第2関節/指先 の3点 */
-  /* 曲げ=指がその向きのまま手のひら側へ折りたたまれる(関節のこぶが残り、指先は手のひらの上へ)。
-     角度で回すと指ごとに回る向きが変わって交差するので、指の軸に沿ってたたむ */
-  c=clamp(c||0,0,1); g=clamp(g||0,-f.sp,f.sp);
-  const aExt=rad(f.a+g), ux=Math.cos(aExt), uy=Math.sin(aExt);
-  let wx=P.x-f.b.x, wy=P.y-f.b.y;                          /* 手のひら中心への向き(軸に直交する成分だけ使う) */
-  const dot=wx*ux+wy*uy; wx-=dot*ux; wy-=dot*uy;
-  const wl=Math.hypot(wx,wy)||1; wx/=wl; wy/=wl;
-  const L=f.L, k1=L*(0.55-0.20*c), k2=L*(0.45-0.92*c), sh1=L*0.10*c, sh2=L*0.22*c;
-  const M={x:f.b.x+ux*k1+wx*sh1, y:f.b.y+uy*k1+wy*sh1};
-  const T={x:M.x+ux*k2+wx*sh2,   y:M.y+uy*k2+wy*sh2};
-  return [f.b,M,T];
+const extTip=f=>({ x:f.b.x+L*Math.cos(rad(f.a)), y:f.b.y+L*Math.sin(rad(f.a)) });   /* 伸ばした時の指先 */
+function bentTip(f){                                     /* 曲げた時の指先=付け根から手のひら中心へ少し */
+  const dx=P.x-f.b.x, dy=P.y-f.b.y, d=Math.hypot(dx,dy)||1;
+  return { x:f.b.x+dx/d*L*0.15, y:f.b.y+dy/d*L*0.15 };
 }
-function poseFromPointer(f,curG,pt){                     /* つまんだ位置 → {c,g}。軸方向の距離=曲げ、左右のずれ=開き */
-  const vx=pt.x-f.b.x, vy=pt.y-f.b.y, aE=rad(f.a);
-  const sAx= vx*Math.cos(aE)+vy*Math.sin(aE);            /* 軸方向の成分(伸ばした先が+) */
-  const lat=-vx*Math.sin(aE)+vy*Math.cos(aE);            /* 横方向の成分 */
-  const c=clamp((f.L-sAx)/(f.L*1.15),0,1);               /* 指先まで伸ばせば0・付け根を越えて引き込めば1 */
-  let g=curG;
-  if(sAx>f.L*0.25) g=clamp(Math.atan2(lat,sAx)*180/Math.PI,-f.sp,f.sp);   /* 曲げている間は開き角を変えない */
-  return {c:c,g:g};
+const SHAPE_TIPS={ paper:[1,1,1,1,1], rock:[0,0,0,0,0], scissors:[0,1,1,0,0] };   /* 1=伸ばし 0=曲げ */
+function tipsOfShape(k){ return FINGERS.map((f,i)=>SHAPE_TIPS[k][i]?extTip(f):bentTip(f)); }
+function newTips(){ return tipsOfShape("paper"); }
+function tipFromPointer(f,pt){                           /* つまんだ位置 → 指先(付け根からLまで・向きは自由) */
+  const dx=pt.x-f.b.x, dy=pt.y-f.b.y, d=Math.hypot(dx,dy);
+  if(d<=L) return {x:pt.x,y:pt.y};
+  return { x:f.b.x+dx/d*L, y:f.b.y+dy/d*L };
 }
+const reach=(f,t)=>Math.hypot(t.x-f.b.x,t.y-f.b.y)/L;    /* 伸び具合 0〜1 */
 const PALM_D="M 88 152 C 78 205, 76 252, 92 302 L 92 332 C 92 350, 112 358, 162 358 C 212 358, 232 350, 232 332 L 232 302 C 248 252, 246 205, 236 160 C 214 148, 130 144, 88 152 Z";
-function buildHand(svg,mine){                            /* SVGの中身を作る(輪郭線なし・かんたんな表現)。戻り値=描き直し用の参照 */
+function buildHand(svg,mine){                            /* SVGの中身(手のひら+指5本の直線)。戻り値=描き直し用の参照 */
   svg.innerHTML="";
   const NS="http://www.w3.org/2000/svg", mk=(t,at)=>{ const e=document.createElementNS(NS,t); for(const k in at) e.setAttribute(k,at[k]); svg.appendChild(e); return e; };
   mk("path",{class:"palm",d:PALM_D});
-  const order=[4,3,2,1,0];                                /* 小指→親指の順に描く(親指がいちばん手前) */
-  const parts={};
-  for(const i of order){ parts[i]={ sh:mk("path",{class:"fg-sh","stroke-width":FINGERS[i].w+6}) }; }   /* 影を先に全部 */
-  for(const i of order){ parts[i].g=mk("path",{class:"fg","stroke-width":FINGERS[i].w}); }
-  if(mine){
-    for(const i of order){
-      parts[i].ring=mk("circle",{class:"hd-ring",r:26});
-      parts[i].hd=mk("circle",{class:"hd",r:15});
-      parts[i].hit=mk("circle",{class:"hd-hit",r:36,"data-f":i});
-    }
-  }
+  const order=[4,3,2,1,0], parts={};
+  for(const i of order) parts[i]={ g:mk("path",{class:"fg","stroke-width":FINGERS[i].w}) };
+  if(mine) for(const i of order) parts[i].hit=mk("circle",{class:"hd-hit",r:38,"data-f":i});   /* つまむための見えない当たり */
   return parts;
 }
-function drawHand(parts,cs,gs){
+function drawHand(parts,tips){
   for(let i=0;i<5;i++){
-    const [B,M,T]=fingerPts(FINGERS[i],cs[i],gs?gs[i]:0);
-    const d="M"+B.x.toFixed(1)+" "+B.y.toFixed(1)+"L"+M.x.toFixed(1)+" "+M.y.toFixed(1)+"L"+T.x.toFixed(1)+" "+T.y.toFixed(1);
-    parts[i].g.setAttribute("d",d);
-    parts[i].sh.setAttribute("d",d); parts[i].sh.setAttribute("transform","translate(0 4)");
-    if(parts[i].hd){
-      ["ring","hd","hit"].forEach(k=>{ parts[i][k].setAttribute("cx",T.x.toFixed(1)); parts[i][k].setAttribute("cy",T.y.toFixed(1)); });
-    }
+    const B=FINGERS[i].b, T=tips[i];
+    parts[i].g.setAttribute("d","M"+B.x.toFixed(1)+" "+B.y.toFixed(1)+"L"+T.x.toFixed(1)+" "+T.y.toFixed(1));
+    if(parts[i].hit){ parts[i].hit.setAttribute("cx",T.x.toFixed(1)); parts[i].hit.setAttribute("cy",T.y.toFixed(1)); }
   }
 }
-/* つまんで動かす(複数の指を同時につまめる)。svg=対象・parts=描画の参照・pose()={c:[5],g:[5]}・canMove()=いま動かせるか・onMove()=動いた時 */
+/* つまんで動かす(複数の指を同時につまめる)。tips()=指先5点の配列・canMove()=いま動かせるか・onMove()=動いた時 */
 function svgPoint(svg,e){
   const pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY;
   const m=svg.getScreenCTM(); if(!m) return {x:0,y:0};
   const q=pt.matrixTransform(m.inverse()); return {x:q.x,y:q.y};
 }
-function attachDrag(svg,parts,pose,canMove,onMove){
+function attachDrag(svg,tips,canMove,onMove){
   const drags=new Map();                                  /* pointerId → 指番号 */
   svg.addEventListener("pointerdown",e=>{
     ensureAudio();
     if(!canMove()) return;
-    const P0=pose(), p=svgPoint(svg,e);
+    const T=tips(), p=svgPoint(svg,e);
     let best=-1, bd=1e9;
-    for(let i=0;i<5;i++){
-      const T=fingerPts(FINGERS[i],P0.c[i],P0.g[i])[2];
-      const d=Math.hypot(T.x-p.x,T.y-p.y);
-      if(d<bd){ bd=d; best=i; }
-    }
-    if(best<0||bd>48) return;
+    for(let i=0;i<5;i++){ const d=Math.hypot(T[i].x-p.x,T[i].y-p.y); if(d<bd){ bd=d; best=i; } }
+    if(best<0||bd>50) return;
     for(const [,fi] of drags) if(fi===best) return;
     drags.set(e.pointerId,best);
     try{ svg.setPointerCapture(e.pointerId); }catch(_){}
-    parts[best].hd.classList.add("on");
     e.preventDefault();
   });
   svg.addEventListener("pointermove",e=>{
     const fi=drags.get(e.pointerId); if(fi==null) return;
     if(!canMove()) return;
-    const P0=pose(), p=svgPoint(svg,e);
-    const r=poseFromPointer(FINGERS[fi],P0.g[fi],p);
-    if(Math.abs(r.c-P0.c[fi])>0.001||Math.abs(r.g-P0.g[fi])>0.05){ P0.c[fi]=r.c; P0.g[fi]=r.g; if(onMove) onMove(); }
+    const T=tips(), p=svgPoint(svg,e), n=tipFromPointer(FINGERS[fi],p);
+    if(Math.abs(n.x-T[fi].x)>0.05||Math.abs(n.y-T[fi].y)>0.05){ T[fi].x=n.x; T[fi].y=n.y; if(onMove) onMove(); }
   });
-  const end=e=>{ const fi=drags.get(e.pointerId); if(fi==null) return; drags.delete(e.pointerId); parts[fi].hd.classList.remove("on"); };
+  const end=e=>{ drags.delete(e.pointerId); };
   svg.addEventListener("pointerup",end); svg.addEventListener("pointercancel",end); svg.addEventListener("lostpointercapture",end);
-  return { clear(){ drags.clear(); for(let i=0;i<5;i++) parts[i].hd.classList.remove("on"); } };
+  return { clear(){ drags.clear(); } };
 }
 
-/* ===== 判定(ざっくり。指ごとに伸ばし/曲げの2値・中間は前の状態を保つ) =====
-   ★パーは「ちゃんと開き切って」から(伸ばし判定は c<0.15)。曲げは c>0.65 */
-const BENT_AT=0.65, EXT_AT=0.15;
-const SHAPE_NAME={ paper:"パー", rock:"グー", scissors:"チョキ", none:"―" };
-function stepStates(st,curls){                           /* st=[bool×5] true=曲げ。中間ゾーンでは変えない */
+/* ===== 判定(ざっくり。指ごとに伸ばし/曲げの2値・中間は前の状態を保つ。親指も含む5本で見る) =====
+   伸び具合(付け根からの距離÷L)が EXT_AT 以上で伸ばし・BENT_AT 以下で曲げ。パァは開き切ってから */
+const EXT_AT=0.88, BENT_AT=0.42;
+const SHAPE_NAME={ paper:"パァ", rock:"グゥ", scissors:"チョ", none:"―" };
+function stepStates(st,tips){                            /* st=[bool×5] true=曲げ。中間ゾーンでは変えない */
   let changed=false;
   for(let i=0;i<5;i++){
-    const c=curls[i]||0;
-    if(!st[i]&&c>BENT_AT){ st[i]=true; changed=true; }
-    else if(st[i]&&c<EXT_AT){ st[i]=false; changed=true; }
+    const r=reach(FINGERS[i],tips[i]);
+    if(!st[i]&&r<BENT_AT){ st[i]=true; changed=true; }
+    else if(st[i]&&r>EXT_AT){ st[i]=false; changed=true; }
   }
   return changed;
 }
-function shapeOf(st){                                    /* 親指は数えない。人差し指〜小指の4本で見る */
-  const b=[st[1],st[2],st[3],st[4]];
-  if(!b[0]&&!b[1]&&!b[2]&&!b[3]) return "paper";
-  if(b[0]&&b[1]&&b[2]&&b[3]) return "rock";
-  if(!b[0]&&!b[1]&&b[2]&&b[3]) return "scissors";
+function shapeOf(st){
+  const e=st.map(b=>!b);                                 /* e=伸ばし */
+  if(e[0]&&e[1]&&e[2]&&e[3]&&e[4]) return "paper";
+  if(!e[0]&&!e[1]&&!e[2]&&!e[3]&&!e[4]) return "rock";
+  if(!e[0]&&e[1]&&e[2]&&!e[3]&&!e[4]) return "scissors";
   return "none";
 }
 const BEATS={ rock:"scissors", scissors:"paper", paper:"rock" };
 const beats=(x,y)=>x!=="none"&&BEATS[x]===y;
 const beaterOf=s=>({ rock:"paper", paper:"scissors", scissors:"rock" })[s]||null;
-const SHAPE_CURLS={ paper:[0,0,0,0,0], rock:[1,1,1,1,1], scissors:[1,0,0,1,1] };
 
 /* ===== 音 ===== */
 let actx=null, seOn=true;
@@ -608,9 +576,8 @@ const WIN_N=3;
 let mode="cpu", mySide="a", cpuLv=1, debugMode=false;
 let phase="idle";                                        /* idle / ready(3カウント) / play / end / over */
 let round=0, count=0, score={a:0,b:0}, lastWinner=null, lastShapes={a:"paper",b:"paper"}, overWinner=null, endReason="";
-let curls={ a:[0,0,0,0,0], b:[0,0,0,0,0] };             /* 曲げ具合(自分=入力・あいて=届いた値) */
-let angs ={ a:[0,0,0,0,0], b:[0,0,0,0,0] };             /* 開き角 */
-let shown={ a:[0,0,0,0,0], b:[0,0,0,0,0] }, shownG={ a:[0,0,0,0,0], b:[0,0,0,0,0] };   /* 画面に描く値(あいての手はなめらかに追従) */
+let tips={ a:newTips(), b:newTips() };                  /* 指先の位置(自分=入力・あいて=届いた値) */
+let shown={ a:newTips(), b:newTips() };                 /* 画面に描く位置(あいての手はなめらかに追従) */
 let states={ a:[0,0,0,0,0].map(()=>false), b:[0,0,0,0,0].map(()=>false) };
 let shapes={ a:"paper", b:"paper" };
 var resultLogged=false;
@@ -630,10 +597,10 @@ const canMoveMine=()=>debugMode||((phase==="ready"||phase==="play")&&!(mode==="o
 const partsMe=buildHand($("handMe"),true);
 const partsFoe=buildHand($("handFoe"),false);
 const partsLogo=buildHand($("logoHand"),true);
-const logoPose={ c:[0,0,0,0,0], g:[0,0,0,0,0] };        /* タイトルの手=初期パー・自由に動かせる */
-drawHand(partsLogo,logoPose.c,logoPose.g);
-const dragMe=attachDrag($("handMe"),partsMe,()=>({c:curls[mySide],g:angs[mySide]}),canMoveMine,()=>{ myMoved=true; });
-attachDrag($("logoHand"),partsLogo,()=>logoPose,()=>true,()=>{ drawHand(partsLogo,logoPose.c,logoPose.g); });
+const logoTips=newTips();                                /* タイトルの手=初期パァ・自由に動かせる */
+drawHand(partsLogo,logoTips);
+const dragMe=attachDrag($("handMe"),()=>tips[mySide],canMoveMine,()=>{ myMoved=true; });
+attachDrag($("logoHand"),()=>logoTips,()=>true,()=>{ drawHand(partsLogo,logoTips); });
 function setWord(id,shape){
   const el=$(id), nm=SHAPE_NAME[shape]||"―";
   if(el.textContent!==nm){ el.textContent=nm; el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); }
@@ -658,61 +625,64 @@ function renderStatic(){                                 /* 名前・本数・�
   $("giveBtn").disabled=!debugMode&&!(matchStarted&&phase!=="over");
   $("seBtn").classList.toggle("off",!seOn); $("seTx").textContent=seOn?"効果音":"効果音OFF";
 }
-function renderDbg(){                                    /* デバッグ: 指ごとの曲げ具合と判定を出す */
-  const st=states[mySide], cl=curls[mySide];
+function renderDbg(){                                    /* デバッグ: 指ごとの伸び具合と判定を出す(位置固定・色は変えない) */
+  const st=states[mySide], tp=tips[mySide];
   let h='<table>';
   for(let i=0;i<5;i++){
-    const c=cl[i], k=st[i]?"bent":"ext", zone=(c>BENT_AT)?"bent":(c<EXT_AT?"ext":"mid");
-    h+='<tr><td>'+FINGERS[i].n+(i===0?'（判定に使わない）':'')+'</td><td class="v">'+Math.round(c*100)+'%</td><td class="'+k+'">'+(st[i]?"曲げ":"伸ばし")+'</td><td class="'+zone+'">'+(zone==="mid"?"（中間＝前の状態を保つ）":"")+'</td></tr>';
+    const r=reach(FINGERS[i],tp[i]);
+    h+='<tr><td>'+FINGERS[i].n+'</td><td class="v">'+Math.round(r*100)+'%</td><td class="j">'+(st[i]?"曲げ":"伸ばし")+'</td></tr>';
   }
-  h+='</table><div>いまの形：<b>'+SHAPE_NAME[shapes[mySide]]+'</b>　｜　曲げ判定 '+Math.round(BENT_AT*100)+'%以上 ／ 伸ばし判定 '+Math.round(EXT_AT*100)+'%以下</div>';
+  h+='</table><div>いまの形：<b>'+SHAPE_NAME[shapes[mySide]]+'</b></div>'
+    +'<div class="note">%＝付け根からの距離（伸ばし切った長さ＝100%）<br>伸ばし判定 '+Math.round(EXT_AT*100)+'%以上 ／ 曲げ判定 '+Math.round(BENT_AT*100)+'%以下<br>間は前の状態を保つ</div>';
   $("dbgPanel").innerHTML=h;
 }
 
 /* ===== ロボット ===== */
-const cpu={ target:[0,0,0,0,0], startAt:[0,0,0,0,0], tg:[0,0,0,0,0], nextAt:0 };
-/* speed=曲げ具合/秒(1.0=伸ばし→曲げに1秒) / react=次に考え直すまでの間 / first=ラウンド開始から最初に動くまで
+const cpu={ target:newTips(), startAt:[0,0,0,0,0], nextAt:0, shape:"paper" };
+/* speed=指先の速さ(px/秒。伸ばし⇄曲げは約85px) / react=次に考え直すまでの間 / first=ラウンド開始から最初に動くまで
    smart=「相手の形(向かっている形)に勝てる形」を選ぶ確率 / stagger=指ごとに動き出しをずらす幅(途中の「どれでもない」時間ができる) */
 const CPU_CFG=[
-  { speed:0.8,  react:[1100,2300], first:1500, smart:0.0,  stagger:260 },   /* 初級=ゆっくり・でたらめ */
-  { speed:1.3,  react:[600,1000],  first:950,  smart:0.65, stagger:180 },   /* 中級=そこそこ速く、7割は勝てる形へ */
-  { speed:2.0,  react:[220,380],   first:480,  smart:0.92, stagger:90 },    /* 上級=速く・的確 */
+  { speed:75,  react:[1100,2300], first:1500, smart:0.0,  stagger:260 },   /* 初級=ゆっくり・でたらめ */
+  { speed:125, react:[600,1000],  first:950,  smart:0.65, stagger:180 },   /* 中級=そこそこ速く、7割は勝てる形へ */
+  { speed:200, react:[220,380],   first:480,  smart:0.92, stagger:90 },    /* 上級=速く・的確 */
 ];
-function nearestShape(cl){                               /* いまの曲げ具合から「どの形へ向かっているか」を読む */
+function nearestShape(tp){                               /* いまの指先から「どの形へ向かっているか」を読む */
   let best="paper", bd=1e9;
-  for(const k in SHAPE_CURLS){ const t=SHAPE_CURLS[k]; let d=0; for(let i=1;i<5;i++) d+=(cl[i]-t[i])*(cl[i]-t[i]); if(d<bd){ bd=d; best=k; } }
+  for(const k in SHAPE_TIPS){ let d=0; for(let i=0;i<5;i++){ const r=reach(FINGERS[i],tp[i]), t=SHAPE_TIPS[k][i]?1:0.15; d+=(r-t)*(r-t); } if(d<bd){ bd=d; best=k; } }
   return best;
 }
 function cpuDecide(now){
   const cfg=CPU_CFG[cpuLv];
-  const humanNow=shapes[mySide], heading=nearestShape(curls[mySide]);
+  const humanNow=shapes[mySide], heading=nearestShape(tips[mySide]);
   let want=null;
   if(Math.random()<cfg.smart){
-    const base = humanNow!=="none" ? humanNow : heading;   /* 完成していれば今の形、途中なら向かっている形に対して */
+    const base = humanNow!=="none" ? humanNow : heading;
     want=beaterOf(base);
-    /* 相手が完成している形にいま負けている形へは行かない(=それはこちらの即負け) */
   }else{
     const ks=["paper","rock","scissors"]; want=ks[Math.floor(Math.random()*3)];
     if(humanNow!=="none"&&beats(humanNow,want)&&cpuLv>0) want=beaterOf(humanNow);   /* 中級以上は自殺手はしない */
   }
-  if(want){ const t=SHAPE_CURLS[want]; for(let i=0;i<5;i++){ if(cpu.target[i]!==t[i]){ cpu.target[i]=t[i]; cpu.startAt[i]=now+Math.random()*cfg.stagger; } cpu.tg[i]=(Math.random()*2-1)*FINGERS[i].sp*0.5; } }
+  if(want&&want!==cpu.shape){
+    cpu.shape=want; const t=tipsOfShape(want);
+    for(let i=0;i<5;i++){ const jit=(Math.random()*2-1)*7; cpu.target[i]={x:t[i].x+jit,y:t[i].y+jit}; cpu.startAt[i]=now+Math.random()*cfg.stagger; }
+  }
   cpu.nextAt=now+cfg.react[0]+Math.random()*(cfg.react[1]-cfg.react[0]);
 }
 function cpuTick(now,dt){
   if(phase!=="play") return;
   const cfg=CPU_CFG[cpuLv];
   if(now>=cpu.nextAt) cpuDecide(now);
-  const cl=curls[foeSide()], gl=angs[foeSide()], step=cfg.speed*dt;
+  const tp=tips[foeSide()], step=cfg.speed*dt;
   for(let i=0;i<5;i++){
     if(now<cpu.startAt[i]) continue;
-    const d=cpu.target[i]-cl[i];
-    if(Math.abs(d)<=step) cl[i]=cpu.target[i]; else cl[i]+=Math.sign(d)*step;
-    gl[i]+= (cpu.tg[i]-gl[i])*Math.min(1,dt*3);            /* 開き角はゆっくり目標へ(生きている感じ) */
+    const dx=cpu.target[i].x-tp[i].x, dy=cpu.target[i].y-tp[i].y, d=Math.hypot(dx,dy);
+    if(d<=step){ tp[i].x=cpu.target[i].x; tp[i].y=cpu.target[i].y; } else { tp[i].x+=dx/d*step; tp[i].y+=dy/d*step; }
   }
 }
 function cpuReset(now){
   const cfg=CPU_CFG[cpuLv];
-  for(let i=0;i<5;i++){ cpu.target[i]=0; cpu.startAt[i]=0; cpu.tg[i]=0; }
+  cpu.shape="paper"; const t=newTips();
+  for(let i=0;i<5;i++){ cpu.target[i]=t[i]; cpu.startAt[i]=0; }
   cpu.nextAt=now+cfg.first+Math.random()*200;
 }
 
@@ -725,9 +695,9 @@ function startMatch(){
   nextRound();
 }
 function resetHands(){
-  for(const s of ["a","b"]){ for(let i=0;i<5;i++){ curls[s][i]=0; shown[s][i]=0; angs[s][i]=0; shownG[s][i]=0; states[s][i]=false; } shapes[s]="paper"; }
+  for(const s of ["a","b"]){ tips[s]=newTips(); shown[s]=newTips(); for(let i=0;i<5;i++) states[s][i]=false; shapes[s]="paper"; }
   setWord("shMe",shapes[mySide]); setWord("shFoe",shapes[foeSide()]);
-  drawHand(partsMe,shown[mySide],shownG[mySide]); drawHand(partsFoe,shown[foeSide()],shownG[foeSide()]);
+  drawHand(partsMe,shown[mySide]); drawHand(partsFoe,shown[foeSide()]);
   dragMe.clear();
 }
 function clearReadyTimers(){ readyT.forEach(clearTimeout); readyT=[]; }
@@ -789,15 +759,15 @@ setInterval(()=>{
   /* 自分の手=そのまま。あいての手=届いた値へなめらかに寄せる */
   const me=mySide, fo=foeSide();
   for(let i=0;i<5;i++){
-    shown[me][i]=curls[me][i]; shownG[me][i]=angs[me][i];
+    shown[me][i].x=tips[me][i].x; shown[me][i].y=tips[me][i].y;
     const k=(mode==="cpu")?1:Math.min(1,dt*18);
-    shown[fo][i]+=(curls[fo][i]-shown[fo][i])*k; shownG[fo][i]+=(angs[fo][i]-shownG[fo][i])*k;
+    shown[fo][i].x+=(tips[fo][i].x-shown[fo][i].x)*k; shown[fo][i].y+=(tips[fo][i].y-shown[fo][i].y)*k;
   }
-  drawHand(partsMe,shown[me],shownG[me]); drawHand(partsFoe,shown[fo],shownG[fo]);
+  drawHand(partsMe,shown[me]); drawHand(partsFoe,shown[fo]);
   /* 形の更新(3カウント中も表示は更新・勝敗の判定はplayの間だけ・ホストだけ) */
   if(phase==="play"||phase==="ready"||debugMode){
     for(const s of ["a","b"]){
-      const ch=stepStates(states[s],curls[s]);
+      const ch=stepStates(states[s],tips[s]);
       if(ch){ const sh=shapeOf(states[s]); if(s===me) playTick(); if(sh!==shapes[s]){ shapes[s]=sh; setWord(s===me?"shMe":"shFoe",sh); } }
     }
     if(phase==="play"&&amHost()) judge();
@@ -806,7 +776,7 @@ setInterval(()=>{
   /* 自分の指位置を相手へ(50msごと・動いた時だけ) */
   if(mode==="online"&&online&&started){
     netAcc+=dt*1000;
-    if(netAcc>=50){ netAcc=0; if(myMoved){ myMoved=false; send("fin",{id:myId,rd:round,c:curls[me].map(v=>Math.round(v*100)/100),g:angs[me].map(v=>Math.round(v))}); } }
+    if(netAcc>=50){ netAcc=0; if(myMoved){ myMoved=false; send("fin",{id:myId,rd:round,t:tips[me].map(p=>[Math.round(p.x),Math.round(p.y)])}); } }
     if(isHost&&now-lastSnapAt>700) hostBroadcast();
   }
 },30);
@@ -893,11 +863,10 @@ function joinRoom(code,asHost){
   });
   ch.on("broadcast",{event:"nm"},({payload})=>{ if(payload&&typeof payload.pn==="string"){ peerName=payload.pn.slice(0,16); renderStatic(); } });
   ch.on("broadcast",{event:"fin"},({payload})=>{     /* あいての指位置 */
-    if(!payload||payload.id===myId||!started||!Array.isArray(payload.c)) return;
+    if(!payload||payload.id===myId||!started||!Array.isArray(payload.t)) return;
     if(isHost&&(payload.rd|0)!==round) return;          /* 前のラウンドの古い値は無視(リセット直後の誤判定を防ぐ) */
     const fo=foeSide();
-    for(let i=0;i<5;i++){ const v=+payload.c[i]; if(isFinite(v)) curls[fo][i]=clamp(v,0,1); }
-    if(Array.isArray(payload.g)) for(let i=0;i<5;i++){ const v=+payload.g[i]; if(isFinite(v)) angs[fo][i]=clamp(v,-FINGERS[i].sp,FINGERS[i].sp); }
+    for(let i=0;i<5;i++){ const q=payload.t[i]; if(!Array.isArray(q)) continue; const x=+q[0], y=+q[1]; if(isFinite(x)&&isFinite(y)) tips[fo][i]=tipFromPointer(FINGERS[i],{x:x,y:y}); }
   });
   ch.on("broadcast",{event:"snap"},({payload})=>{ if(isHost||!started) return; applySnap(payload); });
   ch.on("broadcast",{event:"again"},({payload})=>{
