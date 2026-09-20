@@ -71,8 +71,8 @@
   .acct-pill svg{ width:13px; height:13px; flex:none; }
   .acct-ov{ display:none; position:fixed; inset:0; z-index:9000; background:rgba(32,33,31,.55); align-items:center; justify-content:center; padding:16px; }
   .acct-ov.on{ display:flex; }
-  .acct-card{ background:#fff; border-radius:18px; padding:22px 20px; width:min(92vw,400px); display:flex; flex-direction:column; gap:12px; box-shadow:0 12px 40px rgba(0,0,0,.25); }
-  .acct-card h2{ font-size:18px; font-weight:900; letter-spacing:.04em; color:var(--ink); }
+  .acct-card{ position:relative; background:#fff; border-radius:18px; padding:22px 20px; width:min(92vw,400px); display:flex; flex-direction:column; gap:12px; box-shadow:0 12px 40px rgba(0,0,0,.25); }
+  .acct-card h2{ font-size:18px; font-weight:900; letter-spacing:.04em; color:var(--ink); padding-right:34px; }   /* 右上の×/←と重ならない分だけあける */
   .acct-card p{ font-size:12.5px; line-height:1.7; color:rgba(32,33,31,.7); }
   .acct-card input{ width:100%; height:44px; padding:0 12px; border-radius:10px; border:1.6px solid rgba(32,33,31,.25); font-family:inherit; font-size:15px; }
   .acct-card input:focus{ outline:none; border-color:var(--teal); }
@@ -89,7 +89,12 @@
   .acct-btn.warn{ background:#fff; color:var(--red); border:1.6px solid rgba(255,54,22,.5); }
   .acct-msg{ font-size:12.5px; font-weight:700; color:var(--red); min-height:1.4em; }
   .acct-msg.ok{ color:var(--teal); }
-  .acct-close{ align-self:center; font-size:12.5px; font-weight:700; color:rgba(32,33,31,.55); background:none; border:none; cursor:pointer; text-decoration:underline; text-underline-offset:3px; font-family:inherit; }
+  /* とじる/もどるはダイアログ右上の丸ボタン(×と←が同じ場所で入れ替わる。2026-09-20) */
+  .acct-x{ position:absolute; right:9px; top:9px; width:32px; height:32px; display:inline-flex; align-items:center; justify-content:center;
+    background:none; border:none; padding:0; cursor:pointer; color:rgba(32,33,31,.5); border-radius:50%; }
+  .acct-x svg{ width:18px; height:18px; }
+  .acct-x:hover{ background:rgba(32,33,31,.07); color:var(--ink); }
+  .acct-x:active{ transform:scale(.92); }
   #sortSel{ font-family:inherit; font-size:13px; font-weight:700; color:var(--ink);
     padding:6px 28px 6px 12px; border:1.6px solid rgba(32,33,31,.25); border-radius:8px; cursor:pointer;
     appearance:none; -webkit-appearance:none;   /* ネイティブの▼は右端固定で動かせないため自前で描く */
@@ -1489,6 +1494,8 @@
       try{ localStorage.setItem("mk.name",nm); }catch(e){}
       return "";
     }
+    const X_SVG='<button type="button" class="acct-x" id="acctX" aria-label="とじる"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6 18 18M18 6 6 18"/></svg></button>';
+    const BACK_SVG='<button type="button" class="acct-x" id="acctBack" aria-label="もどる"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5 8 12l7 7"/></svg></button>';
     const EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg>';
     const pwField=(id,ph,ac)=>'<div class="acct-pw"><input id="'+id+'" type="password" placeholder="'+ph+'" autocomplete="'+ac+'"><button type="button" class="acct-eye" id="'+id+'Eye" aria-label="押している間だけパスワードを表示">'+EYE+'</button></div>';
     function bindEye(pwId){   // パスワード欄の目: 押している間だけ表示(欄ごとに呼ぶ)
@@ -1526,11 +1533,11 @@
       }catch(e){ m.textContent="通信に失敗しました"; }
     }
     function loginView(){
-      card.innerHTML='<h2>ログイン</h2><p>登録したメールアドレスとパスワードを入力してください</p>'
+      card.innerHTML=BACK_SVG+'<h2>ログイン</h2>'
         +'<input id="acctMail" type="email" placeholder="メールアドレス" autocomplete="email">'
         +pwField("acctPw","パスワード","current-password")
         +'<div class="acct-msg" id="acctMsg"></div>'
-        +'<div class="acct-row"><button class="acct-btn" id="acctIn">ログイン</button></div><button class="acct-close" id="acctBack">もどる</button>';
+        +'<div class="acct-row"><button class="acct-btn" id="acctIn">ログイン</button></div>';
       const m=card.querySelector("#acctMsg");
       const go=async()=>{
         const email=(card.querySelector("#acctMail").value||"").trim(), pw=card.querySelector("#acctPw").value||"";
@@ -1546,13 +1553,13 @@
       try{ card.querySelector("#acctMail").focus(); }catch(e){}
     }
     function signupView(){
-      card.innerHTML='<h2>新規登録</h2><p>アカウント名はゲームの中で使われます（あとから変えられます）<br>メールアドレスとパスワードは、次からのログインに使います</p>'
+      card.innerHTML=BACK_SVG+'<h2>新規登録</h2>'
         +'<input id="acctName" maxlength="16" placeholder="アカウント名">'
         +'<input id="acctMail" type="email" placeholder="メールアドレス" autocomplete="email">'
         +pwField("acctPw","パスワード（6文字以上）","new-password")
         +pwField("acctPw2","パスワード（確認）","new-password")
         +'<div class="acct-msg" id="acctMsg"></div>'
-        +'<div class="acct-row"><button class="acct-btn" id="acctUp">新規登録</button></div><button class="acct-close" id="acctBack">もどる</button>';
+        +'<div class="acct-row"><button class="acct-btn" id="acctUp">新規登録</button></div>';
       const m=card.querySelector("#acctMsg");
       card.querySelector("#acctName").value=lsGet("mk.name");
       const go=async()=>{
@@ -1573,10 +1580,10 @@
       try{ card.querySelector("#acctName").focus(); }catch(e){}
     }
     function nameView(msg){   // 新規登録でアカウント名が保存できなかった時だけ出す(名前の重複など)
-      card.innerHTML='<h2>なまえを決める</h2><p>登録できました<br>ゲームの中で使われる名前を決めてください（あとから変えられます）</p>'
+      card.innerHTML=X_SVG+'<h2>なまえを決める</h2><p>登録できました<br>ゲームの中で使われる名前を決めてください（あとから変えられます）</p>'
         +'<input id="acctName" maxlength="16" placeholder="アカウント名">'
         +'<div class="acct-msg" id="acctMsg"></div>'
-        +'<div class="acct-row"><button class="acct-btn" id="acctNameGo">決定</button></div><button class="acct-close" id="acctX">あとで</button>';
+        +'<div class="acct-row"><button class="acct-btn" id="acctNameGo">決定</button></div>';
       const inp=card.querySelector("#acctName"); inp.value=lsGet("mk.name");
       const m=card.querySelector("#acctMsg"); if(msg) m.textContent=msg;
       const go=async()=>{
@@ -1593,9 +1600,9 @@
     function view(msg,ok){
       const s=ses();
       if(s){
-        card.innerHTML='<h2>アカウント</h2><p>ログイン中：<b id="acctEmail"></b><br>この端末の記録はアカウントに保存されます。他の端末に同じメールアドレスでログインすれば、記録を引き継げます</p>'
+        card.innerHTML=X_SVG+'<h2>アカウント</h2><p>ログイン中：<b id="acctEmail"></b><br>この端末の記録はアカウントに保存されます。他の端末に同じメールアドレスでログインすれば、記録を引き継げます</p>'
           +'<label for="acctName">なまえ（ゲームで使われます）</label><input id="acctName" maxlength="16" placeholder="アカウント名">'
-          +'<div class="acct-msg'+(ok?" ok":"")+'" id="acctMsg"></div><div class="acct-row"><button class="acct-btn" id="acctSave">名前を保存</button><button class="acct-btn warn" id="acctOut">ログアウト</button></div><button class="acct-close" id="acctX">とじる</button>';
+          +'<div class="acct-msg'+(ok?" ok":"")+'" id="acctMsg"></div><div class="acct-row"><button class="acct-btn" id="acctSave">名前を保存</button><button class="acct-btn warn" id="acctOut">ログアウト</button></div>';
         card.querySelector("#acctEmail").textContent=s.email||"";
         card.querySelector("#acctName").value=lsGet("mk.name");
         card.querySelector("#acctSave").onclick=async()=>{
@@ -1612,9 +1619,9 @@
           view(back?"ログアウトしました（この端末は、ログインする前の記録に戻りました）":"ログアウトしました（この端末はゲストに戻りました。記録はアカウントに残っています）",true);
         };
       }else{   // 入力欄は出さず、まず「ログイン」「新規登録」を選んでもらう(2026-09-20)
-        card.innerHTML='<h2>アカウント</h2><p>アカウントを登録して頂くことで『ノミのみ』などの記録を、他の端末へ引き継げます<br>※一部ゲームには、アカウントの登録が必要な要素があります</p>'
+        card.innerHTML=X_SVG+'<h2>アカウント</h2><p>アカウントを登録して遊ぶと『ノミのみ』などの記録を、他の端末へ引き継げます<br>※一部ゲームには、アカウントの登録が必要な要素があります</p>'
           +'<div class="acct-msg'+(ok?" ok":"")+'" id="acctMsg"></div>'
-          +'<div class="acct-row"><button class="acct-btn" id="acctGoIn">ログイン</button><button class="acct-btn sub" id="acctGoUp">新規登録</button></div><button class="acct-close" id="acctX">とじる</button>';
+          +'<div class="acct-row"><button class="acct-btn" id="acctGoIn">ログイン</button><button class="acct-btn sub" id="acctGoUp">新規登録</button></div>';
         card.querySelector("#acctGoIn").onclick=()=>loginView();
         card.querySelector("#acctGoUp").onclick=()=>signupView();
       }
