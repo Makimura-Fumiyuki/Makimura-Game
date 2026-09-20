@@ -1490,8 +1490,10 @@
       return "";
     }
     const EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg>';
-    function bindEye(){   // パスワード欄の目: 押している間だけ表示
-      const eye=card.querySelector("#acctEye"), pw=card.querySelector("#acctPw"); if(!eye||!pw) return;
+    const pwField=(id,ph,ac)=>'<div class="acct-pw"><input id="'+id+'" type="password" placeholder="'+ph+'" autocomplete="'+ac+'"><button type="button" class="acct-eye" id="'+id+'Eye" aria-label="押している間だけパスワードを表示">'+EYE+'</button></div>';
+    function bindEye(pwId){   // パスワード欄の目: 押している間だけ表示(欄ごとに呼ぶ)
+      pwId=pwId||"acctPw";
+      const eye=card.querySelector("#"+pwId+"Eye"), pw=card.querySelector("#"+pwId); if(!eye||!pw) return;
       const swap=(t,on)=>{   // type を切り替えると入力カーソルが先頭に戻るので、位置を覚えて戻す
         if(pw.type===t) return;
         const act=(document.activeElement===pw); let a=null,b=null;
@@ -1506,14 +1508,79 @@
     }
     const STAGE=/[?&]stage=1/.test(location.search);   // 文字化けかくれんぼのステージ=全員が同じ画面を見るので、名前は出さず「アカウント」固定
     function renderBtn(){ const s=ses(); btnTx.textContent=(!STAGE&&s&&s.email) ? (lsGet("mk.name")||s.email) : "アカウント"; }
-    function nameView(){   // 新規登録の直後だけ出す。名前はあとから変えられるので「あとで」も置く
+    async function auth(signup,email,pw,nm,m){   // ログイン/新規登録の通信部分(共通)
+      try{
+        const r=await fetch(SB_URL+(signup?"/auth/v1/signup":"/auth/v1/token?grant_type=password"),{ method:"POST", headers:{ apikey:SB_KEY, "Content-Type":"application/json" }, body:JSON.stringify({ email, password:pw }) });
+        const d=await r.json();
+        if(!r.ok){ const em=(d&&(d.msg||d.error_description||d.message))||""; m.textContent= /Invalid login/i.test(em)?"メールかパスワードが違います": /already/i.test(em)?"このメールは登録済みです（ログインしてください）": /Email not confirmed/i.test(em)?"メールの確認がまだです（届いたメールのリンクを押してください）":("失敗しました："+(em||r.status)); return; }
+        if(!d.access_token){ m.className="acct-msg ok"; m.textContent="確認メールを送りました。迷惑メールも確認して、リンクを押してから「ログイン」してください"; return; }
+        if(signup && nm){ try{ localStorage.setItem("mk.name",nm); }catch(e){} }   // syncAcctが作る行のacct_nameに使われる
+        saveSes(d,email); renderBtn();
+        let note=""; try{ note=await syncAcct(d.access_token); }catch(e){ note="ログインしましたが、記録の同期に失敗しました（"+e.message+"）"; }
+        if(signup && nm){
+          const err=await saveAcctName(nm); renderBtn();
+          if(err){ nameView(err); return; }        // 名前が使われていた等 → 決め直してもらう
+          view("登録しました",true); return;
+        }
+        renderBtn(); view(note,true);
+      }catch(e){ m.textContent="通信に失敗しました"; }
+    }
+    function loginView(){
+      card.innerHTML='<h2>ログイン</h2><p>登録したメールアドレスとパスワードを入力してください</p>'
+        +'<input id="acctMail" type="email" placeholder="メールアドレス" autocomplete="email">'
+        +pwField("acctPw","パスワード","current-password")
+        +'<div class="acct-msg" id="acctMsg"></div>'
+        +'<div class="acct-row"><button class="acct-btn" id="acctIn">ログイン</button></div><button class="acct-close" id="acctBack">もどる</button>';
+      const m=card.querySelector("#acctMsg");
+      const go=async()=>{
+        const email=(card.querySelector("#acctMail").value||"").trim(), pw=card.querySelector("#acctPw").value||"";
+        m.className="acct-msg";
+        if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ m.textContent="メールアドレスを確認してください"; return; }
+        if(!pw){ m.textContent="パスワードを入力してください"; return; }
+        m.textContent="ログイン中…"; await auth(false,email,pw,"",m);
+      };
+      card.querySelector("#acctIn").onclick=go;
+      ["acctMail","acctPw"].forEach(id=>card.querySelector("#"+id).addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing) go(); }));
+      bindEye("acctPw");
+      card.querySelector("#acctBack").onclick=()=>view("",false);
+      try{ card.querySelector("#acctMail").focus(); }catch(e){}
+    }
+    function signupView(){
+      card.innerHTML='<h2>新規登録</h2><p>アカウント名はゲームの中で使われます（あとから変えられます）<br>メールアドレスとパスワードは、次からのログインに使います</p>'
+        +'<input id="acctName" maxlength="16" placeholder="アカウント名">'
+        +'<input id="acctMail" type="email" placeholder="メールアドレス" autocomplete="email">'
+        +pwField("acctPw","パスワード（6文字以上）","new-password")
+        +pwField("acctPw2","パスワード（確認）","new-password")
+        +'<div class="acct-msg" id="acctMsg"></div>'
+        +'<div class="acct-row"><button class="acct-btn" id="acctUp">新規登録</button></div><button class="acct-close" id="acctBack">もどる</button>';
+      const m=card.querySelector("#acctMsg");
+      card.querySelector("#acctName").value=lsGet("mk.name");
+      const go=async()=>{
+        const nm=(card.querySelector("#acctName").value||"").trim();
+        const email=(card.querySelector("#acctMail").value||"").trim();
+        const pw=card.querySelector("#acctPw").value||"", pw2=card.querySelector("#acctPw2").value||"";
+        m.className="acct-msg";
+        if(!nm){ m.textContent="アカウント名を入力してください"; return; }
+        if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ m.textContent="メールアドレスを確認してください"; return; }
+        if(pw.length<6){ m.textContent="パスワードは6文字以上"; return; }
+        if(pw!==pw2){ m.textContent="パスワード（確認）が一致しません"; return; }
+        m.textContent="登録中…"; await auth(true,email,pw,nm,m);
+      };
+      card.querySelector("#acctUp").onclick=go;
+      ["acctName","acctMail","acctPw","acctPw2"].forEach(id=>card.querySelector("#"+id).addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing) go(); }));
+      bindEye("acctPw"); bindEye("acctPw2");
+      card.querySelector("#acctBack").onclick=()=>view("",false);
+      try{ card.querySelector("#acctName").focus(); }catch(e){}
+    }
+    function nameView(msg){   // 新規登録でアカウント名が保存できなかった時だけ出す(名前の重複など)
       card.innerHTML='<h2>なまえを決める</h2><p>登録できました<br>ゲームの中で使われる名前を決めてください（あとから変えられます）</p>'
         +'<input id="acctName" maxlength="16" placeholder="アカウント名">'
         +'<div class="acct-msg" id="acctMsg"></div>'
         +'<div class="acct-row"><button class="acct-btn" id="acctNameGo">決定</button></div><button class="acct-close" id="acctX">あとで</button>';
       const inp=card.querySelector("#acctName"); inp.value=lsGet("mk.name");
+      const m=card.querySelector("#acctMsg"); if(msg) m.textContent=msg;
       const go=async()=>{
-        const m=card.querySelector("#acctMsg"); m.className="acct-msg"; m.textContent="保存中…";
+        m.className="acct-msg"; m.textContent="保存中…";
         const err=await saveAcctName(inp.value);
         if(err){ m.textContent=err; return; }
         renderBtn(); view("アカウント名を決めました",true);
@@ -1544,32 +1611,12 @@
           try{ localStorage.removeItem(KEY); }catch(e){} renderBtn();
           view(back?"ログアウトしました（この端末は、ログインする前の記録に戻りました）":"ログアウトしました（この端末はゲストに戻りました。記録はアカウントに残っています）",true);
         };
-      }else{
+      }else{   // 入力欄は出さず、まず「ログイン」「新規登録」を選んでもらう(2026-09-20)
         card.innerHTML='<h2>アカウント</h2><p>アカウントを登録して頂くことで『ノミのみ』などの記録を、他の端末へ引き継げます<br>※一部ゲームには、アカウントの登録が必要な要素があります</p>'
-          +'<input id="acctMail" type="email" placeholder="メールアドレス" autocomplete="email">'
-          +'<div class="acct-pw"><input id="acctPw" type="password" placeholder="パスワード（6文字以上）" autocomplete="current-password"><button type="button" class="acct-eye" id="acctEye" aria-label="押している間だけパスワードを表示">'+EYE+'</button></div>'
-          +'<div class="acct-msg'+(ok?" ok":"")+'" id="acctMsg"></div><div class="acct-row"><button class="acct-btn" id="acctIn">ログイン</button><button class="acct-btn sub" id="acctUp">新規登録</button></div><button class="acct-close" id="acctX">とじる</button>';
-        const go=async(signup)=>{
-          const email=(card.querySelector("#acctMail").value||"").trim(), pw=card.querySelector("#acctPw").value||"";
-          const m=card.querySelector("#acctMsg"); m.className="acct-msg";
-          if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ m.textContent="メールアドレスを確認してください"; return; }
-          if(pw.length<6){ m.textContent="パスワードは6文字以上"; return; }
-          m.textContent=signup?"登録中…":"ログイン中…";
-          try{
-            const r=await fetch(SB_URL+(signup?"/auth/v1/signup":"/auth/v1/token?grant_type=password"),{ method:"POST", headers:{ apikey:SB_KEY, "Content-Type":"application/json" }, body:JSON.stringify({ email, password:pw }) });
-            const d=await r.json();
-            if(!r.ok){ const em=(d&&(d.msg||d.error_description||d.message))||""; m.textContent= /Invalid login/i.test(em)?"メールかパスワードが違います": /already/i.test(em)?"このメールは登録済みです（ログインしてください）": /Email not confirmed/i.test(em)?"メールの確認がまだです（届いたメールのリンクを押してください）":("失敗しました："+(em||r.status)); return; }
-            if(!d.access_token){ m.className="acct-msg ok"; m.textContent="確認メールを送りました。迷惑メールも確認して、リンクを押してから「ログイン」してください"; return; }
-            saveSes(d,email); renderBtn();
-            let note=""; try{ note=await syncAcct(d.access_token); }catch(e){ note="ログインしましたが、記録の同期に失敗しました（"+e.message+"）"; }
-            renderBtn();
-            if(signup) nameView();          // 新規登録の直後だけ「なまえを決める」を出す
-            else view(note,true);           // ログインはアカウント側の名前が正なので何も聞かない
-          }catch(e){ m.textContent="通信に失敗しました"; }
-        };
-        card.querySelector("#acctIn").onclick=()=>go(false); card.querySelector("#acctUp").onclick=()=>go(true);
-        card.querySelector("#acctPw").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing) go(false); });
-        bindEye();
+          +'<div class="acct-msg'+(ok?" ok":"")+'" id="acctMsg"></div>'
+          +'<div class="acct-row"><button class="acct-btn" id="acctGoIn">ログイン</button><button class="acct-btn sub" id="acctGoUp">新規登録</button></div><button class="acct-close" id="acctX">とじる</button>';
+        card.querySelector("#acctGoIn").onclick=()=>loginView();
+        card.querySelector("#acctGoUp").onclick=()=>signupView();
       }
       const mm=card.querySelector("#acctMsg"); if(mm&&msg){ mm.textContent=msg; }
       card.querySelector("#acctX").onclick=()=>ov.classList.remove("on");
