@@ -1601,8 +1601,8 @@
       const s=ses();
       if(s){
         card.innerHTML=X_SVG+'<h2>アカウント</h2><p>ログイン中：<b id="acctEmail"></b><br>この端末の記録はアカウントに保存されます。他の端末に同じメールアドレスでログインすれば、記録を引き継げます</p>'
-          +'<label for="acctName">なまえ（ゲームで使われます）</label><input id="acctName" maxlength="16" placeholder="アカウント名">'
-          +'<div class="acct-msg'+(ok?" ok":"")+'" id="acctMsg"></div><div class="acct-row"><button class="acct-btn" id="acctSave">名前を保存</button><button class="acct-btn warn" id="acctOut">ログアウト</button></div>';
+          +'<input id="acctName" maxlength="16" placeholder="新しいアカウント名">'
+          +'<div class="acct-msg'+(ok?" ok":"")+'" id="acctMsg"></div><div class="acct-row"><button class="acct-btn warn" id="acctOut">ログアウト</button><button class="acct-btn" id="acctSave">名前を変更</button></div>';
         card.querySelector("#acctEmail").textContent=s.email||"";
         card.querySelector("#acctName").value=lsGet("mk.name");
         card.querySelector("#acctSave").onclick=async()=>{
@@ -1621,7 +1621,7 @@
       }else{   // 入力欄は出さず、まず「ログイン」「新規登録」を選んでもらう(2026-09-20)
         card.innerHTML=X_SVG+'<h2>アカウント</h2><p>アカウントを登録して遊ぶと『ノミのみ』などの記録を、他の端末へ引き継げます<br>※一部ゲームには、アカウントの登録が必要な要素があります</p>'
           +'<div class="acct-msg'+(ok?" ok":"")+'" id="acctMsg"></div>'
-          +'<div class="acct-row"><button class="acct-btn" id="acctGoIn">ログイン</button><button class="acct-btn sub" id="acctGoUp">新規登録</button></div>';
+          +'<div class="acct-row"><button class="acct-btn sub" id="acctGoUp">新規登録</button><button class="acct-btn" id="acctGoIn">ログイン</button></div>';
         card.querySelector("#acctGoIn").onclick=()=>loginView();
         card.querySelector("#acctGoUp").onclick=()=>signupView();
       }
