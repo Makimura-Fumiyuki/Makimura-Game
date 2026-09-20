@@ -1506,6 +1506,23 @@
     }
     const STAGE=/[?&]stage=1/.test(location.search);   // 文字化けかくれんぼのステージ=全員が同じ画面を見るので、名前は出さず「アカウント」固定
     function renderBtn(){ const s=ses(); btnTx.textContent=(!STAGE&&s&&s.email) ? (lsGet("mk.name")||s.email) : "アカウント"; }
+    function nameView(){   // 新規登録の直後だけ出す。名前はあとから変えられるので「あとで」も置く
+      card.innerHTML='<h2>なまえを決める</h2><p>登録できました<br>ゲームの中で使われる名前を決めてください（あとから変えられます）</p>'
+        +'<input id="acctName" maxlength="16" placeholder="アカウント名">'
+        +'<div class="acct-msg" id="acctMsg"></div>'
+        +'<div class="acct-row"><button class="acct-btn" id="acctNameGo">決定</button></div><button class="acct-close" id="acctX">あとで</button>';
+      const inp=card.querySelector("#acctName"); inp.value=lsGet("mk.name");
+      const go=async()=>{
+        const m=card.querySelector("#acctMsg"); m.className="acct-msg"; m.textContent="保存中…";
+        const err=await saveAcctName(inp.value);
+        if(err){ m.textContent=err; return; }
+        renderBtn(); view("アカウント名を決めました",true);
+      };
+      card.querySelector("#acctNameGo").onclick=go;
+      inp.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing) go(); });
+      card.querySelector("#acctX").onclick=()=>ov.classList.remove("on");
+      try{ inp.focus(); }catch(e){}
+    }
     function view(msg,ok){
       const s=ses();
       if(s){
@@ -1529,11 +1546,9 @@
         };
       }else{
         card.innerHTML='<h2>アカウント</h2><p>アカウントを登録して頂くことで『ノミのみ』などの記録を、他の端末へ引き継げます<br>※一部ゲームには、アカウントの登録が必要な要素があります</p>'
-          +'<input id="acctName" maxlength="16" placeholder="アカウント名">'
           +'<input id="acctMail" type="email" placeholder="メールアドレス" autocomplete="email">'
           +'<div class="acct-pw"><input id="acctPw" type="password" placeholder="パスワード（6文字以上）" autocomplete="current-password"><button type="button" class="acct-eye" id="acctEye" aria-label="押している間だけパスワードを表示">'+EYE+'</button></div>'
           +'<div class="acct-msg'+(ok?" ok":"")+'" id="acctMsg"></div><div class="acct-row"><button class="acct-btn" id="acctIn">ログイン</button><button class="acct-btn sub" id="acctUp">新規登録</button></div><button class="acct-close" id="acctX">とじる</button>';
-        card.querySelector("#acctName").value=lsGet("mk.name");
         const go=async(signup)=>{
           const email=(card.querySelector("#acctMail").value||"").trim(), pw=card.querySelector("#acctPw").value||"";
           const m=card.querySelector("#acctMsg"); m.className="acct-msg";
@@ -1545,12 +1560,11 @@
             const d=await r.json();
             if(!r.ok){ const em=(d&&(d.msg||d.error_description||d.message))||""; m.textContent= /Invalid login/i.test(em)?"メールかパスワードが違います": /already/i.test(em)?"このメールは登録済みです（ログインしてください）": /Email not confirmed/i.test(em)?"メールの確認がまだです（届いたメールのリンクを押してください）":("失敗しました："+(em||r.status)); return; }
             if(!d.access_token){ m.className="acct-msg ok"; m.textContent="確認メールを送りました。迷惑メールも確認して、リンクを押してから「ログイン」してください"; return; }
-            const nm0=[...((card.querySelector("#acctName").value||"").trim())].slice(0,10).join("");
-            if(signup && nm0){ try{ localStorage.setItem("mk.name",nm0); }catch(e){} }   // 新規登録の時だけ、入力したアカウント名を使う
             saveSes(d,email); renderBtn();
             let note=""; try{ note=await syncAcct(d.access_token); }catch(e){ note="ログインしましたが、記録の同期に失敗しました（"+e.message+"）"; }
-            if(nm0 && (signup || !lsGet("mk.name"))) await saveAcctName(nm0);   // ログインでは上書きしない(アカウント側の名前が正。名前が未登録のアカウントだけ入力を採用)
-            renderBtn(); view(note,true);
+            renderBtn();
+            if(signup) nameView();          // 新規登録の直後だけ「なまえを決める」を出す
+            else view(note,true);           // ログインはアカウント側の名前が正なので何も聞かない
           }catch(e){ m.textContent="通信に失敗しました"; }
         };
         card.querySelector("#acctIn").onclick=()=>go(false); card.querySelector("#acctUp").onclick=()=>go(true);
