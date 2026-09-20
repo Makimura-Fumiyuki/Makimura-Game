@@ -67,7 +67,7 @@
 
   /* ===== タイトル ===== */
   .t-wrap{ text-align:center; display:flex; flex-direction:column; align-items:center; gap:4px; }
-  .t-logo{ width:clamp(180px,48vw,250px); height:auto; display:block; margin-bottom:-10px; }   /* タイトルの手も自由に動かせる */
+  .t-logo{ width:clamp(180px,48vw,250px); height:auto; display:block; margin-bottom:8px; }   /* タイトルの手も自由に動かせる */
   .t-main{ line-height:1.06; }
   .t-main .l1{ display:block; font-size:clamp(19px,5vw,30px); font-weight:900; letter-spacing:.12em; text-indent:.12em; color:var(--a); }
   .t-main .l2{ display:block; margin-top:2px; font-size:clamp(34px,9.4vw,60px); font-weight:900;
@@ -134,14 +134,23 @@
   .dots{ display:flex; gap:5px; flex:none; color:var(--sc); }
   .dots i{ width:10px; height:10px; border-radius:50%; border:2px solid currentColor; opacity:.35; display:block; transition:background .2s, opacity .2s, transform .2s; }
   .dots i.on{ background:currentColor; opacity:1; transform:scale(1.2); }
-  /* 手=枠・背景・影・輪郭線なし。手のひらと指は同じ色(境目のないシルエット) */
-  .hand{ width:100%; height:auto; display:block; touch-action:none; overflow:visible; }
+  /* 手=枠・背景・輪郭線なし。手のひらと指は同じ色(角丸の四角のシルエット)。影だけ付けて浮かせる */
+  .hand{ width:100%; height:auto; display:block; touch-action:none; overflow:visible;
+    filter:drop-shadow(0 8px 14px rgba(90,50,20,.20)); }
   .side .hand{ width:min(100%,340px); }
   .hand.mine{ cursor:grab; }
-  .hand .fg{ fill:none; stroke:var(--skin); stroke-linecap:round; stroke-linejoin:round; }
+  .hand .fg{ fill:var(--skin); }
   .hand .palm{ fill:var(--skin); }
+  .hand .hd{ fill:rgba(255,255,255,.85); stroke:rgba(0,0,0,.18); stroke-width:1.5; pointer-events:none; }   /* 指先の丸=つかめる印 */
   .hand .hd-hit{ fill:transparent; cursor:grab; }
   .hand.locked .hd-hit{ cursor:default; }
+  .hand.locked .hd{ opacity:.45; }
+  /* タイトル: 手の色 */
+  .skin-row{ display:flex; align-items:center; justify-content:center; gap:10px; margin-top:-4px; }
+  .skin-row .lbl{ font-size:12px; font-weight:700; letter-spacing:.14em; color:var(--sub); }
+  .swatch{ width:30px; height:30px; border-radius:8px; overflow:hidden; position:relative; display:inline-block; cursor:pointer;
+    box-shadow:0 2px 8px rgba(0,0,0,.14), 0 0 0 1px rgba(0,0,0,.08) inset; }
+  .swatch input{ position:absolute; inset:-8px; width:calc(100% + 16px); height:calc(100% + 16px); border:none; padding:0; cursor:pointer; opacity:0; }
   .shape-word{ font-size:clamp(24px,7.4vw,42px); font-weight:900; letter-spacing:.14em; text-indent:.14em; line-height:1.1; margin-top:-6px;
     color:var(--sc); transition:color .15s, transform .15s; }
   .shape-word.none{ color:rgba(42,37,33,.22); }
@@ -149,9 +158,9 @@
   @keyframes chipPop{ 0%{ transform:scale(.7); } 60%{ transform:scale(1.14); } 100%{ transform:scale(1); } }
   /* デバッグ(手のためし) */
   body.dbg .side.foe, body.dbg .round-tag{ display:none; }
-  /* デバッグ表は画面に固定・文字色も変えない(動くと見づらい) */
-  .dbg-panel{ display:none; position:fixed; right:10px; top:56px; z-index:60; width:250px; background:rgba(255,255,255,.94); border-radius:10px;
-    padding:10px 12px; font-size:12px; line-height:1.75; font-weight:700; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,.1); }
+  /* デバッグ表は手の下・文字色は変えない(動くと見づらい) */
+  .dbg-panel{ display:none; width:min(94vw,380px); background:rgba(255,255,255,.94); border-radius:10px;
+    padding:10px 14px; font-size:12px; line-height:1.75; font-weight:700; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,.1); }
   body.dbg .dbg-panel{ display:block; }
   .dbg-panel table{ width:100%; border-collapse:collapse; }
   .dbg-panel td{ padding:1px 4px; white-space:nowrap; }
@@ -308,6 +317,7 @@
 <div class="scene on" id="titleScene">
   <div class="t-wrap">
     <svg class="t-logo hand mine" id="logoHand" viewBox="0 0 300 360"></svg>
+    <div class="skin-row"><span class="lbl">手の色</span><span class="swatch" id="skinSw"><input type="color" id="skinCol" value="#f6d0b0"></span></div>
     <div class="t-main"><span class="l1">手作り</span><span class="l2">じゃんけん</span></div>
   </div>
 
@@ -435,14 +445,16 @@ const foeLabel=()=>peerName||MK_GUEST;
 /* ===== 手の形(幾何) =====
    右手・手のひらを正面に。指1本は「指先の位置(x,y)」だけで表す。付け根を中心に360°どこへでも動き、
    付け根からの距離にだけ上限 L(5指共通)がある。付け根と指先はただの直線でつなぐ(関節の表現はしない) */
-const P={x:162,y:236};                                   /* 手のひらの中心 */
+const P={x:167,y:272};                                   /* 手のひらの中心 */
 const L=100;                                             /* 指の長さ=伸び縮みの上限(5指共通・暫定) */
+/* 見た目は角丸の四角だけで組む(手のひら=大きな角丸四角・指=細長い角丸四角・親指は左に離して斜め) */
+const PALM={ x:92, y:195, w:150, h:158, r:18 };
 const FINGERS=[                                          /* 0=親指 1=人差し指 2=中指 3=薬指 4=小指。b=付け根・a=伸ばした向き(度)・w=太さ */
-  { n:"親指",   b:{x:98,y:232},  a:-140, w:37 },
-  { n:"人差し指", b:{x:108,y:150}, a:-100, w:33 },
-  { n:"中指",   b:{x:147,y:140}, a:-92,  w:35 },
-  { n:"薬指",   b:{x:184,y:146}, a:-84,  w:32 },
-  { n:"小指",   b:{x:218,y:162}, a:-74,  w:27 },
+  { n:"親指",   b:{x:80,y:226},    a:-135, w:40 },
+  { n:"人差し指", b:{x:108.5,y:189}, a:-90,  w:33 },
+  { n:"中指",   b:{x:147.5,y:189}, a:-90,  w:33 },
+  { n:"薬指",   b:{x:186.5,y:189}, a:-90,  w:33 },
+  { n:"小指",   b:{x:225.5,y:189}, a:-90,  w:33 },
 ];
 const rad=d=>d*Math.PI/180;
 const clamp=(v,lo,hi)=>v<lo?lo:(v>hi?hi:v);
@@ -460,21 +472,30 @@ function tipFromPointer(f,pt){                           /* つまんだ位置 �
   return { x:f.b.x+dx/d*L, y:f.b.y+dy/d*L };
 }
 const reach=(f,t)=>Math.hypot(t.x-f.b.x,t.y-f.b.y)/L;    /* 伸び具合 0〜1 */
-const PALM_D="M 88 152 C 78 205, 76 252, 92 302 L 92 332 C 92 350, 112 358, 162 358 C 212 358, 232 350, 232 332 L 232 302 C 248 252, 246 205, 236 160 C 214 148, 130 144, 88 152 Z";
-function buildHand(svg,mine){                            /* SVGの中身(手のひら+指5本の直線)。戻り値=描き直し用の参照 */
+function buildHand(svg,mine){                            /* SVGの中身(手のひら+指5本の角丸四角)。戻り値=描き直し用の参照 */
   svg.innerHTML="";
   const NS="http://www.w3.org/2000/svg", mk=(t,at)=>{ const e=document.createElementNS(NS,t); for(const k in at) e.setAttribute(k,at[k]); svg.appendChild(e); return e; };
-  mk("path",{class:"palm",d:PALM_D});
+  mk("rect",{class:"palm",x:PALM.x,y:PALM.y,width:PALM.w,height:PALM.h,rx:PALM.r});
   const order=[4,3,2,1,0], parts={};
-  for(const i of order) parts[i]={ g:mk("path",{class:"fg","stroke-width":FINGERS[i].w}) };
-  if(mine) for(const i of order) parts[i].hit=mk("circle",{class:"hd-hit",r:38,"data-f":i});   /* つまむための見えない当たり */
+  for(const i of order) parts[i]={ g:mk("rect",{class:"fg",rx:9}) };
+  if(mine) for(const i of order){
+    parts[i].hd=mk("circle",{class:"hd",r:11});                                   /* 指先の丸=つかめる印 */
+    parts[i].hit=mk("circle",{class:"hd-hit",r:38,"data-f":i});                  /* つまむための見えない当たり */
+  }
   return parts;
 }
 function drawHand(parts,tips){
   for(let i=0;i<5;i++){
-    const B=FINGERS[i].b, T=tips[i];
-    parts[i].g.setAttribute("d","M"+B.x.toFixed(1)+" "+B.y.toFixed(1)+"L"+T.x.toFixed(1)+" "+T.y.toFixed(1));
-    if(parts[i].hit){ parts[i].hit.setAttribute("cx",T.x.toFixed(1)); parts[i].hit.setAttribute("cy",T.y.toFixed(1)); }
+    const f=FINGERS[i], B=f.b, T=tips[i];
+    const dx=T.x-B.x, dy=T.y-B.y, len=Math.max(f.w,Math.hypot(dx,dy)), ang=Math.atan2(dy,dx)*180/Math.PI;
+    const r=parts[i].g;                                   /* 付け根を原点に、指先の向きへ回した細長い角丸四角 */
+    r.setAttribute("x",(-f.w/2).toFixed(1)); r.setAttribute("y",(-len).toFixed(1));
+    r.setAttribute("width",f.w); r.setAttribute("height",len.toFixed(1));
+    r.setAttribute("transform","translate("+B.x.toFixed(1)+" "+B.y.toFixed(1)+") rotate("+(ang+90).toFixed(2)+")");
+    if(parts[i].hit){
+      parts[i].hit.setAttribute("cx",T.x.toFixed(1)); parts[i].hit.setAttribute("cy",T.y.toFixed(1));
+      parts[i].hd.setAttribute("cx",T.x.toFixed(1)); parts[i].hd.setAttribute("cy",T.y.toFixed(1));
+    }
   }
 }
 /* つまんで動かす(複数の指を同時につまめる)。tips()=指先5点の配列・canMove()=いま動かせるか・onMove()=動いた時 */
@@ -599,6 +620,17 @@ const partsFoe=buildHand($("handFoe"),false);
 const partsLogo=buildHand($("logoHand"),true);
 const logoTips=newTips();                                /* タイトルの手=初期パァ・自由に動かせる */
 drawHand(partsLogo,logoTips);
+/* 手の色(タイトルで選ぶ・保存する・あいてにも伝える) */
+const SKIN_DEF="#f6d0b0";
+let mySkin=SKIN_DEF, peerSkin="";
+try{ const v=localStorage.getItem("hjk.skin"); if(v&&/^#[0-9a-f]{6}$/i.test(v)) mySkin=v; }catch(e){}
+function applySkins(){
+  $("logoHand").style.setProperty("--skin",mySkin); $("handMe").style.setProperty("--skin",mySkin);
+  $("handFoe").style.setProperty("--skin",(mode==="online"&&peerSkin)?peerSkin:SKIN_DEF);
+  $("skinSw").style.background=mySkin; $("skinCol").value=mySkin;
+}
+$("skinCol").addEventListener("input",()=>{ const v=$("skinCol").value; if(/^#[0-9a-f]{6}$/i.test(v)){ mySkin=v; try{ localStorage.setItem("hjk.skin",v); }catch(e){} applySkins(); } });
+applySkins();
 const dragMe=attachDrag($("handMe"),()=>tips[mySide],canMoveMine,()=>{ myMoved=true; });
 attachDrag($("logoHand"),()=>logoTips,()=>true,()=>{ drawHand(partsLogo,logoTips); });
 function setWord(id,shape){
@@ -607,7 +639,7 @@ function setWord(id,shape){
   el.classList.toggle("none",shape==="none");
 }
 function renderStatic(){                                 /* 名前・本数・ラウンド表示・ボタン(状態が変わった時だけ) */
-  const me=mySide, fo=foeSide();
+  const me=mySide, fo=foeSide(); applySkins();
   $("sideMe").className="side me "+me; $("sideFoe").className="side foe "+fo;
   $("pnMe").textContent=labelOf(me); $("pnFoe").textContent=labelOf(fo);
   [...$("dotsMe").children].forEach((d,i)=>d.classList.toggle("on",i<score[me]));
@@ -851,17 +883,18 @@ function startOnlineGame(){
 }
 function joinRoom(code,asHost){
   leaveChannel();
-  roomCode=code; isHost=asHost; online=true; started=false; peerName="";
+  roomCode=code; isHost=asHost; online=true; started=false; peerName=""; peerSkin="";
   ch=sbClient().channel("hjk_"+code,{ config:{ presence:{ key:myId }, broadcast:{ self:false } } });
   ch.on("presence",{event:"sync"},onPresence);
   ch.on("presence",{event:"leave"},onPresence);
   ch.on("broadcast",{event:"start"},({payload})=>{
     if(!payload||isHost) return;
     if(typeof payload.pn==="string") peerName=payload.pn.slice(0,16);
-    send("nm",{pn:myAcctName()});
+    if(typeof payload.col==="string"&&/^#[0-9a-f]{6}$/i.test(payload.col)) peerSkin=payload.col;
+    send("nm",{pn:myAcctName(),col:mySkin});
     startOnlineGame();
   });
-  ch.on("broadcast",{event:"nm"},({payload})=>{ if(payload&&typeof payload.pn==="string"){ peerName=payload.pn.slice(0,16); renderStatic(); } });
+  ch.on("broadcast",{event:"nm"},({payload})=>{ if(!payload) return; if(typeof payload.pn==="string") peerName=payload.pn.slice(0,16); if(typeof payload.col==="string"&&/^#[0-9a-f]{6}$/i.test(payload.col)) peerSkin=payload.col; applySkins(); renderStatic(); });
   ch.on("broadcast",{event:"fin"},({payload})=>{     /* あいての指位置 */
     if(!payload||payload.id===myId||!started||!Array.isArray(payload.t)) return;
     if(isHost&&(payload.rd|0)!==round) return;          /* 前のラウンドの古い値は無視(リセット直後の誤判定を防ぐ) */
@@ -894,8 +927,8 @@ function joinRoom(code,asHost){
   ch.on("broadcast",{event:"bye"},()=>{ if(!started) return; foeLeft(); });
   ch.subscribe(async st=>{
     if(st!=="SUBSCRIBED") return;
-    try{ await ch.track({ id:myId, n:myAcctName(), host:asHost, t:Date.now() }); }catch(e){}
-    if(!asHost){ send("nm",{pn:myAcctName()}); setTimeout(()=>{ if(!started){ roomNote("部屋が見つかりません。合言葉をたしかめてね","err"); leaveChannel(); } },4500); }
+    try{ await ch.track({ id:myId, n:myAcctName(), col:mySkin, host:asHost, t:Date.now() }); }catch(e){}
+    if(!asHost){ send("nm",{pn:myAcctName(),col:mySkin}); setTimeout(()=>{ if(!started){ roomNote("部屋が見つかりません。合言葉をたしかめてね","err"); leaveChannel(); } },4500); }
   });
 }
 function onPresence(){
@@ -905,14 +938,15 @@ function onPresence(){
   arr.sort((a,b)=>(a.t||0)-(b.t||0));
   const foe=arr.find(p=>p.id!==myId);
   if(foe&&typeof foe.n==="string"&&foe.n) peerName=foe.n.slice(0,16);
+  if(foe&&typeof foe.col==="string"&&/^#[0-9a-f]{6}$/i.test(foe.col)){ peerSkin=foe.col; applySkins(); }
   if(arr.length>2&&arr.slice(0,2).every(p=>p.id!==myId)){
     toast("部屋がいっぱいです"); leaveChannel(); goTitle(); return;
   }
   if(foe){ clearTimeout(goneT); goneT=0; }
   if(isHost&&!started&&arr.length>=2){
-    send("start",{pn:myAcctName()});
+    send("start",{pn:myAcctName(),col:mySkin});
     startOnlineGame();
-    setTimeout(()=>send("start",{pn:myAcctName()}),400);   /* 届かないことがあるので念のため2回 */
+    setTimeout(()=>send("start",{pn:myAcctName(),col:mySkin}),400);   /* 届かないことがあるので念のため2回 */
   }
   if(started&&phase!=="over"&&!foe&&!goneT){          /* 通信が一瞬切れただけの時もあるので15秒待つ */
     toast("あいての接続が切れました（15秒待ちます）");
@@ -957,7 +991,7 @@ function showResult(){
 }
 function tryRematch(){
   if(!(againMe&&againFoe)) return;
-  if(isHost){ send("start",{pn:myAcctName()}); startOnlineGame(); }
+  if(isHost){ send("start",{pn:myAcctName(),col:mySkin}); startOnlineGame(); }
   else $("rSub").textContent="あいてを待っています…";
 }
 function again(){
