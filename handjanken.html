@@ -66,7 +66,7 @@
   .help-btn:active,.snd-btn:active{ transform:translateY(1px); }
 
   /* ===== タイトル ===== */
-  .t-wrap{ text-align:center; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .t-wrap{ text-align:center; display:flex; flex-direction:column; align-items:center; gap:4px; position:relative; }
   .t-logo{ width:clamp(180px,48vw,250px); height:auto; display:block; margin-bottom:8px; }   /* タイトルの手も自由に動かせる */
   .t-main{ line-height:1.06; }
   .t-main .l1{ display:block; font-size:clamp(19px,5vw,30px); font-weight:900; letter-spacing:.12em; text-indent:.12em; color:var(--a); }
@@ -134,23 +134,18 @@
   .dots{ display:flex; gap:5px; flex:none; color:var(--sc); }
   .dots i{ width:10px; height:10px; border-radius:50%; border:2px solid currentColor; opacity:.35; display:block; transition:background .2s, opacity .2s, transform .2s; }
   .dots i.on{ background:currentColor; opacity:1; transform:scale(1.2); }
-  /* 手=枠・背景・輪郭線なし。手のひらと指は同じ色(角丸の四角のシルエット)。影だけ付けて浮かせる */
-  .hand{ width:100%; height:auto; display:block; touch-action:none; overflow:visible;
-    filter:drop-shadow(0 8px 14px rgba(90,50,20,.20)); }
+  /* 手=枠・背景・影なし。手のひらと指は同じ色(角丸の四角)+うすい輪郭線(どんな色でも見えるよう黒の半透明) */
+  .hand{ width:100%; height:auto; display:block; touch-action:none; overflow:visible; }
   .side .hand{ width:min(100%,340px); }
   .hand.mine{ cursor:grab; }
-  .hand .fg{ fill:var(--skin); }
-  .hand .palm{ fill:var(--skin); }
-  .hand .hd{ fill:rgba(255,255,255,.85); stroke:rgba(0,0,0,.18); stroke-width:1.5; pointer-events:none; }   /* 指先の丸=つかめる印 */
+  .hand .fg,.hand .palm{ fill:var(--skin); stroke:rgba(0,0,0,.24); stroke-width:4; stroke-linejoin:round; }
+  #logoHand .palm{ cursor:pointer; }                     /* タイトル=手のひらを押すと色を選べる */
+  .hand .hd{ fill:rgba(255,255,255,.82); stroke:none; pointer-events:none; }   /* 指先の丸=つかめる印(輪郭なし・指の内側) */
   .hand .hd-hit{ fill:transparent; cursor:grab; }
   .hand.locked .hd-hit{ cursor:default; }
   .hand.locked .hd{ opacity:.45; }
-  /* タイトル: 手の色 */
-  .skin-row{ display:flex; align-items:center; justify-content:center; gap:10px; margin-top:-4px; }
-  .skin-row .lbl{ font-size:12px; font-weight:700; letter-spacing:.14em; color:var(--sub); }
-  .swatch{ width:30px; height:30px; border-radius:8px; overflow:hidden; position:relative; display:inline-block; cursor:pointer;
-    box-shadow:0 2px 8px rgba(0,0,0,.14), 0 0 0 1px rgba(0,0,0,.08) inset; }
-  .swatch input{ position:absolute; inset:-8px; width:calc(100% + 16px); height:calc(100% + 16px); border:none; padding:0; cursor:pointer; opacity:0; }
+  /* タイトル: 手の色は手のひらを押して選ぶ(カラーパレットの入力欄は見えない所に置く) */
+  #skinCol{ position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; left:50%; top:40%; }
   .shape-word{ font-size:clamp(24px,7.4vw,42px); font-weight:900; letter-spacing:.14em; text-indent:.14em; line-height:1.1; margin-top:-6px;
     color:var(--sc); transition:color .15s, transform .15s; }
   .shape-word.none{ color:rgba(42,37,33,.22); }
@@ -317,7 +312,7 @@
 <div class="scene on" id="titleScene">
   <div class="t-wrap">
     <svg class="t-logo hand mine" id="logoHand" viewBox="0 0 300 360"></svg>
-    <div class="skin-row"><span class="lbl">手の色</span><span class="swatch" id="skinSw"><input type="color" id="skinCol" value="#f6d0b0"></span></div>
+    <input type="color" id="skinCol" value="#f6d0b0" aria-label="手の色">
     <div class="t-main"><span class="l1">手作り</span><span class="l2">じゃんけん</span></div>
   </div>
 
@@ -445,10 +440,10 @@ const foeLabel=()=>peerName||MK_GUEST;
 /* ===== 手の形(幾何) =====
    右手・手のひらを正面に。指1本は「指先の位置(x,y)」だけで表す。付け根を中心に360°どこへでも動き、
    付け根からの距離にだけ上限 L(5指共通)がある。付け根と指先はただの直線でつなぐ(関節の表現はしない) */
-const P={x:167,y:272};                                   /* 手のひらの中心 */
+const P={x:167,y:264};                                   /* 手のひらの中心 */
 const L=100;                                             /* 指の長さ=伸び縮みの上限(5指共通・暫定) */
 /* 見た目は角丸の四角だけで組む(手のひら=大きな角丸四角・指=細長い角丸四角・親指は左に離して斜め) */
-const PALM={ x:92, y:195, w:150, h:158, r:18 };
+const PALM={ x:92, y:195, w:150, h:138, r:18 };
 const FINGERS=[                                          /* 0=親指 1=人差し指 2=中指 3=薬指 4=小指。b=付け根・a=伸ばした向き(度)・w=太さ */
   { n:"親指",   b:{x:80,y:226},    a:-135, w:40 },
   { n:"人差し指", b:{x:108.5,y:189}, a:-90,  w:33 },
@@ -479,7 +474,7 @@ function buildHand(svg,mine){                            /* SVGの中身(手の�
   const order=[4,3,2,1,0], parts={};
   for(const i of order) parts[i]={ g:mk("rect",{class:"fg",rx:9}) };
   if(mine) for(const i of order){
-    parts[i].hd=mk("circle",{class:"hd",r:11});                                   /* 指先の丸=つかめる印 */
+    parts[i].hd=mk("circle",{class:"hd",r:9.5});                                  /* 指先の丸=つかめる印 */
     parts[i].hit=mk("circle",{class:"hd-hit",r:38,"data-f":i});                  /* つまむための見えない当たり */
   }
   return parts;
@@ -494,7 +489,8 @@ function drawHand(parts,tips){
     r.setAttribute("transform","translate("+B.x.toFixed(1)+" "+B.y.toFixed(1)+") rotate("+(ang+90).toFixed(2)+")");
     if(parts[i].hit){
       parts[i].hit.setAttribute("cx",T.x.toFixed(1)); parts[i].hit.setAttribute("cy",T.y.toFixed(1));
-      parts[i].hd.setAttribute("cx",T.x.toFixed(1)); parts[i].hd.setAttribute("cy",T.y.toFixed(1));
+      const ux=dx/(Math.hypot(dx,dy)||1), uy=dy/(Math.hypot(dx,dy)||1), inset=f.w/2;   /* 丸は指先から半幅ぶん内側=指からはみ出さない */
+      parts[i].hd.setAttribute("cx",(T.x-ux*inset).toFixed(1)); parts[i].hd.setAttribute("cy",(T.y-uy*inset).toFixed(1));
     }
   }
 }
@@ -620,16 +616,32 @@ const partsFoe=buildHand($("handFoe"),false);
 const partsLogo=buildHand($("logoHand"),true);
 const logoTips=newTips();                                /* タイトルの手=初期パァ・自由に動かせる */
 drawHand(partsLogo,logoTips);
-/* 手の色(タイトルで選ぶ・保存する・あいてにも伝える) */
-const SKIN_DEF="#f6d0b0";
-let mySkin=SKIN_DEF, peerSkin="";
-try{ const v=localStorage.getItem("hjk.skin"); if(v&&/^#[0-9a-f]{6}$/i.test(v)) mySkin=v; }catch(e){}
+/* 手の色=タイトルに戻るたびランダム(手のひらを押すとカラーパレットで好きな色に)。ロボットの色も対局ごとにランダム(自分と離れた色相) */
+function hslHex(h,sl,l){
+  const sat=sl/100, li=l/100, c=(1-Math.abs(2*li-1))*sat, x=c*(1-Math.abs((h/60)%2-1)), m=li-c/2;
+  let r=0,g=0,b=0; h=((h%360)+360)%360;
+  if(h<60){r=c;g=x;} else if(h<120){r=x;g=c;} else if(h<180){g=c;b=x;} else if(h<240){g=x;b=c;} else if(h<300){r=x;b=c;} else {r=c;b=x;}
+  return "#"+[r,g,b].map(v=>Math.round((v+m)*255).toString(16).padStart(2,"0")).join("");
+}
+function hueOf(hex){ const r=parseInt(hex.slice(1,3),16)/255,g=parseInt(hex.slice(3,5),16)/255,b=parseInt(hex.slice(5,7),16)/255;
+  const mx=Math.max(r,g,b), mn=Math.min(r,g,b), d=mx-mn; if(!d) return 0;
+  let h= mx===r ? ((g-b)/d)%6 : mx===g ? (b-r)/d+2 : (r-g)/d+4; return ((h*60)+360)%360; }
+function randSkin(avoidHue){                             /* 明るめの色をランダムに。avoidHueから60°以上はなす */
+  let h=Math.random()*360;
+  if(avoidHue!=null){ const off=60+Math.random()*240; h=(avoidHue+off)%360; }
+  return hslHex(h,52+Math.random()*26,58+Math.random()*14);
+}
+let mySkin=randSkin(null), peerSkin="", cpuSkin=randSkin(hueOf(mySkin));
 function applySkins(){
   $("logoHand").style.setProperty("--skin",mySkin); $("handMe").style.setProperty("--skin",mySkin);
-  $("handFoe").style.setProperty("--skin",(mode==="online"&&peerSkin)?peerSkin:SKIN_DEF);
-  $("skinSw").style.background=mySkin; $("skinCol").value=mySkin;
+  $("handFoe").style.setProperty("--skin",(mode==="online")?(peerSkin||"#f6d0b0"):cpuSkin);
+  $("skinCol").value=mySkin;
 }
-$("skinCol").addEventListener("input",()=>{ const v=$("skinCol").value; if(/^#[0-9a-f]{6}$/i.test(v)){ mySkin=v; try{ localStorage.setItem("hjk.skin",v); }catch(e){} applySkins(); } });
+$("skinCol").addEventListener("input",()=>{ const v=$("skinCol").value; if(/^#[0-9a-f]{6}$/i.test(v)){ mySkin=v; applySkins(); } });
+$("logoHand").addEventListener("click",e=>{             /* タイトルの手のひらを押す→カラーパレット */
+  if(!(e.target&&e.target.classList&&e.target.classList.contains("palm"))) return;
+  ensureAudio(); playSelect(); try{ $("skinCol").click(); }catch(_){}
+});
 applySkins();
 const dragMe=attachDrag($("handMe"),()=>tips[mySide],canMoveMine,()=>{ myMoved=true; });
 attachDrag($("logoHand"),()=>logoTips,()=>true,()=>{ drawHand(partsLogo,logoTips); });
@@ -976,6 +988,7 @@ function goTitle(){
   $("resultOv").classList.remove("on","peek");
   roomStatus("");
   $("makeRoomBtn").classList.remove("sel"); $("joinRoomBtn").classList.remove("sel");
+  mySkin=randSkin(null); cpuSkin=randSkin(hueOf(mySkin)); applySkins();   /* タイトルに戻るたび手の色はランダム */
   showScene("titleScene");
 }
 function winnerLabel(){ return labelOf(overWinner)+"の勝ち"; }
@@ -995,7 +1008,7 @@ function tryRematch(){
   else $("rSub").textContent="あいてを待っています…";
 }
 function again(){
-  if(mode!=="online"){ startMatch(); return; }
+  if(mode!=="online"){ cpuSkin=randSkin(hueOf(mySkin)); applySkins(); startMatch(); return; }
   if(!started||!online){ toast("あいてが退出しました"); playNg(); return; }
   againMe=true;
   send("again",{id:myId});
@@ -1019,6 +1032,7 @@ $("lvRow").addEventListener("click",e=>{
 });
 $("startCpu").addEventListener("click",()=>{
   ensureAudio(); playSelect(); mode="cpu"; mySide="a"; isHost=false; debugMode=false;
+  cpuSkin=randSkin(hueOf(mySkin));                       /* ロボットの手の色は対局ごとにランダム */
   showScene("gameScene"); startMatch();
 });
 $("dbgBtn").addEventListener("click",()=>{             /* デバッグ: 手を自由に動かして、どれくらいでグー/チョキ/パーになるかを見る */
