@@ -481,11 +481,9 @@ function buildHand(svg,mine){                            /* SVGの中身(手の�
   const NS="http://www.w3.org/2000/svg", mk=(t,at)=>{ const e=document.createElementNS(NS,t); for(const k in at) e.setAttribute(k,at[k]); svg.appendChild(e); return e; };
   mk("rect",{class:"palm",x:PALM.x,y:PALM.y,width:PALM.w,height:PALM.h,rx:PALM.r});
   const order=[4,3,2,1,0], parts={};
-  for(const i of order) parts[i]={ g:mk("rect",{class:"fg",rx:9}) };
-  if(mine) for(const i of order){
-    parts[i].hd=mk("circle",{class:"hd",r:9.5});                                  /* 指先の丸=つかめる印 */
-    parts[i].hit=mk("circle",{class:"hd-hit",r:38,"data-f":i});                  /* つまむための見えない当たり */
-  }
+  /* 指先の丸はその指の四角の直後に置く=手前の指(あとに描く指)に自然に隠れる(レイヤー表現・2026-09-22) */
+  for(const i of order){ parts[i]={ g:mk("rect",{class:"fg",rx:9}) }; if(mine) parts[i].hd=mk("circle",{class:"hd",r:9.5}); }
+  if(mine) for(const i of order) parts[i].hit=mk("circle",{class:"hd-hit",r:38,"data-f":i});   /* つまむための見えない当たり(いちばん上) */
   return parts;
 }
 function drawHand(parts,tips){
@@ -502,8 +500,8 @@ function drawHand(parts,tips){
     r.setAttribute("transform","translate("+B.x.toFixed(1)+" "+B.y.toFixed(1)+") rotate("+(ang+90).toFixed(2)+")");
   }
   if(!parts[0].hit) return;
-  /* 指先の丸が「自分より手前に描かれている別の指」の四角の中にある時は隠し、その指はつかめない(parts.covered)。
-     描き順は小指(4)が奥・親指(0)が手前=番号の小さい指ほど手前 */
+  /* 指先の丸の中心が「自分より手前に描かれている別の指」の四角の中にある時は、その指はつかめない(parts.covered)。
+     丸そのものは消さない=DOM順で手前の指に隠れる(部分的に重なれば部分的に隠れる)。描き順は小指(4)が奥・親指(0)が手前 */
   const inRect=(p,g)=>{ const px=p.x-g.B.x, py=p.y-g.B.y, t=px*g.ux+py*g.uy, sd=Math.abs(-px*g.uy+py*g.ux); return t>=0&&t<=g.len&&sd<=g.w/2; };
   parts.covered=parts.covered||[];
   for(let i=0;i<5;i++){
@@ -514,7 +512,6 @@ function drawHand(parts,tips){
     parts[i].hit.style.pointerEvents=cov?"none":"";
     /* 丸は「描いた四角の先端」から半幅ぶん内側(指が最小の長さの時も四角の中に収まる) */
     parts[i].hd.setAttribute("cx",g.vx.toFixed(1)); parts[i].hd.setAttribute("cy",g.vy.toFixed(1));
-    parts[i].hd.style.display=cov?"none":"";
   }
 }
 /* つまんで動かす(複数の指を同時につまめる)。tips()=指先5点の配列・canMove()=いま動かせるか・onMove()=動いた時 */
