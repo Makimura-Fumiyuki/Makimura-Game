@@ -183,17 +183,20 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 .edit-row button{ height:30px; padding:0 12px; border-radius:8px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.18); font-size:12px; font-weight:700; color:var(--gray); font-family:"Noto Sans JP",sans-serif; }
 #gameScene.seek .hider .ht{ cursor:default; }
 .hider.found .frame2, .hider.reveal .frame2{ position:absolute; inset:-3px; pointer-events:none; }
-.hider.found .frame2{ border:2.5px solid var(--mag); animation:foundPop .5s ease-out; }
+.hider .frame2{ --ring-o:rgba(255,255,255,.92); --ring-i:rgba(12,12,18,.5); }   /* ★背景が同系色(ピンクの上のピンク等)でも輪郭が消えないよう、線の外に白・内に黒のごく細い線を重ねる(2026-09-22) */
+.hider.found .frame2{ border:2.5px solid var(--mag); box-shadow:0 0 0 1.5px var(--ring-o), inset 0 0 0 1.5px var(--ring-i); animation:foundPop .5s ease-out; }
 .hider.reveal .frame2{ border:2px dashed var(--cyan); }
 @keyframes foundPop{ 0%{ transform:scale(1.6); } 100%{ transform:none; } }
 /* 点滅は全員ぶん1本のアニメ(voteGlow)で同時に始める。色や消灯は変数--gcだけ変える=アニメを差し替えないので点滅のタイミングがズレない */
-#gameScene.voting .hider .frame2{ animation:voteGlow 1.4s ease-in-out infinite; border-style:solid; border-color:var(--mag); --gc:rgba(255,45,122,.8); }
+#gameScene.voting .hider .frame2{ animation:voteGlow 1.4s ease-in-out infinite; border-style:solid; border-color:var(--mag); --gc:rgba(255,45,122,.8); --gcw:rgba(255,255,255,.8); --gcd:rgba(12,12,18,.45); }
 /* 投票中: 箱から波紋が広がる(発光だけでは気付けないため。色は--gcに連動=投票済み/自分/投票完了中は出ない) */
-#gameScene.voting .hider .frame2::before, #gameScene.voting .hider .frame2::after{ content:""; position:absolute; left:50%; top:50%; width:220px; height:220px; margin:-110px 0 0 -110px; border-radius:50%; border:3px solid var(--gc); opacity:0; animation:voteRip 2s ease-out infinite; pointer-events:none; }
+/* ★中央合わせは margin でなく translate(-50%,-50%) で行う=疑似要素は box-sizing:border-box を継承しないため、枠線3px×2ぶん右下へズレていた(2026-09-22修正)。box-sizing も明示しておく */
+#gameScene.voting .hider .frame2::before, #gameScene.voting .hider .frame2::after{ content:""; box-sizing:border-box; position:absolute; left:50%; top:50%; width:220px; height:220px; margin:0; border-radius:50%; border:3px solid var(--gc); box-shadow:0 0 0 1.5px var(--gcw), inset 0 0 0 1.5px var(--gcd); opacity:0; animation:voteRip 2s ease-out infinite; pointer-events:none; }
 #gameScene.voting .hider .frame2::after{ animation-delay:1s; }
-@keyframes voteRip{ 0%{ transform:scale(.12); opacity:.95; } 100%{ transform:scale(1); opacity:0; } }
-#gameScene.voting .hider.voted .frame2, #gameScene.voting .hider.own .frame2, #gameScene.voting.vdone .hider .frame2{ --gc:transparent; }   /* 投票済み・自分の箱・投票完了後は発光なし */
-@keyframes voteGlow{ 0%,100%{ box-shadow:0 0 0 0 transparent; } 50%{ box-shadow:0 0 40px 16px var(--gc); } }
+@keyframes voteRip{ 0%{ transform:translate(-50%,-50%) scale(.12); opacity:.95; } 100%{ transform:translate(-50%,-50%) scale(1); opacity:0; } }
+#gameScene.voting .hider.voted .frame2, #gameScene.voting .hider.own .frame2, #gameScene.voting.vdone .hider .frame2{ --gc:transparent; --gcw:transparent; --gcd:transparent; }   /* 投票済み・自分の箱・投票完了後は発光なし */
+@keyframes voteGlow{ 0%,100%{ box-shadow:0 0 0 1.5px var(--ring-o), inset 0 0 0 1.5px var(--ring-i), 0 0 0 0 transparent; }
+  50%{ box-shadow:0 0 0 1.5px var(--ring-o), inset 0 0 0 1.5px var(--ring-i), 0 0 40px 16px var(--gc), 0 0 15px 3px var(--gcw); } }
 /* リザルト後: 上に名前・下にグッド/バッドの数 */
 #gameScene.resulted .who{ display:block; transform:translateY(-100%); background:rgba(255,255,255,.92); color:var(--ink); box-shadow:0 2px 6px rgba(0,0,0,.14); }
 .tally{ display:none; gap:10px; align-items:center; white-space:nowrap; background:rgba(255,255,255,.92); padding:2px 8px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,.14); font-family:"Noto Sans JP",sans-serif; line-height:1.4; }
