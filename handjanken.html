@@ -69,10 +69,10 @@
   .t-wrap{ text-align:center; display:flex; flex-direction:column; align-items:center; gap:4px; position:relative; }
   .t-logo{ width:clamp(200px,54vw,280px); height:auto; display:block; margin-top:4px; }
   /* いま作っている形=手のすぐ下に大きな文字で(ラウンド中の表示と同じ見せ方)。どれでもない時は何も出さない */
-  .t-shape{ min-height:60px; display:flex; align-items:center; justify-content:center; font-size:clamp(17px,4.93vw,28px); font-weight:900; letter-spacing:-4px; text-indent:-4px; line-height:1.1;
+  .t-shape{ min-height:60px; display:flex; align-items:center; justify-content:center; font-size:clamp(17px,4.93vw,28px); font-weight:900; letter-spacing:1px; text-indent:1px; line-height:1.1;
     color:var(--sw,var(--ink)); margin:-38px 0 0; position:relative; z-index:2;
-    background:var(--swb,rgba(255,255,255,.7)); padding:4px 14px 6px; border-radius:14px; width:140px; box-sizing:border-box; text-align:center; }
-  /* 文字=2/3(28px)・字間=.14em(約6px)から10px減=-4px・背景は高さ60px/幅140pxで据え置き(2026-09-22) */   /* 文字=手の色を濃く・背景=手の色を薄く(--sw/--swbをJSが入れる)。手との間隔は-30px(2026-09-21) */
+    background:var(--swb,rgba(255,255,255,.7)); padding:4px 10px 6px; border-radius:999px; width:110px; box-sizing:border-box; text-align:center; }
+  /* 文字=2/3(28px)・字間=1px(-4pxから+5)・背景は高さ60px/幅110px/完全な角丸(2026-09-22) */   /* 文字=手の色を濃く・背景=手の色を薄く(--sw/--swbをJSが入れる)。手との間隔は-30px(2026-09-21) */
   .t-shape.pop{ animation:chipPop .3s cubic-bezier(.2,1.5,.4,1); }   /* タイトルの手も自由に動かせる */
   .t-main{ line-height:1.06; }
   .t-main .l1{ display:block; font-size:clamp(19px,5vw,30px); font-weight:900; letter-spacing:.12em; text-indent:.12em; color:var(--ui); }
@@ -145,15 +145,16 @@
   .hand .fg,.hand .palm{ fill:var(--skin); stroke:var(--skin-o); stroke-width:1; stroke-linejoin:round; }   /* 輪郭=手の色を濃くしたもの */
   #logoHand .palm{ cursor:pointer; }                     /* タイトル=手のひらを押すと色を選べる */
   .hand .hd{ fill:var(--skin-hd); stroke:none; pointer-events:none; }   /* 指先の丸=つかめる印(手の色を明るくしたもの・輪郭なし・指の内側) */
+  .hand.holding .hd:not(.held){ display:none; }   /* 指をつかんでいる間は、つかんでいる指以外の丸を隠す(2026-09-22) */
   .hand .hd-hit{ fill:transparent; cursor:grab; }
   .hand.locked .hd-hit{ cursor:default; }
   .hand.locked .hd{ opacity:.45; }
   /* タイトル: 手の色は手のひらを押して選ぶ(カラーパレットの入力欄は見えない所に置く) */
   #skinCol{ position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; left:50%; top:40%; }
-  .shape-word{ font-size:clamp(16px,4.93vw,28px); font-weight:900; letter-spacing:-4px; text-indent:-4px; line-height:1.1; margin-top:-36px;
+  .shape-word{ font-size:clamp(16px,4.93vw,28px); font-weight:900; letter-spacing:1px; text-indent:1px; line-height:1.1; margin-top:-36px;
     color:var(--sw,var(--sc)); transition:color .15s, transform .15s; }   /* 文字=その人の手の色を濃く・背景=薄く。手との間隔は-30px(2026-09-21) */
-  .shape-word{ position:relative; z-index:2; display:flex; align-items:center; justify-content:center; min-height:60px; width:min(100%,140px);
-    background:var(--swb,rgba(255,255,255,.7)); padding:4px 14px 6px; border-radius:14px; box-sizing:border-box; }
+  .shape-word{ position:relative; z-index:2; display:flex; align-items:center; justify-content:center; min-height:60px; width:min(100%,110px);
+    background:var(--swb,rgba(255,255,255,.7)); padding:4px 10px 6px; border-radius:999px; box-sizing:border-box; }
   .shape-word.pop{ animation:chipPop .3s cubic-bezier(.2,1.5,.4,1); }
   @keyframes chipPop{ 0%{ transform:scale(.7); } 60%{ transform:scale(1.14); } 100%{ transform:scale(1); } }
   /* デバッグ(手のためし) */
@@ -482,7 +483,7 @@ function buildHand(svg,mine){                            /* SVGの中身(手の�
   mk("rect",{class:"palm",x:PALM.x,y:PALM.y,width:PALM.w,height:PALM.h,rx:PALM.r});
   const order=[4,3,2,1,0], parts={};
   /* 指先の丸はその指の四角の直後に置く=手前の指(あとに描く指)に自然に隠れる(レイヤー表現・2026-09-22) */
-  for(const i of order){ parts[i]={ g:mk("rect",{class:"fg",rx:9}) }; if(mine) parts[i].hd=mk("circle",{class:"hd",r:9.5}); }
+  for(const i of order){ parts[i]={ g:mk("rect",{class:"fg",rx:9}) }; if(mine) parts[i].hd=mk("circle",{class:"hd",r:9.5,"data-f":i}); }
   if(mine) for(const i of order) parts[i].hit=mk("circle",{class:"hd-hit",r:38,"data-f":i});   /* つまむための見えない当たり(いちばん上) */
   return parts;
 }
@@ -517,6 +518,11 @@ function svgPoint(svg,e){
 }
 function attachDrag(svg,tips,canMove,onMove){
   const drags=new Map();                                  /* pointerId → 指番号 */
+  const hold=()=>{                                        /* つかんでいる指だけ丸を残す */
+    const held=new Set(drags.values());
+    svg.classList.toggle("holding",held.size>0);
+    svg.querySelectorAll(".hd").forEach(h=>h.classList.toggle("held",held.has(+h.getAttribute("data-f"))));
+  };
   svg.addEventListener("pointerdown",e=>{
     ensureAudio();
     if(!canMove()) return;
@@ -527,7 +533,7 @@ function attachDrag(svg,tips,canMove,onMove){
     if(best<0) for(let i=0;i<5;i++){ const d=Math.hypot(T[i].x-p.x,T[i].y-p.y); if(d<bd){ bd=d; best=i; } }
     if(best<0||bd>50) return;
     for(const [,fi] of drags) if(fi===best) return;
-    drags.set(e.pointerId,best);
+    drags.set(e.pointerId,best); hold();
     try{ svg.setPointerCapture(e.pointerId); }catch(_){}
     e.preventDefault();
   });
@@ -537,9 +543,9 @@ function attachDrag(svg,tips,canMove,onMove){
     const T=tips(), p=svgPoint(svg,e), n=tipFromPointer(FINGERS[fi],p);
     if(Math.abs(n.x-T[fi].x)>0.05||Math.abs(n.y-T[fi].y)>0.05){ T[fi].x=n.x; T[fi].y=n.y; if(onMove) onMove(); }
   });
-  const end=e=>{ drags.delete(e.pointerId); };
+  const end=e=>{ drags.delete(e.pointerId); hold(); };
   svg.addEventListener("pointerup",end); svg.addEventListener("pointercancel",end); svg.addEventListener("lostpointercapture",end);
-  return { clear(){ drags.clear(); } };
+  return { clear(){ drags.clear(); hold(); } };
 }
 
 /* ===== 判定(指ごとに伸ばし/曲げの2値・中間は前の状態を保つ。親指も含む5本で見る) =====
