@@ -33,10 +33,7 @@
   }
   *{ box-sizing:border-box; font-family:"Noto Sans JP","Hiragino Sans",sans-serif; -webkit-tap-highlight-color:transparent; }
   html,body{ margin:0; height:100%; }
-  body{ background:
-      radial-gradient(ellipse 130% 80% at 18% -10%, var(--tint1,rgba(224,118,46,.10)), transparent 60%),
-      radial-gradient(ellipse 130% 80% at 84% -6%, var(--tint2,rgba(47,127,191,.09)), transparent 60%),
-      var(--bg);   /* 背景も手の色に(--bg/--tint1=自分・--tint2=あいて。JSのapplySkinsが入れる・2026-09-22) */
+  body{ background:var(--bg);   /* 背景=自分の手の色をごく薄くした単色(グラデーションなし。JSのapplySkinsが--bgを入れる・2026-09-22) */
     color:var(--ink); -webkit-font-smoothing:antialiased;
     position:relative; height:100svh; overflow:hidden; user-select:none; -webkit-user-select:none; }
   button{ font-family:inherit; cursor:pointer; }
@@ -182,13 +179,13 @@
     --ol1:var(--olm1,var(--ui)); --ol2:var(--olm2,var(--ui-d)); }
   .fx .big.count{ font-size:clamp(64px,20vw,120px); letter-spacing:0; text-indent:0; }
   .fx .big::before,.fx .big::after{ content:attr(data-t); position:absolute; inset:0; padding:0 .3em; text-align:center; pointer-events:none; color:transparent; }
-  .fx .big::before{ -webkit-text-stroke:.36em var(--ol2); z-index:-2; }
-  .fx .big::after{ -webkit-text-stroke:.18em var(--ol1); z-index:-1; }
+  .fx .big::before{ -webkit-text-stroke:.2em var(--ol2); z-index:-2; }    /* 外線(見える幅≒.06em) */
+  .fx .big::after{ -webkit-text-stroke:.08em var(--ol1); z-index:-1; }    /* 内線(見える幅≒.04em)=外側より細く */
   .fx.gray .big{ --ol1:var(--olf1,var(--ink)); --ol2:var(--olf2,#000); }   /* あいての勝ち=あいての手の色 */
   .fx.count .big{ --ol1:var(--olm1,var(--ui)); --ol2:var(--olm2,var(--ui-d)); }   /* 3カウントは自分の色 */
   .fx .small{ position:relative; font-size:clamp(13px,3.6vw,16px); font-weight:900; letter-spacing:.1em; color:#fff; white-space:nowrap; --ol2:var(--olm2,var(--ui-d)); }
   .fx.gray .small{ --ol2:var(--olf2,#000); }
-  .fx .small::before{ content:attr(data-t); position:absolute; inset:0; -webkit-text-stroke:.34em var(--ol2); z-index:-1; color:transparent; }
+  .fx .small::before{ content:attr(data-t); position:absolute; inset:0; -webkit-text-stroke:.2em var(--ol2); z-index:-1; color:transparent; }
   @keyframes fxIn{ 0%{ transform:scale(.6) rotate(-4deg); } 60%{ transform:scale(1.08) rotate(1deg); } 100%{ transform:none; } }
 
   .sub-btns{ display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
@@ -612,12 +609,13 @@ function noise(dur,vol,hp,delay){
 }
 const playSelect=()=>note(880,880,.06,"sine",.12);
 const playNg    =()=>note(150,110,.11,"square",.10);
-const playTick  =()=>{ note(1300,900,.045,"sine",.07); noise(.03,.03,2200); };   /* 指が伸ばし⇄曲げに切り替わった(???になった時も) */
+const playTick  =()=>{ note(1300,900,.045,"sine",.045); noise(.03,.015,2200); };   /* 指が伸ばし⇄曲げに切り替わった(少し控えめ・2026-09-22) */
+const playNone  =()=>{ note(760,560,.035,"sine",.028); };   /* ???になった時=ごく小さい短い音(3つの形より主張しない・2026-09-22) */
 /* 形ができた時の音(2026-09-22)=グゥ:硬い(低いコツン+短いアタック) / チョ:尖った(高いシャキッ) / パァ:やわらかい(サイン波の和音がふわっ) / ???:playTick */
 const playRock    =()=>{ note(170,60,.11,"square",.12); note(1100,400,.03,"triangle",.09); noise(.035,.08,1800); };
 const playScissor =()=>{ note(1900,2900,.06,"sawtooth",.055); note(3200,2200,.05,"square",.035,.05); noise(.04,.05,4000); };
 const playPaper   =()=>{ note(523,554,.22,"sine",.08); note(659,659,.24,"sine",.06,.03); note(784,784,.26,"sine",.045,.06); };
-const playShape   =sh=>{ if(sh==="rock") playRock(); else if(sh==="scissors") playScissor(); else if(sh==="paper") playPaper(); else playTick(); };
+const playShape   =sh=>{ if(sh==="rock") playRock(); else if(sh==="scissors") playScissor(); else if(sh==="paper") playPaper(); else playNone(); };
 const playReady =()=>note(660,660,.09,"triangle",.13);
 const playGo    =()=>{ note(880,1320,.14,"triangle",.16); noise(.06,.04,1500); };
 const playRoundWin =()=>{ [784,988,1319].forEach((f,i)=>note(f,f,.16,"triangle",.17,i*.07)); note(1760,1760,.35,"sine",.07,.2); };
@@ -693,6 +691,14 @@ function mixHex(hex,to,t){                              /* hexを to(0=黒/255=�
 function setSkin(svg,hex){                               /* 本体=その色・輪郭=濃く・指先の丸=明るく(手の色から決める) */
   const st=svg.style; st.setProperty("--skin",hex); st.setProperty("--skin-o",mixHex(hex,0,0.32)); st.setProperty("--skin-hd",mixHex(hex,255,0.62));
 }
+/* 手の形の文字を「手のひらの真下」に=手のひらの中心(x=167)はviewBox(-40〜340)の54.5%なので、svgの幅×(0.545-0.5)ぶん右へ(flexの中央そろえなのでmargin-leftは2倍) */
+const PALM_CX_RATIO=(PALM.x+PALM.w/2+40)/380-0.5;
+function placeWords(){
+  [["logoHand","tShape"],["handMe","shMe"],["handFoe","shFoe"]].forEach(([sv,wd])=>{
+    const w=$(sv).getBoundingClientRect().width; $(wd).style.marginLeft=(w*PALM_CX_RATIO*2).toFixed(1)+"px";
+  });
+}
+window.addEventListener("resize",placeWords); window.addEventListener("load",placeWords); setTimeout(placeWords,50);
 function applySkins(){
   const foe=(mode==="online")?(peerSkin||"#f6d0b0"):cpuSkin;
   setSkin($("logoHand"),mySkin); setSkin($("handMe"),mySkin); setSkin($("handFoe"),foe);
@@ -701,7 +707,7 @@ function applySkins(){
   /* 全体のUI色も手の色に合わせる: --ui=自分の手の色(ボタン・ロゴ・見出し) / --a,--b=その側の人の手の色(名前・本数・チャット・結果) */
   const uiC=mixHex(mySkin,0,0.3), uiD=mixHex(mySkin,0,0.55), foC=mixHex(foe,0,0.3), foD=mixHex(foe,0,0.55), rs=document.documentElement.style;
   rs.setProperty("--ui",uiC); rs.setProperty("--ui-d",uiD); rs.setProperty("--ui-bg",mixHex(mySkin,255,0.86));
-  rs.setProperty("--bg",mixHex(mySkin,255,0.9)); rs.setProperty("--tint1",mixHex(mySkin,255,0.62)); rs.setProperty("--tint2",mixHex(foe,255,0.68));   /* 画面全体の背景=自分の手の色をごく薄く+左上に自分・右上にあいての色みを少し */
+  rs.setProperty("--bg",mixHex(mySkin,255,0.88));   /* 画面全体の背景=自分の手の色をごく薄くした単色 */
   /* 3カウント・「◯◯の勝ち」の2重アウトライン=内側:手の色そのまま寄り・外側:濃く */
   rs.setProperty("--olm1",mixHex(mySkin,0,0.15)); rs.setProperty("--olm2",mixHex(mySkin,0,0.55)); rs.setProperty("--olf1",mixHex(foe,0,0.15)); rs.setProperty("--olf2",mixHex(foe,0,0.55));
   rs.setProperty("--a", mySide==="a"?uiC:foC); rs.setProperty("--a-d", mySide==="a"?uiD:foD);
@@ -724,6 +730,7 @@ function setWord(id,shape){                              /* 形の名前(合わ�
   el.classList.toggle("none",shape==="none");
 }
 function renderStatic(){                                 /* 名前・本数・ラウンド表示・ボタン(状態が変わった時だけ) */
+  placeWords();
   const me=mySide, fo=foeSide(); applySkins();
   $("sideMe").className="side me "+me; $("sideFoe").className="side foe "+fo;
   $("pnMe").textContent=labelOf(me); $("pnFoe").textContent=labelOf(fo);
@@ -1048,6 +1055,7 @@ function foeLeft(){
 
 /* ===== 画面のきりかえ ===== */
 function showScene(id){
+  setTimeout(placeWords,0); setTimeout(placeWords,380);   /* シーン切替の直後とフェード後に手の形の文字を手のひらの真下へ */
   ["titleScene","gameScene"].forEach(s=>$(s).classList.toggle("on",s===id));
   $("chatBox").classList.toggle("on",id==="gameScene");
   window.scrollTo(0,0);
