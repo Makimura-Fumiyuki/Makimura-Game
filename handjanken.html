@@ -315,7 +315,7 @@
 <div class="scene on" id="titleScene">
   <div class="t-wrap">
     <div class="t-main"><span class="l1">手作り</span><span class="l2">じゃんけん</span></div>
-    <svg class="t-logo hand mine" id="logoHand" viewBox="-75 20 420 340"></svg>
+    <svg class="t-logo hand mine" id="logoHand" viewBox="-40 40 380 320"></svg>
     <input type="color" id="skinCol" value="#f6d0b0" aria-label="手の色">
     <div class="t-shape" id="tShape">パァ</div>
   </div>
@@ -358,12 +358,12 @@
   <div class="arena">
     <div class="side me" id="sideMe">
       <div class="who"><span class="nm" id="pnMe">あなた</span><span class="dots" id="dotsMe"><i></i><i></i><i></i></span></div>
-      <svg class="hand mine" id="handMe" viewBox="-75 20 420 340"></svg>
+      <svg class="hand mine" id="handMe" viewBox="-40 40 380 320"></svg>
       <div class="shape-word" id="shMe"><span class="sw-tx">パァ</span></div>
     </div>
     <div class="side foe" id="sideFoe">
       <div class="who"><span class="nm" id="pnFoe">あいて</span><span class="dots" id="dotsFoe"><i></i><i></i><i></i></span></div>
-      <svg class="hand" id="handFoe" viewBox="-75 20 420 340"></svg>
+      <svg class="hand" id="handFoe" viewBox="-40 40 380 320"></svg>
       <div class="shape-word" id="shFoe"><span class="sw-tx">パァ</span></div>
     </div>
     <div class="fx" id="fx"><div class="big" id="fxBig"></div><div class="small" id="fxSmall"></div></div>
@@ -415,8 +415,8 @@
   <ul>
     <li>5本の指それぞれを「伸ばし」か「曲げ」で見る。指先が付け根の高さより上なら伸ばし、手のひら側まで下げると曲げ。</li>
     <li><b>パァ</b>＝5本とも伸ばす　<b>グゥ</b>＝5本とも曲げる　<b>チョ</b>＝人差し指と中指だけ伸ばす。</li>
-    <li>どの形にもぴったり合わない手は「謎手」。謎手の間は勝ちも負けもつかない。</li>
-    <li>毎ラウンド、両方の手は指を3分の2ほど伸ばしたパァから始まる。3カウントの間も指は動かせる。</li>
+    <li>どの形にもぴったり合わない手は「???」。???の間は勝ちも負けもつかない。</li>
+    <li>毎ラウンド、両方の手は指を半分ほど伸ばしたパァから始まる。3カウントの間も指は動かせる。</li>
   </ul>
   <p class="h-sec k">ここが勝負</p>
   <ul>
@@ -447,8 +447,8 @@ const foeLabel=()=>peerName||MK_GUEST;
 const P={x:167,y:249};                                   /* 手のひらの中心 */
 /* 見た目は角丸の四角だけで組む(手のひら=大きな角丸四角・指=細長い角丸四角・親指は左に離して斜め) */
 const PALM={ x:92, y:195, w:150, h:108, r:18 };
-const FINGERS=[                                          /* 0=親指 1=人差し指 2=中指 3=薬指 4=小指。b=付け根・a=伸ばした向き(度)・w=太さ・L=伸びる上限(2026-09-21=親指174・他104) */
-  { n:"親指",   b:{x:80,y:226},    a:-135, w:33, L:174 },
+const FINGERS=[                                          /* 0=親指 1=人差し指 2=中指 3=薬指 4=小指。b=付け根・a=伸ばした向き(度)・w=太さ・L=伸びる上限(2026-09-21=5本とも104)・r0=初期の長さ(上限に対する割合) */
+  { n:"親指",   b:{x:80,y:226},    a:-135, w:33, L:104, r0:2/3 },
   { n:"人差し指", b:{x:108.5,y:189}, a:-90,  w:33, L:104 },
   { n:"中指",   b:{x:147.5,y:189}, a:-90,  w:33, L:104 },
   { n:"薬指",   b:{x:186.5,y:189}, a:-90,  w:33, L:104 },
@@ -463,8 +463,9 @@ function bentTip(f){                                     /* 曲げた時の指�
 }
 const SHAPE_TIPS={ paper:[1,1,1,1,1], rock:[0,0,0,0,0], scissors:[0,1,1,0,0] };   /* 1=伸ばし 0=曲げ */
 function tipsOfShape(k){ return FINGERS.map((f,i)=>SHAPE_TIPS[k][i]?extTip(f):bentTip(f)); }
-const INIT_R=2/3;                                        /* 初期の指の長さ=上限の2/3 */
-function newTips(){ return FINGERS.map(f=>({ x:f.b.x+f.L*INIT_R*Math.cos(rad(f.a)), y:f.b.y+f.L*INIT_R*Math.sin(rad(f.a)) })); }
+const INIT_R=1/2;                                        /* 初期の指の長さ=上限の1/2(親指だけ f.r0=2/3) */
+const initR=f=>(f.r0!=null?f.r0:INIT_R);
+function newTips(){ return FINGERS.map(f=>({ x:f.b.x+f.L*initR(f)*Math.cos(rad(f.a)), y:f.b.y+f.L*initR(f)*Math.sin(rad(f.a)) })); }
 function tipFromPointer(f,pt){                           /* つまんだ位置 → 指先(付け根からLまで・向きは自由) */
   const dx=pt.x-f.b.x, dy=pt.y-f.b.y, d=Math.hypot(dx,dy);
   if(d<=f.L) return {x:pt.x,y:pt.y};
@@ -548,10 +549,10 @@ function attachDrag(svg,tips,canMove,onMove,covered){
 /* ===== 判定(指ごとに伸ばし/曲げの2値・中間は前の状態を保つ。親指も含む5本で見る) =====
    伸び具合(軸方向÷L。初期=0.5)が 0以上=伸ばし・0未満(付け根より手のひら側)=曲げ。中間ゾーンなし(2026-09-21牧村指示)。
    グゥ=5本とも0未満(1本でも0以上ならグゥにしない)／チョ=人差し指・中指が0以上でそれ以外が0未満／パァ=5本とも0以上。
-   ★どれにもぴったり合わない時は none=「謎手」と表示(時間制限なし・勝ち負けはつかない)(2026-09-21牧村指示)。
+   ★どれにもぴったり合わない時は none=「???」と表示(時間制限なし・勝ち負けはつかない)(2026-09-21牧村指示)。
    5本の並びがぴったり合う形だけ採用・合わなければ「どれでもない」(none)=文字を消すだけで勝ち負けはつかない(時間制限なし) */
 const EXT_AT=0, BENT_AT=0;                               /* 判定のしきい値=0(付け根の高さ)。0以上=伸ばし・0未満=曲げ */
-const SHAPE_NAME={ paper:"パァ", rock:"グゥ", scissors:"チョ", none:"謎手" };
+const SHAPE_NAME={ paper:"パァ", rock:"グゥ", scissors:"チョ", none:"???" };
 function stepStates(st,tips){                            /* st=[bool×5] true=曲げ。中間ゾーンでは変えない */
   let changed=false;
   for(let i=0;i<5;i++){
@@ -561,7 +562,7 @@ function stepStates(st,tips){                            /* st=[bool×5] true=�
   }
   return changed;
 }
-function shapeOf(st){                                   /* st=[曲げ×5] → ぴったり合う形。無ければ none(謎手) */
+function shapeOf(st){                                   /* st=[曲げ×5] → ぴったり合う形。無ければ none(???) */
   for(const k of ["paper","rock","scissors"]){
     let ok=true; for(let i=0;i<5;i++){ if((!st[i])!==!!SHAPE_TIPS[k][i]){ ok=false; break; } }
     if(ok) return k;
@@ -645,7 +646,7 @@ function judgeLogo(){                                    /* タイトルでも�
   stepStates(logoStates,logoTips);
   const sh=shapeOf(logoStates);
   if(sh!==logoShape){
-    logoShape=sh; const el=$("tShape"); el.textContent=SHAPE_NAME[sh];   /* 合わない時は「謎手」 */
+    logoShape=sh; const el=$("tShape"); el.textContent=SHAPE_NAME[sh];   /* 合わない時は「???」 */
     el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop");
     playTick();
   }
@@ -688,7 +689,7 @@ $("logoHand").addEventListener("click",e=>{             /* タイトルの手の
 applySkins();
 const dragMe=attachDrag($("handMe"),()=>tips[mySide],canMoveMine,()=>{ myMoved=true; },()=>partsMe.covered);
 attachDrag($("logoHand"),()=>logoTips,()=>true,()=>{ drawHand(partsLogo,logoTips); judgeLogo(); },()=>partsLogo.covered);
-function setWord(id,shape){                              /* 形の名前(合わない時は「謎手」) */
+function setWord(id,shape){                              /* 形の名前(合わない時は「???」) */
   const el=$(id), tx=el.querySelector(".sw-tx"), nm=SHAPE_NAME[shape];
   if(tx.textContent!==nm){ tx.textContent=nm; el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); }
   el.classList.toggle("none",shape==="none");
@@ -720,7 +721,7 @@ function renderDbg(){                                    /* デバッグ: 指ご
     h+='<tr><td>'+FINGERS[i].n+'</td><td class="v">'+Math.round(clamp(r,-1,1)*100)+'%</td><td class="j">'+(st[i]?"曲げ":"伸ばし")+'</td></tr>';
   }
   h+='</table><div>いまの形：<b>'+SHAPE_NAME[shapes[mySide]]+'</b></div>'
-    +'<div class="note">%＝指先が「伸ばす向き」にどれだけ出ているか（伸ばし切り＝100%・初期＝67%・付け根の高さ＝0%・手のひら側はマイナス）<br>伸ばし判定 0%以上 ／ 曲げ判定 0%未満<br>グゥ＝5本とも0%未満（1本でも0%以上ならグゥにしない）／チョ＝人差し指・中指が0%以上でそれ以外が0%未満／パァ＝5本とも0%以上。どれにも合わない時は「謎手」（勝ち負けはつかない）</div>';
+    +'<div class="note">%＝指先が「伸ばす向き」にどれだけ出ているか（伸ばし切り＝100%・初期＝50%（親指は67%）・付け根の高さ＝0%・手のひら側はマイナス）<br>伸ばし判定 0%以上 ／ 曲げ判定 0%未満<br>グゥ＝5本とも0%未満（1本でも0%以上ならグゥにしない）／チョ＝人差し指・中指が0%以上でそれ以外が0%未満／パァ＝5本とも0%以上。どれにも合わない時は「???」（勝ち負けはつかない）</div>';
   $("dbgPanel").innerHTML=h;
 }
 
