@@ -25,8 +25,9 @@
     --ink:#2a2521;
     --sub:#8e857b;
     --line:#e0d8cc;
-    --a:#e0762e;  --a-d:#a8521a;  --a-bg:#fff2e8;    /* 部屋を作った側(a)=だいだい */
-    --b:#2f7fbf;  --b-d:#1d5786;  --b-bg:#eaf3fb;    /* 入った側(b)=青 */
+    --a:#e0762e;  --a-d:#a8521a;  --a-bg:#fff2e8;    /* 側(a/b)の色=起動後はJS(applySkins)がその人の手の色で上書きする(2026-09-22) */
+    --b:#2f7fbf;  --b-d:#1d5786;  --b-bg:#eaf3fb;
+    --ui:#e0762e; --ui-d:#a8521a; --ui-bg:#fff2e8;   /* 共通UI(ボタン・ロゴ・見出し)=自分の手の色(JSが上書き) */
     --skin:#f6d0b0; --skin-d:#e2b08c; --skin-line:#c98d63;
     --tc:var(--a); --tc-d:var(--a-d);
   }
@@ -59,7 +60,7 @@
   .help-btn{ position:fixed; left:10px; top:10px; z-index:80; }
   .snd-btns{ position:fixed; right:10px; top:10px; z-index:80; }
   .help-btn .q{ display:inline-flex; align-items:center; justify-content:center; width:17px; height:17px;
-    border-radius:50%; background:var(--a); color:#fff; font-size:11.5px; font-weight:900; }
+    border-radius:50%; background:var(--ui); color:#fff; font-size:11.5px; font-weight:900; }
   .snd-btn svg{ width:14px; height:13px; }
   .snd-btn.off{ opacity:.5; } .snd-btn.off .w1,.snd-btn.off .w2{ display:none; }
   .help-btn:active,.snd-btn:active{ transform:translateY(1px); }
@@ -68,12 +69,13 @@
   .t-wrap{ text-align:center; display:flex; flex-direction:column; align-items:center; gap:4px; position:relative; }
   .t-logo{ width:clamp(200px,54vw,280px); height:auto; display:block; margin-top:4px; }
   /* いま作っている形=手のすぐ下に大きな文字で(ラウンド中の表示と同じ見せ方)。どれでもない時は何も出さない */
-  .t-shape{ min-height:1.2em; font-size:clamp(26px,7.4vw,42px); font-weight:900; letter-spacing:.16em; text-indent:.16em; line-height:1.1;
+  .t-shape{ min-height:60px; display:flex; align-items:center; justify-content:center; font-size:clamp(17px,4.93vw,28px); font-weight:900; letter-spacing:-4px; text-indent:-4px; line-height:1.1;
     color:var(--sw,var(--ink)); margin:-38px 0 0; position:relative; z-index:2;
-    background:var(--swb,rgba(255,255,255,.7)); padding:4px 20px 6px; border-radius:14px; min-width:200px; box-sizing:border-box; text-align:center; }   /* 文字=手の色を濃く・背景=手の色を薄く(--sw/--swbをJSが入れる)。手との間隔は-30px(2026-09-21) */
+    background:var(--swb,rgba(255,255,255,.7)); padding:4px 14px 6px; border-radius:14px; width:140px; box-sizing:border-box; text-align:center; }
+  /* 文字=2/3(28px)・字間=.14em(約6px)から10px減=-4px・背景は高さ60px/幅140pxで据え置き(2026-09-22) */   /* 文字=手の色を濃く・背景=手の色を薄く(--sw/--swbをJSが入れる)。手との間隔は-30px(2026-09-21) */
   .t-shape.pop{ animation:chipPop .3s cubic-bezier(.2,1.5,.4,1); }   /* タイトルの手も自由に動かせる */
   .t-main{ line-height:1.06; }
-  .t-main .l1{ display:block; font-size:clamp(19px,5vw,30px); font-weight:900; letter-spacing:.12em; text-indent:.12em; color:var(--a); }
+  .t-main .l1{ display:block; font-size:clamp(19px,5vw,30px); font-weight:900; letter-spacing:.12em; text-indent:.12em; color:var(--ui); }
   .t-main .l2{ display:block; margin-top:2px; font-size:clamp(34px,9.4vw,60px); font-weight:900;
     letter-spacing:.02em; white-space:nowrap; color:var(--ink); text-shadow:0 2px 0 rgba(255,255,255,.8); }
   .t-sub{ margin-top:12px; font-size:clamp(12px,3.4vw,15px); color:var(--sub); letter-spacing:.14em; font-weight:700; }
@@ -86,10 +88,8 @@
     box-shadow:0 3px 0 var(--line);
     transition:transform .14s cubic-bezier(.3,1.4,.5,1), box-shadow .14s ease, background .14s, color .14s, border-color .14s; }
   .fuda:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--line); }
-  .fuda.sel{ color:#fff; background:var(--a); border-color:var(--a); box-shadow:0 3px 0 var(--a-d); }
-  .fuda.b.sel{ background:var(--b); border-color:var(--b); box-shadow:0 3px 0 var(--b-d); }
-  .fuda.sel:active{ box-shadow:0 1px 0 var(--a-d); }
-  .fuda.b.sel:active{ box-shadow:0 1px 0 var(--b-d); }
+  .fuda.sel{ color:#fff; background:var(--ui); border-color:var(--ui); box-shadow:0 3px 0 var(--ui-d); }
+  .fuda.sel:active{ box-shadow:0 1px 0 var(--ui-d); }
   #modeRow .fuda{ min-width:0; max-width:none; font-size:clamp(12px,3.3vw,15px); letter-spacing:.02em; padding-left:4px; padding-right:4px; }
   .lv-row{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
   .lv-row .fuda{ min-width:110px; max-width:148px; padding:12px 6px 10px; font-size:15px; }
@@ -99,24 +99,24 @@
 
   .start-btn{ margin-top:2px; padding:15px 50px 17px; white-space:nowrap;
     font-size:22px; font-weight:900; letter-spacing:.3em; text-indent:.3em; color:#fff;
-    background:var(--a); border:none; border-radius:14px;
-    box-shadow:0 5px 0 var(--a-d), 0 9px 18px rgba(168,82,26,.28); }
-  .start-btn:active{ transform:translateY(3px); box-shadow:0 2px 0 var(--a-d); }
+    background:var(--ui); border:none; border-radius:14px;
+    box-shadow:0 5px 0 var(--ui-d), 0 9px 18px rgba(0,0,0,.16); }
+  .start-btn:active{ transform:translateY(3px); box-shadow:0 2px 0 var(--ui-d); }
   .room-btns{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
   .room-area{ display:flex; flex-direction:column; align-items:center; gap:14px; min-height:20px; text-align:center; }
   /* オンライン: 合言葉まわり(碁石系列と同じ作り=枠なしの縦積み) */
   .room-note{ font-size:12.5px; font-weight:700; letter-spacing:.12em; color:var(--sub); }
-  .room-note.err{ color:var(--a); }
+  .room-note.err{ color:var(--ui); }
   @keyframes waitDots{ 0%,100%{ opacity:.4; } 50%{ opacity:1; } }
   .room-wait{ animation:waitDots 1.6s ease-in-out infinite; }
   .code-show{ display:inline-flex; align-items:center; gap:12px; margin-top:-6px;
-    background:#fff; border:2.2px solid var(--a); border-radius:12px; padding:6px 20px 8px 16px; cursor:pointer;
+    background:#fff; border:2.2px solid var(--ui); border-radius:12px; padding:6px 20px 8px 16px; cursor:pointer;
     transition:transform .12s ease, box-shadow .15s ease; }
   .code-show:hover{ box-shadow:0 3px 10px rgba(224,118,46,.24); }
   .code-show:active{ transform:scale(.97); }
   .code-show .cs-code{ font-size:clamp(34px,9vw,44px); font-weight:900; letter-spacing:.22em; text-indent:.22em;
-    color:var(--a); font-variant-numeric:tabular-nums; line-height:1.15; }
-  .code-show .cs-copy{ width:24px; height:24px; flex:none; fill:none; stroke:var(--a); stroke-width:2; opacity:.7; }
+    color:var(--ui); font-variant-numeric:tabular-nums; line-height:1.15; }
+  .code-show .cs-copy{ width:24px; height:24px; flex:none; fill:none; stroke:var(--ui); stroke-width:2; opacity:.7; }
   .code-input{ width:230px; padding:10px 6px; text-align:center; font-family:inherit; font-weight:900;
     font-size:26px; letter-spacing:.25em; text-indent:.25em; text-transform:uppercase;
     color:var(--ink); background:#fff; border:2px solid var(--line); border-radius:8px; outline:none;
@@ -150,9 +150,9 @@
   .hand.locked .hd{ opacity:.45; }
   /* タイトル: 手の色は手のひらを押して選ぶ(カラーパレットの入力欄は見えない所に置く) */
   #skinCol{ position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; left:50%; top:40%; }
-  .shape-word{ font-size:clamp(24px,7.4vw,42px); font-weight:900; letter-spacing:.14em; text-indent:.14em; line-height:1.1; margin-top:-36px;
+  .shape-word{ font-size:clamp(16px,4.93vw,28px); font-weight:900; letter-spacing:-4px; text-indent:-4px; line-height:1.1; margin-top:-36px;
     color:var(--sw,var(--sc)); transition:color .15s, transform .15s; }   /* 文字=その人の手の色を濃く・背景=薄く。手との間隔は-30px(2026-09-21) */
-  .shape-word{ position:relative; z-index:2; display:flex; align-items:center; justify-content:center; min-height:1.2em; width:min(100%,200px);
+  .shape-word{ position:relative; z-index:2; display:flex; align-items:center; justify-content:center; min-height:60px; width:min(100%,140px);
     background:var(--swb,rgba(255,255,255,.7)); padding:4px 14px 6px; border-radius:14px; box-sizing:border-box; }
   .shape-word.pop{ animation:chipPop .3s cubic-bezier(.2,1.5,.4,1); }
   @keyframes chipPop{ 0%{ transform:scale(.7); } 60%{ transform:scale(1.14); } 100%{ transform:scale(1); } }
@@ -187,7 +187,7 @@
   #gameScene .sub-btns .txt-btn{ min-width:132px; text-align:center; }
   .txt-btn:disabled{ opacity:.35; cursor:default; pointer-events:none; }
   .txt-btn:not(:disabled):active{ transform:translateY(1px); }
-  .txt-btn.deny{ color:#fff; background:var(--a); border-color:var(--a); }
+  .txt-btn.deny{ color:#fff; background:var(--ui); border-color:var(--ui); }
 
   /* ===== チャット(スタンプもこの中に入れる・全ゲーム共通) ===== */
   #chatBox{ position:fixed; left:10px; bottom:10px; z-index:75; display:none;
@@ -246,7 +246,7 @@
     display:flex; align-items:center; justify-content:center; color:#666; top:4px; left:100%; margin-left:7px; }
   .stamp-mute svg{ width:15px; height:15px; transform:translateY(1px); }
   .stamp-mute .mute-slash{ display:none; }
-  .stamp-mute.muted{ color:var(--a); }
+  .stamp-mute.muted{ color:var(--ui); }
   .stamp-mute.muted .mute-slash{ display:block; }
   .stamp-mute:active{ transform:translateY(1px) scale(.93); }
   .stamp-fly{ position:fixed; bottom:-30px; width:96px; z-index:63; pointer-events:none;
@@ -285,8 +285,8 @@
     animation:rIn .28s cubic-bezier(.2,.9,.3,1); }
   .help-card h2{ margin:0 0 14px; font-size:16px; font-weight:900; letter-spacing:.12em; text-align:center; }
   .h-sec{ display:flex; align-items:center; gap:8px; margin:0 0 6px; font-size:14.5px; font-weight:900; letter-spacing:.1em; }
-  .h-sec::before{ content:""; width:5px; height:17px; border-radius:2px; background:var(--a); flex:none; }
-  .h-sec.b::before{ background:var(--b); } .h-sec.k::before{ background:var(--ink); }
+  .h-sec::before{ content:""; width:5px; height:17px; border-radius:2px; background:var(--ui); flex:none; }
+  .h-sec.b::before{ background:var(--ui-d); } .h-sec.k::before{ background:var(--ink); }
   .help-card ul{ margin:0 0 16px; padding-left:1.15em; }
   .help-card li{ font-size:13.5px; font-weight:500; line-height:1.95; letter-spacing:.03em; color:#3a352f; }
   .help-card li b{ font-weight:900; }
@@ -500,16 +500,11 @@ function drawHand(parts,tips){
     r.setAttribute("transform","translate("+B.x.toFixed(1)+" "+B.y.toFixed(1)+") rotate("+(ang+90).toFixed(2)+")");
   }
   if(!parts[0].hit) return;
-  /* 指先の丸の中心が「自分より手前に描かれている別の指」の四角の中にある時は、その指はつかめない(parts.covered)。
-     丸そのものは消さない=DOM順で手前の指に隠れる(部分的に重なれば部分的に隠れる)。描き順は小指(4)が奥・親指(0)が手前 */
-  const inRect=(p,g)=>{ const px=p.x-g.B.x, py=p.y-g.B.y, t=px*g.ux+py*g.uy, sd=Math.abs(-px*g.uy+py*g.ux); return t>=0&&t<=g.len&&sd<=g.w/2; };
-  parts.covered=parts.covered||[];
+  /* 丸はDOM順で手前の指に隠れる(部分的に重なれば部分的に隠れる)。描き順は小指(4)が奥・親指(0)が手前。
+     重なっていてもつかめる(手前の指が優先=attachDrag側)。2026-09-22 */
   for(let i=0;i<5;i++){
-    const g=geo[i], p={x:g.vx,y:g.vy}; let cov=false;
-    for(let j=0;j<i;j++) if(inRect(p,geo[j])){ cov=true; break; }
-    parts.covered[i]=cov;
+    const g=geo[i];
     parts[i].hit.setAttribute("cx",tips[i].x.toFixed(1)); parts[i].hit.setAttribute("cy",tips[i].y.toFixed(1));
-    parts[i].hit.style.pointerEvents=cov?"none":"";
     /* 丸は「描いた四角の先端」から半幅ぶん内側(指が最小の長さの時も四角の中に収まる) */
     parts[i].hd.setAttribute("cx",g.vx.toFixed(1)); parts[i].hd.setAttribute("cy",g.vy.toFixed(1));
   }
@@ -520,14 +515,16 @@ function svgPoint(svg,e){
   const m=svg.getScreenCTM(); if(!m) return {x:0,y:0};
   const q=pt.matrixTransform(m.inverse()); return {x:q.x,y:q.y};
 }
-function attachDrag(svg,tips,canMove,onMove,covered){
+function attachDrag(svg,tips,canMove,onMove){
   const drags=new Map();                                  /* pointerId → 指番号 */
   svg.addEventListener("pointerdown",e=>{
     ensureAudio();
     if(!canMove()) return;
-    const T=tips(), p=svgPoint(svg,e), cv=covered?covered():null;
+    const T=tips(), p=svgPoint(svg,e);
+    /* 押した所の近く(22px以内)に指先が重なっていたら手前の指(番号の小さい方)を優先。無ければいちばん近い指(50px以内) */
     let best=-1, bd=1e9;
-    for(let i=0;i<5;i++){ if(cv&&cv[i]) continue; const d=Math.hypot(T[i].x-p.x,T[i].y-p.y); if(d<bd){ bd=d; best=i; } }   /* 丸が隠れている指はつかめない */
+    for(let i=0;i<5;i++){ const d=Math.hypot(T[i].x-p.x,T[i].y-p.y); if(d<=22){ best=i; bd=d; break; } }
+    if(best<0) for(let i=0;i<5;i++){ const d=Math.hypot(T[i].x-p.x,T[i].y-p.y); if(d<bd){ bd=d; best=i; } }
     if(best<0||bd>50) return;
     for(const [,fi] of drags) if(fi===best) return;
     drags.set(e.pointerId,best);
@@ -677,7 +674,12 @@ function applySkins(){
   const foe=(mode==="online")?(peerSkin||"#f6d0b0"):cpuSkin;
   setSkin($("logoHand"),mySkin); setSkin($("handMe"),mySkin); setSkin($("handFoe"),foe);
   /* 手の形の文字も手の色に準じる(読めるよう黒へ38%寄せた色) */
-  const swm=mixHex(mySkin,0,0.38), swf=mixHex(foe,0,0.38), swbm=mixHex(mySkin,255,0.78), swbf=mixHex(foe,255,0.78);   /* 背景=手の色を白へ78%寄せた色 */
+  const swm=mixHex(mySkin,0,0.2), swf=mixHex(foe,0,0.2), swbm=mixHex(mySkin,255,0.55), swbf=mixHex(foe,255,0.55);   /* 背景=手の色を白へ55%(濃い寄り)・文字=黒へ20%(薄い寄り) 2026-09-22 */
+  /* 全体のUI色も手の色に合わせる: --ui=自分の手の色(ボタン・ロゴ・見出し) / --a,--b=その側の人の手の色(名前・本数・チャット・結果) */
+  const uiC=mixHex(mySkin,0,0.3), uiD=mixHex(mySkin,0,0.55), foC=mixHex(foe,0,0.3), foD=mixHex(foe,0,0.55), rs=document.documentElement.style;
+  rs.setProperty("--ui",uiC); rs.setProperty("--ui-d",uiD); rs.setProperty("--ui-bg",mixHex(mySkin,255,0.86));
+  rs.setProperty("--a", mySide==="a"?uiC:foC); rs.setProperty("--a-d", mySide==="a"?uiD:foD);
+  rs.setProperty("--b", mySide==="b"?uiC:foC); rs.setProperty("--b-d", mySide==="b"?uiD:foD);
   $("tShape").style.setProperty("--sw",swm); $("shMe").style.setProperty("--sw",swm); $("shFoe").style.setProperty("--sw",swf);
   $("tShape").style.setProperty("--swb",swbm); $("shMe").style.setProperty("--swb",swbm); $("shFoe").style.setProperty("--swb",swbf);
   $("skinCol").value=mySkin;
@@ -688,8 +690,8 @@ $("logoHand").addEventListener("click",e=>{             /* タイトルの手の
   ensureAudio(); playSelect(); try{ $("skinCol").click(); }catch(_){}
 });
 applySkins();
-const dragMe=attachDrag($("handMe"),()=>tips[mySide],canMoveMine,()=>{ myMoved=true; },()=>partsMe.covered);
-attachDrag($("logoHand"),()=>logoTips,()=>true,()=>{ drawHand(partsLogo,logoTips); judgeLogo(); },()=>partsLogo.covered);
+const dragMe=attachDrag($("handMe"),()=>tips[mySide],canMoveMine,()=>{ myMoved=true; });
+attachDrag($("logoHand"),()=>logoTips,()=>true,()=>{ drawHand(partsLogo,logoTips); judgeLogo(); });
 function setWord(id,shape){                              /* 形の名前(合わない時は「???」) */
   const el=$(id), tx=el.querySelector(".sw-tx"), nm=SHAPE_NAME[shape];
   if(tx.textContent!==nm){ tx.textContent=nm; el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); }
