@@ -138,9 +138,9 @@
   .hand{ width:100%; height:auto; display:block; touch-action:none; overflow:visible; }
   .side .hand{ width:min(100%,340px); }
   .hand.mine{ cursor:grab; }
-  .hand .fg,.hand .palm{ fill:var(--skin); stroke:rgba(0,0,0,.24); stroke-width:4; stroke-linejoin:round; }
+  .hand .fg,.hand .palm{ fill:var(--skin); stroke:var(--skin-o); stroke-width:4; stroke-linejoin:round; }   /* 輪郭=手の色を濃くしたもの */
   #logoHand .palm{ cursor:pointer; }                     /* タイトル=手のひらを押すと色を選べる */
-  .hand .hd{ fill:rgba(255,255,255,.82); stroke:none; pointer-events:none; }   /* 指先の丸=つかめる印(輪郭なし・指の内側) */
+  .hand .hd{ fill:var(--skin-hd); stroke:none; pointer-events:none; }   /* 指先の丸=つかめる印(手の色を明るくしたもの・輪郭なし・指の内側) */
   .hand .hd-hit{ fill:transparent; cursor:grab; }
   .hand.locked .hd-hit{ cursor:default; }
   .hand.locked .hd{ opacity:.45; }
@@ -311,7 +311,7 @@
 <!-- ===== タイトル ===== -->
 <div class="scene on" id="titleScene">
   <div class="t-wrap">
-    <svg class="t-logo hand mine" id="logoHand" viewBox="0 0 300 360"></svg>
+    <svg class="t-logo hand mine" id="logoHand" viewBox="-40 0 380 360"></svg>
     <input type="color" id="skinCol" value="#f6d0b0" aria-label="手の色">
     <div class="t-main"><span class="l1">手作り</span><span class="l2">じゃんけん</span></div>
   </div>
@@ -354,12 +354,12 @@
   <div class="arena">
     <div class="side me" id="sideMe">
       <div class="who"><span class="nm" id="pnMe">あなた</span><span class="dots" id="dotsMe"><i></i><i></i><i></i></span></div>
-      <svg class="hand mine" id="handMe" viewBox="0 0 300 360"></svg>
+      <svg class="hand mine" id="handMe" viewBox="-40 0 380 360"></svg>
       <div class="shape-word" id="shMe">パァ</div>
     </div>
     <div class="side foe" id="sideFoe">
       <div class="who"><span class="nm" id="pnFoe">あいて</span><span class="dots" id="dotsFoe"><i></i><i></i><i></i></span></div>
-      <svg class="hand" id="handFoe" viewBox="0 0 300 360"></svg>
+      <svg class="hand" id="handFoe" viewBox="-40 0 380 360"></svg>
       <div class="shape-word" id="shFoe">パァ</div>
     </div>
     <div class="fx" id="fx"><div class="big" id="fxBig"></div><div class="small" id="fxSmall"></div></div>
@@ -440,12 +440,12 @@ const foeLabel=()=>peerName||MK_GUEST;
 /* ===== 手の形(幾何) =====
    右手・手のひらを正面に。指1本は「指先の位置(x,y)」だけで表す。付け根を中心に360°どこへでも動き、
    付け根からの距離にだけ上限 L(5指共通)がある。付け根と指先はただの直線でつなぐ(関節の表現はしない) */
-const P={x:167,y:264};                                   /* 手のひらの中心 */
-const L=100;                                             /* 指の長さ=伸び縮みの上限(5指共通・暫定) */
+const P={x:167,y:234};                                   /* 手のひらの中心 */
+const L=130;                                             /* 指の長さ=伸び縮みの上限(5指共通・暫定) */
 /* 見た目は角丸の四角だけで組む(手のひら=大きな角丸四角・指=細長い角丸四角・親指は左に離して斜め) */
-const PALM={ x:92, y:195, w:150, h:138, r:18 };
+const PALM={ x:92, y:195, w:150, h:78, r:18 };
 const FINGERS=[                                          /* 0=親指 1=人差し指 2=中指 3=薬指 4=小指。b=付け根・a=伸ばした向き(度)・w=太さ */
-  { n:"親指",   b:{x:80,y:226},    a:-135, w:40 },
+  { n:"親指",   b:{x:80,y:226},    a:-135, w:33 },
   { n:"人差し指", b:{x:108.5,y:189}, a:-90,  w:33 },
   { n:"中指",   b:{x:147.5,y:189}, a:-90,  w:33 },
   { n:"薬指",   b:{x:186.5,y:189}, a:-90,  w:33 },
@@ -632,9 +632,16 @@ function randSkin(avoidHue){                             /* 明るめの色を�
   return hslHex(h,52+Math.random()*26,58+Math.random()*14);
 }
 let mySkin=randSkin(null), peerSkin="", cpuSkin=randSkin(hueOf(mySkin));
+function mixHex(hex,to,t){                              /* hexを to(0=黒/255=白)へ t だけ寄せる */
+  const c=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16));
+  return "#"+c.map(v=>Math.round(v+(to-v)*t).toString(16).padStart(2,"0")).join("");
+}
+function setSkin(svg,hex){                               /* 本体=その色・輪郭=濃く・指先の丸=明るく(手の色から決める) */
+  const st=svg.style; st.setProperty("--skin",hex); st.setProperty("--skin-o",mixHex(hex,0,0.32)); st.setProperty("--skin-hd",mixHex(hex,255,0.62));
+}
 function applySkins(){
-  $("logoHand").style.setProperty("--skin",mySkin); $("handMe").style.setProperty("--skin",mySkin);
-  $("handFoe").style.setProperty("--skin",(mode==="online")?(peerSkin||"#f6d0b0"):cpuSkin);
+  setSkin($("logoHand"),mySkin); setSkin($("handMe"),mySkin);
+  setSkin($("handFoe"),(mode==="online")?(peerSkin||"#f6d0b0"):cpuSkin);
   $("skinCol").value=mySkin;
 }
 $("skinCol").addEventListener("input",()=>{ const v=$("skinCol").value; if(/^#[0-9a-f]{6}$/i.test(v)){ mySkin=v; applySkins(); } });
