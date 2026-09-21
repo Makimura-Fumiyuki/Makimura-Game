@@ -66,12 +66,23 @@
   .help-btn:active,.snd-btn:active{ transform:translateY(1px); }
 
   /* ===== タイトル ===== */
-  .t-wrap{ text-align:center; display:flex; flex-direction:column; align-items:center; gap:4px; position:relative; }
-  .t-logo{ width:clamp(180px,48vw,250px); height:auto; display:block; margin-bottom:8px; }   /* タイトルの手も自由に動かせる */
-  .t-main{ line-height:1.06; }
-  .t-main .l1{ display:block; font-size:clamp(19px,5vw,30px); font-weight:900; letter-spacing:.12em; text-indent:.12em; color:var(--a); }
-  .t-main .l2{ display:block; margin-top:2px; font-size:clamp(34px,9.4vw,60px); font-weight:900;
-    letter-spacing:.02em; white-space:nowrap; color:var(--ink); text-shadow:0 2px 0 rgba(255,255,255,.8); }
+  .t-wrap{ text-align:center; display:flex; flex-direction:column; align-items:center; gap:0; position:relative; }
+  /* 手のうしろに大きな色の玉(手の色に連動)=画面がその人の色になる */
+  .t-blob{ position:absolute; left:50%; top:38%; width:clamp(300px,74vw,420px); height:clamp(300px,74vw,420px); border-radius:50%;
+    transform:translate(-50%,-50%); background:var(--skin-bg,#f0e2d0); opacity:.55; z-index:-1; filter:blur(2px); transition:background .3s; }
+  .t-logo{ width:clamp(200px,54vw,280px); height:auto; display:block; margin-top:-10px; position:relative; z-index:1; }
+  /* いま作っている形=手のすぐ下に、手の色で大きく。ラウンド中の表示と同じ「文字で見せる」 */
+  .t-shape{ min-height:1.2em; font-size:clamp(30px,9vw,56px); font-weight:900; letter-spacing:.16em; text-indent:.16em; line-height:1.1;
+    color:var(--skin-o,var(--ink)); margin:-10px 0 10px; transform:rotate(-3deg); transition:color .2s; }
+  .t-shape.none{ color:rgba(42,37,33,.16); font-size:clamp(22px,6vw,36px); letter-spacing:.3em; }
+  .t-shape.pop{ animation:chipPop .3s cubic-bezier(.2,1.5,.4,1); }   /* タイトルの手も自由に動かせる */
+  /* ロゴ=すこし傾けた札に「手作り」・その下に太い「じゃんけん」(ブロックの影) */
+  .t-main{ line-height:1.06; transform:rotate(-2deg); }
+  .t-main .l1{ display:inline-block; font-size:clamp(15px,4vw,22px); font-weight:900; letter-spacing:.24em; text-indent:.24em; color:#fff;
+    background:var(--ink); padding:4px 14px 5px; border-radius:6px; transform:rotate(-6deg) translateY(6px); box-shadow:0 3px 0 rgba(0,0,0,.25); }
+  .t-main .l2{ display:block; margin-top:2px; font-size:clamp(40px,11vw,72px); font-weight:900;
+    letter-spacing:.02em; white-space:nowrap; color:var(--ink);
+    text-shadow:3px 3px 0 var(--skin-o,#c98d63), 6px 6px 0 rgba(0,0,0,.10); }
   .t-sub{ margin-top:12px; font-size:clamp(12px,3.4vw,15px); color:var(--sub); letter-spacing:.14em; font-weight:700; }
   .sec-label{ font-size:15px; letter-spacing:.5em; text-indent:.5em; opacity:.6;
     text-align:center; margin-bottom:12px; font-weight:700; }
@@ -138,7 +149,7 @@
   .hand{ width:100%; height:auto; display:block; touch-action:none; overflow:visible; }
   .side .hand{ width:min(100%,340px); }
   .hand.mine{ cursor:grab; }
-  .hand .fg,.hand .palm{ fill:var(--skin); stroke:var(--skin-o); stroke-width:4; stroke-linejoin:round; }   /* 輪郭=手の色を濃くしたもの */
+  .hand .fg,.hand .palm{ fill:var(--skin); stroke:var(--skin-o); stroke-width:3; stroke-linejoin:round; }   /* 輪郭=手の色を濃くしたもの */
   #logoHand .palm{ cursor:pointer; }                     /* タイトル=手のひらを押すと色を選べる */
   .hand .hd{ fill:var(--skin-hd); stroke:none; pointer-events:none; }   /* 指先の丸=つかめる印(手の色を明るくしたもの・輪郭なし・指の内側) */
   .hand .hd-hit{ fill:transparent; cursor:grab; }
@@ -311,8 +322,10 @@
 <!-- ===== タイトル ===== -->
 <div class="scene on" id="titleScene">
   <div class="t-wrap">
-    <svg class="t-logo hand mine" id="logoHand" viewBox="-40 0 380 360"></svg>
+    <div class="t-blob" id="tBlob"></div>
+    <svg class="t-logo hand mine" id="logoHand" viewBox="-40 -80 380 440"></svg>
     <input type="color" id="skinCol" value="#f6d0b0" aria-label="手の色">
+    <div class="t-shape none" id="tShape">パァ</div>
     <div class="t-main"><span class="l1">手作り</span><span class="l2">じゃんけん</span></div>
   </div>
 
@@ -354,12 +367,12 @@
   <div class="arena">
     <div class="side me" id="sideMe">
       <div class="who"><span class="nm" id="pnMe">あなた</span><span class="dots" id="dotsMe"><i></i><i></i><i></i></span></div>
-      <svg class="hand mine" id="handMe" viewBox="-40 0 380 360"></svg>
+      <svg class="hand mine" id="handMe" viewBox="-40 -80 380 440"></svg>
       <div class="shape-word" id="shMe">パァ</div>
     </div>
     <div class="side foe" id="sideFoe">
       <div class="who"><span class="nm" id="pnFoe">あいて</span><span class="dots" id="dotsFoe"><i></i><i></i><i></i></span></div>
-      <svg class="hand" id="handFoe" viewBox="-40 0 380 360"></svg>
+      <svg class="hand" id="handFoe" viewBox="-40 -80 380 440"></svg>
       <div class="shape-word" id="shFoe">パァ</div>
     </div>
     <div class="fx" id="fx"><div class="big" id="fxBig"></div><div class="small" id="fxSmall"></div></div>
@@ -440,33 +453,34 @@ const foeLabel=()=>peerName||MK_GUEST;
 /* ===== 手の形(幾何) =====
    右手・手のひらを正面に。指1本は「指先の位置(x,y)」だけで表す。付け根を中心に360°どこへでも動き、
    付け根からの距離にだけ上限 L(5指共通)がある。付け根と指先はただの直線でつなぐ(関節の表現はしない) */
-const P={x:167,y:234};                                   /* 手のひらの中心 */
-const L=130;                                             /* 指の長さ=伸び縮みの上限(5指共通・暫定) */
+const P={x:167,y:249};                                   /* 手のひらの中心 */
 /* 見た目は角丸の四角だけで組む(手のひら=大きな角丸四角・指=細長い角丸四角・親指は左に離して斜め) */
-const PALM={ x:92, y:195, w:150, h:78, r:18 };
-const FINGERS=[                                          /* 0=親指 1=人差し指 2=中指 3=薬指 4=小指。b=付け根・a=伸ばした向き(度)・w=太さ */
-  { n:"親指",   b:{x:80,y:226},    a:-135, w:33 },
-  { n:"人差し指", b:{x:108.5,y:189}, a:-90,  w:33 },
-  { n:"中指",   b:{x:147.5,y:189}, a:-90,  w:33 },
-  { n:"薬指",   b:{x:186.5,y:189}, a:-90,  w:33 },
-  { n:"小指",   b:{x:225.5,y:189}, a:-90,  w:33 },
+const PALM={ x:92, y:195, w:150, h:108, r:18 };
+const FINGERS=[                                          /* 0=親指 1=人差し指 2=中指 3=薬指 4=小指。b=付け根・a=伸ばした向き(度)・w=太さ・L=伸びる上限(親指以外は1.8倍) */
+  { n:"親指",   b:{x:80,y:226},    a:-135, w:33, L:130 },
+  { n:"人差し指", b:{x:108.5,y:189}, a:-90,  w:33, L:234 },
+  { n:"中指",   b:{x:147.5,y:189}, a:-90,  w:33, L:234 },
+  { n:"薬指",   b:{x:186.5,y:189}, a:-90,  w:33, L:234 },
+  { n:"小指",   b:{x:225.5,y:189}, a:-90,  w:33, L:234 },
 ];
 const rad=d=>d*Math.PI/180;
 const clamp=(v,lo,hi)=>v<lo?lo:(v>hi?hi:v);
-const extTip=f=>({ x:f.b.x+L*Math.cos(rad(f.a)), y:f.b.y+L*Math.sin(rad(f.a)) });   /* 伸ばした時の指先 */
-function bentTip(f){                                     /* 曲げた時の指先=付け根から手のひら中心へ少し */
+const extTip=f=>({ x:f.b.x+f.L*Math.cos(rad(f.a)), y:f.b.y+f.L*Math.sin(rad(f.a)) });   /* 伸ばした時の指先 */
+function bentTip(f){                                     /* 曲げた時の指先=付け根から手のひら中心へ少し(付け根より手のひら側) */
   const dx=P.x-f.b.x, dy=P.y-f.b.y, d=Math.hypot(dx,dy)||1;
-  return { x:f.b.x+dx/d*L*0.15, y:f.b.y+dy/d*L*0.15 };
+  return { x:f.b.x+dx/d*40, y:f.b.y+dy/d*40 };
 }
 const SHAPE_TIPS={ paper:[1,1,1,1,1], rock:[0,0,0,0,0], scissors:[0,1,1,0,0] };   /* 1=伸ばし 0=曲げ */
 function tipsOfShape(k){ return FINGERS.map((f,i)=>SHAPE_TIPS[k][i]?extTip(f):bentTip(f)); }
 function newTips(){ return tipsOfShape("paper"); }
 function tipFromPointer(f,pt){                           /* つまんだ位置 → 指先(付け根からLまで・向きは自由) */
   const dx=pt.x-f.b.x, dy=pt.y-f.b.y, d=Math.hypot(dx,dy);
-  if(d<=L) return {x:pt.x,y:pt.y};
-  return { x:f.b.x+dx/d*L, y:f.b.y+dy/d*L };
+  if(d<=f.L) return {x:pt.x,y:pt.y};
+  return { x:f.b.x+dx/d*f.L, y:f.b.y+dy/d*f.L };
 }
-const reach=(f,t)=>Math.hypot(t.x-f.b.x,t.y-f.b.y)/L;    /* 伸び具合 0〜1 */
+/* 伸び具合=指先が「伸ばした向き」にどれだけ出ているか(付け根からの距離ではなく、軸方向の成分÷L)。
+   指先を手のひら側(付け根より下)まで下げると0以下=曲げ。横向きも0付近=曲げ扱い */
+const reach=(f,t)=>((t.x-f.b.x)*Math.cos(rad(f.a))+(t.y-f.b.y)*Math.sin(rad(f.a)))/f.L;
 function buildHand(svg,mine){                            /* SVGの中身(手のひら+指5本の角丸四角)。戻り値=描き直し用の参照 */
   svg.innerHTML="";
   const NS="http://www.w3.org/2000/svg", mk=(t,at)=>{ const e=document.createElementNS(NS,t); for(const k in at) e.setAttribute(k,at[k]); svg.appendChild(e); return e; };
@@ -526,8 +540,8 @@ function attachDrag(svg,tips,canMove,onMove){
 }
 
 /* ===== 判定(ざっくり。指ごとに伸ばし/曲げの2値・中間は前の状態を保つ。親指も含む5本で見る) =====
-   伸び具合(付け根からの距離÷L)が EXT_AT 以上で伸ばし・BENT_AT 以下で曲げ。パァは開き切ってから */
-const EXT_AT=0.88, BENT_AT=0.42;
+   伸び具合(軸方向÷L)が EXT_AT 以上で伸ばし・BENT_AT 以下(=指先が付け根の高さ以下=手のひら側)で曲げ。パァは開き切ってから */
+const EXT_AT=0.75, BENT_AT=0.10;
 const SHAPE_NAME={ paper:"パァ", rock:"グゥ", scissors:"チョ", none:"―" };
 function stepStates(st,tips){                            /* st=[bool×5] true=曲げ。中間ゾーンでは変えない */
   let changed=false;
@@ -608,6 +622,7 @@ const labelOf=s=>{
   return mode==="cpu" ? robotName() : foeLabel();
 };
 const amHost=()=>mode==="cpu"||isHost;
+const skinOf=s=>(s===mySide)?mySkin:((mode==="online")?(peerSkin||"#f6d0b0"):cpuSkin);   /* その人の手の色 */
 const canMoveMine=()=>debugMode||((phase==="ready"||phase==="play")&&!(mode==="online"&&!online));   /* 3カウントの間も動かせる */
 
 /* ===== 手の描画・操作 ===== */
@@ -615,7 +630,17 @@ const partsMe=buildHand($("handMe"),true);
 const partsFoe=buildHand($("handFoe"),false);
 const partsLogo=buildHand($("logoHand"),true);
 const logoTips=newTips();                                /* タイトルの手=初期パァ・自由に動かせる */
+const logoStates=[false,false,false,false,false]; let logoShape="paper";
 drawHand(partsLogo,logoTips);
+function judgeLogo(){                                    /* タイトルでも同じ判定を動かして、形の名前を大きく出す */
+  stepStates(logoStates,logoTips);
+  const sh=shapeOf(logoStates);
+  if(sh!==logoShape){
+    logoShape=sh; const el=$("tShape"); el.textContent=SHAPE_NAME[sh];
+    el.classList.toggle("none",sh==="none"); el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop");
+    if(sh!=="none") playTick();
+  }
+}
 /* 手の色=タイトルに戻るたびランダム(手のひらを押すとカラーパレットで好きな色に)。ロボットの色も対局ごとにランダム(自分と離れた色相) */
 function hslHex(h,sl,l){
   const sat=sl/100, li=l/100, c=(1-Math.abs(2*li-1))*sat, x=c*(1-Math.abs((h/60)%2-1)), m=li-c/2;
@@ -640,8 +665,12 @@ function setSkin(svg,hex){                               /* 本体=その色・�
   const st=svg.style; st.setProperty("--skin",hex); st.setProperty("--skin-o",mixHex(hex,0,0.32)); st.setProperty("--skin-hd",mixHex(hex,255,0.62));
 }
 function applySkins(){
-  setSkin($("logoHand"),mySkin); setSkin($("handMe"),mySkin);
-  setSkin($("handFoe"),(mode==="online")?(peerSkin||"#f6d0b0"):cpuSkin);
+  const foe=(mode==="online")?(peerSkin||"#f6d0b0"):cpuSkin;
+  setSkin($("logoHand"),mySkin); setSkin($("handMe"),mySkin); setSkin($("handFoe"),foe);
+  /* 名前・本数・形の文字・タイトルの玉も手の色に連動(その人の色=その人の手の色) */
+  const tw=$("titleScene").querySelector(".t-wrap"); tw.style.setProperty("--skin-o",mixHex(mySkin,0,0.32)); tw.style.setProperty("--skin-bg",mixHex(mySkin,255,0.55));
+  $("sideMe").style.setProperty("--sc",mySkin); $("sideMe").style.setProperty("--sc-d",mixHex(mySkin,0,0.32));
+  $("sideFoe").style.setProperty("--sc",foe);   $("sideFoe").style.setProperty("--sc-d",mixHex(foe,0,0.32));
   $("skinCol").value=mySkin;
 }
 $("skinCol").addEventListener("input",()=>{ const v=$("skinCol").value; if(/^#[0-9a-f]{6}$/i.test(v)){ mySkin=v; applySkins(); } });
@@ -651,7 +680,7 @@ $("logoHand").addEventListener("click",e=>{             /* タイトルの手の
 });
 applySkins();
 const dragMe=attachDrag($("handMe"),()=>tips[mySide],canMoveMine,()=>{ myMoved=true; });
-attachDrag($("logoHand"),()=>logoTips,()=>true,()=>{ drawHand(partsLogo,logoTips); });
+attachDrag($("logoHand"),()=>logoTips,()=>true,()=>{ drawHand(partsLogo,logoTips); judgeLogo(); });
 function setWord(id,shape){
   const el=$(id), nm=SHAPE_NAME[shape]||"―";
   if(el.textContent!==nm){ el.textContent=nm; el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); }
@@ -681,10 +710,10 @@ function renderDbg(){                                    /* デバッグ: 指ご
   let h='<table>';
   for(let i=0;i<5;i++){
     const r=reach(FINGERS[i],tp[i]);
-    h+='<tr><td>'+FINGERS[i].n+'</td><td class="v">'+Math.round(r*100)+'%</td><td class="j">'+(st[i]?"曲げ":"伸ばし")+'</td></tr>';
+    h+='<tr><td>'+FINGERS[i].n+'</td><td class="v">'+Math.round(clamp(r,-1,1)*100)+'%</td><td class="j">'+(st[i]?"曲げ":"伸ばし")+'</td></tr>';
   }
   h+='</table><div>いまの形：<b>'+SHAPE_NAME[shapes[mySide]]+'</b></div>'
-    +'<div class="note">%＝付け根からの距離（伸ばし切った長さ＝100%）<br>伸ばし判定 '+Math.round(EXT_AT*100)+'%以上 ／ 曲げ判定 '+Math.round(BENT_AT*100)+'%以下<br>間は前の状態を保つ</div>';
+    +'<div class="note">%＝指先が「伸ばす向き」にどれだけ出ているか（伸ばし切り＝100%・付け根の高さ＝0%・手のひら側はマイナス）<br>伸ばし判定 '+Math.round(EXT_AT*100)+'%以上 ／ 曲げ判定 '+Math.round(BENT_AT*100)+'%以下<br>間は前の状態を保つ</div>';
   $("dbgPanel").innerHTML=h;
 }
 
@@ -699,7 +728,7 @@ const CPU_CFG=[
 ];
 function nearestShape(tp){                               /* いまの指先から「どの形へ向かっているか」を読む */
   let best="paper", bd=1e9;
-  for(const k in SHAPE_TIPS){ let d=0; for(let i=0;i<5;i++){ const r=reach(FINGERS[i],tp[i]), t=SHAPE_TIPS[k][i]?1:0.15; d+=(r-t)*(r-t); } if(d<bd){ bd=d; best=k; } }
+  for(const k in SHAPE_TIPS){ let d=0; for(let i=0;i<5;i++){ const r=clamp(reach(FINGERS[i],tp[i]),0,1), t=SHAPE_TIPS[k][i]?1:0; d+=(r-t)*(r-t); } if(d<bd){ bd=d; best=k; } }
   return best;
 }
 function cpuDecide(now){
@@ -780,7 +809,7 @@ function roundWon(w,sh){
   phase="end"; lastWinner=w; lastShapes={a:sh.a,b:sh.b};
   score[w]++;
   const iWon=(w===mySide);
-  fx(labelOf(w)+"の勝ち", SHAPE_NAME[sh[w]]+" ＞ "+SHAPE_NAME[sh[other(w)]], w===mySide?"":"gray");
+  fx(labelOf(w)+"の勝ち", SHAPE_NAME[sh[w]]+" ＞ "+SHAPE_NAME[sh[other(w)]], "", skinOf(w));
   if(iWon) playRoundWin(); else playRoundLose();
   dragMe.clear();
   renderStatic(); hostBroadcast();
@@ -793,9 +822,10 @@ function matchOver(w,reason){
   if(w===mySide) playWin(); else playLose();
   renderStatic(); hostBroadcast(); showResult();
 }
-function fx(big,small,cls){
+function fx(big,small,cls,col){
   const el=$("fx"); el.className="fx on"+(cls?" "+cls:"");
   const b=$("fxBig"); b.className="big"+(cls&&cls.indexOf("count")>=0?" count":"");
+  if(col){ b.style.background=col; b.style.boxShadow="0 6px 0 "+mixHex(col,0,0.32)+", 0 14px 30px rgba(0,0,0,.25)"; } else { b.style.background=""; b.style.boxShadow=""; }
   b.textContent=big; b.style.animation="none"; void b.offsetWidth; b.style.animation="";
   $("fxSmall").textContent=small||""; $("fxSmall").style.display=small?"":"none";
 }
@@ -881,7 +911,7 @@ function applySnap(s){                             /* ゲスト: ホストの進
     const w=s.w;
     if(w){
       shapes.a=lastShapes.a; shapes.b=lastShapes.b; setWord("shMe",shapes[mySide]); setWord("shFoe",shapes[foeSide()]);
-      fx(labelOf(w)+"の勝ち", SHAPE_NAME[lastShapes[w]]+" ＞ "+SHAPE_NAME[lastShapes[other(w)]], w===mySide?"":"gray");
+      fx(labelOf(w)+"の勝ち", SHAPE_NAME[lastShapes[w]]+" ＞ "+SHAPE_NAME[lastShapes[other(w)]], "", skinOf(w));
       if(w===mySide) playRoundWin(); else playRoundLose();
     }
     dragMe.clear();
@@ -996,6 +1026,7 @@ function goTitle(){
   roomStatus("");
   $("makeRoomBtn").classList.remove("sel"); $("joinRoomBtn").classList.remove("sel");
   mySkin=randSkin(null); cpuSkin=randSkin(hueOf(mySkin)); applySkins();   /* タイトルに戻るたび手の色はランダム */
+  { const t=newTips(); for(let i=0;i<5;i++){ logoTips[i]=t[i]; logoStates[i]=false; } logoShape="paper"; $("tShape").textContent="パァ"; $("tShape").classList.remove("none"); drawHand(partsLogo,logoTips); }
   showScene("titleScene");
 }
 function winnerLabel(){ return labelOf(overWinner)+"の勝ち"; }
@@ -1240,7 +1271,7 @@ function toast(m){
   const el=$("toast"); el.textContent=m; el.classList.add("on");
   clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove("on"),1600);
 }
-resetHands(); renderStatic();
+resetHands(); renderStatic(); $("tShape").classList.remove("none");
 </script>
 <script>/* 招待リンク(?join=合言葉)で来た人を自動で入室させる */
 (function(){
