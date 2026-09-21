@@ -67,10 +67,10 @@
 
   /* ===== タイトル ===== */
   .t-wrap{ text-align:center; display:flex; flex-direction:column; align-items:center; gap:4px; position:relative; }
-  .t-logo{ width:clamp(200px,54vw,280px); height:auto; display:block; margin-top:-10px; }
-  /* いま作っている形=手のすぐ下に大きな文字で(ラウンド中の表示と同じ見せ方) */
+  .t-logo{ width:clamp(200px,54vw,280px); height:auto; display:block; margin-top:4px; }
+  /* いま作っている形=手のすぐ下に大きな文字で(ラウンド中の表示と同じ見せ方)。どれでもない時は何も出さない */
   .t-shape{ min-height:1.2em; font-size:clamp(26px,7.4vw,42px); font-weight:900; letter-spacing:.16em; text-indent:.16em; line-height:1.1;
-    color:var(--ink); margin:-8px 0 10px; }
+    color:var(--ink); margin:-8px 0 0; }
   .t-shape.pop{ animation:chipPop .3s cubic-bezier(.2,1.5,.4,1); }   /* タイトルの手も自由に動かせる */
   .t-main{ line-height:1.06; }
   .t-main .l1{ display:block; font-size:clamp(19px,5vw,30px); font-weight:900; letter-spacing:.12em; text-indent:.12em; color:var(--a); }
@@ -152,7 +152,11 @@
   #skinCol{ position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; left:50%; top:40%; }
   .shape-word{ font-size:clamp(24px,7.4vw,42px); font-weight:900; letter-spacing:.14em; text-indent:.14em; line-height:1.1; margin-top:-6px;
     color:var(--sc); transition:color .15s, transform .15s; }
-  .shape-word.none{ color:rgba(42,37,33,.22); }
+  .shape-word{ position:relative; display:flex; align-items:center; justify-content:center; min-height:1.2em; width:min(100%,200px); }
+  .shape-word .sw-gauge{ display:none; position:absolute; left:10%; right:10%; top:50%; height:10px; margin-top:-5px; border-radius:999px;
+    background:rgba(42,37,33,.12); overflow:hidden; }
+  .shape-word .sw-gauge i{ display:block; height:100%; width:0; background:var(--sc); border-radius:999px; transition:width .08s linear; }
+  .shape-word.none.timing .sw-gauge{ display:block; }   /* どれでもない=文字の代わりに残り時間のゲージ */
   .shape-word.pop{ animation:chipPop .3s cubic-bezier(.2,1.5,.4,1); }
   @keyframes chipPop{ 0%{ transform:scale(.7); } 60%{ transform:scale(1.14); } 100%{ transform:scale(1); } }
   /* デバッグ(手のためし) */
@@ -315,10 +319,10 @@
 <!-- ===== タイトル ===== -->
 <div class="scene on" id="titleScene">
   <div class="t-wrap">
+    <div class="t-main"><span class="l1">手作り</span><span class="l2">じゃんけん</span></div>
     <svg class="t-logo hand mine" id="logoHand" viewBox="-40 -80 380 440"></svg>
     <input type="color" id="skinCol" value="#f6d0b0" aria-label="手の色">
     <div class="t-shape" id="tShape">パァ</div>
-    <div class="t-main"><span class="l1">手作り</span><span class="l2">じゃんけん</span></div>
   </div>
 
   <div>
@@ -360,12 +364,12 @@
     <div class="side me" id="sideMe">
       <div class="who"><span class="nm" id="pnMe">あなた</span><span class="dots" id="dotsMe"><i></i><i></i><i></i></span></div>
       <svg class="hand mine" id="handMe" viewBox="-40 -80 380 440"></svg>
-      <div class="shape-word" id="shMe">パァ</div>
+      <div class="shape-word" id="shMe"><span class="sw-tx">パァ</span><span class="sw-gauge"><i></i></span></div>
     </div>
     <div class="side foe" id="sideFoe">
       <div class="who"><span class="nm" id="pnFoe">あいて</span><span class="dots" id="dotsFoe"><i></i><i></i><i></i></span></div>
       <svg class="hand" id="handFoe" viewBox="-40 -80 380 440"></svg>
-      <div class="shape-word" id="shFoe">パァ</div>
+      <div class="shape-word" id="shFoe"><span class="sw-tx">パァ</span><span class="sw-gauge"><i></i></span></div>
     </div>
     <div class="fx" id="fx"><div class="big" id="fxBig"></div><div class="small" id="fxSmall"></div></div>
   </div>
@@ -416,7 +420,7 @@
   <ul>
     <li>5本の指それぞれを「伸ばし」か「曲げ」で見る。</li>
     <li><b>パァ</b>＝5本とも伸ばす　<b>グゥ</b>＝5本とも曲げる　<b>チョ</b>＝人差し指と中指だけ伸ばす。</li>
-    <li>ぴったりでなくても、<b>5本の並びがいちばん近い形</b>として見る。手はいつも必ずどれかの形になっている。</li>
+    <li>どの形にもぴったり合わない手は「どれでもない」。<b>3秒間どれでもないままだと、そのラウンドは負け</b>（どれかの形になれば数え直し）。</li>
     <li>毎ラウンド、両方の手は指を半分だけ伸ばしたパァから始まる。3カウントの間も指は動かせる。</li>
   </ul>
   <p class="h-sec k">ここが勝負</p>
@@ -488,15 +492,18 @@ function buildHand(svg,mine){                            /* SVGの中身(手の�
 function drawHand(parts,tips){
   for(let i=0;i<5;i++){
     const f=FINGERS[i], B=f.b, T=tips[i];
-    const dx=T.x-B.x, dy=T.y-B.y, len=Math.max(f.w,Math.hypot(dx,dy)), ang=Math.atan2(dy,dx)*180/Math.PI;
+    const dx=T.x-B.x, dy=T.y-B.y, d0=Math.hypot(dx,dy), len=Math.max(f.w,d0);
+    /* 指先が付け根に近すぎる時は向きが決まらないので伸ばした向きを使う */
+    const ux=d0>0.5?dx/d0:Math.cos(rad(f.a)), uy=d0>0.5?dy/d0:Math.sin(rad(f.a)), ang=Math.atan2(uy,ux)*180/Math.PI;
     const r=parts[i].g;                                   /* 付け根を原点に、指先の向きへ回した細長い角丸四角 */
     r.setAttribute("x",(-f.w/2).toFixed(1)); r.setAttribute("y",(-len).toFixed(1));
     r.setAttribute("width",f.w); r.setAttribute("height",len.toFixed(1));
     r.setAttribute("transform","translate("+B.x.toFixed(1)+" "+B.y.toFixed(1)+") rotate("+(ang+90).toFixed(2)+")");
     if(parts[i].hit){
       parts[i].hit.setAttribute("cx",T.x.toFixed(1)); parts[i].hit.setAttribute("cy",T.y.toFixed(1));
-      const ux=dx/(Math.hypot(dx,dy)||1), uy=dy/(Math.hypot(dx,dy)||1), inset=f.w/2;   /* 丸は指先から半幅ぶん内側=指からはみ出さない */
-      parts[i].hd.setAttribute("cx",(T.x-ux*inset).toFixed(1)); parts[i].hd.setAttribute("cy",(T.y-uy*inset).toFixed(1));
+      /* 丸は「描いた四角の先端」から半幅ぶん内側(指が最小の長さの時も四角の中に収まる) */
+      const vx=B.x+ux*(len-f.w/2), vy=B.y+uy*(len-f.w/2);
+      parts[i].hd.setAttribute("cx",vx.toFixed(1)); parts[i].hd.setAttribute("cy",vy.toFixed(1));
     }
   }
 }
@@ -533,8 +540,9 @@ function attachDrag(svg,tips,canMove,onMove){
 
 /* ===== 判定(指ごとに伸ばし/曲げの2値・中間は前の状態を保つ。親指も含む5本で見る) =====
    伸び具合(軸方向÷L。初期=0.5)が EXT_AT 以上で伸ばし・BENT_AT 以下で曲げ。
-   ★「どれでもない」は無し=5本の伸ばし/曲げの並びがいちばん近い形を必ず採用する(同じ距離なら今の形を保つ) */
-const EXT_AT=0.65, BENT_AT=0.35;
+   5本の並びがぴったり合う形だけ採用・合わなければ「どれでもない」(none)。
+   ★対局中に none が NONE_LIMIT ms 続くとそのラウンドは負け(どれかの形になるたびにリセット) */
+const EXT_AT=0.65, BENT_AT=0.35, NONE_LIMIT=3000;
 const SHAPE_NAME={ paper:"パァ", rock:"グゥ", scissors:"チョ", none:"―" };
 function stepStates(st,tips){                            /* st=[bool×5] true=曲げ。中間ゾーンでは変えない */
   let changed=false;
@@ -545,13 +553,12 @@ function stepStates(st,tips){                            /* st=[bool×5] true=�
   }
   return changed;
 }
-function shapeOf(st,prev){                              /* st=[曲げ×5] → いちばん近い形(違う指の本数が最少)。同数なら prev を優先 */
-  let best=null, bd=99;
+function shapeOf(st){                                   /* st=[曲げ×5] → ぴったり合う形。無ければ none */
   for(const k of ["paper","rock","scissors"]){
-    let d=0; for(let i=0;i<5;i++){ const ext=!st[i]; if(ext!==!!SHAPE_TIPS[k][i]) d++; }
-    if(d<bd||(d===bd&&k===prev)){ bd=d; best=k; }
+    let ok=true; for(let i=0;i<5;i++){ if((!st[i])!==!!SHAPE_TIPS[k][i]){ ok=false; break; } }
+    if(ok) return k;
   }
-  return best;
+  return "none";
 }
 const BEATS={ rock:"scissors", scissors:"paper", paper:"rock" };
 const beats=(x,y)=>x!=="none"&&BEATS[x]===y;
@@ -600,11 +607,12 @@ const playLose  =()=>{ note(392,196,.5,"triangle",.14); note(262,131,.6,"sine",.
 const WIN_N=3;
 let mode="cpu", mySide="a", cpuLv=1, debugMode=false;
 let phase="idle";                                        /* idle / ready(3カウント) / play / end / over */
-let round=0, count=0, score={a:0,b:0}, lastWinner=null, lastShapes={a:"paper",b:"paper"}, overWinner=null, endReason="";
+let round=0, count=0, score={a:0,b:0}, lastWinner=null, lastShapes={a:"paper",b:"paper"}, lastReason="", overWinner=null, endReason="";
 let tips={ a:newTips(), b:newTips() };                  /* 指先の位置(自分=入力・あいて=届いた値) */
 let shown={ a:newTips(), b:newTips() };                 /* 画面に描く位置(あいての手はなめらかに追従) */
 let states={ a:[0,0,0,0,0].map(()=>false), b:[0,0,0,0,0].map(()=>false) };
 let shapes={ a:"paper", b:"paper" };
+let noneSince={ a:null, b:null };                        /* 「どれでもない」になった時刻(3秒で負け) */
 var resultLogged=false;
 let matchStarted=false, myMoved=false, readyT=[];
 const other=s=>s==="a"?"b":"a";
@@ -628,11 +636,11 @@ const logoStates=[false,false,false,false,false]; let logoShape="paper";
 drawHand(partsLogo,logoTips);
 function judgeLogo(){                                    /* タイトルでも同じ判定を動かして、形の名前を大きく出す */
   stepStates(logoStates,logoTips);
-  const sh=shapeOf(logoStates,logoShape);
+  const sh=shapeOf(logoStates);
   if(sh!==logoShape){
-    logoShape=sh; const el=$("tShape"); el.textContent=SHAPE_NAME[sh];
+    logoShape=sh; const el=$("tShape"); el.textContent=(sh==="none")?"":SHAPE_NAME[sh];   /* タイトルでは「―」は出さない */
     el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop");
-    playTick();
+    if(sh!=="none") playTick();
   }
 }
 /* 手の色=タイトルに戻るたびランダム(手のひらを押すとカラーパレットで好きな色に)。ロボットの色も対局ごとにランダム(自分と離れた色相) */
@@ -671,10 +679,15 @@ $("logoHand").addEventListener("click",e=>{             /* タイトルの手の
 applySkins();
 const dragMe=attachDrag($("handMe"),()=>tips[mySide],canMoveMine,()=>{ myMoved=true; });
 attachDrag($("logoHand"),()=>logoTips,()=>true,()=>{ drawHand(partsLogo,logoTips); judgeLogo(); });
-function setWord(id,shape){
-  const el=$(id), nm=SHAPE_NAME[shape]||"―";
-  if(el.textContent!==nm){ el.textContent=nm; el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); }
+function setWord(id,shape){                              /* 形の名前。none の時は文字を消してゲージ(残り時間)を出す */
+  const el=$(id), tx=el.querySelector(".sw-tx"), nm=(shape==="none")?"":SHAPE_NAME[shape];
+  if(tx.textContent!==nm){ tx.textContent=nm; el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); }
   el.classList.toggle("none",shape==="none");
+}
+function setGauge(id,ratio){                             /* ratio=残り(1→0)。nullで隠す */
+  const g=$(id).querySelector(".sw-gauge i");
+  if(ratio==null){ g.style.width="0%"; $(id).classList.remove("timing"); return; }
+  $(id).classList.add("timing"); g.style.width=(ratio*100).toFixed(1)+"%";
 }
 function renderStatic(){                                 /* 名前・本数・ラウンド表示・ボタン(状態が変わった時だけ) */
   const me=mySide, fo=foeSide(); applySkins();
@@ -703,7 +716,7 @@ function renderDbg(){                                    /* デバッグ: 指ご
     h+='<tr><td>'+FINGERS[i].n+'</td><td class="v">'+Math.round(clamp(r,-1,1)*100)+'%</td><td class="j">'+(st[i]?"曲げ":"伸ばし")+'</td></tr>';
   }
   h+='</table><div>いまの形：<b>'+SHAPE_NAME[shapes[mySide]]+'</b></div>'
-    +'<div class="note">%＝指先が「伸ばす向き」にどれだけ出ているか（伸ばし切り＝100%・初期＝50%・付け根の高さ＝0%・手のひら側はマイナス）<br>伸ばし判定 '+Math.round(EXT_AT*100)+'%以上 ／ 曲げ判定 '+Math.round(BENT_AT*100)+'%以下（間は前の状態を保つ）<br>形は5本の並びがいちばん近いものを必ず採用（どれでもない、は無い）</div>';
+    +'<div class="note">%＝指先が「伸ばす向き」にどれだけ出ているか（伸ばし切り＝100%・初期＝50%・付け根の高さ＝0%・手のひら側はマイナス）<br>伸ばし判定 '+Math.round(EXT_AT*100)+'%以上 ／ 曲げ判定 '+Math.round(BENT_AT*100)+'%以下（間は前の状態を保つ）<br>5本の並びがぴったり合う形だけ採用。合わない時は「どれでもない」（対局中は3秒で負け）</div>';
   $("dbgPanel").innerHTML=h;
 }
 
@@ -765,8 +778,8 @@ function startMatch(){
   nextRound();
 }
 function resetHands(){
-  for(const s of ["a","b"]){ tips[s]=newTips(); shown[s]=newTips(); for(let i=0;i<5;i++) states[s][i]=false; shapes[s]="paper"; }
-  setWord("shMe",shapes[mySide]); setWord("shFoe",shapes[foeSide()]);
+  for(const s of ["a","b"]){ tips[s]=newTips(); shown[s]=newTips(); for(let i=0;i<5;i++) states[s][i]=false; shapes[s]="paper"; noneSince[s]=null; }
+  setWord("shMe",shapes[mySide]); setWord("shFoe",shapes[foeSide()]); setGauge("shMe",null); setGauge("shFoe",null);
   drawHand(partsMe,shown[mySide]); drawHand(partsFoe,shown[foeSide()]);
   dragMe.clear();
 }
@@ -795,11 +808,11 @@ function judge(){                                        /* 両者の形をつ�
   if(!w) return;
   roundWon(w,{a:sa,b:sb});
 }
-function roundWon(w,sh){
-  phase="end"; lastWinner=w; lastShapes={a:sh.a,b:sh.b};
+function roundWon(w,sh,reason){
+  phase="end"; lastWinner=w; lastShapes={a:sh.a,b:sh.b}; lastReason=reason||"";
   score[w]++;
   const iWon=(w===mySide);
-  fx(labelOf(w)+"の勝ち", SHAPE_NAME[sh[w]]+" ＞ "+SHAPE_NAME[sh[other(w)]], w===mySide?"":"gray");
+  fx(labelOf(w)+"の勝ち", reason?(labelOf(other(w))+"の"+reason):(SHAPE_NAME[sh[w]]+" ＞ "+SHAPE_NAME[sh[other(w)]]), w===mySide?"":"gray");
   if(iWon) playRoundWin(); else playRoundLose();
   dragMe.clear();
   renderStatic(); hostBroadcast();
@@ -839,9 +852,16 @@ setInterval(()=>{
   if(phase==="play"||phase==="ready"||debugMode){
     for(const s of ["a","b"]){
       const ch=stepStates(states[s],tips[s]);
-      if(ch){ const sh=shapeOf(states[s],shapes[s]); if(s===me) playTick(); if(sh!==shapes[s]){ shapes[s]=sh; setWord(s===me?"shMe":"shFoe",sh); } }
+      if(ch){ const sh=shapeOf(states[s]); if(s===me) playTick(); if(sh!==shapes[s]){ shapes[s]=sh; setWord(s===me?"shMe":"shFoe",sh); } }
+      /* どれでもない時間を数える(何かの形になったらリセット) */
+      if(shapes[s]==="none"){ if(noneSince[s]==null) noneSince[s]=now; } else noneSince[s]=null;
+      if(phase==="play") setGauge(s===me?"shMe":"shFoe", noneSince[s]==null?null:Math.max(0,1-(now-noneSince[s])/NONE_LIMIT));
+      else setGauge(s===me?"shMe":"shFoe",null);
     }
-    if(phase==="play"&&amHost()) judge();
+    if(phase==="play"&&amHost()){
+      for(const s of ["a","b"]) if(noneSince[s]!=null&&now-noneSince[s]>=NONE_LIMIT){ roundWon(other(s),{a:shapes.a,b:shapes.b},"時間切れ"); break; }   /* 3秒どれでもない=負け */
+      judge();
+    }
     if(debugMode) renderDbg();
   }
   /* 自分の指位置を相手へ(50msごと・動いた時だけ) */
@@ -882,7 +902,7 @@ function leaveChannel(){
 function hostBroadcast(){                          /* ホスト→両者: いまの進行(届かなくても0.7秒ごとに送り直す) */
   if(mode!=="online"||!online||!isHost||!started) return;
   snapVer++; lastSnapAt=Date.now();
-  send("snap",{ v:snapVer, ph:phase, rd:round, ct:count, sa:score.a, sb:score.b, w:lastWinner, sh:lastShapes, ow:overWinner, er:endReason });
+  send("snap",{ v:snapVer, ph:phase, rd:round, ct:count, sa:score.a, sb:score.b, w:lastWinner, sh:lastShapes, rs:lastReason, ow:overWinner, er:endReason });
 }
 function applySnap(s){                             /* ゲスト: ホストの進行に合わせる */
   if(!s||typeof s.v!=="number") return;
@@ -897,11 +917,11 @@ function applySnap(s){                             /* ゲスト: ホストの進
     if(prevPh!=="ready"){ resetHands(); myMoved=true; }
     fx("はじめ","",""); playGo(); setTimeout(()=>{ if(phase==="play") fxOff(); },650);
   }else if(s.ph==="end"&&prevPh!=="end"){
-    round=s.rd|0; phase="end"; lastWinner=s.w; lastShapes=s.sh||lastShapes;
+    round=s.rd|0; phase="end"; lastWinner=s.w; lastShapes=s.sh||lastShapes; lastReason=s.rs||"";
     const w=s.w;
     if(w){
-      shapes.a=lastShapes.a; shapes.b=lastShapes.b; setWord("shMe",shapes[mySide]); setWord("shFoe",shapes[foeSide()]);
-      fx(labelOf(w)+"の勝ち", SHAPE_NAME[lastShapes[w]]+" ＞ "+SHAPE_NAME[lastShapes[other(w)]], w===mySide?"":"gray");
+      shapes.a=lastShapes.a; shapes.b=lastShapes.b; setWord("shMe",shapes[mySide]); setWord("shFoe",shapes[foeSide()]); setGauge("shMe",null); setGauge("shFoe",null);
+      fx(labelOf(w)+"の勝ち", lastReason?(labelOf(other(w))+"の"+lastReason):(SHAPE_NAME[lastShapes[w]]+" ＞ "+SHAPE_NAME[lastShapes[other(w)]]), w===mySide?"":"gray");
       if(w===mySide) playRoundWin(); else playRoundLose();
     }
     dragMe.clear();
