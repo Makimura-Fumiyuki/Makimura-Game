@@ -74,6 +74,7 @@
   .t-main{ line-height:1.06; }
   /* ロゴ=ゲーム中の「◯◯の勝ち」と同じ2重アウトライン(白文字・内線=手の色・外線=濃い手の色)。2026-09-22 */
   .t-main .l1,.t-main .l2{ position:relative; display:block; color:#fff; --ol1:var(--olm1,var(--ui)); --ol2:var(--olm2,var(--ui-d)); }
+  .t-main .l1{ --ol1:var(--olf1,var(--b)); --ol2:var(--olf2,var(--b-d)); }   /* 「手作り」=あいて(ロボット)の手の色・「じゃんけん」=自分の手の色(2026-09-22) */
   .t-main .l1{ font-size:clamp(19px,5vw,30px); font-weight:900; letter-spacing:.12em; text-indent:.12em; padding:0 .2em; }
   .t-main .l2{ margin-top:2px; font-size:clamp(34px,9.4vw,60px); font-weight:900; letter-spacing:.02em; white-space:nowrap; padding:0 .2em; }
   .t-main .l1::before,.t-main .l1::after,.t-main .l2::before,.t-main .l2::after{ content:attr(data-t); position:absolute; inset:0; padding:0 .2em; text-align:center; color:transparent; pointer-events:none; }
@@ -697,9 +698,9 @@ function setSkin(svg,hex){                               /* 本体=その色・�
 }
 /* 手の形の文字を「手のひらの真下」に=手のひらの中心(x=167)はviewBox(-40〜340)の54.5%なので、svgの幅×(0.545-0.5)ぶん右へ(flexの中央そろえなのでmargin-leftは2倍) */
 const PALM_CX_RATIO=(PALM.x+PALM.w/2+40)/380-0.5;
-function placeWords(){
+function placeWords(){                                   /* 手のひらの中心が左右中央に来るよう、手(svg)を左へずらす。形の文字は中央のまま=手のひらの真下(2026-09-22) */
   [["logoHand","tShape"],["handMe","shMe"],["handFoe","shFoe"]].forEach(([sv,wd])=>{
-    const w=$(sv).getBoundingClientRect().width; $(wd).style.marginLeft=(w*PALM_CX_RATIO*2).toFixed(1)+"px";
+    const el=$(sv), w=el.getBoundingClientRect().width; el.style.marginLeft=(-w*PALM_CX_RATIO*2).toFixed(1)+"px"; $(wd).style.marginLeft="";
   });
 }
 window.addEventListener("resize",placeWords); window.addEventListener("load",placeWords); setTimeout(placeWords,50);
@@ -770,9 +771,9 @@ const cpu={ target:newTips(), startAt:[0,0,0,0,0], nextAt:0, shape:"paper" };
 /* speed=指先の速さ(px/秒。伸ばし⇄曲げは約85px) / react=次に考え直すまでの間 / first=ラウンド開始から最初に動くまで
    smart=「相手の形(向かっている形)に勝てる形」を選ぶ確率 / stagger=指ごとに動き出しをずらす幅(途中の「どれでもない」時間ができる) */
 const CPU_CFG=[
-  { speed:75,  react:[1100,2300], first:1500, smart:0.0,  stagger:260 },   /* 初級=ゆっくり・でたらめ */
-  { speed:125, react:[600,1000],  first:950,  smart:0.65, stagger:180 },   /* 中級=そこそこ速く、7割は勝てる形へ */
-  { speed:200, react:[220,380],   first:480,  smart:0.92, stagger:90 },    /* 上級=速く・的確 */
+  { speed:135, react:[1100,2300], first:1500, smart:0.0,  stagger:260 },   /* 初級=ゆっくり・でたらめ */
+  { speed:225, react:[600,1000],  first:950,  smart:0.65, stagger:180 },   /* 中級=そこそこ速く、7割は勝てる形へ */
+  { speed:360, react:[220,380],   first:480,  smart:0.92, stagger:90 },    /* 上級=速く・的確 */
 ];
 function nearestShape(tp){                               /* いまの指先から「どの形へ向かっているか」を読む */
   let best="paper", bd=1e9;
@@ -793,6 +794,7 @@ function cpuDecide(now){
   if(want&&want!==cpu.shape){
     cpu.shape=want; const t=tipsOfShape(want);
     for(let i=0;i<5;i++){ const jit=(Math.random()*2-1)*7; cpu.target[i]={x:t[i].x+jit,y:t[i].y+jit}; cpu.startAt[i]=now+Math.random()*cfg.stagger; }
+    cpu.order=[0,1,2,3,4].sort(()=>Math.random()-0.5);   /* 動かす順番は毎回ランダム */
   }
   cpu.nextAt=now+cfg.react[0]+Math.random()*(cfg.react[1]-cfg.react[0]);
 }
@@ -801,10 +803,14 @@ function cpuTick(now,dt){
   const cfg=CPU_CFG[cpuLv];
   if(now>=cpu.nextAt) cpuDecide(now);
   const tp=tips[foeSide()], step=cfg.speed*dt;
-  for(let i=0;i<5;i++){
-    if(now<cpu.startAt[i]) continue;
+  /* 人と同じく1本ずつ=目標に着いていない指のうち、動き出し時刻を過ぎた最初の1本だけ動かす(2026-09-22。速さは1.8倍にして所要時間をならした) */
+  const order=cpu.order||[0,1,2,3,4];
+  for(const i of order){
     const dx=cpu.target[i].x-tp[i].x, dy=cpu.target[i].y-tp[i].y, d=Math.hypot(dx,dy);
+    if(d<0.5) continue;
+    if(now<cpu.startAt[i]) break;
     if(d<=step){ tp[i].x=cpu.target[i].x; tp[i].y=cpu.target[i].y; } else { tp[i].x+=dx/d*step; tp[i].y+=dy/d*step; }
+    break;
   }
 }
 function cpuReset(now){
