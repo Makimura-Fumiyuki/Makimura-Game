@@ -97,6 +97,12 @@
   .lv-row{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
   .lv-row .fuda{ min-width:110px; max-width:148px; padding:12px 6px 10px; font-size:15px; }
   .setup{ display:none; flex-direction:column; align-items:center; gap:20px; }
+  /* デバッグ(タイトルでDキー)=指ごとの%だけを出す小さな窓。もう一度Dで閉じる(2026-09-24) */
+  .dbg-win{ display:none; position:fixed; right:10px; top:52px; z-index:90; background:rgba(255,255,255,.94); border-radius:10px;
+    padding:8px 12px; font-size:12.5px; font-weight:700; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,.14); line-height:1.7; pointer-events:none; }
+  .dbg-win.on{ display:block; }
+  .dbg-win div{ display:flex; justify-content:space-between; gap:14px; }
+  .dbg-win b{ font-variant-numeric:tabular-nums; min-width:3.2em; text-align:right; }
   /* ルール(先取本数)=ひとり/オンライン共通。オンラインは部屋を作った側の値で遊ぶ(2026-09-24) */
   .rule-box{ display:flex; flex-direction:column; align-items:center; gap:10px; }
   .rule-frame{ display:flex; align-items:center; gap:12px; padding:10px 16px; background:var(--card); border:2px solid var(--line); border-radius:13px; }
@@ -452,6 +458,7 @@
 </div></div>
 
 <div class="toast" id="toast"></div>
+<div class="dbg-win" id="dbgWin"></div>
 
 <script>
 const $=id=>document.getElementById(id);
@@ -472,7 +479,7 @@ const P={x:167,y:249};                                   /* 手のひらの中�
 /* 見た目は角丸の四角だけで組む(手のひら=大きな角丸四角・指=細長い角丸四角・親指は左に離して斜め) */
 const PALM={ x:92, y:195, w:150, h:108, r:18 };
 const FINGERS=[                                          /* 0=親指 1=人差し指 2=中指 3=薬指 4=小指。b=付け根・a=伸ばした向き(度)・w=太さ・L=伸びる上限(2026-09-21=5本とも104) */
-  { n:"親指",   b:{x:80,y:226},    a:-135, w:33, L:104 },
+  { n:"親指",   b:{x:80,y:226},    a:-135, w:33, L:104, ja:-90 },   /* 親指: 置き方(初期の向き)は斜め-135°のまま、判定は他の指と同じ「真上=100%」(ja・2026-09-24) */
   { n:"人差し指", b:{x:108.5,y:189}, a:-90,  w:33, L:104 },
   { n:"中指",   b:{x:147.5,y:189}, a:-90,  w:33, L:104 },
   { n:"薬指",   b:{x:186.5,y:189}, a:-90,  w:33, L:104 },
@@ -497,7 +504,7 @@ function tipFromPointer(f,pt){                           /* つまんだ位置 �
 }
 /* 伸び具合=指先が「伸ばした向き」にどれだけ出ているか(付け根からの距離ではなく、軸方向の成分÷L)。
    指先を手のひら側(付け根より下)まで下げると0以下=曲げ。横向きも0付近=曲げ扱い */
-const reach=(f,t)=>((t.x-f.b.x)*Math.cos(rad(f.a))+(t.y-f.b.y)*Math.sin(rad(f.a)))/f.L;
+const reach=(f,t)=>{ const a=rad(f.ja!=null?f.ja:f.a); return ((t.x-f.b.x)*Math.cos(a)+(t.y-f.b.y)*Math.sin(a))/f.L; };   /* 判定の向き=ja(親指)またはa */
 function buildHand(svg,mine){                            /* SVGの中身(手のひら+指5本の角丸四角)。戻り値=描き直し用の参照 */
   svg.innerHTML="";
   const NS="http://www.w3.org/2000/svg", mk=(t,at)=>{ const e=document.createElementNS(NS,t); for(const k in at) e.setAttribute(k,at[k]); svg.appendChild(e); return e; };
@@ -1153,6 +1160,20 @@ $("modeRow").addEventListener("click",e=>{
   ["cpu","online"].forEach(k=>$(k+"Setup").classList.toggle("on",k===mode));
   document.body.classList.toggle("online-mode",mode==="online");   /* オンラインの時だけ「部屋を作った側のルール」の注記 */
   if(mode!=="online"){ leaveChannel(); roomStatus(""); $("makeRoomBtn").classList.remove("sel"); $("joinRoomBtn").classList.remove("sel"); }
+});
+/* デバッグ窓: タイトルでDキー→指ごとの%(伸ばす向きにどれだけ出ているか)。対局中は自分の手、タイトルではタイトルの手 */
+let dbgT=null;
+function renderDbg(){
+  const tp=$("gameScene").classList.contains("on")?tips[mySide]:logoTips;
+  $("dbgWin").innerHTML=FINGERS.map((f,i)=>'<div><span>'+f.n+'</span><b>'+Math.round(reach(f,tp[i])*100)+'%</b></div>').join("");
+}
+document.addEventListener("keydown",e=>{
+  if(e.isComposing||e.repeat) return;
+  if(e.target&&(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA")) return;
+  if((e.key==="d"||e.key==="D")&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&$("titleScene").classList.contains("on")){
+    const on=!$("dbgWin").classList.contains("on"); $("dbgWin").classList.toggle("on",on);
+    clearInterval(dbgT); dbgT=null; if(on){ renderDbg(); dbgT=setInterval(renderDbg,100); }
+  }
 });
 function setWinN(n){
   winN=Math.max(WIN_MIN,Math.min(WIN_MAX,n|0||WIN_DEF));
