@@ -1576,7 +1576,10 @@ tickIv=setInterval(()=>{
     renderTimer();
     let ms=-1;
     if(G.phase==="draw"){ const c=curDrawCard(); if(c&&!debug){ ms=drawLeftMs(c); if(ms<=0){ finishCard(c.id); } } }   // 1枚ごとの時間切れ=その時点の絵で確定
-    else if(G.stepEnd && !G.resAt) ms=localEnd-Date.now();
+    else if(G.stepEnd && !G.resAt){                  // 警告音は自分に関係ある時だけ(ほかの人の番の時間切れで鳴り続けないように)
+      const mine = G.phase==="topic"? !G.topics[VID()] : G.phase==="match"? G.turn===VID() : false;
+      if(mine) ms=localEnd-Date.now();
+    }
     const s=Math.ceil(ms/1000);
     if(ms>0 && s<=5 && s>=1 && s!==lastWarnS){ lastWarnS=s; playWarn(); }
   }
