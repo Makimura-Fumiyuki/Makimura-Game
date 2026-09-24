@@ -144,7 +144,7 @@
   .n-note{ position:absolute; left:20px; right:20px; bottom:calc(22px + env(safe-area-inset-bottom)); font-size:11px; font-weight:400; letter-spacing:.06em; color:rgba(255,255,255,.5); line-height:1.7; text-align:center; }
 </style>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8539036056022595" crossorigin="anonymous"></script>
-<link rel="canonical" href="https://makimura-gamehub.com/nomi">
+<link rel="canonical" href="https://makimura-gamehub.com/games/nominomi">
 <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjMWIxYjFiIi8+PHRleHQgeD0iMTYiIHk9IjE2LjUiIGZvbnQtc2l6ZT0iMTciIGZvbnQtd2VpZ2h0PSI3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIiBmaWxsPSIjZmZmIiBmb250LWZhbWlseT0iJ0hpcmFnaW5vIFNhbnMnLCdOb3RvIFNhbnMgSlAnLHNhbnMtc2VyaWYiPuODjjwvdGV4dD48L3N2Zz4=">
 <meta property="og:image" content="https://makimura-gamehub.com/img/icon.png">
 </head>
@@ -182,7 +182,7 @@
     </button>
   </div>
 
-  <a class="home-foot" href="./index.html">牧村が作ったゲーム集へ</a>
+  <a class="home-foot" href="../index.html">牧村が作ったゲーム集へ</a>
 
   <!-- 世界累計(黒オーバーレイ) -->
   <div id="worldOverlay">
@@ -193,7 +193,7 @@
     <div class="w-total" id="wTotal">-</div>
     <div class="w-list" id="wList"></div>
     <button id="wMe" style="display:none"></button>
-    <a class="w-guest" id="wGuest" href="./index.html?account=1" style="display:none">「牧村が作ったゲーム集」でアカウントを登録するとランキングに反映されます</a>
+    <a class="w-guest" id="wGuest" href="../index.html?account=1" style="display:none">「牧村が作ったゲーム集」でアカウントを登録するとランキングに反映されます</a>
   </div>
 
   <!-- 名前(黒オーバーレイに入力欄と決定だけ。注記は画面下部) -->
@@ -202,7 +202,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
     </button>
     <input class="n-input" id="nameInput" maxlength="16" autocomplete="off" spellcheck="false" placeholder="あなたの名前">
-    <div class="n-guide" id="nameGuide" style="display:none;"><a href="./index.html?account=1" style="color:#fff;">「牧村が作ったゲーム集」でアカウントを登録すると名前を変更できます</a></div>
+    <div class="n-guide" id="nameGuide" style="display:none;"><a href="../index.html?account=1" style="color:#fff;">「牧村が作ったゲーム集」でアカウントを登録すると名前を変更できます</a></div>
     <div class="n-err" id="nameErr">この名前は使われています</div>
     <button class="n-ok" id="nameOk">決定</button>
     <div class="n-note">登録した名前はオンラインランキングで他のプレイヤーに公開されます</div>
@@ -1057,7 +1057,7 @@ $("wMe").addEventListener("click",()=>{
       }catch(e){ setMsg("パスワードが違います"); }
     };
     document.getElementById("admGo").onclick=()=>{ document.getElementById("admMsg").textContent="パスワードが違います"; };   // 「ログイン」=正誤問わず失敗表示(ダミー)
-    document.getElementById("admQuit").onclick=()=>{ location.href="nomi.html"; };   // 「やめる」=管理画面を閉じる
+    document.getElementById("admQuit").onclick=()=>{ location.href="./nominomi.html"; };   // 「やめる」=管理画面を閉じる
     let admSecT=0; const armA=()=>{ if(admSecT) return; admSecT=setTimeout(doAdmLogin,10000); }, disA=()=>{ clearTimeout(admSecT); admSecT=0; };
     window.addEventListener("touchstart",e=>{ if(e.touches&&e.touches.length>=3) armA(); },{passive:true});
     window.addEventListener("touchend",e=>{ if(!e.touches||e.touches.length<3) disA(); });
@@ -1074,7 +1074,7 @@ $("wMe").addEventListener("click",()=>{
       +'<button id="admClose" style="margin-left:auto;padding:8px 16px;border:none;border-radius:8px;font-weight:700;cursor:pointer;">閉じてゲームへ</button></div>'
       +'<div style="opacity:.6;font-size:12.5px;margin-top:4px;line-height:1.7;">削除=その人のオンライン記録を全て消す（本人の端末にローカル累計が残っていると再送で戻ることがあります）。戻したくない人は「除外」=再送されてもランキングに出ません</div>'
       +'<div id="admList" style="font-size:14.5px;margin-top:16px;">読み込み中…</div></div>';
-    document.getElementById("admClose").onclick=()=>{ location.href="nomi.html"; };
+    document.getElementById("admClose").onclick=()=>{ location.href="./nominomi.html"; };
     let raw=[];
     try{ await acProbe; }catch(e){}
     try{

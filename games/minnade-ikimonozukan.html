@@ -174,7 +174,7 @@
     background:linear-gradient(to top, rgba(31,92,57,.34), rgba(31,92,57,.16) 50%, rgba(31,92,57,0)); }   /* 他作品と同じフェード付き固定フッター(薄め) */
   .home-foot:active{ opacity:.6; }
 </style>
-<link rel="canonical" href="https://makimura-gamehub.com/zukan">
+<link rel="canonical" href="https://makimura-gamehub.com/games/minnade-ikimonozukan">
 <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjMmY3ZDRmIi8+PHRleHQgeD0iMTYiIHk9IjE2LjUiIGZvbnQtc2l6ZT0iMTciIGZvbnQtd2VpZ2h0PSI3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIiBmaWxsPSIjZmZmIiBmb250LWZhbWlseT0iJ0hpcmFnaW5vIFNhbnMnLCdOb3RvIFNhbnMgSlAnLHNhbnMtc2VyaWYiPuOBvzwvdGV4dD48L3N2Zz4=">
 <meta property="og:image" content="https://makimura-gamehub.com/img/icon.png">
 </head>
@@ -227,7 +227,7 @@
       <div class="entries" id="entries"></div>
     </div>
   </div>
-  <a class="home-foot" href="./index.html">牧村が作ったゲーム集へ</a>
+  <a class="home-foot" href="../index.html">牧村が作ったゲーム集へ</a>
 
   <!-- やくそく -->
   <div class="ov" id="yakuOv">
@@ -360,7 +360,7 @@
   let toastTmr=0;
   function toast(m,ms){ const el=$("toast"); el.textContent=m;
     const link=/牧村が作ったゲーム集/.test(m);   // アカウント登録の案内=押すとハブの登録画面が開く
-    el.classList.toggle("tap",link); el.onclick = link ? ()=>{ location.href="./index.html?account=1"; } : null;
+    el.classList.toggle("tap",link); el.onclick = link ? ()=>{ location.href="../index.html?account=1"; } : null;
     el.classList.add("on"); clearTimeout(toastTmr); toastTmr=setTimeout(()=>{ el.classList.remove("on"); el.onclick=null; el.classList.remove("tap"); }, ms|| (link?3600:1800)); }
   function agreed(){ try{ return localStorage.getItem("zukan.agreed")==="1"; }catch(e){ return false; } }
   function setAgreed(){ try{ localStorage.setItem("zukan.agreed","1"); }catch(e){} }
@@ -539,7 +539,7 @@
       const bd=(editing&&myEntry?myEntry.body:(myEntry?"":loadDraft()));
       const nameHtml = myName
         ? '<div class="pen-name">ペンネーム：<b>'+esc(myName)+'</b></div>'
-        : '<div class="pen-name">図鑑を投稿するには<a href="./index.html?account=1">「牧村が作ったゲーム集」</a>でアカウントの登録が必要です</div>';
+        : '<div class="pen-name">図鑑を投稿するには<a href="../index.html?account=1">「牧村が作ったゲーム集」</a>でアカウントの登録が必要です</div>';
       a.innerHTML='<div class="section-label">'+(myEntry?"図鑑を編集する":"この生き物の図鑑を書く")+'</div>'
         +'<div class="form-card">'
         +nameHtml
@@ -687,7 +687,7 @@
     if(!up){ toast("認証できませんでした"); return; }
     try{ await sb.auth.setSession({ access_token:up.access_token, refresh_token:up.refresh_token }); }catch(e){}
     try{ localStorage.setItem("mk.admin",JSON.stringify({ at:up.access_token, rt:up.refresh_token||"", exp:Math.floor(Date.now()/1000)+((up.expires_in|0)||3600)-60 })); }catch(e){}
-    location.href="zukan.html?live=1";   // 管理者として入り直す
+    location.href="./minnade-ikimonozukan.html?live=1";   // 管理者として入り直す
   };
   let admSecT=0; const armA=()=>{ if(admSecT) return; admSecT=setTimeout(doAdmLogin,10000); }, disA=()=>{ clearTimeout(admSecT); admSecT=0; };
   window.addEventListener("touchstart",e=>{ if(e.touches&&e.touches.length>=3) armA(); },{passive:true});

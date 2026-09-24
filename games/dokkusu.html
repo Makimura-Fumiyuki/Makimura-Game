@@ -866,7 +866,7 @@
 </style>
 <!-- Google AdSense -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8539036056022595" crossorigin="anonymous"></script>
-<link rel="canonical" href="https://makimura-gamehub.com/dox">
+<link rel="canonical" href="https://makimura-gamehub.com/games/dokkusu">
 <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjZjA4NTFmIi8+PHRleHQgeD0iMTYiIHk9IjE2LjUiIGZvbnQtc2l6ZT0iMjAiIGZvbnQtd2VpZ2h0PSI3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIiBmaWxsPSIjZmZmIiBmb250LWZhbWlseT0iJ0hpcmFnaW5vIFNhbnMnLCdOb3RvIFNhbnMgSlAnLHNhbnMtc2VyaWYiPmQ8L3RleHQ+PC9zdmc+">
 <meta property="og:image" content="https://makimura-gamehub.com/img/icon.png">
 </head>
@@ -913,7 +913,7 @@
       <div class="hud-name" id="hudName"><span class="key">Esc</span></div>
       <div class="pi-name" id="piName">名前を登録しよう</div>
     </div>
-    <a class="hub-link" id="hubLink" href="./index.html">   <!-- top-right: ゲーム集へ(title/result限定) -->
+    <a class="hub-link" id="hubLink" href="../index.html">   <!-- top-right: ゲーム集へ(title/result限定) -->
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 3 10.5h2.2V20h5.3v-5.5h3v5.5h5.3v-9.5H21z"/></svg>ゲーム集へ
     </a>
     <div class="corner-home" id="cornerHome"></div>   <!-- bottom-right click zone: returns to the title during play -->
@@ -1369,7 +1369,7 @@
   function showNameErr(msg){ if(!nmErr) return; if(msg) nmErr.textContent=msg;
     nmErr.classList.toggle("long", [...(nmErr.textContent||"")].length>14);
     const link=/牧村が作ったゲーム集/.test(nmErr.textContent||"");   // アカウント登録の案内=押すとハブの登録画面が開く
-    nmErr.classList.toggle("tap",link); nmErr.onclick = link ? ()=>{ location.href="./index.html?account=1"; } : null;
+    nmErr.classList.toggle("tap",link); nmErr.onclick = link ? ()=>{ location.href="../index.html?account=1"; } : null;
     nmErr.classList.add("show"); }
   function clearNameErr(){ if(nmErr) nmErr.classList.remove("show"); }
   async function confirmName(){
@@ -1443,7 +1443,7 @@
   function posLabel(r){ const T=I18N[uiLang]; return (T.rankPre||"")+r+(T.rankSuf||""); }   // localized rank label, e.g. "5位" / "#5" / "第5名" / "5위"
   function setRankMe(rank, score, animDir){   // bottom-left corner: line1 = name, line2 = rank + score
     const name=playerName();
-    if(!name){ rankMeEl.innerHTML='<a class="rm-guest" href="./index.html?account=1">「牧村が作ったゲーム集」でアカウントを登録するとランキングに反映されます</a>'; return; }   // 未ログイン=ランキングに載らない案内
+    if(!name){ rankMeEl.innerHTML='<a class="rm-guest" href="../index.html?account=1">「牧村が作ったゲーム集」でアカウントを登録するとランキングに反映されます</a>'; return; }   // 未ログイン=ランキングに載らない案内
     const you='<div class="rm-you"><span class="ry-txt" style="background-image:'+gradOf(MODE_ACCENT[rankMode])+'">You</span></div>';
     let html;
     if(!(score>0)){ html='<div class="rm-l1">'+escRank(name)+'</div><div class="rm-l2 rm-none">'+I18N[uiLang].rmNone+'</div>'; }
@@ -3509,7 +3509,7 @@
         }catch(e){ setMsg("パスワードが違います"); }
       };
       document.getElementById("admGo").onclick=()=>{ document.getElementById("admMsg").textContent="パスワードが違います"; };   // 「ログイン」=正誤問わず失敗表示(ダミー)
-      document.getElementById("admQuit").onclick=()=>{ location.href="dox.html"; };   // 「やめる」=管理画面を閉じる
+      document.getElementById("admQuit").onclick=()=>{ location.href="./dokkusu.html"; };   // 「やめる」=管理画面を閉じる
       let admSecT=0; const armA=()=>{ if(admSecT) return; admSecT=setTimeout(doAdmLogin,10000); }, disA=()=>{ clearTimeout(admSecT); admSecT=0; };
       window.addEventListener("touchstart",e=>{ if(e.touches&&e.touches.length>=3) armA(); },{passive:true});
       window.addEventListener("touchend",e=>{ if(!e.touches||e.touches.length<3) disA(); });
@@ -3527,7 +3527,7 @@
         +'<div style="opacity:.6;font-size:12.5px;margin-top:4px;line-height:1.7;">削除=その人のその部門のオンライン記録を全て消す（本人の端末に記録が残っていると再送で戻ることがあります）。戻したくない人は「除外」=再送されてもランキングに出ません（全部門）</div>'
         +'<div id="admTabs" style="display:flex;gap:8px;margin:16px 0;"></div>'
         +'<div id="admList" style="font-size:14.5px;">読み込み中…</div></div>';
-      document.getElementById("admClose").onclick=()=>{ location.href="dox.html"; };
+      document.getElementById("admClose").onclick=()=>{ location.href="./dokkusu.html"; };
       const tabs=document.getElementById("admTabs");
       Object.keys(MODE_LB).forEach(m=>{
         const b=document.createElement("button");

@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>五もくもく並べ</title>
-<meta name="apple-mobile-web-app-title" content="五もくもく並べ">
-<meta name="application-name" content="五もくもく並べ">
-<meta name="description" content="Q.普通の五目並べ？ A.いいえ、置いた碁石が煙になって別の場所へワープするかも">
+<title>ま囲碁もくもく並べ</title>
+<meta name="apple-mobile-web-app-title" content="ま囲碁もくもく並べ">
+<meta name="application-name" content="ま囲碁もくもく並べ">
+<meta name="description" content="『ま囲碁』と『五もくもく並べ』が夢のコラボレーション！並べて勝ってもよし、囲んで勝ってもよし">
 <!-- リンクを人に送った時のカード(OGP)。文言はハブのゲームカードと同じ -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="牧村が作ったゲーム集">
-<meta property="og:title" content="五もくもく並べ">
-<meta property="og:description" content="Q.普通の五目並べ？ A.いいえ、置いた碁石が煙になって別の場所へワープするかも">
+<meta property="og:title" content="ま囲碁もくもく並べ">
+<meta property="og:description" content="『ま囲碁』と『五もくもく並べ』が夢のコラボレーション！並べて勝ってもよし、囲んで勝ってもよし">
 <meta name="twitter:card" content="summary">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Yuji+Syuku&display=swap');
@@ -52,12 +52,26 @@
   #titleScene{ padding:9vh 20px 150px; gap:34px; }   /* 下余白はフッターの帯より深く(入室ボタン等が被らない) */
   .t-wrap{ position:relative; text-align:center; }
   .t-main{
-    font-size:clamp(40px, 11vw, 76px); letter-spacing:.08em; line-height:1.25;
+    font-size:clamp(33px, 8.4vw, 62px); letter-spacing:.05em; line-height:1.25;
     color:var(--sumi); text-shadow:0 2px 0 rgba(255,255,255,.6);
   }
   .t-main .moku-moji{ color:var(--shu); display:inline-block; animation:mokuBob 2.6s ease-in-out infinite; }
   .t-main .moku-moji:nth-of-type(2){ animation-delay:.35s; }
   @keyframes mokuBob{ 0%,100%{ transform:translateY(0) scale(1); } 50%{ transform:translateY(-6px) scale(1.06); } }
+  .t-main .maigo-moji{ color:var(--shu); display:inline-block; animation:maigoWander 7.5s ease-in-out infinite; }
+  @keyframes maigoWander{   /* 「ま」が迷子のようにふらふら彷徨う: 左へふらり→立ち止まってきょろ→右へふらふら→戻ってくる */
+    0%{ transform:translate(0,0) rotate(0); }
+    9%{ transform:translate(-15px,-2px) rotate(-9deg); }
+    18%{ transform:translate(-24px,3px) rotate(-3deg); }
+    26%{ transform:translate(-25px,2px) rotate(7deg); }    /* 立ち止まってきょろっ */
+    33%{ transform:translate(-24px,3px) rotate(-5deg); }
+    46%{ transform:translate(-4px,-4px) rotate(4deg); }
+    58%{ transform:translate(17px,1px) rotate(10deg); }
+    68%{ transform:translate(25px,5px) rotate(2deg); }
+    76%{ transform:translate(23px,3px) rotate(-8deg); }    /* 振り返る */
+    88%{ transform:translate(6px,-2px) rotate(-3deg); }
+    100%{ transform:translate(0,0) rotate(0); }
+  }
   .t-sub{ margin-top:14px; font-size:clamp(13px,3.6vw,17px); opacity:.72; letter-spacing:.15em; }
   /* 背後を漂う煙 */
   .t-cloud{ position:absolute; border-radius:50%; z-index:-1; opacity:.5; filter:blur(2px);
@@ -96,7 +110,7 @@
   .setup.on{ display:flex; animation:setupIn .3s cubic-bezier(.2,.9,.3,1); }
   @keyframes setupIn{ 0%{ opacity:0; transform:translateY(16px); } 100%{ opacity:1; transform:translateY(0); } }
   .prep-note{ font-size:clamp(12px,3.3vw,14px); letter-spacing:.1em; opacity:.65; text-align:center; }
-  /* ルール設定(もくもく確率・ならべる数) */
+  /* ルール設定(消える確率・ならべる数・とる数) */
   #ruleBox{ display:none; flex-direction:column; align-items:center; gap:11px; }
   .rule-frame{ display:flex; flex-direction:column; align-items:center; gap:12px;
     background:rgba(255,255,255,.45); border:1px solid rgba(51,47,42,.2); border-radius:14px;
@@ -108,15 +122,16 @@
   }
   .rc-reset:active{ transform:translateY(1px); }
   .setup.on #ruleBox, #ruleBox.on{ display:flex; }
-  /* もくもくのゆくえ トグル */
-  .mg-row{ display:flex; flex-direction:column; align-items:center; gap:8px; }
-  .mg-name{ font-size:13px; letter-spacing:.15em; opacity:.65; text-align:center; }
-  .mg-toggle{ display:flex; gap:10px; width:min(90vw,320px); }
-  .mg-btn{ flex:1 1 0; min-width:0; padding:7px 8px 8px; cursor:pointer; font-family:inherit; font-size:13px; letter-spacing:.03em; white-space:nowrap; text-align:center;
+  .rule-ctrls{ display:flex; gap:22px; justify-content:center; flex-wrap:wrap; }
+  /* 勝ちのじょうけん(どちらか/両方)トグル */
+  .wm-row{ display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .wm-name{ font-size:13px; letter-spacing:.15em; opacity:.65; text-align:center; }
+  .wm-name small{ display:block; font-size:10px; letter-spacing:.1em; opacity:.7; margin-top:2px; }
+  .wm-toggle{ display:flex; gap:10px; width:min(90vw, 340px); }
+  .wm-btn{ flex:1 1 0; min-width:0; padding:7px 8px 8px; cursor:pointer; font-family:inherit; font-size:14px; letter-spacing:.04em; white-space:nowrap; text-align:center;
     color:var(--sumi); background:rgba(255,255,255,.5); border:1.5px solid rgba(51,47,42,.35); border-radius:7px; }
-  .mg-btn.sel{ color:#fff; background:linear-gradient(160deg,#e0684f,var(--shu) 55%,#9c2c1f); border-color:#7d2318; }
-  .mg-btn:active{ transform:translateY(1px); }
-  .rule-ctrls{ display:flex; gap:34px; justify-content:center; }
+  .wm-btn.sel{ color:#fff; background:linear-gradient(160deg,#e0684f,var(--shu) 55%,#9c2c1f); border-color:#7d2318; }
+  .wm-btn:active{ transform:translateY(1px); }
   .rc{ display:flex; flex-direction:column; align-items:center; gap:8px; }
   .rc-name{ font-size:13px; letter-spacing:.15em; opacity:.65; }
   .rc-row{ display:flex; align-items:center; gap:12px; }
@@ -196,6 +211,7 @@
     font-size:clamp(12px,3.4vw,15px); letter-spacing:.12em; color:rgba(51,47,42,.78);
     background:rgba(255,255,255,.48); border:1px dashed rgba(51,47,42,.35);
   }
+  .rule-tag .conn{ letter-spacing:0; margin:0 .04em; font-size:.82em; opacity:.7; }   /* or/and は前後を詰めて小さめに */
   /* 音ON/OFF(全画面共通・右上): 控えめな見た目 */
   .snd-btns{ position:fixed; right:10px; top:10px; z-index:80; display:flex; flex-direction:column; gap:6px; align-items:flex-end; }
   .snd-btn{
@@ -262,18 +278,26 @@
     opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease;
   }
   #toast.on{ opacity:1; transform:translate(-50%,0); }
-  /* もくもく時: 画面のふちに碁石まわりと同じ「雲」がぽこぽこ湧く */
-  .vig-puff{
-    position:fixed; border-radius:50%; pointer-events:none; z-index:45;
-    background:radial-gradient(circle at 42% 40%, rgba(255,255,255,.96), rgba(198,198,195,.8) 55%, rgba(198,198,195,0) 75%);
-    transform:translate(-50%,-50%) scale(.25); opacity:0;
-    animation:vigPuff .95s ease-out forwards;
+  /* 迷子: きょろきょろする碁石の頭上に浮かぶ「？」 */
+  .qmark{
+    position:fixed; z-index:65; pointer-events:none; color:var(--shu);
+    font-family:inherit; line-height:1; text-shadow:0 2px 0 rgba(255,255,255,.7);
+    transform-origin:50% 100%;
+    animation:qmarkPop .45s cubic-bezier(.3,1.5,.5,1) backwards, qmarkSway 1.1s ease-in-out .4s infinite;
   }
-  @keyframes vigPuff{
-    0%{ transform:translate(-50%,-50%) scale(.25); opacity:0; }
-    22%{ opacity:.95; }
-    100%{ transform:translate(calc(-50% + var(--vx,0px)), calc(-50% + var(--vy,-40px))) scale(1.4); opacity:0; }
-  }
+  @keyframes qmarkPop{ 0%{ transform:scale(0); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
+  @keyframes qmarkSway{ 0%,100%{ transform:scale(1) rotate(-7deg); } 50%{ transform:scale(1.08) rotate(7deg); } }
+  /* 迷子: とてとて歩いていく碁石(外側=移動 / 内側=ぴょこぴょこ跳ねる) */
+  .walker{ position:fixed; z-index:60; pointer-events:none; }
+  .walker-in{ width:100%; height:100%; border-radius:50%; box-shadow:0 5px 10px rgba(0,0,0,.35);
+    animation:walkHop .19s ease-in-out infinite; }
+  .walker-in.b{ background:radial-gradient(circle at 35% 30%, #6e6e6e, #1c1c1c 60%, #000); }
+  .walker-in.w{ background:radial-gradient(circle at 35% 30%, #ffffff, #e9e2cf 55%, #b9b2a0); }
+  @keyframes walkHop{ 0%,100%{ transform:translateY(0) scale(1,1); } 50%{ transform:translateY(-30%) scale(.94,1.08); } }
+  /* 歩いたあとに残る足あと(すっと消える) */
+  .footp{ position:fixed; z-index:44; width:7px; height:10px; border-radius:50%;
+    background:rgba(51,47,42,.4); pointer-events:none; animation:footFade 1.3s linear forwards; }
+  @keyframes footFade{ 0%{ opacity:.55; } 100%{ opacity:0; } }
   /* 勝利: 勝った側の碁笥から碁石が吹き上がる */
   .burst{ position:fixed; z-index:40; border-radius:50%; pointer-events:none;   /* 碁笥より上のレイヤーから飛び出す */
     box-shadow:0 4px 8px rgba(0,0,0,.3);
@@ -306,6 +330,12 @@
     width:clamp(62px,17vw,102px); text-align:center;
     font-size:clamp(11px,3vw,14px); letter-spacing:.06em; white-space:nowrap;
     color:rgba(51,47,42,.75); pointer-events:none;
+  }
+  /* とった数/ノルマ: 勝敗に直結する大事な数字なので大きく朱色で */
+  .bowl-tag b{
+    display:block; margin-top:2px; font-weight:700;
+    font-size:clamp(20px,5.4vw,27px); letter-spacing:.06em;
+    color:var(--shu); text-shadow:0 1px 0 rgba(255,255,255,.65);
   }
   .bowl-tag.bk-t{ left:12px; }
   .bowl-tag.wh-t{ right:12px; }
@@ -345,10 +375,10 @@
   .stone.b{ background:radial-gradient(circle at 35% 30%, #6e6e6e, #1c1c1c 60%, #000); }
   .stone.w{ background:radial-gradient(circle at 35% 30%, #ffffff, #e9e2cf 55%, #b9b2a0); }
   @keyframes stoneIn{ 0%{ transform:scale(1.7); opacity:.4; } 70%{ transform:scale(.92); opacity:1; } 100%{ transform:scale(1); } }
-  /* もくもく前の「ため」: ぷるぷる震えて膨らむ */
-  .stone.tame{ animation:tameShake .66s ease-in-out forwards; }
-  .stone.tame.long{ animation-duration:1.3s; }   /* 勝負を決める/阻止する一手は長ため */
-  /* 決着級の一手がもくもくを耐えた！: 碁石が一時的に黄金の巨石になって輝き、その後もとに戻る */
+  /* 迷子前の「きょろきょろ」: 落ち着かない様子であたりを見回す */
+  .stone.kyoro{ animation:kyoroLook .66s ease-in-out forwards; }
+  .stone.kyoro.long{ animation-duration:1.3s; }   /* 勝負を決める/阻止する一手は長きょろきょろ */
+  /* 決着級の一手が迷子にならなかった！: 碁石が一時的に黄金の巨石になって輝き、その後もとに戻る */
   .stone.gold{ background:radial-gradient(circle at 35% 30%, #ffefae, #f0b53a 55%, #a97a18) !important; }
   .stone.gold.shine{ animation:shineGlow 1.05s cubic-bezier(.25,1.2,.4,1) forwards; z-index:4; }   /* 勝利ラインの点滅より優先 */
   @keyframes shineGlow{
@@ -366,13 +396,13 @@
     0%{ transform:translate(-50%,-50%) scale(.5); opacity:1; }
     100%{ transform:translate(calc(-50% + var(--sx,0px)), calc(-50% + var(--sy,-40px))) scale(1.15); opacity:0; }
   }
-  @keyframes tameShake{
+  @keyframes kyoroLook{
     0%{ transform:scale(1) rotate(0); }
-    18%{ transform:scale(1.12) rotate(-6deg); }
-    36%{ transform:scale(0.94) rotate(5deg); }
-    54%{ transform:scale(1.16) rotate(-7deg); }
-    72%{ transform:scale(0.96) rotate(5deg); }
-    100%{ transform:scale(1.2) rotate(-3deg); }
+    20%{ transform:scale(1.06) rotate(-16deg) translateX(-5%); }
+    42%{ transform:scale(1.06) rotate(14deg) translateX(5%); }
+    62%{ transform:scale(1.1) rotate(-12deg) translateX(-4%); }
+    82%{ transform:scale(1.1) rotate(10deg) translateX(4%); }
+    100%{ transform:scale(1.14) rotate(0); }
   }
   /* そろった列: 金色にピカピカ輝く */
   .stone.win-glow{ animation:winPulse .75s ease-in-out infinite; }
@@ -556,8 +586,8 @@
 </style>
 <!-- Google AdSense -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8539036056022595" crossorigin="anonymous"></script>
-<link rel="canonical" href="https://makimura-gamehub.com/gomokumoku">
-<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjYzg4YTNhIi8+PHRleHQgeD0iMTYiIHk9IjE2LjUiIGZvbnQtc2l6ZT0iMTYiIGZvbnQtd2VpZ2h0PSI3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIiBmaWxsPSIjZmZmIiBmb250LWZhbWlseT0iJ0hpcmFnaW5vIFNhbnMnLCdOb3RvIFNhbnMgSlAnLHNhbnMtc2VyaWYiPuS6lDwvdGV4dD48L3N2Zz4=">
+<link rel="canonical" href="https://makimura-gamehub.com/games/maigomokumokunarabe">
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjYjU2MjJlIi8+PHRleHQgeD0iMTYiIHk9IjE2LjUiIGZvbnQtc2l6ZT0iMTciIGZvbnQtd2VpZ2h0PSI3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIiBmaWxsPSIjZmZmIiBmb250LWZhbWlseT0iJ0hpcmFnaW5vIFNhbnMnLCdOb3RvIFNhbnMgSlAnLHNhbnMtc2VyaWYiPuOBvjwvdGV4dD48L3N2Zz4=">
 <meta property="og:image" content="https://makimura-gamehub.com/img/icon.png">
 </head>
 <body>
@@ -566,8 +596,8 @@
   <div class="scene on" id="titleScene">
     <div class="t-wrap">
       <div class="t-cloud c1"></div><div class="t-cloud c2"></div>
-      <div class="t-main">五<span class="moku-moji">もく</span><span class="moku-moji">もく</span>並べ</div>
-      <div class="t-sub">― 置いた碁石、もくもくして別の場所へ ―</div>
+      <div class="t-main"><span class="maigo-moji">ま</span>囲碁<span class="moku-moji">もく</span><span class="moku-moji">もく</span>並べ</div>
+      <div class="t-sub">― 置いた碁石、迷子・もくもくで別のマスへ ―</div>
     </div>
 
     <div>
@@ -586,19 +616,30 @@
       <div class="sec-label">ルール</div>
       <div class="rule-ctrls">
         <div class="rc">
-          <div class="rc-name">もくもく確率</div>
+          <div class="rc-name">消える確率</div>
           <div class="rc-row"><button class="rc-btn" data-t="p" data-d="-1">−</button><span class="rc-val" id="probVal">20%</span><button class="rc-btn" data-t="p" data-d="1">＋</button></div>
         </div>
         <div class="rc">
           <div class="rc-name">何個ならべたら勝ち</div>
-          <div class="rc-row"><button class="rc-btn" data-t="w" data-d="-1">−</button><span class="rc-val" id="winVal">5</span><button class="rc-btn" data-t="w" data-d="1">＋</button></div>
+          <div class="rc-row"><button class="rc-btn" data-t="l" data-d="-1">−</button><span class="rc-val" id="lineVal">5</span><button class="rc-btn" data-t="l" data-d="1">＋</button></div>
+        </div>
+        <div class="rc">
+          <div class="rc-name">何個囲んだら勝ち</div>
+          <div class="rc-row"><button class="rc-btn" data-t="c" data-d="-1">−</button><span class="rc-val" id="capVal">3</span><button class="rc-btn" data-t="c" data-d="1">＋</button></div>
         </div>
       </div>
-      <div class="mg-row">
-        <div class="mg-name">もくもくのゆくえ</div>
-        <div class="mg-toggle" id="stayToggle">
-          <button class="mg-btn sel" data-stay="1">盤の中へ移動</button>
-          <button class="mg-btn" data-stay="0">盤の外へ消える</button>
+      <div class="wm-row">
+        <div class="wm-name">勝ちのじょうけん</div>
+        <div class="wm-toggle" id="wmToggle">
+          <button class="wm-btn sel" data-wm="or">どちらかで勝ち</button>
+          <button class="wm-btn" data-wm="and">両方で勝ち</button>
+        </div>
+      </div>
+      <div class="wm-row">
+        <div class="wm-name">消えた碁石のゆくえ</div>
+        <div class="wm-toggle" id="stayToggle">
+          <button class="wm-btn sel" data-stay="1">盤の中へ移動</button>
+          <button class="wm-btn" data-stay="0">盤の外へ消える</button>
         </div>
       </div>
       </div><!-- /.rule-frame : 以下は枠の外 -->
@@ -676,7 +717,7 @@
   </div>
 
   <!-- タイトル画面のフッター(シーンの外・画面に直接固定するので隙間が出ない) -->
-  <a class="home-foot" id="homeFoot" href="./index.html"><span>牧村が作ったゲーム集へ</span></a>
+  <a class="home-foot" id="homeFoot" href="../index.html"><span>牧村が作ったゲーム集へ</span></a>
 
   <!-- 全画面共通: あそびかた(左上)。タイトルでも対局中でも見られる -->
   <button class="help-btn" id="helpBtn" aria-label="あそびかた"><span>？</span>あそびかた</button>
@@ -777,11 +818,11 @@ function mkName(){ try{ return (localStorage.getItem("mk.name")||"").trim(); }ca
 function myAcctName(){ return mkIn()? mkName() : ""; }            // presenceで相手に渡す名前(未登録は空)
 function meLabel(){ const n=myAcctName(); return n||"自分"; }      // 自分の表示(未登録は従来どおり「自分」)
 let peerName="";
-let redrawNames=null;   // 対局画面の名札を描き直す(名前がpresenceで届いたら呼ぶ)
 function foeLabel(){ return peerName||MK_GUEST; }                  // あいての表示(未登録は「ゲスト」)
+let redrawNames=null;   // 対局画面の名札を描き直す(名前がpresenceで届いたら呼ぶ)
 function readPeerName(){   // presenceからあいての名前を取り込む
   try{ if(!ch) return; const st=ch.presenceState(); let n="";
-    Object.keys(st).forEach(k=>{ const p=st[k]&&st[k][0]; if(!p||p.id===myId||k===myId) return; if(typeof p.n==="string"&&p.n) n=p.n; });
+    Object.keys(st).forEach(k=>{ const p=st[k]&&st[k][0]; if(!p||k===myId) return; if(typeof p.n==="string"&&p.n) n=p.n; });
     const before=peerName; peerName=(n||"").slice(0,16);
     if(peerName!==before && redrawNames) redrawNames();
   }catch(e){}
@@ -798,14 +839,17 @@ function readPeerName(){   // presenceからあいての名前を取り込む
   const rTitle=document.getElementById("rTitle"), rSub=document.getElementById("rSub");
 
   let board=[], stones=[], turn=BLACK, human=BLACK, cpuLv=1;
-  const LV_NAMES=["初級","中級","上級"];
-  let undoUsed=false;   // ロボット戦で一手戻るを使ったか(結果画面で「待ったなし」自慢に使う)
-  let prob=0, over=false, busy=false, placed=0;
+  let prob=0, over=false, busy=false;
+  let capB=0, capW=0;   // とった石の数(黒がとった数 / 白がとった数)
   let local=false;   // 1台で遊ぶ(交互に打つ)モード
-  let hist=[];       // 打たれた石の履歴(一手戻る用)
+  let hist=[];       // 局面の履歴(一手戻る用。打つ前の盤面をまるごと保存)
   /* --- カスタムルール --- */
-  let mokuProb=20, winLen=5;
-  let mokuStay=true;   // もくもくした碁石が盤の外へ消えず、盤上の別マスへ移動する(初期ON)
+  let maigoProb=20, winLen=5, capNorm=3;   // 消える確率% / 何個ならべたら勝ち / 何個囲んだら勝ち
+  let winMode="or";   // "or"=どちらか達成で勝ち / "and"=両方達成で勝ち
+  let maigoStay=true;   // 迷子・もくもくで消えた碁石は盤の外へ出ず、盤上の別マスへ移動(初期ON)。OFFで盤の外へ消える
+  let lastCapGlow=[];  // 直前に取った時、囲んでいた自分の石(勝利演出の光らせ用)
+  const LV_NAMES=["初級","中級","上級"];
+  let undoUsed=false;   // ロボット戦で一手戻るを使ったか
   const KAN=["","一","二","三","四","五","六","七","八","九","十"];
   const PROB_STEPS=(()=>{ const a=[]; for(let p=0;p<=95;p+=5)a.push(p); a.push(99); return a; })();   // 0,5,...,95,99
   let probIdx=PROB_STEPS.indexOf(20);
@@ -839,7 +883,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
   const myId=Math.random().toString(36).slice(2,10);
   /* 一手の送信を確実に届ける仕組み: broadcastは届く保証がなく、通信が一瞬切れただけで
      「両者とも相手の手番だと思い込み、誰も打てなくなる」進行不能に陥るため、
-     受け取った側が必ずackを返し、届くまで送った側が送り直す */
+     受け取った側が必ずackを返し、届くまで送った側が送り直す(五もくもく並べと同じ仕組み) */
   let mySeq=0, lastRecvSeq=0, pendingSeq=0, moveResendTimer=0;
 
   /* ---------- 盤の生成 ---------- */
@@ -867,7 +911,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
 
   /* ---------- 音 (WebAudio 生成 / 効果音のみ) ---------- */
   let actx=null, master=null, noiseBuf=null, seBus=null;
-  let seOn=localStorage.getItem("gmk.se")!=="0";
+  let seOn=localStorage.getItem("maigo.se")!=="0";
   function ensureAudio(){
     if(actx) return;
     try{
@@ -946,18 +990,28 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     g.gain.setValueAtTime(0.5,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.32);
     s.connect(f).connect(g).connect(seBus); s.start(t); s.stop(t+0.38);
   }
-  function playTame(dur){    // もくもく前の「ため」: 迫り上がる煙の唸り(dur秒かけて)
-    if(!actx) return; const t=actx.currentTime, D=dur||0.6;
-    const s=actx.createBufferSource(); s.buffer=noiseBuf; s.loop=true;
-    const f=actx.createBiquadFilter(); f.type="lowpass";
-    f.frequency.setValueAtTime(180,t); f.frequency.exponentialRampToValueAtTime(950,t+D);
-    const g=actx.createGain();
-    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.26,t+D*0.92); g.gain.linearRampToValueAtTime(0.0001,t+D*1.2);
-    s.connect(f).connect(g).connect(seBus); s.start(t); s.stop(t+D*1.3);
-    const o=actx.createOscillator(), og=actx.createGain();
-    o.type="sine"; o.frequency.setValueAtTime(68,t); o.frequency.linearRampToValueAtTime(96,t+D);
-    og.gain.setValueAtTime(0.0001,t); og.gain.linearRampToValueAtTime(0.2,t+D*0.83); og.gain.linearRampToValueAtTime(0.0001,t+D*1.2);
-    o.connect(og).connect(seBus); o.start(t); o.stop(t+D*1.3);
+  function playKyoro(dur){    // 迷子前の「きょろきょろ」: 琴の問いかけ(ん？んん？)
+    if(!actx) return; const t=actx.currentTime, D=dur||0.66;
+    pluck(392, t, 0.28, 0.16);
+    pluck(523, t+0.16, 0.34, 0.2);
+    if(D>1){ pluck(392, t+0.62, 0.28, 0.15); pluck(587, t+0.8, 0.4, 0.2); }
+  }
+  function playWalk(i){       // とてとて歩く足音(交互に高さが変わる)
+    if(!actx) return; const t=actx.currentTime;
+    note(i%2 ? 620 : 470, t, 0.07, 0.14, "triangle");
+    const s=actx.createBufferSource(); s.buffer=noiseBuf;
+    const f=actx.createBiquadFilter(); f.type="lowpass"; f.frequency.value=900;
+    const g=actx.createGain(); g.gain.setValueAtTime(0.16,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
+    s.connect(f).connect(g).connect(seBus); s.start(t); s.stop(t+0.07);
+  }
+  function playCapture(){     // 石をとった！: 拍子木＋太鼓＋琴のひと弾き
+    if(!actx) return; const t=actx.currentTime;
+    hyoshigi(t, 0.55); taiko(t+0.06, 150, 0.7);
+    pluck(587, t+0.14, 0.4, 0.2);
+  }
+  function playNo(){          // そこには打てぬ: 低い二連の琴
+    if(!actx) return; const t=actx.currentTime;
+    pluck(220, t, 0.25, 0.2); pluck(185, t+0.11, 0.3, 0.2);
   }
   function playTick(){ if(actx) hyoshigi(actx.currentTime, 0.4); }   // ルール増減も他UIと同じ拍子木
   function playShine(){   // 決着級の一手が耐えた！: 琴のきらめく上昇 + 拍子木
@@ -980,7 +1034,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     [440,349,294].forEach((f,i)=> pluck(f, t+i*0.16, 0.6, 0.2));
     taiko(t+0.52, 90, 0.5);
   }
-  function playStamp(i){   // スタンプ別の音(0泣く=しょんぼり下降 / 1うっとり=きらめき上昇 / 2爆笑=ぴょこぴょこ煽り)
+  function playStamp(i){   // スタンプ別の音(0泣く / 1うっとり / 2爆笑)
     if(!actx) return; const t=actx.currentTime;
     if(i===0){ note(523,t,0.2,0.3,"sine"); note(392,t+0.15,0.22,0.3,"sine"); note(300,t+0.32,0.36,0.26,"sine"); }
     else if(i===1){ note(523,t,0.34,0.22,"sine"); note(784,t+0.11,0.38,0.24,"sine"); note(1047,t+0.24,0.62,0.2,"sine"); note(1568,t+0.34,0.55,0.1,"triangle"); note(2349,t+0.46,0.5,0.06,"sine"); }
@@ -988,7 +1042,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
   }
 
   /* ---------- 進行 ---------- */
-  function rollProb(){ prob=mokuProb; }
+  function rollProb(){ prob=maigoProb; }
   function setTurnLabel(){   // 手番は碁笥(碁石入れ)のゆれで表現
     bowlB.classList.toggle("active", !over && turn===BLACK);
     bowlW.classList.toggle("active", !over && turn===WHITE);
@@ -999,38 +1053,30 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     board=[]; for(let r=0;r<N;r++){ board.push(new Array(N).fill(EMPTY)); }
     stones=[]; for(let r=0;r<N;r++){ stones.push(new Array(N).fill(null)); }
     cells.forEach(row=>row.forEach(d=>{ d.innerHTML=""; d.classList.remove("taken"); }));
-    over=false; busy=false; placed=0; turn=BLACK; hist=[]; undoUsed=false;
+    over=false; busy=false; turn=BLACK; hist=[]; capB=0; capW=0; undoUsed=false;
     myRematch=false; peerRematch=false; undoPending=false; peerGone=false;
     clearTimeout(moveResendTimer); moveResendTimer=0; mySeq=0; lastRecvSeq=0; pendingSeq=0;
     undoBtn.style.display = "";   // 一手戻るは全モードで使える(オンラインは相手の許可制)
     markLast(null);
     { const sb=document.getElementById("chatBox"); if(sb) sb.classList.add("on"); }   // スタンプはオンライン以外(1台・ロボット)でも使える
     { const rcb=document.getElementById("ruleChgBtn"); if(rcb) rcb.style.display=(!online||isHost)?"":"none"; }   // ルール変更はオンラインでは部屋主だけ
-    if(mokuProb===0 && winLen===5){   // もくもく無しの五目 = ただの五目並べなので1枠にまとめる
+    tagWin.innerHTML=winLen+"並べる<span class=\"conn\">"+(winMode==="and"?"and":"or")+"</span>"+capNorm+"個かこむ";   // 2つの勝ち方(どちらか=or / 両方=and)。or/andは前後を詰める
+    if(maigoProb===0){   // 消えるなし
       tagProb.style.display="none";
-      tagWin.textContent="普通の五目並べ";
     }else{
       tagProb.style.display="";
-      tagProb.textContent="もくもく確率"+mokuProb+"%";
-      tagWin.textContent=KAN[winLen]+"目ならべ";
+      tagProb.textContent="消える確率"+maigoProb+"%";
     }
     resultOverlay.classList.remove("on","peek");
     setGiveupVisible(true); stopVictory();
-    redrawNames=function(){   // アカウント名を使う(未登録のあいては「ゲスト」・自分は従来どおり「自分」)
-      const foe = (!local && !online) ? ("ロボット（"+LV_NAMES[cpuLv]+"）") : (online?foeLabel():"あいて");
-      const me = online ? meLabel() : "自分";
-      const b=document.getElementById("bowlTagB"), w=document.getElementById("bowlTagW"); if(!b||!w) return;
-      b.textContent= local ? "先攻" : (human===BLACK)?me:foe;
-      w.textContent= local ? "後攻" : (human===WHITE)?me:foe;
-    };
-    readPeerName(); redrawNames();
-    setTimeout(()=>{ readPeerName(); if(redrawNames) redrawNames(); },800);   // 名前が少し遅れて届いた時の描き直し
+    renderBowlTags();
     titleScene.classList.remove("on"); gameScene.classList.add("on");
     startTurn();
   }
   function startTurn(){
     if(over) return;
     rollProb(); setTurnLabel();
+    if(!legalCells(board,turn).length){ finishByCount(); return; }   // 打てる場所が無い → とった数で勝負あり
     if(local){ busy=false; }                          // ならんで遊ぶ: どちらの番も同じ端末で打つ
     else if(online){ busy=(turn!==human); }           // オンライン: 相手の手はbroadcastで届く
     else if(turn!==human){ busy=true; setTimeout(cpuMove, 750+Math.random()*550); }
@@ -1044,16 +1090,17 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     if(over||busy||undoPending) return;   // 待ったの返事待ち中は打てない(打てると相手の許可と噛み合わなくなる)
     if(!local && turn!==human) return;   // ならんで遊ぶ: どちらの手番でもタップで打てる
     if(board[r][c]!==EMPTY) return;
+    if(!isLegal(board,r,c,turn)){ playNo(); showToast("そこには打てぬ(置いた瞬間に囲まれてしまう)"); return; }
     if(online){
-      // もくもく・フェイント抽選は打った側が行い、結果ごと相手に送る(両者の演出と盤面が必ず一致)
-      const moku=(Math.random()*100)<prob;
-      const foe=(human===BLACK)?WHITE:BLACK;
-      const fake=(!moku && prob>0 && (!!winLine(r,c,human) || !!winLine(r,c,foe) || Math.random()<0.05));   // 勝負を決める/阻止する一手は必ずため(0%設定なら無し)
+      // 消える・演出の抽選は打った側が行い、結果ごと相手に送る(両者の演出と盤面が必ず一致)
+      const gone=(Math.random()*100)<prob;
+      const fake=(!gone && prob>0 && (isCritical(r,c,human) || Math.random()<0.05));   // 決着級の一手は必ずフェイント(0%設定なら無し)
+      const flavor=(gone||fake) ? (Math.random()<0.5?"maigo":"moku") : "";   // 迷子/もくもくの見た目(消える時もフェイント時も)
       let dr=-1, dc=-1;
-      if(moku && mokuStay){ const d=pickDest(r,c); if(d){ dr=d[0]; dc=d[1]; } }   // 移動ルール: 行き先も打った側が決めて送る
+      if(gone && maigoStay){ const d=pickDest(human,r,c); if(d){ dr=d[0]; dc=d[1]; } }   // 盤内移動ルール: 迷子・もくもく共通、行き先は打った側が決めて送る
       mySeq++; pendingSeq=mySeq;
-      sendMove({ r,c,moku,fake,dr,dc,seq:mySeq });
-      tryPlace(r,c,moku,fake,dr,dc);
+      sendMove({ r,c,gone,gtype:flavor,fake,dr,dc,seq:mySeq });
+      tryPlace(r,c,gone,fake,flavor,dr,dc);
       return;
     }
     tryPlace(r,c);
@@ -1093,20 +1140,16 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     setTimeout(()=>{ el.remove(); if(done) done(); }, 300);
   }
 
-  /* もくもく前の「ため」: 石が震え、小さな煙がちらつく */
-  function tameWisps(r,c){
-    for(let i=0;i<3;i++){
-      setTimeout(()=>{
-        const p=document.createElement("div"); p.className="puff";
-        p.style.width=p.style.height=(30+Math.random()*22)+"%";
-        p.style.left=(38+Math.random()*24)+"%"; p.style.top=(30+Math.random()*22)+"%";
-        p.style.setProperty("--px",(Math.random()*20-10).toFixed(0)+"px");
-        p.style.setProperty("--py","-16px");
-        p.style.setProperty("--ps","1.1");
-        cells[r][c].appendChild(p);
-        setTimeout(()=>p.remove(), 900);
-      }, i*170);
-    }
+  /* 迷子前の「きょろきょろ」: 石の頭上に「？」が浮かぶ */
+  function qmarkAt(r,c,ms){
+    const cr=cells[r][c].getBoundingClientRect();
+    const q=document.createElement("div"); q.className="qmark";
+    q.textContent="？";
+    q.style.left=(cr.left+cr.width*0.66)+"px";
+    q.style.top=(cr.top-cr.height*0.62)+"px";
+    q.style.fontSize=(cr.width*0.9)+"px";
+    document.body.appendChild(q);
+    setTimeout(()=>q.remove(), (ms||660)+150);
   }
   function spawnSparks(r,c){   // 金色の粒が飛び散る(耐えた祝福)
     const base=cells[r][c];
@@ -1122,23 +1165,113 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       setTimeout(()=>p.remove(), 1200);
     }
   }
-  function showVignette(){   // 画面の4辺に沿って雲がぽこぽこ(碁石まわりの煙と同じ見た目)
-    const W=window.innerWidth, H=window.innerHeight;
-    for(let i=0;i<16;i++){
-      const p=document.createElement("div"); p.className="vig-puff";
-      const s=(0.10+Math.random()*0.12)*Math.max(W,H);
-      p.style.width=p.style.height=s+"px";
-      const side=i%4;
-      if(side===0){ p.style.left=(Math.random()*W)+"px"; p.style.top="0px"; }          // 上辺
-      else if(side===1){ p.style.left=(Math.random()*W)+"px"; p.style.top=H+"px"; }    // 下辺
-      else if(side===2){ p.style.left="0px"; p.style.top=(Math.random()*H)+"px"; }     // 左辺
-      else { p.style.left=W+"px"; p.style.top=(Math.random()*H)+"px"; }                // 右辺
-      p.style.setProperty("--vx",(Math.random()*60-30).toFixed(0)+"px");
-      p.style.setProperty("--vy",(-20-Math.random()*50).toFixed(0)+"px");
-      p.style.animationDelay=(Math.random()*0.18)+"s";
-      document.body.appendChild(p);
-      setTimeout(()=>p.remove(), 1400);
+  /* 迷子の碁石がとてとて歩いて行く(足あとを残しながら) */
+  let footFlip=1;
+  function footprintAt(x,y){
+    const f=document.createElement("div"); f.className="footp";
+    footFlip*=-1;
+    f.style.left=(x+footFlip*5)+"px"; f.style.top=y+"px";
+    document.body.appendChild(f);
+    setTimeout(()=>f.remove(), 1350);
+  }
+  /* 迷子の碁石は一番近い盤のふちへ歩いて行き、そのまま盤の外へ消える */
+  function walkOffBoard(color, r, c, done){
+    const a=cells[r][c].getBoundingClientRect();
+    const bw=boardEl.getBoundingClientRect();
+    const size=a.width*0.86;
+    const x0=a.left+a.width/2, y0=a.top+a.height/2;
+    // 出口 = 一番近いふちの外側(同じ距離なら運まかせ)
+    const exits=[
+      { x:bw.left-size*1.4,  y:y0, v:x0-bw.left },
+      { x:bw.right+size*1.4, y:y0, v:bw.right-x0 },
+      { x:x0, y:bw.top-size*1.4,    v:y0-bw.top },
+      { x:x0, y:bw.bottom+size*1.4, v:bw.bottom-y0 },
+    ].sort((p,q)=>(p.v-q.v) || Math.random()-0.5);
+    const x1=exits[0].x, y1=exits[0].y;
+    const hops=Math.max(3, Math.min(8, Math.round(Math.hypot(x1-x0, y1-y0)/55)));
+    const el=document.createElement("div");
+    el.className="walker";
+    el.innerHTML='<div class="walker-in '+(color===BLACK?"b":"w")+'"></div>';
+    el.style.width=el.style.height=size+"px";
+    el.style.left=(x0-size/2)+"px"; el.style.top=(y0-size/2)+"px";
+    document.body.appendChild(el);
+    const HOP=190;
+    let i=0;
+    const step=()=>{
+      i++;
+      const t=i/hops, nx=(x1-x0)*t, ny=(y1-y0)*t;
+      el.style.transition="transform "+(HOP/1000)+"s cubic-bezier(.3,.7,.3,1), opacity "+(HOP/1000)+"s linear";
+      el.style.transform="translate("+nx+"px,"+ny+"px)";
+      if(i>=hops-1) el.style.opacity=(i>=hops)?"0":".55";   // 最後の2歩ですうっと消える
+      playWalk(i);
+      footprintAt(x0+nx-(x1-x0)/hops*0.5, y0+ny-(y1-y0)/hops*0.5+size*0.32);
+      if(i<hops) setTimeout(step, HOP);
+      else setTimeout(()=>{ el.remove(); if(done) done(); }, HOP);
+    };
+    step();
+  }
+  /* 特殊ルール用: 迷子の碁石が盤上の別マス(r1,c1)まで歩いて行く(消えずに移動) */
+  function walkToCell(color, r0,c0, r1,c1, done){
+    const a=cells[r0][c0].getBoundingClientRect(), b=cells[r1][c1].getBoundingClientRect();
+    const size=a.width*0.86;
+    const x0=a.left+a.width/2, y0=a.top+a.height/2, x1=b.left+b.width/2, y1=b.top+b.height/2;
+    const hops=Math.max(3, Math.min(9, Math.round(Math.hypot(x1-x0,y1-y0)/50)));
+    const el=document.createElement("div"); el.className="walker";
+    el.innerHTML='<div class="walker-in '+(color===BLACK?"b":"w")+'"></div>';
+    el.style.width=el.style.height=size+"px"; el.style.left=(x0-size/2)+"px"; el.style.top=(y0-size/2)+"px";
+    document.body.appendChild(el);
+    const HOP=180; let i=0;
+    const step=()=>{ i++; const t=i/hops, nx=(x1-x0)*t, ny=(y1-y0)*t;
+      el.style.transition="transform "+(HOP/1000)+"s cubic-bezier(.3,.7,.3,1)";
+      el.style.transform="translate("+nx+"px,"+ny+"px)";
+      playWalk(i); footprintAt(x0+nx-(x1-x0)/hops*0.5, y0+ny-(y1-y0)/hops*0.5+size*0.32);
+      if(i<hops) setTimeout(step, HOP); else setTimeout(()=>{ el.remove(); if(done) done(); }, HOP);
+    };
+    step();
+  }
+  /* もくもくした碁石が、煙のまま(r0,c0)から(r1,c1)へすーっと流れて移動する。道中に小さな煙をこぼす */
+  function driftSmoke(r0,c0, r1,c1, done){
+    const a=cells[r0][c0].getBoundingClientRect(), b=cells[r1][c1].getBoundingClientRect();
+    const size=a.width*1.25;
+    const x0=a.left+a.width/2, y0=a.top+a.height/2, x1=b.left+b.width/2, y1=b.top+b.height/2;
+    const el=document.createElement("div");
+    el.style.cssText="position:fixed;z-index:60;pointer-events:none;border-radius:50%;width:"+size+"px;height:"+size+"px;"
+      +"left:"+(x0-size/2)+"px;top:"+(y0-size/2)+"px;"
+      +"background:radial-gradient(circle at 42% 40%, rgba(255,255,255,.96), rgba(198,198,195,.82) 55%, rgba(198,198,195,0) 74%);";
+    document.body.appendChild(el);
+    const DUR=0.8;
+    el.style.transition="transform "+DUR+"s cubic-bezier(.4,.15,.4,1), opacity "+DUR+"s linear";
+    void el.offsetWidth;
+    el.style.transform="translate("+(x1-x0)+"px,"+(y1-y0)+"px) scale(1.08)";
+    const W=4;
+    for(let i=1;i<=W;i++){ setTimeout(()=>{ const t=i/(W+1), wx=x0+(x1-x0)*t, wy=y0+(y1-y0)*t, ws=size*0.55;
+      const w=document.createElement("div");
+      w.style.cssText="position:fixed;z-index:59;pointer-events:none;border-radius:50%;width:"+ws+"px;height:"+ws+"px;left:"+(wx-ws/2)+"px;top:"+(wy-ws/2)+"px;opacity:.55;transition:opacity .55s linear;background:radial-gradient(circle,rgba(228,228,225,.75),rgba(228,228,225,0) 70%);";
+      document.body.appendChild(w); void w.offsetWidth; w.style.opacity="0"; setTimeout(()=>w.remove(),560);
+    }, DUR*1000*i/(W+1)); }
+    setTimeout(()=>{ el.remove(); if(done) done(); }, DUR*1000);
+  }
+  /* もくもく風フェイント用: 石の上に小さな煙をちらっと立てる(？は出さない) */
+  function puffTease(r,c){
+    const base=cells[r][c];
+    for(let i=0;i<3;i++){ setTimeout(()=>{
+      const p=document.createElement("div"); p.className="puff";
+      p.style.width=p.style.height=(45+Math.random()*30)+"%";
+      p.style.left=(35+Math.random()*30)+"%"; p.style.top=(32+Math.random()*22)+"%";
+      p.style.setProperty("--px",(Math.random()*24-12).toFixed(0)+"px");
+      p.style.setProperty("--py",(-14-Math.random()*10).toFixed(0)+"px");
+      p.style.setProperty("--ps","1.2");
+      base.appendChild(p); setTimeout(()=>p.remove(),850);
+    }, i*160); }
+  }
+  /* 迷子の移動先: 座っても即取られない空きマスから運まかせに選ぶ(元の位置は除く)。無ければnull */
+  function pickDest(p, avoidR, avoidC){
+    const cand=[];
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+      if(r===avoidR && c===avoidC) continue;
+      if(board[r][c]===EMPTY) cand.push([r,c]);   // 即囲まれて取られる場所もアリ(自殺手OK)
     }
+    return cand.length ? cand[Math.floor(Math.random()*cand.length)] : null;
   }
   /* 勝利: 勝った側の碁笥から碁石が吹き上がる
      左下(黒)の碁笥→上から右へ大きく / 右下(白)の碁笥→上から左へ大きく */
@@ -1172,100 +1305,154 @@ function readPeerName(){   // presenceからあいての名前を取り込む
   }
   function stopVictory(){ clearInterval(victoryTimer); victoryTimer=0; }
 
-  /* 石を置く(もくもく判定込み)。人間/ロボット/通信相手 共通
-     moku: 消える / fake: 「ため」だけ入って結局置かれる(いやもくもくせんのかい！) */
-  /* 移動先: 盤上の空きマスから運まかせに1つ(元の位置は除く)。無ければnull */
-  function pickDest(avoidR,avoidC){
-    const cand=[];
-    for(let r=0;r<N;r++) for(let c=0;c<N;c++){ if(board[r][c]===EMPTY && !(r===avoidR&&c===avoidC)) cand.push([r,c]); }
-    return cand.length ? cand[Math.floor(Math.random()*cand.length)] : null;
-  }
-  /* もくもくした碁石が、煙のまま(r0,c0)から(r1,c1)へすーっと流れて移動する。道中に小さな煙をこぼす */
-  function driftSmoke(r0,c0, r1,c1, done){
-    const a=cells[r0][c0].getBoundingClientRect(), b=cells[r1][c1].getBoundingClientRect();
-    const size=a.width*1.25;
-    const x0=a.left+a.width/2, y0=a.top+a.height/2, x1=b.left+b.width/2, y1=b.top+b.height/2;
-    const el=document.createElement("div");
-    el.style.cssText="position:fixed;z-index:60;pointer-events:none;border-radius:50%;width:"+size+"px;height:"+size+"px;"
-      +"left:"+(x0-size/2)+"px;top:"+(y0-size/2)+"px;"
-      +"background:radial-gradient(circle at 42% 40%, rgba(255,255,255,.96), rgba(198,198,195,.82) 55%, rgba(198,198,195,0) 74%);";
-    document.body.appendChild(el);
-    const DUR=0.8;
-    el.style.transition="transform "+DUR+"s cubic-bezier(.4,.15,.4,1), opacity "+DUR+"s linear";
-    void el.offsetWidth;
-    el.style.transform="translate("+(x1-x0)+"px,"+(y1-y0)+"px) scale(1.08)";
-    const W=4;
-    for(let i=1;i<=W;i++){ setTimeout(()=>{ const t=i/(W+1), wx=x0+(x1-x0)*t, wy=y0+(y1-y0)*t, ws=size*0.55;
-      const w=document.createElement("div");
-      w.style.cssText="position:fixed;z-index:59;pointer-events:none;border-radius:50%;width:"+ws+"px;height:"+ws+"px;left:"+(wx-ws/2)+"px;top:"+(wy-ws/2)+"px;opacity:.55;transition:opacity .55s linear;background:radial-gradient(circle,rgba(228,228,225,.75),rgba(228,228,225,0) 70%);";
-      document.body.appendChild(w); void w.offsetWidth; w.style.opacity="0"; setTimeout(()=>w.remove(),560);
-    }, DUR*1000*i/(W+1)); }
-    setTimeout(()=>{ el.remove(); if(done) done(); }, DUR*1000);
-  }
-  function tryPlace(r,c,forcedMoku,forcedFake,forcedDR,forcedDC){
+  /* 石を置く(消える判定込み)。人間/ロボット/通信相手 共通
+     gone: 消える(迷子=歩いて盤外へ / もくもく=その場で煙) / fake: きょろきょろだけして結局そこに座る */
+  function tryPlace(r,c,forcedGone,forcedFake,forcedType,forcedDR,forcedDC){
     busy=true; boardEl.classList.remove("myturn");
     const me=turn;
-    const moku=(forcedMoku===undefined) ? (Math.random()*100)<prob : forcedMoku;
-    // 勝ちが決まる一手・相手の勝ちを阻止する一手は必ず「ため」を入れる(本物でも嘘でも)。通常の嘘もくもくは10%
-    const foe=(me===BLACK)?WHITE:BLACK;
-    const critical=prob>0 && (!!winLine(r,c,me) || !!winLine(r,c,foe));   // 勝ち or 阻止の一手(もくもく0%設定なら演出なし)
-    const winMove=!!winLine(r,c,me);   // 黄金演出はこの一手で勝ちが決まる時だけ(相手の勝ちを阻止するだけの時は出さない)
-    const fake=(forcedFake===undefined) ? (!moku && (critical || (prob>0 && Math.random()<0.05))) : forcedFake;
+    const gone=(forcedGone===undefined) ? (Math.random()*100)<prob : forcedGone;
+    // 石をとる一手・アタリの味方を助ける一手は必ず「きょろきょろ」を入れる(本物でも嘘でも)。通常の嘘は5%
+    const critical=prob>0 && isCritical(r,c,me);
+    // winMove=この一手(消えずに座れば)自分の勝ちが決まる手。黄金演出はこの時だけ(相手の勝ちを防ぐだけの時は出さない)
+    const winMove=critical && (()=>{
+      const caps=capturedBy(board,r,c,me).length, capMet=capOf(me)+caps>=capNorm, lineDone=lineScoreOn(board,r,c,me).win;
+      return (winMode==="and") ? (capMet && (lineDone || !!findAnyLine(me))) : (capMet || lineDone);
+    })();
+    const fake=(forcedFake===undefined) ? (!gone && (critical || (prob>0 && Math.random()<0.05))) : forcedFake;
+    // 迷子 or もくもく の見た目は、消える時もフェイントの時も両方でランダムに決める(フェイントが毎回?になるのを防ぐ)
+    const flavor=(gone||fake) ? (forcedType || (Math.random()<0.5?"maigo":"moku")) : "";
+    hist.push({ p:me, snap:board.map(row=>row.slice()), capB, capW });   // 一手戻る用(打つ前の局面まるごと)
     flyStone(me, r, c, ()=>{
       const st=document.createElement("div");
       st.className="stone "+(me===BLACK?"b":"w");
       cells[r][c].appendChild(st);
       playStone();
-      const commitAt=(rr,cc,el)=>{   // (rr,cc)に石を確定(元の位置でも、もくもく移動先でも)
-        board[rr][cc]=me; stones[rr][cc]=el; placed++;
-        hist.push({r:rr,c:cc,p:me});   // 一手戻る用の棋譜
-        cells[rr][cc].classList.add("taken");
-        markLast(el);   // 一番最後に置かれた石の目印
-        const line=winLine(rr,cc,me);
-        if(line){ finish(me,line); return; }
-        if(placed>=N*N){ finish(0,null); return; }
-        setTimeout(switchTurn, 200);
-      };
-      const tameMs=critical?1250:640, tameCls=critical?"tame long":"tame";   // 決着級の一手は長ため
-      if(moku){
-        setTimeout(()=>{   // ため → もくもく
-          st.className+=" "+tameCls; playTame(tameMs/1000); tameWisps(r,c);
+      const tameMs=critical?1250:640, kyoroCls=critical?"kyoro long":"kyoro";   // 決着級の一手は長きょろきょろ
+      if(gone){
+        setTimeout(()=>{   // きょろきょろ → 消える
+          st.className+=" "+kyoroCls; playKyoro(tameMs/1000);
+          if(flavor==="moku") puffTease(r,c); else qmarkAt(r,c,tameMs);   // もくもく=煙 / 迷子=？
           setTimeout(()=>{
-            st.remove(); spawnPuffs(r,c); playPuff(); showVignette();   // 元の場所で煙になる
+            st.remove();
+            // 移動先(ONの時)。ローカル/ロボットは自分で抽選、オンラインは送られた行き先(-1=行き先なし)
             let dest=null;
-            if(mokuStay){
-              if(forcedDR===undefined) dest=pickDest(r,c);              // ローカル/ロボット: 自分で行き先を抽選
-              else dest = (forcedDR>=0) ? [forcedDR,forcedDC] : null;   // オンライン: 送られた行き先(-1=行き先なし)
-            }
-            if(dest){
-              driftSmoke(r,c, dest[0],dest[1], ()=>{   // 煙のまま別マスへ流れていって、そこで石に戻る
-                const st2=document.createElement("div"); st2.className="stone "+(me===BLACK?"b":"w");
-                cells[dest[0]][dest[1]].appendChild(st2);
-                spawnPuffs(dest[0],dest[1]); playPuff();
-                commitAt(dest[0],dest[1],st2);
-              });
-            } else {
-              setTimeout(()=>{ if(!over) switchTurn(); }, 520);        // 消える(OFF/移動先なし)
+            if(maigoStay){ dest = (forcedDR===undefined) ? pickDest(me,r,c) : ((forcedDR>=0)?[forcedDR,forcedDC]:null); }
+            if(flavor==="moku"){   // もくもく: 元の場所で煙 → 煙のまま別マスへ流れて、そこで石に戻る
+              spawnPuffs(r,c); playPuff();
+              if(dest){
+                driftSmoke(r,c, dest[0],dest[1], ()=>{
+                  const st2=document.createElement("div"); st2.className="stone "+(me===BLACK?"b":"w");
+                  cells[dest[0]][dest[1]].appendChild(st2);
+                  spawnPuffs(dest[0],dest[1]); playPuff();
+                  commitStone(dest[0], dest[1], me, st2);
+                });
+              } else {
+                setTimeout(()=>{ if(!over) switchTurn(); }, 520);         // 消える(OFF/移動先なし)
+              }
+            } else {              // 迷子: とてとて歩いて移動 / 盤の外へ消える
+              if(dest){
+                walkToCell(me, r, c, dest[0], dest[1], ()=>{
+                  const st2=document.createElement("div"); st2.className="stone "+(me===BLACK?"b":"w");
+                  cells[dest[0]][dest[1]].appendChild(st2); playStone();
+                  commitStone(dest[0], dest[1], me, st2);   // 移動先で着地(取り・並び・勝敗判定もここで)
+                });
+              } else {
+                walkOffBoard(me, r, c, ()=>{ if(!over) switchTurn(); });  // 通常(OFF)/移動先が無い時は盤の外へ消える
+              }
             }
           }, tameMs);
         }, 130);
         return;
       }
       if(fake){
-        setTimeout(()=>{   // ため → もくもくせず普通に設置(フェイント)
-          st.className+=" "+tameCls; playTame(tameMs/1000); tameWisps(r,c);
+        setTimeout(()=>{   // きょろきょろ/もくもく → 消えず、そこに座る(フェイント)
+          st.className+=" "+kyoroCls; playKyoro(tameMs/1000);
+          if(flavor==="moku") puffTease(r,c); else qmarkAt(r,c,tameMs);   // もくもく風=煙 / 迷子風=？
           setTimeout(()=>{
-            st.classList.remove("tame","long");
-            if(winMove){   // 勝ちを決める一手が耐えた！黄金の巨石に(1.3秒でもとの色・サイズへ戻る)
+            st.classList.remove("kyoro","long");
+            if(winMove){   // 勝ちを決める一手が迷子にならなかった！黄金の巨石に(1.3秒でもとの色・サイズへ戻る)
               spawnSparks(r,c); playShine();   // 金色化はfinish/勝敗判定で全勝利石に同時付与(この石だけ先行させない)
             }
-            commitAt(r,c,st);
+            commitStone(r, c, me, st);
           }, tameMs);
         }, 130);
         return;
       }
-      commitAt(r,c,st);
+      commitStone(r, c, me, st);
     });
+  }
+  /* 盤上でpが winLen連 を持っていれば、その石列を返す(勝ち判定・演出用) */
+  function findAnyLine(p){
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+      if(board[r][c]!==p) continue;
+      for(const [dr,dc] of DIRS){
+        const cellsRun=[[r,c]]; let ok=true;
+        for(let k=1;k<winLen;k++){ const rr=r+dr*k, cc=c+dc*k; if(rr<0||rr>=N||cc<0||cc>=N||board[rr][cc]!==p){ ok=false; break; } cellsRun.push([rr,cc]); }
+        if(ok) return cellsRun;
+      }
+    }
+    return null;
+  }
+  /* 石が盤に座る: とれる石をとり、勝敗を確かめ、手番を渡す(OR=どちらか / AND=両方) */
+  function commitStone(r,c,p,st){
+    board[r][c]=p; stones[r][c]=st; cells[r][c].classList.add("taken");
+    markLast(st);   // 一番最後に置かれた石の目印
+    const dead=deadNeighbors(board,r,c);
+    let wait=200;
+    if(dead.length){ takeStones(p, dead); wait=560; }
+    else if(groupInfo(board,r,c).libs===0){
+      // 保険: 着地した瞬間に囲まれてしまう場所だったら、その石はそのまま昇天(誰の得点にもならない)
+      board[r][c]=EMPTY; stones[r][c]=null; cells[r][c].classList.remove("taken");
+      st.remove(); spawnPuffs(r,c); playPuff();
+      renderBowlTags();
+      setTimeout(()=>{ if(!over) switchTurn(); }, wait);
+      return;
+    }
+    renderBowlTags();
+    // 勝敗判定(石が盤に残っている時)
+    if(board[r][c]===p){
+      const line=findAnyLine(p);                 // 今 p が winLen連 を持っているか
+      const capMet=capOf(p)>=capNorm;            // 囲んだ数がノルマに達したか
+      const lineGlow=line ? line.map(([lr,lc])=>stones[lr][lc]).filter(Boolean) : null;
+      if(winMode==="and"){
+        if(capMet && line){ finish(p, lineGlow, "both"); return; }   // 両方達成
+      } else {
+        if(line){ finish(p, lineGlow, "line"); return; }              // 並べ勝ち
+        if(capMet){ finish(p, lastCapGlow, "capture"); return; }      // 囲み勝ち
+      }
+    }
+    setTimeout(()=>{ if(!over) switchTurn(); }, wait);
+  }
+  /* 相手の石をとる: とった石が自分の碁笥へ飛んでいく(勝ち判定はcommitStone側でまとめて行う) */
+  function takeStones(taker, dead){
+    playCapture();
+    const bowl=(taker===BLACK)?bowlB:bowlW;
+    const br=bowl.getBoundingClientRect();
+    const glow=new Set();   // 囲んでいた自分の石たち(勝った時に光らせる)
+    dead.forEach(([dr,dc])=>{
+      neighborsOf(dr,dc).forEach(([nr,nc])=>{ if(board[nr][nc]===taker && stones[nr][nc]) glow.add(stones[nr][nc]); });
+    });
+    dead.forEach(([dr,dc])=>{
+      const el=stones[dr][dc];
+      const cr=cells[dr][dc].getBoundingClientRect();
+      board[dr][dc]=EMPTY; stones[dr][dc]=null; cells[dr][dc].classList.remove("taken");
+      if(el) el.remove();
+      const f=document.createElement("div");
+      f.className="fly "+(taker===BLACK?"w":"b");   // とられるのは相手の色
+      const size=cr.width*0.86;
+      f.style.width=f.style.height=size+"px";
+      f.style.left=(cr.left+(cr.width-size)/2)+"px";
+      f.style.top=(cr.top+(cr.height-size)/2)+"px";
+      f.style.transition="transform .5s cubic-bezier(.45,.6,.4,1), opacity .5s linear";
+      document.body.appendChild(f);
+      void f.offsetWidth;
+      const dx=(br.left+br.width/2)-(cr.left+cr.width/2), dy=(br.top+br.height/2)-(cr.top+cr.height/2);
+      f.style.transform="translate("+dx+"px,"+dy+"px) rotate(300deg) scale(.35)";
+      setTimeout(()=>f.remove(), 540);
+    });
+    setTimeout(()=>{ bowl.classList.remove("pop"); void bowl.offsetWidth; bowl.classList.add("pop"); setTimeout(()=>bowl.classList.remove("pop"),340); }, 470);
+    if(taker===BLACK) capB+=dead.length; else capW+=dead.length;
+    lastCapGlow=[...glow];
   }
   function spawnPuffs(r,c){
     const base=cells[r][c];
@@ -1291,9 +1478,18 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     }
   }
 
-  /* ---------- 勝敗 ---------- */
+  /* ---------- 碁の基礎(かたまり・呼吸点・合法手) ---------- */
+  function neighborsOf(r,c){
+    const out=[];
+    if(r>0) out.push([r-1,c]);
+    if(r<N-1) out.push([r+1,c]);
+    if(c>0) out.push([r,c-1]);
+    if(c<N-1) out.push([r,c+1]);
+    return out;
+  }
+  /* ---------- 並び判定(五目並べ側) ---------- */
   const DIRS=[[0,1],[1,0],[1,1],[1,-1]];
-  function winLine(r,c,p){
+  function winLine(r,c,p){   // (r,c)にpを置いてタテ/ヨコ/ナナメにwinLen連ができたら、その石列を返す
     for(const [dr,dc] of DIRS){
       const line=[[r,c]];
       for(let k=1;k<winLen;k++){ const rr=r+dr*k, cc=c+dc*k; if(rr<0||rr>=N||cc<0||cc>=N||board[rr][cc]!==p) break; line.push([rr,cc]); }
@@ -1302,6 +1498,71 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     }
     return null;
   }
+  /* (r,c)の石とタテヨコでつながる同色のかたまりと、その呼吸点(息)の数 */
+  function groupInfo(b,r,c){
+    const p=b[r][c], seen=new Set([r*N+c]), libs=new Set(), gstones=[], stack=[[r,c]];
+    while(stack.length){
+      const [rr,cc]=stack.pop(); gstones.push([rr,cc]);
+      for(const [nr,nc] of neighborsOf(rr,cc)){
+        const v=b[nr][nc], k=nr*N+nc;
+        if(v===EMPTY) libs.add(k);
+        else if(v===p && !seen.has(k)){ seen.add(k); stack.push([nr,nc]); }
+      }
+    }
+    return { stones:gstones, libs:libs.size };
+  }
+  /* (r,c)に置かれたばかりの石の隣で、息が無くなった相手のかたまり(の石一覧) */
+  function deadNeighbors(b,r,c){
+    const p=b[r][c], foe=(p===BLACK)?WHITE:BLACK, out=[], seen=new Set();
+    for(const [nr,nc] of neighborsOf(r,c)){
+      if(b[nr][nc]!==foe || seen.has(nr*N+nc)) continue;
+      const g=groupInfo(b,nr,nc);
+      g.stones.forEach(([a,bb])=>seen.add(a*N+bb));
+      if(g.libs===0) out.push(...g.stones);
+    }
+    return out;
+  }
+  /* pが(r,c)に打ったらとれる石(盤は書き換えない) */
+  function capturedBy(b,r,c,p){
+    b[r][c]=p; const out=deadNeighbors(b,r,c); b[r][c]=EMPTY;
+    return out;
+  }
+  /* 打てる場所か: 置いた瞬間に自分が囲まれる手(自殺手)は禁止。ただし相手の石をとれるならOK */
+  function isLegal(b,r,c,p){
+    if(b[r][c]!==EMPTY) return false;
+    if(capturedBy(b,r,c,p).length) return true;
+    b[r][c]=p; const libs=groupInfo(b,r,c).libs; b[r][c]=EMPTY;
+    return libs>0;
+  }
+  function legalCells(b,p){
+    const out=[];
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++) if(isLegal(b,r,c,p)) out.push([r,c]);
+    return out;
+  }
+  /* 決着級の一手か: ①相手の石をとれる ②winLen連が完成する ③相手のwinLen連を防ぐ ④アタリ(息1)の味方を本当に助ける */
+  function isCritical(r,c,p){
+    const foe=(p===BLACK)?WHITE:BLACK;
+    if(capturedBy(board,r,c,p).length) return true;   // 取り
+    if(winLine(r,c,p)) return true;                    // 自分の並び完成
+    if(winLine(r,c,foe)) return true;                  // 相手の並びを止める(そこは相手の勝ち筋)
+    let rescue=false;
+    for(const [nr,nc] of neighborsOf(r,c)){
+      if(board[nr][nc]===p && groupInfo(board,nr,nc).libs===1){ rescue=true; break; }
+    }
+    if(!rescue) return false;
+    board[r][c]=p; const after=groupInfo(board,r,c).libs; board[r][c]=EMPTY;
+    return after>=2;   // つないで息が増えるなら本当の救出
+  }
+  function capOf(p){ return (p===BLACK)?capB:capW; }
+  /* 碁笥の上のラベル: 手番の名前 + とった石の数/ノルマ */
+  function renderBowlTags(){
+    const foe = (!local && !online) ? ("ロボット（"+LV_NAMES[cpuLv]+"）") : (online?foeLabel():"あいて");   // ロボット戦は相手の碁笥に階級を常時表示
+    const lb= local ? "先攻" : (human===BLACK)?(online?meLabel():"自分"):foe;
+    const lw= local ? "後攻" : (human===WHITE)?(online?meLabel():"自分"):foe;
+    document.getElementById("bowlTagB").innerHTML=lb+"<b>"+capB+"/"+capNorm+"</b>";
+    document.getElementById("bowlTagW").innerHTML=lw+"<b>"+capW+"/"+capNorm+"</b>";
+  }
+  redrawNames=renderBowlTags;   // 名前が届いたら名札を描き直す
   const giveupBtn=document.getElementById("giveupBtn");
   const undoBtn=document.getElementById("undoBtn");
   /* 一手戻るの演出: 下げる石が自分の碁笥へ飛んで帰る */
@@ -1322,18 +1583,53 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     setTimeout(()=>f.remove(), 360);
     setTimeout(()=>{ bowl.classList.remove("pop"); void bowl.offsetWidth; bowl.classList.add("pop"); setTimeout(()=>bowl.classList.remove("pop"),340); }, 300);   // 受け取った碁笥がぽよん
   }
-  /* 一手戻る(アソビ大全方式): ロボット戦は自分の直前の一手まで(ロボットの応手ごと)巻き戻す。1台対戦は1手だけ戻す */
-  function removeStoneAt(m){
-    board[m.r][m.c]=EMPTY; placed--;
-    flyBackStone(m.p, m.r, m.c);   // 碁笥へ帰っていく
-    if(stones[m.r][m.c]){ stones[m.r][m.c].remove(); stones[m.r][m.c]=null; }
-    cells[m.r][m.c].classList.remove("taken");
+  /* 一手戻るの演出: とられていた石が相手の碁笥から盤へ戻ってくる */
+  function flyFromBowl(color,r,c){
+    const bowl=(color===BLACK)?bowlW:bowlB;   // とられた石は相手の碁笥に入っている
+    const st=stones[r][c]; if(st) st.style.opacity="0";
+    const cr=cells[r][c].getBoundingClientRect(), br=bowl.getBoundingClientRect();
+    const size=cr.width*0.86;
+    const f=document.createElement("div");
+    f.className="fly "+(color===BLACK?"b":"w");
+    f.style.width=f.style.height=size+"px";
+    f.style.left=(br.left+(br.width-size)/2)+"px";
+    f.style.top=(br.top+(br.height-size)/2)+"px";
+    f.style.transition="transform .32s cubic-bezier(.35,.75,.35,1)";
+    document.body.appendChild(f);
+    void f.offsetWidth;
+    const dx=(cr.left+cr.width/2)-(br.left+br.width/2), dy=(cr.top+cr.height/2)-(br.top+br.height/2);
+    f.style.transform="translate("+dx+"px,"+dy+"px)";
+    setTimeout(()=>{ f.remove(); if(st) st.style.opacity=""; }, 330);
   }
-  /* 自分の直前の一手まで巻き戻す(相手の応手ごと)。requester視点で使う共通処理 */
+  /* 一手戻る: 保存してある「打つ前の局面」に盤ごと巻き戻す(とった石の数も戻る) */
+  function restoreState(h){
+    const oldB=board;
+    board=h.snap.map(row=>row.slice()); capB=h.capB; capW=h.capW;
+    // 差分を調べて演出: 盤から下げる石は碁笥へ帰り、復活する石は相手の碁笥から戻ってくる
+    const backIn=[];
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+      if(oldB[r][c]!==EMPTY && board[r][c]===EMPTY) flyBackStone(oldB[r][c], r, c);
+      else if(oldB[r][c]===EMPTY && board[r][c]!==EMPTY) backIn.push([r,c]);
+    }
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+      const cell=cells[r][c]; cell.innerHTML=""; cell.classList.remove("taken"); stones[r][c]=null;
+      if(board[r][c]!==EMPTY){
+        const st=document.createElement("div");
+        st.className="stone "+(board[r][c]===BLACK?"b":"w");
+        st.style.animation="none";   // 並べ直しで石がパラパラ湧いて見えないように
+        cell.appendChild(st); cell.classList.add("taken"); stones[r][c]=st;
+      }
+    }
+    backIn.forEach(([r,c])=> flyFromBowl(board[r][c], r, c));
+    renderBowlTags();
+    markLast(null);   // 巻き戻し後は目印なし(どれが最後か分からないため)
+  }
+  /* 自分の直前の一手の直前まで巻き戻す(相手の応手ごと)。requester視点で使う共通処理 */
   function undoToPlayer(requester){
-    let popped=false;
-    while(hist.length && !popped){ const m=hist.pop(); removeStoneAt(m); if(m.p===requester) popped=true; }
-    { const h=hist[hist.length-1]; markLast(h?stones[h.r][h.c]:null); }   // 目印もひとつ前の石へ
+    let h=null;
+    while(hist.length){ const m=hist.pop(); if(m.p===requester){ h=m; break; } }
+    if(!h) return;
+    restoreState(h);
     turn=requester; over=false;
     startTurn();
   }
@@ -1349,8 +1645,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       return;
     }
     if(local){
-      const m=hist.pop(); removeStoneAt(m); turn=m.p;   // 戻した石の持ち主の番からやり直し
-      { const h=hist[hist.length-1]; markLast(h?stones[h.r][h.c]:null); }   // 目印もひとつ前の石へ
+      const m=hist.pop(); if(m){ restoreState(m); turn=m.p; }   // 戻した手の持ち主の番からやり直し
       startTurn();
     } else {
       if(turn!==human) return;
@@ -1363,23 +1658,34 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     giveupBtn.style.visibility = v ? "" : "hidden";
     undoBtn.style.visibility = v ? "" : "hidden";
   }
-  function finish(winner,line){
+  /* reason: "line"=並べ勝ち / "capture"=囲み勝ち / "count"=盤が詰まって数で決着 */
+  function finish(winner, glowEls, reason){
     over=true; busy=true; setGiveupVisible(false); markLast(null);
     document.getElementById("confirmOverlay").classList.remove("on");   // 開きっぱなしの確認ダイアログを閉じる
-    // 勝利の瞬間: 決め手の石ぜんぶを同時に金色にふくらませる(同時に付けるので点滅の位相もそろう)
-    if(line) setTimeout(()=>{ line.forEach(([r,c])=>{ const el=stones[r][c]; if(el){ el.classList.remove("gold","shine","tame","long","last"); el.classList.add("win-gold"); } }); }, 150);
+    // 勝ち確定の瞬間に「特別な音」を即鳴らす(結果ダイアログのplayWinファンファーレは従来どおり後で)
+    if(winner!==0 && (local || winner===human)) playShine();
+    // 勝ちの瞬間、決め手になった石たち(並んだ列 or 囲んだ石)が金色に光り出す
+    if(glowEls && glowEls.length) setTimeout(()=>{ glowEls.forEach(el=>{ if(el && el.isConnected){ el.classList.remove("gold","shine","kyoro","long","last"); el.classList.add("win-gold"); } }); }, 150);
     setTimeout(()=>{
       if(winner!==0) burstStones(winner);   // 勝利陣営の碁笥から碁石が吹き上がる
-      if(winner===0){ rTitle.textContent="引き分け"; rTitle.className="r-title"; rSub.textContent="盤が埋まってしまった"; }
-      else if(local){ rTitle.textContent=(winner===BLACK?"先攻":"後攻")+"の勝ち！"; rTitle.className="r-title win"; rSub.textContent="みごと"+KAN[winLen]+"つ並べた"; playWin(); }
-      else if(winner===human){ rTitle.textContent="あなたの勝ち！"; rTitle.className="r-title win"; rSub.textContent="みごと"+KAN[winLen]+"つ並べた"; playWin(); }
+      const subWin = reason==="line" ? "みごと"+winLen+"つ並べた"
+                   : reason==="both" ? "囲んで、並べて、大勝利！"
+                   : reason==="count" ? "とった石の数で勝負あり"
+                   : "みごと"+capNorm+"個囲んだ";
+      if(winner===0){ rTitle.textContent="引き分け"; rTitle.className="r-title"; rSub.textContent="打てる場所がなくなった"; }
+      else if(local){ rTitle.textContent=(winner===BLACK?"先攻":"後攻")+"の勝ち！"; rTitle.className="r-title win"; rSub.textContent=subWin; playWin(); }
+      else if(winner===human){ rTitle.textContent="あなたの勝ち！"; rTitle.className="r-title win"; rSub.textContent=subWin; playWin(); }
       else { rTitle.textContent=(online?foeLabel()+"の勝ち…":("ロボット（"+LV_NAMES[cpuLv]+"）の勝ち…")); rTitle.className="r-title"; rSub.textContent="次はきっと勝てる"; playLose(); }
       if(!local && !online){   // ロボット戦: 戦った階級と待ったの有無を表示(勝ちの自慢に)
         rSub.innerHTML += '<br><span class="r-foe">'+LV_NAMES[cpuLv]+'ロボットと対局'+(undoUsed?'（一手戻りあり）':'（一手戻りなし）')+'</span>';
       }
       if(online) bumpRoomStats(winner===0?"draw":(winner===human?"win":"lose")); else renderRoomStats();   // この部屋での成績
       logResult(); document.getElementById("resultOverlay").classList.add("on");
-    }, line?900:300);
+    }, (glowEls&&glowEls.length)?1050:350);
+  }
+  /* 打てる場所が無くなった: とった石の数の多いほうが勝ち */
+  function finishByCount(){
+    finish(capB>capW ? BLACK : (capW>capB ? WHITE : 0), null, "count");
   }
 
   /* ---------- オンライン対戦 (Supabase Realtime / 合言葉方式) ---------- */
@@ -1396,15 +1702,17 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     return u.replace(/[^A-Z0-9]/g,"");             /* ③合言葉だけを貼った時は今までどおり */
   }
   function inviteText(c){   // 招待メッセージ(2026-08-05共通テンプレ。リンク=?join=合言葉で自動入室)
-    return "牧村が作った『五もくもく並べ』を一緒に遊ぼう！\n"+location.origin+location.pathname+"?join="+c+"\n\n合言葉："+c+"\n※リンクから参加できない時に使ってね";
+    return "牧村が作った『ま囲碁もくもく並べ』を一緒に遊ぼう！\n"+location.origin+location.pathname+"?join="+c+"\n\n合言葉："+c+"\n※リンクから参加できない時に使ってね";
   }
-  function rulePayload(){ return { p:mokuProb, w:winLen, s:mokuStay?1:0 }; }   // 部屋主のルール一式(start/restart/rulesで同送)
+  function rulePayload(){ return { p:maigoProb, l:winLen, w:capNorm, m:winMode, s:maigoStay?1:0 }; }   // 部屋主のルール一式(start/restart/rulesで同送)
   function applyNetRules(payload){   // 部屋主から届いたルールを自分にも反映
     if(!payload) return;
-    if(typeof payload.p==="number"){ mokuProb=Math.max(0, Math.min(99, payload.p|0)); probIdx=Math.max(0, PROB_STEPS.indexOf(mokuProb)); }
-    if(typeof payload.w==="number") winLen=Math.max(2, Math.min(10, payload.w|0));
-    if(typeof payload.s==="number") mokuStay=(payload.s===1);
-    renderRules(); renderStay();
+    if(typeof payload.p==="number"){ maigoProb=Math.max(0, Math.min(99, payload.p|0)); probIdx=Math.max(0, PROB_STEPS.indexOf(maigoProb)); }
+    if(typeof payload.l==="number") winLen=Math.max(2, Math.min(10, payload.l|0));
+    if(typeof payload.w==="number") capNorm=Math.max(1, Math.min(30, payload.w|0));
+    if(payload.m==="and"||payload.m==="or") winMode=payload.m;
+    if(typeof payload.s==="number") maigoStay=(payload.s===1);
+    renderRules(); renderWinMode(); renderStay();
   }
   function sbClient(){ if(!sb) sb=window.supabase.createClient(SB_URL, SB_KEY); return sb; }
   function leaveChannel(){
@@ -1419,14 +1727,14 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     leaveChannel();
     isHost=asHost;
     roomWins=0; roomLosses=0; roomDraws=0; roomStreak=0;   // 新しい部屋 = 成績リセット
-    ch=sbClient().channel("gomoku_"+code, { config:{ presence:{ key:myId }, broadcast:{ self:false } } });
+    ch=sbClient().channel("maigomoku_"+code, { config:{ presence:{ key:myId }, broadcast:{ self:false } } });
     ch.on("presence",{event:"join"},()=>{ readPeerName(); });
     ch.on("presence",{event:"sync"},()=>{
       readPeerName();
       if(isHost && !startSent && presenceCount()>=2){
         startSent=true;
         const hc=(Math.random()<0.5)?BLACK:WHITE;   // 先手(黒)はランダム
-        ch.send({ type:"broadcast", event:"start", payload:{ hc, pn:myAcctName(), ...rulePayload() } });
+        ch.send({ type:"broadcast", event:"start", payload:{ pn:myAcctName(), hc, ...rulePayload() } });
         beginOnline(hc);
       }
     });
@@ -1449,12 +1757,12 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       }
       opponentLeft();
     });
-    ch.on("broadcast",{event:"nm"},({payload})=>{ if(payload&&typeof payload.pn==="string"){ peerName=payload.pn.slice(0,16); if(redrawNames) redrawNames(); } });
+    ch.on("broadcast",{event:"nm"},({payload})=>{ if(payload&&typeof payload.pn==="string"){ peerName=payload.pn.slice(0,16); if(typeof redrawNames==="function"&&redrawNames) redrawNames(); } });   // 名前の交換(あいて→自分)
     ch.on("broadcast",{event:"start"},({payload})=>{
+      if(payload&&typeof payload.pn==="string") peerName=payload.pn.slice(0,16);   // 部屋主の名前
+      try{ ch.send({ type:"broadcast", event:"nm", payload:{ pn:myAcctName() } }); }catch(e){}   // 自分の名前を返す
       if(isHost) return;
       applyNetRules(payload);   // 部屋主のルールを受け取って揃える
-      if(payload&&typeof payload.pn==="string"){ peerName=payload.pn.slice(0,16); }   // 部屋主の名前
-      try{ ch.send({ type:"broadcast", event:"nm", payload:{ pn:myAcctName() } }); }catch(e){}   // 自分の名前を返す
       beginOnline(payload && payload.hc===BLACK ? WHITE : BLACK);
     });
     ch.on("broadcast",{event:"move"},({payload})=>{
@@ -1468,7 +1776,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       if(turn===human) turn=(human===BLACK)?WHITE:BLACK;   // 手番のズレを検知したら、届いた一手を信頼して補正する(自己修復)
       const r=payload.r|0, c=payload.c|0;
       if(r<0||r>=N||c<0||c>=N||board[r][c]!==EMPTY) return;
-      tryPlace(r, c, !!payload.moku, !!payload.fake, (payload.dr==null)?-1:(payload.dr|0), (payload.dc==null)?-1:(payload.dc|0));
+      tryPlace(r, c, !!payload.gone, !!payload.fake, payload.gtype||"", (payload.dr==null)?-1:(payload.dr|0), (payload.dc==null)?-1:(payload.dc|0));
     });
     ch.on("broadcast",{event:"moveack"},({payload})=>{
       if(payload && payload.seq===pendingSeq){ clearTimeout(moveResendTimer); moveResendTimer=0; }
@@ -1592,379 +1900,232 @@ function readPeerName(){   // presenceからあいての名前を取り込む
   });
 
   /* ---------- CPU ---------- */
+  function cloneB(b){ return b.map(row=>row.slice()); }
+  function placedCount(){ let n=0; for(let r=0;r<N;r++) for(let c=0;c<N;c++) if(board[r][c]!==EMPTY) n++; return n; }
+  /* pが(r,c)に打った後の盤面を作る(とれる石は取り除く)。違法手ならnull */
+  function simPlace(b,r,c,p){
+    if(b[r][c]!==EMPTY) return null;
+    const b2=cloneB(b); b2[r][c]=p;
+    let caps=0;
+    const foe=(p===BLACK)?WHITE:BLACK, seen=new Set();
+    for(const [nr,nc] of neighborsOf(r,c)){
+      if(b2[nr][nc]!==foe || seen.has(nr*N+nc)) continue;
+      const g=groupInfo(b2,nr,nc);
+      g.stones.forEach(([a,bb])=>seen.add(a*N+bb));
+      if(g.libs===0){ g.stones.forEach(([a,bb])=>{ b2[a][bb]=EMPTY; }); caps+=g.stones.length; }
+    }
+    const g=groupInfo(b2,r,c);
+    if(g.libs===0) return null;   // 自殺手
+    return { b:b2, caps, myLibs:g.libs };
+  }
+  /* pが「次の一手」でとれる石数の最大(=アタリになっている相手のかたまりの最大サイズ) */
+  function biggestThreat(b,p){
+    const foe=(p===BLACK)?WHITE:BLACK, seen=new Set();
+    let best=0;
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+      if(b[r][c]!==foe || seen.has(r*N+c)) continue;
+      const g=groupInfo(b,r,c);
+      g.stones.forEach(([a,bb])=>seen.add(a*N+bb));
+      if(g.libs===1 && g.stones.length>best) best=g.stones.length;
+    }
+    return best;
+  }
+  /* 並び(五目)の評価: winLenまでの距離と両端の空きで点をつける */
+  function patScore(cnt,open){
+    if(cnt>=winLen) return 1e7;
+    if(open===0) return 0;
+    const d=winLen-cnt;
+    if(d===1) return open===2?1e6:1.2e5;
+    if(d===2) return open===2?6e4:3500;
+    if(d===3) return open===2?900:150;
+    return open===2?45:12;
+  }
+  /* (r,c)にpを置いた時の並び価値(盤bは書き換えない)。win=winLen連が完成するか */
+  function lineScoreOn(b,r,c,p){
+    let total=0, win=false;
+    for(const [dr,dc] of DIRS){
+      let cnt=1, open=0, rr=r+dr, cc=c+dc;
+      while(rr>=0&&rr<N&&cc>=0&&cc<N&&b[rr][cc]===p){ cnt++; rr+=dr; cc+=dc; }
+      if(rr>=0&&rr<N&&cc>=0&&cc<N&&b[rr][cc]===EMPTY) open++;
+      rr=r-dr; cc=c-dc;
+      while(rr>=0&&rr<N&&cc>=0&&cc<N&&b[rr][cc]===p){ cnt++; rr-=dr; cc-=dc; }
+      if(rr>=0&&rr<N&&cc>=0&&cc<N&&b[rr][cc]===EMPTY) open++;
+      if(cnt>=winLen) win=true;
+      total+=patScore(cnt,open);
+    }
+    return { score:total, win };
+  }
+  /* 一手の評価: 取り勝ち/並べ勝ち > 相手の勝ち阻止 > 取り・並びを伸ばす > 息・中央・接近戦 */
+  function scoreMove(b,r,c,cpu){
+    const opp=(cpu===BLACK)?WHITE:BLACK;
+    const sim=simPlace(b,r,c,cpu);
+    if(!sim) return -Infinity;
+    let s=Math.random()*8;
+    // --- 取り(囲碁側) ---
+    if(sim.caps){
+      if(capOf(cpu)+sim.caps>=capNorm) return 1e9;   // この一手で取り勝ち
+      s+=sim.caps*3000;
+    }
+    // --- 並び(五目側) ---
+    const myLine=lineScoreOn(b,r,c,cpu);
+    if(myLine.win) return 1e9;                        // この一手で並べ勝ち
+    const oppLine=lineScoreOn(b,r,c,opp);
+    if(oppLine.win) s+=7e8;                           // そこは相手の並び完成点 → 是が非でも止める
+    s+=myLine.score + 0.85*oppLine.score;             // 自分は並べたい / 相手の並びも止めたい
+    // --- 取られ対策(囲碁側) ---
+    const oppNow=biggestThreat(b,opp), oppAfter=biggestThreat(sim.b,opp);
+    if(capOf(opp)+oppAfter>=capNorm) s-=8e8;    // 打った直後に相手に取り勝ちされる手はほぼ打たない
+    s+=(oppNow-oppAfter)*2500;                  // 自分のピンチを解消する(受け)
+    if(sim.myLibs===1) s-=2400;                 // 自分からアタリに突っ込む手は損(並びを作っても囲まれたら消される)
+    if(sim.myLibs>=2) s+=biggestThreat(sim.b,cpu)*600;   // 安全な位置からアタリをかける(攻め)
+    s+=sim.myLibs*30;
+    s+=(8-(Math.abs(r-(N>>1))+Math.abs(c-(N>>1))))*6;    // 中央寄り好み
+    let near=0; for(const [nr,nc] of neighborsOf(r,c)){ if(b[nr][nc]!==EMPTY) near++; }
+    s+=near*40;                                  // 石にくっつく接近戦を好む
+    return s;
+  }
   function cpuMove(){
     if(over) return;
     const mv=pickMove();
+    if(!mv){ finishByCount(); return; }
     tryPlace(mv[0], mv[1]);
   }
-  function emptyNear(dist){
-    const out=[];
-    for(let r=0;r<N;r++) for(let c=0;c<N;c++){
-      if(board[r][c]!==EMPTY) continue;
-      let near=false;
-      for(let dr=-dist;dr<=dist&&!near;dr++) for(let dc=-dist;dc<=dist;dc++){
-        const rr=r+dr, cc=c+dc;
-        if(rr>=0&&rr<N&&cc>=0&&cc<N&&board[rr][cc]!==EMPTY){ near=true; break; }
-      }
-      if(near) out.push([r,c]);
-    }
-    return out;
-  }
-  // (r,c)にpを置いたと仮定した各方向の 連の長さ+両端の空き
-  function lineScore(r,c,p){
-    let total=0;
+  /* ---------- 上級専用: 先読み探索(アルファベータ) ---------- */
+  const _now=(typeof performance!=="undefined"&&performance.now)?()=>performance.now():()=>Date.now();
+  let EXPCPU=WHITE, EXPOPP=BLACK, expDeadline=0;
+  /* (r,c)にpを置いた石を含む winLen連 が在るか */
+  function lineWinOn(b,r,c,p){
     for(const [dr,dc] of DIRS){
-      let cnt=1, open=0;
-      let rr=r+dr, cc=c+dc;
-      while(rr>=0&&rr<N&&cc>=0&&cc<N&&board[rr][cc]===p){ cnt++; rr+=dr; cc+=dc; }
-      if(rr>=0&&rr<N&&cc>=0&&cc<N&&board[rr][cc]===EMPTY) open++;
+      let cnt=1, rr=r+dr, cc=c+dc;
+      while(rr>=0&&rr<N&&cc>=0&&cc<N&&b[rr][cc]===p){ cnt++; rr+=dr; cc+=dc; }
       rr=r-dr; cc=c-dc;
-      while(rr>=0&&rr<N&&cc>=0&&cc<N&&board[rr][cc]===p){ cnt++; rr-=dr; cc-=dc; }
-      if(rr>=0&&rr<N&&cc>=0&&cc<N&&board[rr][cc]===EMPTY) open++;
-      total+=patScore(cnt,open);
+      while(rr>=0&&rr<N&&cc>=0&&cc<N&&b[rr][cc]===p){ cnt++; rr-=dr; cc-=dc; }
+      if(cnt>=winLen) return true;
     }
-    return total;
+    return false;
   }
-  function patScore(cnt,open){   // ならべる数(winLen)からの残り距離で評価
-    if(cnt>=winLen) return 10000000;
-    if(open===0) return 0;
-    const d=winLen-cnt;
-    if(d===1) return open===2 ? 1000000 : 120000;
-    if(d===2) return open===2 ? 60000 : 3500;
-    if(d===3) return open===2 ? 900 : 150;
-    return open===2 ? 45 : 12;
+  /* 探索用の着手候補: 石の近く(8近傍)の合法手を、簡易並び評価で並べて上位beam手 */
+  function genMoves(b,col,beam){
+    const opp=(col===BLACK)?WHITE:BLACK, out=[];
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+      if(b[r][c]!==EMPTY) continue;
+      let near=false;
+      for(let dr=-1;dr<=1&&!near;dr++) for(let dc=-1;dc<=1;dc++){ const rr=r+dr,cc=c+dc; if(rr>=0&&rr<N&&cc>=0&&cc<N&&b[rr][cc]!==EMPTY){ near=true; break; } }
+      if(!near || !isLegal(b,r,c,col)) continue;
+      const q=lineScoreOn(b,r,c,col).score + 0.95*lineScoreOn(b,r,c,opp).score;   // 攻めと受けで手を並べる
+      out.push({r,c,q});
+    }
+    out.sort((a,b)=>b.q-a.q);
+    return out.slice(0,beam);
+  }
+  function winPot(k){ return k>=winLen ? 1e7 : Math.pow(7,k); }   // 並びの伸び(4連=2401, winLen=勝ち)
+  function capScore(x){ return x>=capNorm ? 1e7 : 3000*x + Math.pow(x/capNorm,2)*6000; }
+  /* CPU視点の静的評価(大きいほどCPU有利) */
+  function evalBoard(b, capCpu, capOpp){
+    let sc=capScore(capCpu)-capScore(capOpp);
+    for(const [dr,dc] of DIRS){
+      for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+        const er=r+dr*(winLen-1), ec=c+dc*(winLen-1);
+        if(er<0||er>=N||ec<0||ec>=N) continue;
+        let nc=0,no=0;
+        for(let k=0;k<winLen;k++){ const v=b[r+dr*k][c+dc*k]; if(v===EXPCPU)nc++; else if(v===EXPOPP)no++; }
+        if(nc&&!no) sc+=winPot(nc);
+        else if(no&&!nc) sc-=winPot(no);
+      }
+    }
+    sc += (biggestThreat(b,EXPCPU)-biggestThreat(b,EXPOPP))*250;   // 次に取れる石の差(アタリ)
+    return sc;
+  }
+  function evalSigned(b,col,capCpu,capOpp){ const v=evalBoard(b,capCpu,capOpp); return (col===EXPCPU)?v:-v; }
+  const WINV=1e9;
+  function nega(b,col,depth,alpha,beta,capCpu,capOpp){
+    if(_now()>expDeadline) return evalSigned(b,col,capCpu,capOpp);
+    const opp=(col===BLACK)?WHITE:BLACK;
+    const moves=genMoves(b,col, depth>=3?12:9);
+    if(!moves.length) return evalSigned(b,col,capCpu,capOpp);
+    let best=-1e18;
+    for(const m of moves){
+      const sim=simPlace(b,m.r,m.c,col); if(!sim) continue;
+      const myCap=(col===EXPCPU?capCpu:capOpp)+sim.caps;
+      let val;
+      if(lineWinOn(sim.b,m.r,m.c,col) || myCap>=capNorm){
+        val=WINV-(10-depth);
+      } else if(depth<=1){
+        val=evalSigned(sim.b, col, (col===EXPCPU)?myCap:capCpu, (col===EXPCPU)?capOpp:myCap);
+      } else {
+        const ncCpu=(col===EXPCPU)?myCap:capCpu, ncOpp=(col===EXPCPU)?capOpp:myCap;
+        val=-nega(sim.b, opp, depth-1, -beta, -alpha, ncCpu, ncOpp);
+      }
+      if(val>best) best=val;
+      if(best>alpha) alpha=best;
+      if(alpha>=beta) break;
+    }
+    return best;
+  }
+  function expertPick(){
+    EXPCPU=(human===BLACK)?WHITE:BLACK; EXPOPP=human;
+    if(placedCount()===0) return [N>>1, N>>1];
+    const root=genMoves(board, EXPCPU, 20);
+    if(!root.length){ const l=legalCells(board,EXPCPU); return l.length?l[Math.floor(Math.random()*l.length)]:null; }
+    // 1) 今すぐ勝てる手
+    for(const m of root){ const sim=simPlace(board,m.r,m.c,EXPCPU); if(sim && (lineWinOn(sim.b,m.r,m.c,EXPCPU) || capOf(EXPCPU)+sim.caps>=capNorm)) return [m.r,m.c]; }
+    // 2) 反復深化アルファベータ(残り時間まで)
+    expDeadline=_now()+1900;
+    let best=[root[0].r,root[0].c];
+    for(let D=2; D<=10; D+=2){
+      let bv=-1e18, bm=null;
+      for(const m of root){
+        const sim=simPlace(board,m.r,m.c,EXPCPU); if(!sim) continue;
+        const myCap=capOf(EXPCPU)+sim.caps;
+        let val;
+        if(lineWinOn(sim.b,m.r,m.c,EXPCPU)||myCap>=capNorm) val=WINV;
+        else val=-nega(sim.b, EXPOPP, D-1, -1e18, 1e18, myCap, capOf(EXPOPP));
+        val+=Math.random()*4;   // わずかな揺らぎ(同点の打ち分け)
+        if(val>bv){ bv=val; bm=[m.r,m.c]; }
+        if(_now()>expDeadline) break;
+      }
+      if(bm) best=bm;
+      if(_now()>expDeadline || bv>=WINV-20) break;
+    }
+    return best;
   }
   function pickMove(){
-    if(placed===0) return [6,6];
-    const cpu=(human===BLACK)?WHITE:BLACK;
-    const cand=emptyNear(2);
-    if(!cand.length){ return [6,6]; }
-    // 入門: たまにしか脅威を見ない。基本は既存の石の近くにランダム
+    const cpu=(human===BLACK)?WHITE:BLACK, opp=human;
+    const cand=legalCells(board,cpu);
+    if(!cand.length) return null;
+    if(placedCount()===0) return [N>>1, N>>1];
     if(cpuLv===0){
-      let block=null, bs=0;
+      // 初級: とれる手・とられそうな手・王手級の並びだけ、半々の確率で気付く。基本は石の近くにランダム
+      let urgent=null, us=0;
       for(const [r,c] of cand){
-        const s=Math.max(lineScore(r,c,cpu), lineScore(r,c,human));
-        if(s>bs){ bs=s; block=[r,c]; }
+        const sim=simPlace(board,r,c,cpu); if(!sim) continue;
+        const myL=lineScoreOn(board,r,c,cpu), opL=lineScoreOn(board,r,c,opp);
+        let v=sim.caps*10 + (biggestThreat(board,opp)-biggestThreat(sim.b,opp))*8;
+        if(myL.win||opL.win) v+=100;              // 並べ勝ち/相手の並べ勝ち阻止は最優先
+        else v+=(myL.score+opL.score)/2e5;        // ゆるく並びも見る
+        if(v>us){ us=v; urgent=[r,c]; }
       }
-      if(bs>=10000000 && Math.random()<0.55) return block;   // 王手級だけ半々で対応
-      return cand[Math.floor(Math.random()*cand.length)];
+      if(urgent && us>=8 && Math.random()<0.55) return urgent;
+      const nearCand=cand.filter(([r,c])=>{
+        for(let dr=-2;dr<=2;dr++) for(let dc=-2;dc<=2;dc++){
+          const rr=r+dr, cc=c+dc;
+          if(rr>=0&&rr<N&&cc>=0&&cc<N&&board[rr][cc]!==EMPTY) return true;
+        }
+        return false;
+      });
+      const pool=nearCand.length?nearCand:cand;
+      return pool[Math.floor(Math.random()*pool.length)];
     }
-    // 上級: 専用エンジンに委譲(窓方式評価 + VCF/VCT必勝探索 + 反復深化。詳細はmakeExpertAI)
-    if(cpuLv===2) return expertMove(cpu, placed);
-    // 中級: 評価関数(攻め+守り)
-    const defW=0.78;
-    const scored=cand.map(([r,c])=>{
-      const s=lineScore(r,c,cpu)+defW*lineScore(r,c,human)
-        + (12-(Math.abs(r-6)+Math.abs(c-6)))*2   // 中央寄り好み
-        + Math.random()*10;
-      return {r,c,s};
-    }).sort((a,b)=>b.s-a.s);
-    if(cpuLv===1 && Math.random()<0.3 && scored.length>2 && scored[0].s<10000000){
-      return [scored[1].r, scored[1].c];   // 中級: 3割で最善を逃す
+    const scored=cand.map(([r,c])=>({r,c,s:scoreMove(board,r,c,cpu)})).sort((a,b)=>b.s-a.s);
+    if(cpuLv===1){
+      if(Math.random()<0.3 && scored.length>2 && scored[0].s<1e8) return [scored[1].r,scored[1].c];   // 中級: 3割で最善を逃す
+      return [scored[0].r,scored[0].c];
     }
-    return [scored[0].r, scored[0].c];
+    // 上級: 先読み探索(アルファベータ)に委譲。fork(二段構え)まで読んで受け・攻めを両立
+    const em=expertPick();
+    if(em) return em;
+    return [scored[0].r, scored[0].c];   // 保険
   }
-  /* ---------- 上級専用エンジン ----------
-     窓方式の差分評価(飛び三・飛び四も正しく数える) + VCF/VCT(四と開三を連打する必勝手順の探索)
-     + 強制手延長つき反復深化アルファベータ(最大10手読み・時間制)。
-     毎手番、盤面から状態を作り直すので、もくもく消滅・一手戻る・オンラインにも常に追従する */
-  function makeExpertAI(st){   // st={board,N,winLen,prob,budgetMs}
-    const now=(typeof performance!=="undefined"&&performance.now)?()=>performance.now():()=>Date.now();
-
-    /* 窓(winLenマスの直線)の事前列挙: winLenが変わったら作り直す */
-    let W=null;
-    function buildWindows(){
-      const n=st.N, L=st.winLen;
-      const list=[], cellWins=Array.from({length:n*n},()=>[]);
-      for(const [dr,dc] of DIRS){
-        for(let r=0;r<n;r++) for(let c=0;c<n;c++){
-          const er=r+dr*(L-1), ec=c+dc*(L-1);
-          if(er<0||er>=n||ec<0||ec>=n) continue;
-          const cells=new Int16Array(L);
-          for(let k=0;k<L;k++) cells[k]=(r+dr*k)*n+(c+dc*k);
-          const wi=list.length; list.push(cells);
-          for(const ci of cells) cellWins[ci].push(wi);
-        }
-      }
-      W={list, cellWins, len:L, n};
-    }
-
-    let cnt0,cnt1;        // 窓ごとの石数(色0/色1)
-    let tot0,tot1;        // 窓スコア合計
-    let four0,four1;      // 「あと1で勝ち」窓の本数
-    let cellArr;          // 盤(1次元) 0=空,1,2
-    let nearCnt;          // 2マス以内に石がある度合い(候補生成用)
-    let SCW;              // 窓スコア表(石数→点)
-    const WINV=100000000;
-
-    function rebuild(){
-      if(!W || W.len!==st.winLen || W.n!==st.N) buildWindows();
-      const n=st.N, L=st.winLen, M=W.list.length;
-      cnt0=new Int16Array(M); cnt1=new Int16Array(M);
-      tot0=0; tot1=0; four0=0; four1=0;
-      cellArr=new Int8Array(n*n); nearCnt=new Int16Array(n*n);
-      SCW=new Float64Array(L+1);
-      for(let i=1;i<L;i++) SCW[i]=Math.pow(9,i);
-      SCW[L]=WINV;
-      for(let r=0;r<n;r++) for(let c=0;c<n;c++){
-        const v=st.board[r][c];
-        if(v!==EMPTY) place(r*n+c, v-1);
-      }
-    }
-    function place(ci,col){
-      cellArr[ci]=col+1;
-      const cw=W.cellWins[ci], L=W.len;
-      for(let k=0;k<cw.length;k++){
-        const wi=cw[k];
-        const a=(col===0)?cnt0[wi]:cnt1[wi], b=(col===0)?cnt1[wi]:cnt0[wi];
-        if(b===0){ if(col===0) tot0-=SCW[a]; else tot1-=SCW[a]; if(a===L-1){ if(col===0)four0--; else four1--; } }
-        if(a===0&&b>0){ if(col===0) tot1-=SCW[b]; else tot0-=SCW[b]; if(b===L-1){ if(col===0)four1--; else four0--; } }
-        if(col===0) cnt0[wi]=a+1; else cnt1[wi]=a+1;
-        if(b===0){ if(col===0) tot0+=SCW[a+1]; else tot1+=SCW[a+1]; if(a+1===L-1){ if(col===0)four0++; else four1++; } }
-      }
-      const n=W.n, r=(ci/n)|0, c=ci%n;
-      for(let dr=-2;dr<=2;dr++) for(let dc=-2;dc<=2;dc++){
-        const rr=r+dr, cc=c+dc;
-        if(rr>=0&&rr<n&&cc>=0&&cc<n) nearCnt[rr*n+cc]++;
-      }
-    }
-    function unplace(ci,col){
-      cellArr[ci]=0;
-      const cw=W.cellWins[ci], L=W.len;
-      for(let k=0;k<cw.length;k++){
-        const wi=cw[k];
-        const a=((col===0)?cnt0[wi]:cnt1[wi])-1, b=(col===0)?cnt1[wi]:cnt0[wi];
-        if(b===0){ if(col===0) tot0-=SCW[a+1]; else tot1-=SCW[a+1]; if(a+1===L-1){ if(col===0)four0--; else four1--; } }
-        if(col===0) cnt0[wi]=a; else cnt1[wi]=a;
-        if(b===0){ if(col===0) tot0+=SCW[a]; else tot1+=SCW[a]; if(a===L-1){ if(col===0)four0++; else four1++; } }
-        if(a===0&&b>0){ if(col===0) tot1+=SCW[b]; else tot0+=SCW[b]; if(b===L-1){ if(col===0)four1++; else four0++; } }
-      }
-      const n=W.n, r=(ci/n)|0, c=ci%n;
-      for(let dr=-2;dr<=2;dr++) for(let dc=-2;dc<=2;dc++){
-        const rr=r+dr, cc=c+dc;
-        if(rr>=0&&rr<n&&cc>=0&&cc<n) nearCnt[rr*n+cc]--;
-      }
-    }
-    /* colの「次の一手で勝てるマス」(重複なし)。fourカウンタが0なら即座に空を返す */
-    function winCellsOf(col){
-      if((col===0?four0:four1)===0) return [];
-      const L=W.len, cn=(col===0)?cnt0:cnt1, co=(col===0)?cnt1:cnt0;
-      const out=[], seen=new Set();
-      for(let wi=0;wi<W.list.length;wi++){
-        if(cn[wi]===L-1&&co[wi]===0){
-          const cells=W.list[wi];
-          for(let k=0;k<L;k++){ const ci=cells[k]; if(cellArr[ci]===0){ if(!seen.has(ci)){ seen.add(ci); out.push(ci); } break; } }
-        }
-      }
-      return out;
-    }
-    /* そのマスに置いた時の攻め得点(自分窓の伸び) + 相手窓を割る価値 */
-    function moveGain(ci,col){
-      const cw=W.cellWins[ci], cn=(col===0)?cnt0:cnt1, co=(col===0)?cnt1:cnt0;
-      let g=0;
-      for(let k=0;k<cw.length;k++){
-        const wi=cw[k], a=cn[wi], b=co[wi];
-        if(b===0) g+=SCW[a+1]-SCW[a];
-        else if(a===0) g+=SCW[b]*0.9;
-      }
-      return g;
-    }
-    function topK(col,k,defW){
-      const n=W.n, other=1-col, out=[];
-      for(let ci=0;ci<n*n;ci++){
-        if(cellArr[ci]===0&&nearCnt[ci]>0) out.push({ci, s:moveGain(ci,col)+defW*moveGain(ci,other)});
-      }
-      out.sort((a,b)=>b.s-a.s);
-      return out.slice(0,k);
-    }
-    /* colが一手で「四(勝ち直前)」を作れる窓を持つか */
-    function canMakeFour(col){
-      const cn=(col===0)?cnt0:cnt1, co=(col===0)?cnt1:cnt0, L=W.len;
-      for(let wi=0;wi<W.list.length;wi++){ if(cn[wi]===L-2 && co[wi]===0) return true; }
-      return false;
-    }
-
-    /* VCF/VCT: 四(と開三)を連打して勝ちに到達する手順の探索。勝ちへの最初の一手 or -1 */
-    let vcNodes=0, vcDeadline=0;
-    function forcedWin(me, depth, allowThree){
-      if(depth<=0) return -1;
-      if(vcNodes++>60000 || now()>vcDeadline) return -1;
-      const opp=1-me, L=W.len;
-      // 強制力のある手だけ試す: 四(または三)が作れる窓に絡むマス
-      const cw=(me===0)?cnt0:cnt1, co=(me===0)?cnt1:cnt0;
-      const marks=new Set();
-      const needThree=allowThree?3:2;
-      for(let wi=0;wi<W.list.length;wi++){
-        if(co[wi]!==0) continue;
-        if(cw[wi]>=L-needThree && cw[wi]>=1){
-          const cells=W.list[wi];
-          for(let k=0;k<L;k++){ const ci=cells[k]; if(cellArr[ci]===0) marks.add(ci); }
-        }
-      }
-      if(!marks.size) return -1;
-      const cand=[...marks].map(ci=>({ci, s:moveGain(ci,me)})).sort((a,b)=>b.s-a.s);
-      for(const {ci} of cand){
-        place(ci,me);
-        const myW=winCellsOf(me);
-        if(myW.length){
-          const oppW=winCellsOf(opp);
-          if(oppW.length===0){
-            if(myW.length>=2){ unplace(ci,me); return ci; }   // 両四: 止めきれない
-            const b=myW[0];
-            place(b,opp);
-            let ok=false;
-            if(winCellsOf(opp).length===0){                    // 止めが相手の四を完成させたら失敗
-              ok=forcedWin(me, depth-2, allowThree)>=0;
-            }
-            unplace(b,opp);
-            if(ok){ unplace(ci,me); return ci; }
-          }
-        }else if(allowThree && depth>=4 && winCellsOf(opp).length===0 && !canMakeFour(opp)){
-          // 開三は相手に1手の自由を与えるため、相手が四を作って走れる局面では強制と見なさない(安全側)
-          // この手の後「置けば両四(勝ち確定)になるマス」があるか
-          const dbl=[];
-          const cwn=(me===0)?cnt0:cnt1, con=(me===0)?cnt1:cnt0;
-          const eSet=new Set();
-          for(const wi of W.cellWins[ci]){
-            if(con[wi]===0&&cwn[wi]===L-2){
-              const cells=W.list[wi];
-              for(let k=0;k<L;k++){ const e=cells[k]; if(cellArr[e]===0) eSet.add(e); }
-            }
-          }
-          for(const e of eSet){
-            place(e,me);
-            if(winCellsOf(me).length>=2) dbl.push(e);
-            unplace(e,me);
-          }
-          if(dbl.length){
-            // 相手の受け: 両四点そのもの + 三の窓の空きマス。全部の受けを破れたら勝ち
-            const D=new Set(dbl);
-            for(const wi of W.cellWins[ci]){
-              if(con[wi]===0&&cwn[wi]===L-2){
-                const cells=W.list[wi];
-                for(let k=0;k<L;k++){ const e=cells[k]; if(cellArr[e]===0) D.add(e); }
-              }
-            }
-            let allFail=true;
-            for(const d of D){
-              place(d,opp);
-              let defended=true;
-              if(winCellsOf(opp).length===0){
-                defended=forcedWin(me, depth-2, allowThree)<0;
-              }               // 受けが相手の四になるなら受け成功扱い(安全側)
-              unplace(d,opp);
-              if(defended){ allFail=false; break; }
-            }
-            if(allFail){ unplace(ci,me); return ci; }
-          }
-        }
-        unplace(ci,me);
-      }
-      return -1;
-    }
-
-    /* 静かな局面の反復深化アルファベータ */
-    let abDeadline=0, abNodes=0;
-    const TIMEOUT={};
-    function evalSide(col,defE){
-      let v=(col===0)?(tot0-defE*tot1):(tot1-defE*tot0);
-      const opF=(col===0)?four1:four0;
-      // 相手に四が残る局面: 両四級はほぼ負け / 単発は止めに1手取られるテンポ損
-      if(opF) v-=(opF>=2 ? WINV*0.45 : SCW[W.len-1]*2.2);
-      return v;
-    }
-    function ab(col, depth, alpha, beta, ply, defW, defE, K){
-      abNodes++;
-      if((abNodes&511)===0 && now()>abDeadline) throw TIMEOUT;
-      const opp=1-col;
-      if(winCellsOf(col).length) return WINV-ply;            // 自分がすぐ勝てる
-      if(depth<=0) return evalSide(col,defE);
-      const oppW=winCellsOf(opp);
-      let cand, forced=false;
-      if(oppW.length>=2) return -(WINV-ply-1);               // 両四などは受からない
-      if(oppW.length===1){ cand=[{ci:oppW[0]}]; forced=true; }   // 止めるしかない
-      else cand=topK(col, K[depth]||4, defW);
-      const childDepth=(forced&&ply<24)?depth:depth-1;       // 強制手は深さを消費しない(四追いの応酬を読み切る)
-      let best=-Infinity;
-      for(const m of cand){
-        place(m.ci,col);
-        let v;
-        try{ v=-ab(opp, childDepth, -beta, -alpha, ply+1, defW, defE, K); }
-        finally{ unplace(m.ci,col); }
-        if(v>best) best=v;
-        if(best>alpha) alpha=best;
-        if(alpha>=beta) break;
-      }
-      return (best===-Infinity)?evalSide(col,defE):best;
-    }
-
-    /* 一手決定 */
-    return function(cpuColor, placed){
-      const n=st.N;
-      if(placed===0) return [(n>>1),(n>>1)];
-      rebuild();
-      const me=cpuColor-1, opp=1-me, L=st.winLen;
-      const budget=st.budgetMs||1100;
-      const t0=now();
-      const toRC=ci=>[(ci/n)|0, ci%n];
-      // 1) 即勝ち
-      const wins=winCellsOf(me);
-      if(wins.length) return toRC(wins[0]);
-      // 2) 相手の即勝ちを止める(複数あっても最も得な1つを塞ぐ)
-      const oppWins=winCellsOf(opp);
-      if(oppWins.length){
-        let best=oppWins[0], bs=-1;
-        for(const ci of oppWins){ const s=moveGain(ci,me); if(s>bs){ bs=s; best=ci; } }
-        return toRC(best);
-      }
-      const defW=0.95+st.prob*0.008;   // もくもく確率が高いほど守り重視(従来思想を継承)
-      const defE=1.0+st.prob*0.004;
-      if(L>=4){
-        // 3) 四追い(VCF)
-        vcNodes=0; vcDeadline=t0+budget*0.35;
-        const vcf=forcedWin(me, 24, false);
-        if(vcf>=0) return toRC(vcf);
-        // 4) 三四連続攻撃(VCT)。もくもく世界では長手順が崩れるので浅く
-        vcNodes=0; vcDeadline=t0+budget*0.6;
-        const vctDepth=(st.prob===0)?18:(st.prob<30?13:8);
-        const vct=forcedWin(me, vctDepth, true);
-        if(vct>=0) return toRC(vct);
-        // 5) 相手に四追いが見えているなら、受け候補を必ず読みに混ぜる
-        vcNodes=0; vcDeadline=t0+budget*0.7;
-        var oppVCF=forcedWin(opp, 16, false);
-      }
-      // 6) 反復深化アルファベータ(残り時間いっぱい・最大10手読み)
-      const K=[0, 5, 5, 6, 6, 7, 8, 8, 9, 10, 12, 12, 12, 12, 12];
-      abDeadline=t0+budget; abNodes=0;
-      let rootCand=topK(me, 18, defW);
-      if(typeof oppVCF!=="undefined" && oppVCF>=0 && !rootCand.some(m=>m.ci===oppVCF)){
-        rootCand.push({ci:oppVCF, s:0});
-      }
-      let bestMove=rootCand.length?rootCand[0].ci:-1;
-      try{
-        for(let depth=4; depth<=14; depth+=2){
-          let alpha=-Infinity, bestV=-Infinity, bestThis=-1;
-          for(const m of rootCand){
-            place(m.ci,me);
-            let v;
-            try{ v=-ab(opp, depth-1, -Infinity, -alpha, 1, defW, defE, K); }
-            finally{ unplace(m.ci,me); }
-            m.iterScore=v;
-            if(v>bestV){ bestV=v; bestThis=m.ci; }
-            if(v>alpha) alpha=v;
-          }
-          if(bestThis>=0) bestMove=bestThis;
-          rootCand.sort((a,b)=>(b.iterScore||0)-(a.iterScore||0));   // 次の深さは前回の並び順で
-          if(bestV>=WINV-64) break;                                  // 勝ち筋確定なら十分
-        }
-      }catch(e){ if(e!==TIMEOUT) throw e; }
-      if(bestMove<0){ // 保険: 空きマスならどこでも
-        for(let ci=0;ci<n*n;ci++) if(cellArr[ci]===0){ bestMove=ci; break; }
-      }
-      return toRC(bestMove);
-    };
-  }
-  const expertMove=makeExpertAI({ get board(){return board}, N, get winLen(){return winLen}, get prob(){return prob}, budgetMs:2400 });
 
   /* ---------- タイトル/UI ---------- */
   // あそびかた選択: 選んだ方の設定ブロックだけ出現(ルール設定も選んだ側へ移動)
@@ -1983,9 +2144,9 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       friendSetup.classList.toggle("on", mode==="friend");
     });
   });
-  // ルール設定: −/＋で もくもく確率(0〜99%)・ならべる数(2〜7)。長押しで連続変更
-  const probValEl=document.getElementById("probVal"), winValEl=document.getElementById("winVal");
-  function renderRules(){ probValEl.textContent=mokuProb+"%"; winValEl.textContent=winLen; }
+  // ルール設定: −/＋で 消える確率(0〜99%)・ならべる数(3〜8)・とる数(1〜10)。長押しで連続変更
+  const probValEl=document.getElementById("probVal"), lineValEl=document.getElementById("lineVal"), capValEl=document.getElementById("capVal");
+  function renderRules(){ probValEl.textContent=maigoProb+"%"; lineValEl.textContent=winLen; capValEl.textContent=capNorm; }
   document.querySelectorAll(".rc-btn").forEach(b=>{
     let holdTmr=0, holdIv=0;
     const step=()=>{
@@ -1993,10 +2154,13 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       let changed=false;
       if(b.dataset.t==="p"){
         const ni=Math.max(0, Math.min(PROB_STEPS.length-1, probIdx+d));
-        if(ni!==probIdx){ probIdx=ni; mokuProb=PROB_STEPS[probIdx]; changed=true; }
+        if(ni!==probIdx){ probIdx=ni; maigoProb=PROB_STEPS[probIdx]; changed=true; }
+      } else if(b.dataset.t==="l"){
+        const nl=Math.max(2, Math.min(10, winLen+d));
+        if(nl!==winLen){ winLen=nl; changed=true; }
       } else {
-        const nw=Math.max(2, Math.min(10, winLen+d));
-        if(nw!==winLen){ winLen=nw; changed=true; }
+        const nc=Math.max(1, Math.min(30, capNorm+d));
+        if(nc!==capNorm){ capNorm=nc; changed=true; }
       }
       if(changed){ playTick(); renderRules(); }
     };
@@ -2005,22 +2169,27 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       holdTmr=setTimeout(()=>{ holdIv=setInterval(step, 90); }, 420); });
     ["pointerup","pointerleave","pointercancel"].forEach(ev=> b.addEventListener(ev, stop));
   });
-  // もくもくのゆくえ トグル(初期ON=盤の中へ移動)
-  function renderStay(){ document.querySelectorAll("#stayToggle .mg-btn").forEach(x=>x.classList.toggle("sel", (x.dataset.stay==="1")===mokuStay)); }
-  document.querySelectorAll("#stayToggle .mg-btn").forEach(b=>{
-    b.addEventListener("click",()=>{ ensureAudio(); playSelect(); mokuStay=(b.dataset.stay==="1"); renderStay(); });
+  // 勝ちのじょうけん: どちらか(or) / 両方(and)
+  function renderWinMode(){ document.querySelectorAll("#wmToggle .wm-btn").forEach(x=>x.classList.toggle("sel", x.dataset.wm===winMode)); }
+  document.querySelectorAll("#wmToggle .wm-btn").forEach(b=>{
+    b.addEventListener("click",()=>{ ensureAudio(); playSelect(); winMode=b.dataset.wm; renderWinMode(); });
+  });
+  // 迷子のゆくえ トグル(特殊ルール・初期OFF=盤の外へ消える)
+  function renderStay(){ document.querySelectorAll("#stayToggle .wm-btn").forEach(x=>x.classList.toggle("sel", (x.dataset.stay==="1")===maigoStay)); }
+  document.querySelectorAll("#stayToggle .wm-btn").forEach(b=>{
+    b.addEventListener("click",()=>{ ensureAudio(); playSelect(); maigoStay=(b.dataset.stay==="1"); renderStay(); });
   });
   document.getElementById("ruleReset").addEventListener("click",()=>{
     ensureAudio(); playSelect();
-    probIdx=PROB_STEPS.indexOf(20); mokuProb=20; winLen=5; mokuStay=true; renderRules(); renderStay();
+    probIdx=PROB_STEPS.indexOf(20); maigoProb=20; winLen=5; capNorm=3; winMode="or"; maigoStay=true; renderRules(); renderWinMode(); renderStay();
   });
-  renderRules(); renderStay();
+  renderRules(); renderWinMode(); renderStay();
 
   // 効果音のON/OFF — 全画面共通・保存される
   const seBtn=document.getElementById("seBtn");
   function renderSnd(){ seBtn.classList.toggle("off", !seOn); }
   seBtn.addEventListener("click",()=>{ ensureAudio();
-    seOn=!seOn; try{ localStorage.setItem("gmk.se", seOn?"1":"0"); }catch(e){}
+    seOn=!seOn; try{ localStorage.setItem("maigo.se", seOn?"1":"0"); }catch(e){}
     renderSnd();
     if(seBus) seBus.gain.setTargetAtTime(seOn?1:0, actx.currentTime, 0.02);
     if(seOn) playSelect();
@@ -2122,16 +2291,20 @@ function readPeerName(){   // presenceからあいての名前を取り込む
   const helpOverlay=document.getElementById("helpOverlay"), helpBody=document.getElementById("helpBody");
   function openHelp(){
     ensureAudio(); playSelect();
-    const nb=KAN[winLen]||winLen;
-    let html="<div class=\"h-sec\">基本ルール</div>"
-      +"<p>碁石を交互に置き<br>たて・よこ・ななめに<b>"+nb+"つ</b>揃えたら勝ち</p>";
-    html+="<div class=\"h-sec hl\">もくもく</div>";
-    if(mokuProb>0){
-      if(mokuStay) html+="<p>置いた碁石は<b>"+mokuProb+"%</b>の確率で「もくもく」し<br>煙とともに盤の別の場所へワープする。運を味方につけよ</p>";
-      else         html+="<p>置いた碁石は<b>"+mokuProb+"%</b>の確率で煙となって消え<br>手番が相手に移る。運を味方につけよ</p>";
+    const goalTxt = (winMode==="and")
+      ? "①と②の<b>両方</b>達成で勝ち"
+      : "①か②の<b>どちらか</b>達成で勝ち";
+    let html="<div class=\"h-sec\">2つの勝ち方</div>"
+      +"<p>碁石を交互に置く。"+goalTxt+"<br>①相手の碁石をたて・よこから<b>囲んで"+capNorm+"個</b>とる<br>②自分の碁石をたて・よこ・ななめに<b>"+winLen+"個ならべる</b></p>";
+    html+="<div class=\"h-sec hl\">迷子・もくもく</div>";
+    if(maigoProb>0){
+      if(maigoStay) html+="<p>置いた碁石は<b>"+maigoProb+"%</b>の確率で迷子・もくもくして<br>盤のどこか別のマスへ移動する。運を味方につけよ</p>";
+      else          html+="<p>置いた碁石は<b>"+maigoProb+"%</b>の確率で煙とか迷子になり<br>盤の外へ消えてしまう。運を味方につけよ</p>";
     }else{
-      html+="<p>今回はもくもく無し。碁石は動かない、正真正銘の実力勝負。</p>";
+      html+="<p>今回は消えるナシ。碁石はどこにも行かない、正真正銘の腕くらべ。</p>";
     }
+    html+="<div class=\"h-sec\">置けない場所</div>"
+      +"<p>置いた瞬間に自分を囲ってしまうところ<br>（相手の碁石をとれる時は置ける）</p>";
     html+="<div class=\"h-sec\">一手戻る</div>"
       +"<p>自分の直前の一手をやり直せる<br>（オンラインは相手が許した時だけ）</p>";
     helpBody.innerHTML=html;
@@ -2239,10 +2412,8 @@ setMini(true);   /* ★毎回「チャット欄 表示」の畳んだ状態で�
     const central=1-Math.abs(hx-0.5)*2;                      // 0(両端)〜1(中央)
     el.style.setProperty("--rise", "-"+(24+(1-central)*16).toFixed(0)+"vh");   // 中央は低め(盤の下側に少しかぶる程度)・両端は高め(従来通り)
     el.style.setProperty("--dx", (Math.random()*24-12).toFixed(0)+"px");
-    const nm=who||(online?meLabel():"自分");
-    el.innerHTML='<span class="s-emoji">'+STAMP_SVGS[i]+'</span><span class="s-name">'+nm+'</span>';
+    el.innerHTML='<span class="s-emoji">'+STAMP_SVGS[i]+'</span><span class="s-name">'+(who||(online?meLabel():"自分"))+'</span>';
     if(seOn && !stampMuted) playStamp(i);   // スタンプ別の効果音
-    // ダイアログ表示中は前面に出して見えるようにする
     const overlayOpen=document.getElementById("resultOverlay").classList.contains("on")||document.getElementById("confirmOverlay").classList.contains("on");
     if(overlayOpen){ el.classList.add("over-dialog"); document.body.appendChild(el); }
     else{ (document.getElementById("gameScene")||document.body).appendChild(el); }   // 碁笥/駒と同じ重なり文脈に入れる(盤より前・碁石入れより後ろ)
