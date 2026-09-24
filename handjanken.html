@@ -176,10 +176,13 @@
   .hand .aura.on.pop.rock{ animation:auraIn .3s cubic-bezier(.2,1.5,.4,1), auraRock .5s steps(2,end) .3s infinite; }
   .hand .aura.on.pop.scissors{ animation:auraIn .25s cubic-bezier(.2,1.6,.4,1), auraSci 1.6s ease-in-out .25s infinite; }
   .hand .aura.on.pop.paper{ animation:auraIn .45s cubic-bezier(.2,1.2,.4,1), auraPap 2.4s ease-in-out .45s infinite; }
-  .hand .aura.on.out.rock{ animation:auraIn .3s cubic-bezier(.2,1.5,.4,1) reverse forwards; }   /* 消える=出る時の逆再生 */
-  .hand .aura.on.out.scissors{ animation:auraIn .25s cubic-bezier(.2,1.6,.4,1) reverse forwards; }
-  .hand .aura.on.out.paper{ animation:auraIn .45s cubic-bezier(.2,1.2,.4,1) reverse forwards; }
+  /* 消える=出る時の逆再生。★出る時と同じ名前(auraIn)に reverse を付けるだけだと、ブラウザは「同じアニメの向きを変えただけ」と見なして
+     再生し直さず、終わった状態のまま一瞬で消える(2026-09-24のバグ)→ 別名のauraOutにして、カーブも前後反転した値にする */
+  .hand .aura.on.out.rock{ animation:auraOut .3s cubic-bezier(.6,0,.8,-.5) forwards; }
+  .hand .aura.on.out.scissors{ animation:auraOut .25s cubic-bezier(.6,0,.8,-.6) forwards; }
+  .hand .aura.on.out.paper{ animation:auraOut .45s cubic-bezier(.6,0,.8,-.2) forwards; }
   @keyframes auraIn{ 0%{ transform:scale(.7); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
+  @keyframes auraOut{ 0%{ transform:scale(1); opacity:1; } 100%{ transform:scale(.7); opacity:0; } }
   @keyframes auraRock{ 0%{ transform:translate(-1px,1px); } 100%{ transform:translate(1px,-1px); } }
   @keyframes auraSci{ 0%,100%{ transform:rotate(-3deg); } 50%{ transform:rotate(3deg); } }
   @keyframes auraPap{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.04); } }   /* 輪郭=手の色を濃くしたもの */
