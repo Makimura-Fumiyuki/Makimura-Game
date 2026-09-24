@@ -1140,7 +1140,7 @@
     render();   // 集計が届いたら並びと数字を更新
   }
   /* いいね済みか(このブラウザの記録)。もう一度押すと取り消せる(トグル) */
-  function likedKey(id){ return "gmk.liked."+id; }
+  function likedKey(id){ return "gmk.liked2."+id; }   /* ★2026-09-24: いいね全リセットに伴いキーを変更＝全端末のローカルの「いいね済み」が一度に無効になる(旧gmk.liked.*は無視されるだけ) */
   function hasLiked(id){ try{ return localStorage.getItem(likedKey(id))==="1"; }catch(e){ return false; } }
   function setLiked(id,v){ try{ if(v) localStorage.setItem(likedKey(id),"1"); else localStorage.removeItem(likedKey(id)); }catch(e){}
     try{ if(window.__mkLikesChanged) window.__mkLikesChanged(); }catch(e){} }   /* ログイン中はアカウントへも保存(2026-09-10) */
