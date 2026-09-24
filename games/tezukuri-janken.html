@@ -842,57 +842,95 @@ function renderStatic(){                                 /* 名前・本数・�
 }
 
 /* ===== ロボット ===== */
-const cpu={ target:newTips(), startAt:[0,0,0,0,0], nextAt:0, shape:"paper" };
-/* speed=指先の速さ(px/秒。伸ばし⇄曲げは約85px) / react=次に考え直すまでの間 / first=ラウンド開始から最初に動くまで
-   smart=「相手の形(向かっている形)に勝てる形」を選ぶ確率 / stagger=指ごとに動き出しをずらす幅(途中の「どれでもない」時間ができる) */
+const cpu={ target:newTips(), startAt:[0,0,0,0,0], nextAt:0, shape:"paper", seen:"none", respAt:0, holdAt:0, ph:"", playAt:0 };
+/* speed=指先の速さ(px/秒。1本を伸ばし⇄曲げするのに約180px動く=速さ900なら1本0.2秒) / react=次に考え直すまでの間
+   first=ラウンド開始から最初に動くまで / smart=「勝てる形」を選ぶ確率 / stagger=指ごとに動き出しをずらす幅
+   ★2026-09-24に強化(牧村指示「CPUが弱すぎる」)。足したのは次の3つ:
+   resp = あいての形が変わってから動き直すまで(人でいう反射神経)。タイマー(react)を待たずに考え直す
+   safe = 「最後の1本を動かすと完成するが、その形ではあいてに負ける」時は、その指を止めて別の形へ切り替える(自滅しない)
+   ambush = あいてがまだ「???」の間は、わざと最後の1本を残して待ち伏せる。あいてが形を決めた瞬間に1本だけ動かして勝つ
+            (ずっと待つと勝負が終わらないので ambushMs で打ち切って自分から形を作る=人はここを狙って粘れる)
+   open   = 「はじめ」の直後、この時間は形を完成させない=人が構えるための間。
+            ★これが無いと、3カウントの間に指を4本そろえたロボットが「はじめ」の0.07秒後に勝ってしまい勝負にならない(2026-09-24に実測)
+   ★強すぎ/弱すぎの調整は speed(指の速さ)→open(はじめの間)→resp(反射神経) の順にいじるのが分かりやすい */
 const CPU_CFG=[
-  { speed:135, react:[1100,2300], first:1500, smart:0.0,  stagger:260 },   /* 初級=ゆっくり・でたらめ */
-  { speed:225, react:[600,1000],  first:950,  smart:0.65, stagger:180 },   /* 中級=そこそこ速く、7割は勝てる形へ */
-  { speed:360, react:[220,380],   first:480,  smart:0.92, stagger:90 },    /* 上級=速く・的確 */
+  { speed:200, react:[900,1800], first:1400, smart:0.15, stagger:240, resp:900, open:2400, safe:false, ambush:false, ambushMs:0    },  /* 初級=ゆっくり・でたらめ */
+  { speed:380, react:[400,700],  first:900,  smart:0.80, stagger:120, resp:350, open:1600, safe:true,  ambush:false, ambushMs:0    },  /* 中級=そこそこ速い・自滅はしない */
+  { speed:560, react:[180,300],  first:420,  smart:1.0,  stagger:50,  resp:200, open:1200, safe:true,  ambush:true,  ambushMs:2400 },  /* 上級=速い・的確・待ち伏せる */
 ];
 function nearestShape(tp){                               /* いまの指先から「どの形へ向かっているか」を読む */
   let best="paper", bd=1e9;
   for(const k in SHAPE_TIPS){ let d=0; for(let i=0;i<5;i++){ const r=clamp(reach(FINGERS[i],tp[i]),0,1), t=SHAPE_TIPS[k][i]?1:0; d+=(r-t)*(r-t); } if(d<bd){ bd=d; best=k; } }
   return best;
 }
+function cpuRemain(tp){                                  /* 目標にまだ着いていない指の数(=形が完成するまでの手数) */
+  let n=0; for(let i=0;i<5;i++){ const dx=cpu.target[i].x-tp[i].x, dy=cpu.target[i].y-tp[i].y; if(dx*dx+dy*dy>0.25) n++; }
+  return n;
+}
+function cpuAim(now,want){                               /* 目標の形を決め直す */
+  cpu.shape=want; const t=tipsOfShape(want);
+  for(let i=0;i<5;i++){ const jit=(Math.random()*2-1)*7; cpu.target[i]={x:t[i].x+jit,y:t[i].y+jit}; cpu.startAt[i]=now+Math.random()*CPU_CFG[cpuLv].stagger; }
+  cpu.order=[0,1,2,3,4].sort(()=>Math.random()-0.5);     /* 動かす順番は毎回ランダム */
+}
 function cpuDecide(now){
   const cfg=CPU_CFG[cpuLv];
   const humanNow=shapes[mySide], heading=nearestShape(tips[mySide]);
   let want=null;
   if(Math.random()<cfg.smart){
-    const base = humanNow!=="none" ? humanNow : heading;
-    want=beaterOf(base);
+    want=beaterOf(humanNow!=="none"?humanNow:heading);
   }else{
     const ks=["paper","rock","scissors"]; want=ks[Math.floor(Math.random()*3)];
     if(humanNow!=="none"&&beats(humanNow,want)&&cpuLv>0) want=beaterOf(humanNow);   /* 中級以上は自殺手はしない */
   }
-  if(want&&want!==cpu.shape){
-    cpu.shape=want; const t=tipsOfShape(want);
-    for(let i=0;i<5;i++){ const jit=(Math.random()*2-1)*7; cpu.target[i]={x:t[i].x+jit,y:t[i].y+jit}; cpu.startAt[i]=now+Math.random()*cfg.stagger; }
-    cpu.order=[0,1,2,3,4].sort(()=>Math.random()-0.5);   /* 動かす順番は毎回ランダム */
-  }
+  /* あいてがまだ「???」の間は、途中まで進めた形を捨てない=読みのブレで指が行ったり来たりして永久に完成しないのを防ぐ */
+  const rem=cpuRemain(tips[foeSide()]);
+  if(humanNow==="none"&&want!==cpu.shape&&rem>=1&&rem<=2) want=cpu.shape;   /* rem=0=手が空いている時は止めない(止めると目標を変えられず固まる) */
+  if(want&&want!==cpu.shape) cpuAim(now,want);
   cpu.nextAt=now+cfg.react[0]+Math.random()*(cfg.react[1]-cfg.react[0]);
 }
 function cpuTick(now,dt){
   if(phase!=="play"&&phase!=="ready") return;             /* 3カウントの間も動く(判定はplayから) */
-  const cfg=CPU_CFG[cpuLv];
+  const cfg=CPU_CFG[cpuLv], hs=shapes[mySide], tp=tips[foeSide()], st=states[foeSide()];
+  if(cpu.ph!==phase){ cpu.ph=phase; if(phase==="play") cpu.playAt=now; }
+  /* あいての形が変わったら、反射神経ぶんだけおいて考え直す(reactのタイマーは待たない) */
+  if(hs!==cpu.seen){ cpu.seen=hs; cpu.respAt=now+cfg.resp; }
+  if(cpu.respAt&&now>=cpu.respAt){ cpu.respAt=0; cpuDecide(now); }
   if(now>=cpu.nextAt) cpuDecide(now);
-  const tp=tips[foeSide()], step=cfg.speed*dt;
-  /* 人と同じく1本ずつ=目標に着いていない指のうち、動き出し時刻を過ぎた最初の1本だけ動かす(2026-09-22。速さは1.8倍にして所要時間をならした) */
-  const order=cpu.order||[0,1,2,3,4];
+
+  /* ★いま形を完成させてよいか。
+     完成したかどうかは「指の向き」で決まる(目標の座標に着いたかではない)ので、
+     1本動かす直前に『この1本を動かしたら何の形になるか』を試算して決める。
+     距離で「あと1本」と数える作りにしていたら、目標より手前で形が出来上がってしまい、
+     カウント中に完成 → 「はじめ」の瞬間に人が負ける、という不具合になった(2026-09-24に実測して修正) */
+  /* holdAt=「あいてが???でいる時間」を測る。★ねらう形を変えた時に巻き戻してはいけない
+     =巻き戻すと、あいてが指を動かし続けるかぎり待ち伏せが永久に解けず、決着しなくなる(2026-09-24に実測して修正) */
+  if(hs==="none"){ if(!cpu.holdAt) cpu.holdAt=now; } else cpu.holdAt=0;
+  let blockAny = (phase==="ready") || (now-cpu.playAt<cfg.open);   /* 3カウント中と「はじめ」直後は、どの形も完成させない */
+  if(cfg.ambush&&cpu.holdAt&&now-cpu.holdAt<cfg.ambushMs) blockAny=true;   /* あいてが「???」の間は待ち伏せ(ambushMsで打ち切る) */
+
+  /* 人と同じく1本ずつ=目標に着いていない指のうち、動き出し時刻を過ぎた最初の1本だけ動かす(2026-09-22)。
+     ただし「その1本で形が完成してしまう」時は、その指は飛ばして別の指を動かす=最後の1本を残して構える */
+  const step=cfg.speed*dt, order=cpu.order||[0,1,2,3,4], cur=shapeOf(st);
+  let blocked=false;
   for(const i of order){
     const dx=cpu.target[i].x-tp[i].x, dy=cpu.target[i].y-tp[i].y, d=Math.hypot(dx,dy);
     if(d<0.5) continue;
     if(now<cpu.startAt[i]) break;
-    if(d<=step){ tp[i].x=cpu.target[i].x; tp[i].y=cpu.target[i].y; } else { tp[i].x+=dx/d*step; tp[i].y+=dy/d*step; }
-    break;
+    const k=(d<=step)?1:step/d, nx=tp[i].x+dx*k, ny=tp[i].y+dy*k;
+    const sv=st[i]; st[i]=(reach(FINGERS[i],{x:nx,y:ny})<0); const ns=shapeOf(st); st[i]=sv;
+    /* 止めるのは「新しい形が出来上がってしまう1本」だけ。いまの形を保つ動き(ns===cur)は止めない
+       =これを止めると、ラウンド頭のパァから1本も動かせなくなる(2026-09-24に実測して修正) */
+    if((blockAny&&ns!=="none"&&ns!==cur)||(cfg.safe&&beats(hs,ns))){ blocked=true; continue; }
+    tp[i].x=nx; tp[i].y=ny; return;
   }
+  if(blocked&&cfg.safe&&hs!=="none"&&beats(hs,cpu.shape)&&!cpu.respAt) cpu.respAt=now+cfg.resp;   /* 負ける形で詰まっているので考え直す */
 }
 function cpuReset(now){
   const cfg=CPU_CFG[cpuLv];
   cpu.shape="paper"; const t=newTips();
   for(let i=0;i<5;i++){ cpu.target[i]=t[i]; cpu.startAt[i]=0; }
   cpu.nextAt=now+cfg.first+Math.random()*200;
+  cpu.seen="none"; cpu.respAt=0; cpu.holdAt=0; cpu.order=null; cpu.ph=""; cpu.playAt=now+1e9;   /* playAtはplayに入った時に入る(それまでは完成させない) */
 }
 
 /* ===== 進行(ホスト側で判定する) ===== */
