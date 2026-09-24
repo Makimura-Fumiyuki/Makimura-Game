@@ -72,7 +72,7 @@
     background:var(--swb,rgba(255,255,255,.7)); padding:4px 10px 6px; border-radius:999px; width:110px; box-sizing:border-box; text-align:center; }
   /* 文字=2/3(28px)・字間=1px(-4pxから+5)・背景は高さ40px/幅110px/完全な角丸(2026-09-22)。???の時は背景なし */   /* 文字=手の色を濃く・背景=手の色を薄く(--sw/--swbをJSが入れる)。手との間隔は-30px(2026-09-21) */
   .t-shape.pop{ animation:chipPop .3s cubic-bezier(.2,1.5,.4,1); }   /* タイトルの手も自由に動かせる */
-  .t-main{ line-height:1.06; }
+  .t-main{ line-height:1.06; position:relative; z-index:2; }   /* ロゴは手の囲みより手前 */
   /* ロゴ=ゲーム中の「◯◯の勝ち」と同じ2重アウトライン(白文字・内線=手の色・外線=濃い手の色)。2026-09-22 */
   .t-main .l1,.t-main .l2{ position:relative; display:block; color:#fff; --ol1:var(--olm1,var(--ui)); --ol2:var(--olm2,var(--ui-d)); font-family:"Yusei Magic","Noto Sans JP",sans-serif; font-weight:400; }   /* ロゴは手書き風(2026-09-24) */
   .t-main .l1{ color:var(--olm1,var(--ui)); --ol1:var(--olm2,var(--ui-d)); --ol2:#fff; }   /* 「手作り」=中央から 手の色→濃い→白。「じゃんけん」=白→元色→濃い(2026-09-24) */
@@ -105,11 +105,12 @@
   .dbg-win b{ font-variant-numeric:tabular-nums; min-width:3.2em; text-align:right; }
   /* ルール(先取本数)=ひとり/オンライン共通。オンラインは部屋を作った側の値で遊ぶ(2026-09-24) */
   .rule-box{ display:flex; flex-direction:column; align-items:center; gap:10px; }
-  .rule-frame{ display:flex; align-items:center; gap:12px; padding:10px 16px; background:var(--card); border:2px solid var(--line); border-radius:13px; }
-  .rf-lb{ font-size:14px; font-weight:900; letter-spacing:.08em; margin-right:4px; }
+  .rule-frame{ display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 18px 12px; background:var(--card); border:2px solid var(--line); border-radius:13px; }
+  .rf-lb{ font-size:14px; font-weight:900; letter-spacing:.08em; }   /* 見出し「何本先取？」は −N＋ の上 */
+  .rf-row{ display:flex; align-items:center; gap:12px; }
   .rf-st{ width:34px; height:34px; border-radius:50%; border:2px solid var(--line); background:#fff; font-size:17px; font-weight:900; line-height:1; color:var(--ink); display:inline-flex; align-items:center; justify-content:center; padding:0 0 2px; }
   .rf-st:disabled{ opacity:.3; cursor:default; }
-  .rf-v{ min-width:3em; text-align:center; font-size:18px; font-weight:900; color:var(--ui); font-variant-numeric:tabular-nums; }
+  .rf-v{ min-width:2em; text-align:center; font-size:18px; font-weight:900; color:var(--ui); font-variant-numeric:tabular-nums; }
   .rule-reset{ background:none; border:none; font-size:12.5px; font-weight:700; color:var(--sub); text-decoration:underline; letter-spacing:.06em; padding:2px 6px; }
   .rule-note{ display:none; font-size:12px; font-weight:700; color:var(--sub); letter-spacing:.04em; }
   body.online-mode .rule-note{ display:block; }
@@ -164,7 +165,7 @@
   .hand .fg,.hand .palm{ fill:var(--skin); stroke:var(--skin-o); stroke-width:1; stroke-linejoin:round; }
   /* 形ができた時の囲み(2026-09-24)=手のうしろ・手の色。グゥ=ゴツゴツ/チョ=ギザギザ/パァ=フワフワ。???は出さない */
   .hand .aura{ fill:var(--skin-hd); fill-opacity:.5; stroke:var(--skin); stroke-width:4; stroke-opacity:.75; opacity:0; pointer-events:none;
-    transform-box:fill-box; transform-origin:center; transition:opacity .12s; }
+    transform-origin:141px 194px; }   /* 拡縮の中心=手の中心(AURA_CX/CY)に固定 */
   .hand .aura.on{ opacity:1; }
   .hand .aura.rock{ stroke-linejoin:round; stroke-width:5; }
   .hand .aura.scissors{ stroke-linejoin:miter; stroke-miterlimit:8; stroke-width:3; }
@@ -172,6 +173,9 @@
   .hand .aura.on.pop.rock{ animation:auraIn .3s cubic-bezier(.2,1.5,.4,1), auraRock .5s steps(2,end) .3s infinite; }
   .hand .aura.on.pop.scissors{ animation:auraIn .25s cubic-bezier(.2,1.6,.4,1), auraSci 1.6s ease-in-out .25s infinite; }
   .hand .aura.on.pop.paper{ animation:auraIn .45s cubic-bezier(.2,1.2,.4,1), auraPap 2.4s ease-in-out .45s infinite; }
+  .hand .aura.on.out.rock{ animation:auraIn .3s cubic-bezier(.2,1.5,.4,1) reverse forwards; }   /* 消える=出る時の逆再生 */
+  .hand .aura.on.out.scissors{ animation:auraIn .25s cubic-bezier(.2,1.6,.4,1) reverse forwards; }
+  .hand .aura.on.out.paper{ animation:auraIn .45s cubic-bezier(.2,1.2,.4,1) reverse forwards; }
   @keyframes auraIn{ 0%{ transform:scale(.7); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
   @keyframes auraRock{ 0%{ transform:translate(-1px,1px); } 100%{ transform:translate(1px,-1px); } }
   @keyframes auraSci{ 0%,100%{ transform:rotate(-3deg); } 50%{ transform:rotate(3deg); } }
@@ -367,12 +371,13 @@
   </div>
 
   <div class="rule-box" id="ruleBox">
-    <div class="sec-label">ルール</div>
     <div class="rule-frame">
-      <span class="rf-lb">先取本数</span>
-      <button class="rf-st" id="wnDn" type="button" aria-label="へらす">−</button>
-      <span class="rf-v" id="wnV">3本</span>
-      <button class="rf-st" id="wnUp" type="button" aria-label="ふやす">＋</button>
+      <span class="rf-lb">何本先取？</span>
+      <div class="rf-row">
+        <button class="rf-st" id="wnDn" type="button" aria-label="へらす">−</button>
+        <span class="rf-v" id="wnV">3</span>
+        <button class="rf-st" id="wnUp" type="button" aria-label="ふやす">＋</button>
+      </div>
     </div>
     <button class="rule-reset" id="wnReset" type="button">初期設定に戻す</button>
     <div class="rule-note" id="ruleNote">※部屋を作った側のルールで遊びます</div>
@@ -517,35 +522,41 @@ function buildHand(svg,mine){                            /* SVGの中身(手の�
   return parts;
 }
 /* 手を囲う形(2026-09-24): グゥ=ゴツゴツ(角ばった岩)・チョ=ギザギザ(とげ)・パァ=フワフワ(雲)。???は出さない。
-   手のひら+指先を囲む楕円を基準に、形ごとの輪郭をつくる(指を動かすと一緒に伸び縮み) */
-const ROCK_J=[.13,-.1,.16,-.05,.12,-.13,.09,-.04,.15,-.11];   /* 岩の角(でこぼこを強めに) */
-function auraPath(shape,cx,cy,rx,ry){
-  const P=(t,k)=>[(cx+Math.cos(t)*rx*k).toFixed(1),(cy+Math.sin(t)*ry*k).toFixed(1)];
+   ★手の中心(パァの手を囲む最小の円の中心)から固定の正円=指を動かしても大きさは変わらない。
+   3つとも「内側の半径AURA_RI〜外側の半径AURA_RO」の同じ帯の中に収めるので、形によるサイズの差は無い */
+const AURA_CX=141, AURA_CY=194, AURA_RI=156, AURA_RO=176;
+const ROCK_U=[1,.3,.6,1,.2,.75,1,.4,.55,1,.15,.7];   /* 岩のでこぼこ(0=内側〜1=外側)。上下左右は必ず外側=他の形と同じ大きさ */
+function auraPath(shape){
+  const cx=AURA_CX, cy=AURA_CY, RI=AURA_RI, RO=AURA_RO;
+  const P=(t,r)=>[(cx+Math.cos(t)*r).toFixed(1),(cy+Math.sin(t)*r).toFixed(1)];
   let d="";
   if(shape==="rock"){
-    const n=ROCK_J.length;
-    for(let i=0;i<n;i++){ const t=-Math.PI/2+i/n*Math.PI*2, q=P(t,1+ROCK_J[i]); d+=(i?"L":"M")+q[0]+" "+q[1]; }
+    const n=ROCK_U.length;
+    for(let i=0;i<n;i++){ const q=P(-Math.PI/2+i/n*Math.PI*2, RI+(RO-RI)*ROCK_U[i]); d+=(i?"L":"M")+q[0]+" "+q[1]; }
     return d+"Z";
   }
   if(shape==="scissors"){
     const n=26;
-    for(let i=0;i<n;i++){ const t=-Math.PI/2+i/n*Math.PI*2, q=P(t,i%2?0.88:1.06); d+=(i?"L":"M")+q[0]+" "+q[1]; }
+    for(let i=0;i<n;i++){ const q=P(-Math.PI/2+i/n*Math.PI*2, i%2?RI:RO); d+=(i?"L":"M")+q[0]+" "+q[1]; }
     return d+"Z";
   }
-  const n=13; let pts=[];
-  for(let i=0;i<n;i++){ pts.push(P(-Math.PI/2+i/n*Math.PI*2,0.98)); }
+  /* 雲=内側の円の上に等間隔の点、隣どうしを外へふくらむ弧でつなぐ(ふくらみの頂点がちょうど外側の半径) */
+  const n=13, h=RI*Math.sin(Math.PI/n), sg=RO-RI*Math.cos(Math.PI/n), rA=((h*h+sg*sg)/(2*sg)).toFixed(1);
+  const pts=[]; for(let i=0;i<n;i++) pts.push(P(-Math.PI/2+i/n*Math.PI*2,RI));
   d="M"+pts[0][0]+" "+pts[0][1];
-  for(let i=1;i<=n;i++){ const a=pts[i-1], b=pts[i%n], r=(Math.hypot(b[0]-a[0],b[1]-a[1])*0.56).toFixed(1); d+="A"+r+" "+r+" 0 0 1 "+b[0]+" "+b[1]; }
+  for(let i=1;i<=n;i++){ const b=pts[i%n]; d+="A"+rA+" "+rA+" 0 0 1 "+b[0]+" "+b[1]; }
   return d+"Z";
 }
+const AURA_D={ rock:auraPath("rock"), scissors:auraPath("scissors"), paper:auraPath("paper") };
 function setAura(parts,shape){
-  if(!parts||!parts.aura) return;
-  const on=shape!=="none";
-  if(parts.shape!==shape){
-    parts.shape=shape; const a=parts.aura;
-    a.setAttribute("class","aura "+shape+(on?" on":""));
-    if(on){ a.classList.remove("pop"); void a.getBoundingClientRect(); a.classList.add("pop"); }
+  if(!parts||!parts.aura||parts.shape===shape) return;
+  const a=parts.aura, prev=parts.shape; parts.shape=shape;
+  if(shape==="none"){                                     /* 消える時=出る時の逆再生 */
+    if(prev&&prev!=="none") a.setAttribute("class","aura "+prev+" on out");
+    return;
   }
+  a.setAttribute("d",AURA_D[shape]);
+  a.setAttribute("class","aura "+shape+" on"); void a.getBoundingClientRect(); a.classList.add("pop");
 }
 function drawHand(parts,tips){
   const geo=[];
@@ -559,13 +570,6 @@ function drawHand(parts,tips){
     r.setAttribute("x",(-f.w/2).toFixed(1)); r.setAttribute("y",(-len).toFixed(1));
     r.setAttribute("width",f.w); r.setAttribute("height",len.toFixed(1));
     r.setAttribute("transform","translate("+B.x.toFixed(1)+" "+B.y.toFixed(1)+") rotate("+(ang+90).toFixed(2)+")");
-  }
-  if(parts.aura&&parts.shape!=="none"){                  /* 囲み=手のひらと指先の外接四角を楕円で囲む */
-    let x0=PALM.x,x1=PALM.x+PALM.w,y0=PALM.y,y1=PALM.y+PALM.h;
-    for(let i=0;i<5;i++){ const g=geo[i], hw=g.w/2, ex=g.B.x+g.ux*g.len, ey=g.B.y+g.uy*g.len;
-      x0=Math.min(x0,ex-hw); x1=Math.max(x1,ex+hw); y0=Math.min(y0,ey-hw); y1=Math.max(y1,ey+hw); }
-    const cx=(x0+x1)/2, cy=(y0+y1)/2, rx=(x1-x0)/2*1.08+10, ry=(y1-y0)/2*1.08+10;
-    parts.aura.setAttribute("d",auraPath(parts.shape,cx,cy,rx,ry));
   }
   if(!parts[0].hit) return;
   /* 丸はDOM順で手前の指に隠れる(部分的に重なれば部分的に隠れる)。描き順は小指(4)が奥・親指(0)が手前。
@@ -688,7 +692,7 @@ const playLose  =()=>{ note(392,196,.5,"triangle",.14); note(262,131,.6,"sine",.
 /* ===== ゲームの状態 =====
    side: "a"=部屋を作った側(ひとりで遊ぶ時は自分) / "b"=入った側(ロボット)。
    進行は「ホスト権威」=aの端末(またはひとりで遊ぶ時の自分)が判定して配る */
-const WIN_DEF=3, WIN_MIN=1, WIN_MAX=9;
+const WIN_DEF=3, WIN_MIN=1, WIN_MAX=10;
 let winN=WIN_DEF;                                         /* 先取本数(ルールで変えられる・オンラインは部屋を作った側の値) */
 let mode="cpu", mySide="a", cpuLv=1;
 let phase="idle";                                        /* idle / ready(3カウント) / play / end / over */
@@ -715,9 +719,16 @@ const canMoveMine=()=>(phase==="ready"||phase==="play")&&!(mode==="online"&&!onl
 const partsMe=buildHand($("handMe"),true);
 const partsFoe=buildHand($("handFoe"),false);
 const partsLogo=buildHand($("logoHand"),true);
-setAura(partsMe,"paper"); setAura(partsFoe,"paper"); setAura(partsLogo,"paper");
+setAura(partsMe,"paper"); setAura(partsFoe,"paper");
 const logoTips=newTips();                                /* タイトルの手=初期パァ・自由に動かせる */
 const logoStates=[false,false,false,false,false]; let logoShape="paper";
+{ /* 起動時のタイトルの手=グゥ/チョ/パァのどれかをランダムに(2026-09-24) */
+  const ks=["rock","scissors","paper"], k=ks[Math.floor(Math.random()*3)], t=tipsOfShape(k);
+  for(let i=0;i<5;i++){ logoTips[i].x=t[i].x; logoTips[i].y=t[i].y; }
+  stepStates(logoStates,logoTips); logoShape=shapeOf(logoStates);
+  $("tShape").textContent=SHAPE_NAME[logoShape]; $("tShape").classList.toggle("none",logoShape==="none");
+  setAura(partsLogo,logoShape);
+}
 drawHand(partsLogo,logoTips);
 function judgeLogo(){                                    /* タイトルでも同じ判定を動かして、形の名前を大きく出す */
   const changed=stepStates(logoStates,logoTips);
@@ -1177,7 +1188,7 @@ document.addEventListener("keydown",e=>{
 });
 function setWinN(n){
   winN=Math.max(WIN_MIN,Math.min(WIN_MAX,n|0||WIN_DEF));
-  $("wnV").textContent=winN+"本"; $("wnDn").disabled=winN<=WIN_MIN; $("wnUp").disabled=winN>=WIN_MAX;
+  $("wnV").textContent=String(winN); $("wnDn").disabled=winN<=WIN_MIN; $("wnUp").disabled=winN>=WIN_MAX;
   if($("gameScene").classList.contains("on")) renderStatic();
 }
 $("wnDn").addEventListener("click",()=>{ ensureAudio(); playSelect(); setWinN(winN-1); });
