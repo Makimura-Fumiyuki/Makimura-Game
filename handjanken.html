@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>手作りじゃんけん</title>
 <meta name="apple-mobile-web-app-title" content="手作りじゃんけん">
-<meta name="description" content="指を1本ずつつまんで手の形を作るじゃんけん。相手の形に勝てる形を先に完成させたら勝ち">
+<meta name="description" content="リアルタイムに「グゥ / チョ / パァ」を作って、いざじゃんけん！">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="牧村が作ったゲーム集">
 <meta property="og:title" content="手作りじゃんけん">
-<meta property="og:description" content="指を1本ずつつまんで手の形を作るじゃんけん。相手の形に勝てる形を先に完成させたら勝ち">
+<meta property="og:description" content="リアルタイムに「グゥ / チョ / パァ」を作って、いざじゃんけん！">
 <meta name="twitter:card" content="summary">
 <link rel="canonical" href="https://makimura-gamehub.com/handjanken">
 <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjZTA3NjJlIi8+PHRleHQgeD0iMTYiIHk9IjIzIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iTm90byBTYW5zIEpQLEhpcmFnaW5vIFNhbnMsc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjkwMCIgZm9udC1zaXplPSIyMCIgZmlsbD0iI2ZmZiI+5omLPC90ZXh0Pjwvc3ZnPg==">
@@ -505,9 +505,9 @@ function bentTip(f){                                     /* 曲げた時の指�
 }
 const SHAPE_TIPS={ paper:[1,1,1,1,1], rock:[0,0,0,0,0], scissors:[0,1,1,0,0] };   /* 1=伸ばし 0=曲げ */
 /* 正式な形(2026-09-24牧村指定)=[曲がり具合(判定の向きへの成分), 伸び具合(付け根からの距離)]。親指,人指,中指,薬指,小指の順。
-   グゥ=5本とも曲がり-99・伸び100(2026-09-24変更) */
+   グゥ=親指だけ曲がり-99・伸び100、ほかは曲がり-70・伸び2/3(長さ2/3では-67までしか届かないので長さは70に伸ばす)(2026-09-24) */
 const POSES={
-  rock:     [[-.99,1],[-.99,1],[-.99,1],[-.99,1],[-.99,1]],
+  rock:     [[-.99,1],[-.7,2/3],[-.7,2/3],[-.7,2/3],[-.7,2/3]],
   scissors: [[-1,1],[1,1],[1,1],[-.95,1],[-.95,1]],
   paper:    [[.7,1],[1,1],[1,1],[1,1],[1,1]],
 };

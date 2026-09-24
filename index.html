@@ -129,6 +129,7 @@
   .c-thumb.t-dox{ background:#f4f4f1; }
   .c-thumb.t-nomi{ background:#ffffff; }
   .c-thumb.t-shogibingo{ background:#4a2490; }
+  .c-thumb.t-handjanken{ background:#fbf3ec; }
   .c-thumb.t-marubatsu{ background:#f5f3ef; }
   .c-thumb.t-moku{ background:#f3ead7; }
   .c-thumb.t-maigo{ background:#f3ead7; }
@@ -452,6 +453,28 @@
           </div>
           <div class="c-tags">
             <span class="tag">協力</span><span class="tag">会話</span><span class="tag">型抜き</span>
+          </div>
+          <div class="c-foot"><span class="c-play">あそぶ <span class="tri">▶</span></span><span class="c-count"></span></div>
+        </div>
+      </a>
+    </template>
+
+    <template id="tpl-handjanken">
+      <a class="card" href="./handjanken.html">
+        <div class="c-bar"></div>
+        <div class="c-thumb t-handjanken">
+          <!-- 手作りじゃんけん: 手が2つ。左=チョ(ギザギザの囲み)・右=パァ(フワフワの囲み・左右反転) -->
+          <svg viewBox="0 0 260 132" xmlns="http://www.w3.org/2000/svg"><g transform="translate(12.58 0.04) scale(0.34)"><path d="M163.0 18.0L200.3 42.5L244.8 38.2L266.4 77.2L307.8 94.0L308.9 138.7L337.7 172.8L317.9 212.8L327.6 256.4L291.4 282.6L279.7 325.7L235.5 332.1L205.1 364.9L163.0 350.0L120.9 364.9L90.5 332.1L46.3 325.7L34.6 282.6L-1.6 256.4L8.1 212.8L-11.7 172.8L17.1 138.7L18.2 94.0L59.6 77.2L81.2 38.2L125.7 42.5Z" fill="#fbd9c6" fill-opacity=".55" stroke="#f29a6b" stroke-width="5" stroke-opacity=".8" stroke-linejoin="miter"/><rect x="92" y="195" width="150" height="108" rx="18" fill="#f29a6b" stroke="#b86a42" stroke-width="2"/><rect x="-16.5" y="-104" width="33" height="104.0" rx="9" fill="#f29a6b" stroke="#b86a42" stroke-width="2" transform="translate(225.5 189) rotate(198.2)"/><rect x="-16.5" y="-104" width="33" height="104.0" rx="9" fill="#f29a6b" stroke="#b86a42" stroke-width="2" transform="translate(186.5 189) rotate(198.2)"/><rect x="-16.5" y="-104" width="33" height="104.0" rx="9" fill="#f29a6b" stroke="#b86a42" stroke-width="2" transform="translate(147.5 189) rotate(0.0)"/><rect x="-16.5" y="-104" width="33" height="104.0" rx="9" fill="#f29a6b" stroke="#b86a42" stroke-width="2" transform="translate(108.5 189) rotate(0.0)"/><rect x="-16.5" y="-104" width="33" height="104.0" rx="9" fill="#f29a6b" stroke="#b86a42" stroke-width="2" transform="translate(80 226) rotate(90.0)"/></g><g transform="translate(247.42 0.04) scale(-0.34 0.34)"><path d="M163.0 38.0A40.7 40.7 0 0 1 235.5 55.9A40.7 40.7 0 0 1 291.4 105.4A40.7 40.7 0 0 1 317.9 175.2A40.7 40.7 0 0 1 308.9 249.3A40.7 40.7 0 0 1 266.4 310.8A40.7 40.7 0 0 1 200.3 345.5A40.7 40.7 0 0 1 125.7 345.5A40.7 40.7 0 0 1 59.6 310.8A40.7 40.7 0 0 1 17.1 249.3A40.7 40.7 0 0 1 8.1 175.2A40.7 40.7 0 0 1 34.6 105.4A40.7 40.7 0 0 1 90.5 55.9A40.7 40.7 0 0 1 163.0 38.0Z" fill="#cfe2f8" fill-opacity=".55" stroke="#6fa9e8" stroke-width="5" stroke-opacity=".8"/><rect x="92" y="195" width="150" height="108" rx="18" fill="#6fa9e8" stroke="#3f73ad" stroke-width="2"/><rect x="-16.5" y="-104" width="33" height="104.0" rx="9" fill="#6fa9e8" stroke="#3f73ad" stroke-width="2" transform="translate(225.5 189) rotate(0.0)"/><rect x="-16.5" y="-104" width="33" height="104.0" rx="9" fill="#6fa9e8" stroke="#3f73ad" stroke-width="2" transform="translate(186.5 189) rotate(0.0)"/><rect x="-16.5" y="-104" width="33" height="104.0" rx="9" fill="#6fa9e8" stroke="#3f73ad" stroke-width="2" transform="translate(147.5 189) rotate(0.0)"/><rect x="-16.5" y="-104" width="33" height="104.0" rx="9" fill="#6fa9e8" stroke="#3f73ad" stroke-width="2" transform="translate(108.5 189) rotate(0.0)"/><rect x="-16.5" y="-104" width="33" height="104.0" rx="9" fill="#6fa9e8" stroke="#3f73ad" stroke-width="2" transform="translate(80 226) rotate(-44.4)"/></g></svg>
+        </div>
+        <div class="c-body">
+          <div class="c-name">手作りじゃんけん
+            <span class="c-players"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="7.2" r="4.2"/><path d="M9 13.4c-4.4 0-8 2.5-8 6.1V21h16v-1.5c0-3.6-3.6-6.1-8-6.1z"/><circle cx="17.5" cy="8.2" r="3.3"/><path d="M17.5 13.2c-.8 0-1.6.1-2.3.3 1.9 1.3 3.1 3.2 3.1 5.5V21H23v-1.3c0-3-2.5-5.5-5.5-5.5z"/></svg>1〜2人</span>
+          </div>
+          <div class="c-desc">
+            リアルタイムに「グゥ / チョ / パァ」を作って、いざじゃんけん！
+          </div>
+          <div class="c-tags">
+            <span class="tag">反射神経</span><span class="tag">じゃんけん</span>
           </div>
           <div class="c-foot"><span class="c-play">あそぶ <span class="tri">▶</span></span><span class="c-count"></span></div>
         </div>
@@ -1054,6 +1077,7 @@
   const GAMES=[
     { id:"tsubuyaki", thumbLight:true, noIntro:true, yomi:"まきむらたちのつぶやき", tpl:"tpl-tsubuyaki", release:"2026-09-03", cats:["その他"], clicks:null, likes:null },
     { id:"mojibake", thumbLight:true, yomi:"もじばけかくれんぼ", tpl:"tpl-mojibake", release:"2026-09-05", cats:["パーティ"], clicks:null, likes:null },   // 制作中=Coming Soon(リリース時にsoon:trueを外し、intro-mojibake.htmlを作ってnoIntroも外す)
+    { id:"handjanken", soon:true, thumbLight:true, yomi:"てづくりじゃんけん", tpl:"tpl-handjanken", release:"2026-09-24", cats:["対戦"], clicks:null, likes:null },   // Coming Soon(2026-09-24)。リリース時はsoon:trueを外し、紹介ページのあそぶを有効化+news.htmlに記事
     { id:"marubatsu", thumbLight:true, yomi:"すてうごまるばつげーむ", tpl:"tpl-marubatsu", release:"2026-09-10", cats:["対戦"], clicks:null, likes:null },
     { id:"cookkey", yomi:"くっきー", tpl:"tpl-cookkey", release:"2026-09-03", cats:["パーティ"], clicks:null, likes:null },
     { id:"shogibingo", yomi:"しょうぎおんびんご", tpl:"tpl-shogibingo", release:"2026-08-03", cats:["対戦"], clicks:null, likes:null },
