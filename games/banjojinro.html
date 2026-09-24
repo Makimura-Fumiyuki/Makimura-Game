@@ -515,14 +515,14 @@ document.addEventListener("visibilitychange",function(){ if(!document.hidden) au
 window.addEventListener("pageshow",audioWake);
 window.addEventListener("focus",audioWake);
 function note(f,t,dur,vol,type,f2){
-  if(!actx) return;
+  if(!actx||document.hidden) return;              // 画面が裏にある間(別のタブ・アプリを見ている間)は鳴らさない
   const o=actx.createOscillator(), g=actx.createGain();
   o.type=type||"sine"; o.frequency.setValueAtTime(f,t); if(f2) o.frequency.exponentialRampToValueAtTime(f2,t+dur);
   g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+0.006); g.gain.exponentialRampToValueAtTime(0.0008,t+dur);
   o.connect(g); g.connect(seBus); o.start(t); o.stop(t+dur+0.02);
 }
 function noiseHit(t,f1,f2,q,vol,dur){
-  if(!actx) return;
+  if(!actx||document.hidden) return;
   const n=actx.createBufferSource(); n.buffer=noiseBuf;
   const b=actx.createBiquadFilter(); b.type="bandpass"; b.frequency.setValueAtTime(f1,t);
   b.frequency.exponentialRampToValueAtTime(f2,t+dur*0.9); b.Q.value=q;
@@ -1541,7 +1541,7 @@ const STAMP_WORDS=["やめてよぉ","すごぉい","わろたぁ"];
 let stampTTSVoice=null, stampTTSWarm=false;
 function speakStamp(i){
   try{
-    if(!window.speechSynthesis||!seOn||stampMuted) return;
+    if(!window.speechSynthesis||!seOn||stampMuted||document.hidden) return;
     if(!stampTTSVoice){ const vs=speechSynthesis.getVoices()||[]; stampTTSVoice=vs.find(v=>/ja/i.test(v.lang))||null; }
     if(!stampTTSWarm){ stampTTSWarm=true; speechSynthesis.onvoiceschanged=()=>{ const v2=speechSynthesis.getVoices()||[]; stampTTSVoice=v2.find(v=>/ja/i.test(v.lang))||stampTTSVoice; }; }
     const u=new SpeechSynthesisUtterance(STAMP_WORDS[Math.max(0,Math.min(2,i|0))]); u.lang="ja-JP"; u.rate=1.05; u.pitch=1.1;
@@ -1619,7 +1619,8 @@ tickIv=setInterval(()=>{
     if(isHost||debug) localEnd=G.stepEnd||0;
     renderTimer();
     const s=Math.ceil((localEnd-Date.now())/1000);
-    if(G.stepEnd && s<=5 && s>=1 && s!==lastWarnS && G.phase!=="vres"){ lastWarnS=s; playWarn(); }
+    const m=me(), mine = m && m.alive && ["move","act","vote","talk"].includes(G.phase) && !myInputIn();   // 警告音は自分がまだ入力していない時だけ
+    if(G.stepEnd && mine && s<=5 && s>=1 && s!==lastWarnS){ lastWarnS=s; playWarn(); }
   }
 },200);
 /* ホスト側のrender時に演出も走らせる(ゲストはapplySnapで呼ぶ) */
