@@ -19,6 +19,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Yusei+Magic&text=%E6%89%8B%E4%BD%9C%E3%82%8A%E3%81%98%E3%82%83%E3%82%93%E3%81%91%E3%82%93&display=swap');   /* ロゴだけ手書き風(油性マジック)。使う字だけ読み込む */
   :root{
     --bg:#f7f2ea;
     --card:#ffffff;
@@ -73,10 +74,10 @@
   .t-shape.pop{ animation:chipPop .3s cubic-bezier(.2,1.5,.4,1); }   /* タイトルの手も自由に動かせる */
   .t-main{ line-height:1.06; }
   /* ロゴ=ゲーム中の「◯◯の勝ち」と同じ2重アウトライン(白文字・内線=手の色・外線=濃い手の色)。2026-09-22 */
-  .t-main .l1,.t-main .l2{ position:relative; display:block; color:#fff; --ol1:var(--olm1,var(--ui)); --ol2:var(--olm2,var(--ui-d)); }
-  .t-main .l1{ color:var(--olm2,var(--ui-d)); --ol1:var(--olm1,var(--ui)); --ol2:#fff; }   /* 「手作り」=自分の手の色で順番を逆に(文字=濃い→内線=元色→外線=白)。「じゃんけん」=白→元色→濃い(2026-09-22) */
-  .t-main .l1{ font-size:clamp(19px,5vw,30px); font-weight:900; letter-spacing:.12em; text-indent:.12em; padding:0 .2em; }
-  .t-main .l2{ margin-top:2px; font-size:clamp(34px,9.4vw,60px); font-weight:900; letter-spacing:.02em; white-space:nowrap; padding:0 .2em; }
+  .t-main .l1,.t-main .l2{ position:relative; display:block; color:#fff; --ol1:var(--olm1,var(--ui)); --ol2:var(--olm2,var(--ui-d)); font-family:"Yusei Magic","Noto Sans JP",sans-serif; font-weight:400; }   /* ロゴは手書き風(2026-09-24) */
+  .t-main .l1{ color:var(--olm1,var(--ui)); --ol1:var(--olm2,var(--ui-d)); --ol2:#fff; }   /* 「手作り」=中央から 手の色→濃い→白。「じゃんけん」=白→元色→濃い(2026-09-24) */
+  .t-main .l1{ font-size:clamp(21px,5.6vw,33px); letter-spacing:.12em; text-indent:.12em; padding:0 .2em; }
+  .t-main .l2{ margin-top:2px; font-size:clamp(34px,9.4vw,60px); letter-spacing:.02em; white-space:nowrap; padding:0 .2em; }
   .t-main .l1::before,.t-main .l1::after,.t-main .l2::before,.t-main .l2::after{ content:attr(data-t); position:absolute; inset:0; padding:0 .2em; text-align:center; color:transparent; pointer-events:none; }
   .t-main .l1::before,.t-main .l2::before{ -webkit-text-stroke:.2em var(--ol2); z-index:-2; }
   .t-main .l1::after,.t-main .l2::after{ -webkit-text-stroke:.08em var(--ol1); z-index:-1; }
@@ -96,6 +97,16 @@
   .lv-row{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
   .lv-row .fuda{ min-width:110px; max-width:148px; padding:12px 6px 10px; font-size:15px; }
   .setup{ display:none; flex-direction:column; align-items:center; gap:20px; }
+  /* ルール(先取本数)=ひとり/オンライン共通。オンラインは部屋を作った側の値で遊ぶ(2026-09-24) */
+  .rule-box{ display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .rule-frame{ display:flex; align-items:center; gap:12px; padding:10px 16px; background:var(--card); border:2px solid var(--line); border-radius:13px; }
+  .rf-lb{ font-size:14px; font-weight:900; letter-spacing:.08em; margin-right:4px; }
+  .rf-st{ width:34px; height:34px; border-radius:50%; border:2px solid var(--line); background:#fff; font-size:17px; font-weight:900; line-height:1; color:var(--ink); display:inline-flex; align-items:center; justify-content:center; padding:0 0 2px; }
+  .rf-st:disabled{ opacity:.3; cursor:default; }
+  .rf-v{ min-width:3em; text-align:center; font-size:18px; font-weight:900; color:var(--ui); font-variant-numeric:tabular-nums; }
+  .rule-reset{ background:none; border:none; font-size:12.5px; font-weight:700; color:var(--sub); text-decoration:underline; letter-spacing:.06em; padding:2px 6px; }
+  .rule-note{ display:none; font-size:12px; font-weight:700; color:var(--sub); letter-spacing:.04em; }
+  body.online-mode .rule-note{ display:block; }
   .setup.on{ display:flex; animation:setupIn .36s cubic-bezier(.2,.9,.3,1); }
   @keyframes setupIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
 
@@ -135,7 +146,7 @@
   .arena{ position:relative; display:flex; gap:clamp(6px,2vw,24px); width:min(98vw,760px); align-items:flex-start; justify-content:center; }
   .side{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; gap:2px; }
   .side.a{ --sc:var(--a); --sc-d:var(--a-d); } .side.b{ --sc:var(--b); --sc-d:var(--b-d); }
-  .who{ display:flex; align-items:center; gap:8px; max-width:100%; }
+  .who{ display:flex; align-items:center; gap:8px; max-width:100%; position:relative; z-index:3; }   /* 名前は囲みより手前 */
   .who .nm{ font-size:clamp(12px,3.4vw,15px); font-weight:900; letter-spacing:.06em; color:var(--sc-d); white-space:nowrap; min-width:0; overflow:hidden; text-overflow:ellipsis; }
   .dots{ display:flex; gap:5px; flex:none; color:var(--sc); }
   .dots i{ width:10px; height:10px; border-radius:50%; border:2px solid currentColor; opacity:.35; display:block; transition:background .2s, opacity .2s, transform .2s; }
@@ -144,7 +155,21 @@
   .hand{ width:100%; height:auto; display:block; touch-action:none; overflow:visible; }
   .side .hand{ width:min(100%,340px); }
   .hand.mine{ cursor:grab; }
-  .hand .fg,.hand .palm{ fill:var(--skin); stroke:var(--skin-o); stroke-width:1; stroke-linejoin:round; }   /* 輪郭=手の色を濃くしたもの */
+  .hand .fg,.hand .palm{ fill:var(--skin); stroke:var(--skin-o); stroke-width:1; stroke-linejoin:round; }
+  /* 形ができた時の囲み(2026-09-24)=手のうしろ・手の色。グゥ=ゴツゴツ/チョ=ギザギザ/パァ=フワフワ。???は出さない */
+  .hand .aura{ fill:var(--skin-hd); fill-opacity:.5; stroke:var(--skin); stroke-width:4; stroke-opacity:.75; opacity:0; pointer-events:none;
+    transform-box:fill-box; transform-origin:center; transition:opacity .12s; }
+  .hand .aura.on{ opacity:1; }
+  .hand .aura.rock{ stroke-linejoin:round; stroke-width:5; }
+  .hand .aura.scissors{ stroke-linejoin:miter; stroke-miterlimit:8; stroke-width:3; }
+  .hand .aura.paper{ stroke-linejoin:round; stroke-width:3.5; }
+  .hand .aura.on.pop.rock{ animation:auraIn .3s cubic-bezier(.2,1.5,.4,1), auraRock .5s steps(2,end) .3s infinite; }
+  .hand .aura.on.pop.scissors{ animation:auraIn .25s cubic-bezier(.2,1.6,.4,1), auraSci 1.6s ease-in-out .25s infinite; }
+  .hand .aura.on.pop.paper{ animation:auraIn .45s cubic-bezier(.2,1.2,.4,1), auraPap 2.4s ease-in-out .45s infinite; }
+  @keyframes auraIn{ 0%{ transform:scale(.7); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
+  @keyframes auraRock{ 0%{ transform:translate(-1px,1px); } 100%{ transform:translate(1px,-1px); } }
+  @keyframes auraSci{ 0%,100%{ transform:rotate(-3deg); } 50%{ transform:rotate(3deg); } }
+  @keyframes auraPap{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.04); } }   /* 輪郭=手の色を濃くしたもの */
   #logoHand .palm{ cursor:pointer; }                     /* タイトル=手のひらを押すと色を選べる */
   .hand .hd{ fill:var(--skin-hd); stroke:none; pointer-events:none; }   /* 指先の丸=つかめる印(手の色を明るくしたもの・輪郭なし・指の内側) */
   .hand .hd{ transition:opacity .07s linear; }
@@ -162,17 +187,7 @@
   .shape-word.none,.t-shape.none{ background:transparent; }   /* ???の時は文字だけ(背景なし) */
   @keyframes chipPop{ 0%{ transform:scale(.7); } 60%{ transform:scale(1.14); } 100%{ transform:scale(1); } }
   /* デバッグ(手のためし) */
-  body.dbg .side.foe, body.dbg .round-tag{ display:none; }
   /* デバッグ表は手の下・文字色は変えない(動くと見づらい) */
-  .dbg-panel{ display:none; width:min(94vw,380px); background:rgba(255,255,255,.94); border-radius:10px;
-    padding:10px 14px; font-size:12px; line-height:1.75; font-weight:700; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,.1); }
-  body.dbg .dbg-panel{ display:block; }
-  .dbg-panel table{ width:100%; border-collapse:collapse; }
-  .dbg-panel td{ padding:1px 4px; white-space:nowrap; }
-  .dbg-panel td.v{ font-variant-numeric:tabular-nums; text-align:right; width:44px; }
-  .dbg-panel td.j{ width:48px; }
-  .dbg-panel .note{ margin-top:6px; font-size:11px; color:var(--sub); line-height:1.6; }
-  .dbg-link{ background:none; border:none; font-size:12px; font-weight:700; letter-spacing:.08em; color:var(--sub); text-decoration:underline; }
   /* 中央の演出(ラウンド開始・勝ち) */
   .fx{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
     pointer-events:none; opacity:0; transition:opacity .16s; z-index:5; }
@@ -292,6 +307,9 @@
   .r-score{ font-size:clamp(26px,7vw,36px); font-weight:900; letter-spacing:0; display:flex; gap:6px; align-items:baseline; line-height:1; }
   .r-score .sa{ color:var(--a); } .r-score .sb{ color:var(--b); }
   .r-score .dash{ color:var(--sub); font-size:1em; }   /* 数字と同じ大きさ・同じベースライン(小さくして中央そろえにすると上にずれて見えた・2026-09-22) */
+  .help-card::-webkit-scrollbar{ width:9px; } .help-card::-webkit-scrollbar-track{ background:transparent; }   /* スクロールバーは背景なし・バーだけ */
+  .help-card::-webkit-scrollbar-thumb{ background:rgba(35,33,31,.28); border-radius:999px; border:3px solid transparent; background-clip:padding-box; }
+  .help-card p.h-txt{ margin:0 0 16px; font-size:13.5px; font-weight:500; line-height:1.95; letter-spacing:.03em; color:#3a352f; }
   .help-card{ width:min(92vw,430px); max-height:82vh; overflow-y:auto; background:var(--bg); border-radius:18px;
     border-top:10px solid var(--ink); padding:24px 22px 20px; box-shadow:0 18px 44px rgba(20,22,18,.4);
     animation:rIn .28s cubic-bezier(.2,.9,.3,1); }
@@ -342,6 +360,18 @@
     </div>
   </div>
 
+  <div class="rule-box" id="ruleBox">
+    <div class="sec-label">ルール</div>
+    <div class="rule-frame">
+      <span class="rf-lb">先取本数</span>
+      <button class="rf-st" id="wnDn" type="button" aria-label="へらす">−</button>
+      <span class="rf-v" id="wnV">3本</span>
+      <button class="rf-st" id="wnUp" type="button" aria-label="ふやす">＋</button>
+    </div>
+    <button class="rule-reset" id="wnReset" type="button">初期設定に戻す</button>
+    <div class="rule-note" id="ruleNote">※部屋を作った側のルールで遊びます</div>
+  </div>
+
   <!-- ひとりで遊ぶ -->
   <div class="setup on" id="cpuSetup">
     <div>
@@ -363,12 +393,11 @@
     </div>
     <div class="room-area" id="roomArea"></div>
   </div>
-  <button class="dbg-link" id="dbgBtn" type="button">手のためし（デバッグ）</button>
 </div>
 
 <!-- ===== 対局 ===== -->
 <div class="scene" id="gameScene">
-  <div class="round-tag" id="roundTag">3本先取</div>
+  <div class="round-tag" id="roundTag">ラウンド 1</div>
   <div class="arena">
     <div class="side me" id="sideMe">
       <div class="who"><span class="nm" id="pnMe">あなた</span><span class="dots" id="dotsMe"><i></i><i></i><i></i></span></div>
@@ -382,7 +411,6 @@
     </div>
     <div class="fx" id="fx"><div class="big" id="fxBig"></div><div class="small" id="fxSmall"></div></div>
   </div>
-  <div class="dbg-panel" id="dbgPanel"></div>
   <div class="sub-btns">
     <button class="txt-btn" id="giveBtn" type="button">降参</button>
   </div>
@@ -419,25 +447,7 @@
 <div class="ov" id="helpOv"><div class="help-card">
   <h2>あそびかた</h2>
   <p class="h-sec">基本ルール</p>
-  <ul>
-    <li>グゥ・チョ・パァを選ぶんじゃなくて、<b>指先をつまんで手の形を自分で作る</b>じゃんけん。</li>
-    <li>指先は付け根を中心に<b>どの方向へも自由に動く</b>。付け根に近づけると曲げ、遠くへ伸ばすと伸ばし。</li>
-    <li>あいての手の形はずっと見えている。<b>あいての形に勝てる形を先に完成させた瞬間、その場で勝ち</b>。</li>
-    <li>先に<b>3本</b>取ったほうが勝ち。</li>
-  </ul>
-  <p class="h-sec b">手の形の見かた</p>
-  <ul>
-    <li>5本の指それぞれを「伸ばし」か「曲げ」で見る。指先が付け根の高さより上なら伸ばし、手のひら側まで下げると曲げ。</li>
-    <li><b>パァ</b>＝5本とも伸ばす　<b>グゥ</b>＝5本とも曲げる　<b>チョ</b>＝人差し指と中指だけ伸ばす。</li>
-    <li>どの形にもぴったり合わない手は「???」。???の間は勝ちも負けもつかない。</li>
-    <li>毎ラウンド、両方の手は指を伸ばし切ったパァから始まる。3カウントの間も指は動かせる（ロボットも動く）。</li>
-  </ul>
-  <p class="h-sec k">ここが勝負</p>
-  <ul>
-    <li>同じ形どうし（あいこ）の間は何も起きない。そのまま動かし続けられる。</li>
-    <li>あいてがパァのまま、あなたがチョを完成させたら勝ち。逆に、あいてがパァなのにグゥを完成させたら負け。</li>
-    <li>形を変える途中で、うっかり別の形になることもある。指の順番を考えよう。</li>
-  </ul>
+  <p class="h-txt">リアルタイムに「グゥ / チョ / パァ」を作っていざ、じゃんけん！<br>指先を掴んで、相手に勝てる手を作ろう</p>
   <button class="txt-btn close" id="helpClose" type="button">とじる</button>
 </div></div>
 
@@ -491,12 +501,44 @@ const reach=(f,t)=>((t.x-f.b.x)*Math.cos(rad(f.a))+(t.y-f.b.y)*Math.sin(rad(f.a)
 function buildHand(svg,mine){                            /* SVGの中身(手のひら+指5本の角丸四角)。戻り値=描き直し用の参照 */
   svg.innerHTML="";
   const NS="http://www.w3.org/2000/svg", mk=(t,at)=>{ const e=document.createElementNS(NS,t); for(const k in at) e.setAttribute(k,at[k]); svg.appendChild(e); return e; };
+  const aura=mk("path",{class:"aura"});                                          /* 形ができた時の囲み(手のうしろ) */
   mk("rect",{class:"palm",x:PALM.x,y:PALM.y,width:PALM.w,height:PALM.h,rx:PALM.r});
-  const order=[4,3,2,1,0], parts={};
+  const order=[4,3,2,1,0], parts={ aura, shape:null };
   /* 指先の丸はその指の四角の直後に置く=手前の指(あとに描く指)に自然に隠れる(レイヤー表現・2026-09-22) */
   for(const i of order){ parts[i]={ g:mk("rect",{class:"fg",rx:9}) }; if(mine) parts[i].hd=mk("circle",{class:"hd",r:9.5,"data-f":i}); }
   if(mine) for(const i of order) parts[i].hit=mk("circle",{class:"hd-hit",r:38,"data-f":i});   /* つまむための見えない当たり(いちばん上) */
   return parts;
+}
+/* 手を囲う形(2026-09-24): グゥ=ゴツゴツ(角ばった岩)・チョ=ギザギザ(とげ)・パァ=フワフワ(雲)。???は出さない。
+   手のひら+指先を囲む楕円を基準に、形ごとの輪郭をつくる(指を動かすと一緒に伸び縮み) */
+const ROCK_J=[.13,-.1,.16,-.05,.12,-.13,.09,-.04,.15,-.11];   /* 岩の角(でこぼこを強めに) */
+function auraPath(shape,cx,cy,rx,ry){
+  const P=(t,k)=>[(cx+Math.cos(t)*rx*k).toFixed(1),(cy+Math.sin(t)*ry*k).toFixed(1)];
+  let d="";
+  if(shape==="rock"){
+    const n=ROCK_J.length;
+    for(let i=0;i<n;i++){ const t=-Math.PI/2+i/n*Math.PI*2, q=P(t,1+ROCK_J[i]); d+=(i?"L":"M")+q[0]+" "+q[1]; }
+    return d+"Z";
+  }
+  if(shape==="scissors"){
+    const n=26;
+    for(let i=0;i<n;i++){ const t=-Math.PI/2+i/n*Math.PI*2, q=P(t,i%2?0.88:1.06); d+=(i?"L":"M")+q[0]+" "+q[1]; }
+    return d+"Z";
+  }
+  const n=13; let pts=[];
+  for(let i=0;i<n;i++){ pts.push(P(-Math.PI/2+i/n*Math.PI*2,0.98)); }
+  d="M"+pts[0][0]+" "+pts[0][1];
+  for(let i=1;i<=n;i++){ const a=pts[i-1], b=pts[i%n], r=(Math.hypot(b[0]-a[0],b[1]-a[1])*0.56).toFixed(1); d+="A"+r+" "+r+" 0 0 1 "+b[0]+" "+b[1]; }
+  return d+"Z";
+}
+function setAura(parts,shape){
+  if(!parts||!parts.aura) return;
+  const on=shape!=="none";
+  if(parts.shape!==shape){
+    parts.shape=shape; const a=parts.aura;
+    a.setAttribute("class","aura "+shape+(on?" on":""));
+    if(on){ a.classList.remove("pop"); void a.getBoundingClientRect(); a.classList.add("pop"); }
+  }
 }
 function drawHand(parts,tips){
   const geo=[];
@@ -510,6 +552,13 @@ function drawHand(parts,tips){
     r.setAttribute("x",(-f.w/2).toFixed(1)); r.setAttribute("y",(-len).toFixed(1));
     r.setAttribute("width",f.w); r.setAttribute("height",len.toFixed(1));
     r.setAttribute("transform","translate("+B.x.toFixed(1)+" "+B.y.toFixed(1)+") rotate("+(ang+90).toFixed(2)+")");
+  }
+  if(parts.aura&&parts.shape!=="none"){                  /* 囲み=手のひらと指先の外接四角を楕円で囲む */
+    let x0=PALM.x,x1=PALM.x+PALM.w,y0=PALM.y,y1=PALM.y+PALM.h;
+    for(let i=0;i<5;i++){ const g=geo[i], hw=g.w/2, ex=g.B.x+g.ux*g.len, ey=g.B.y+g.uy*g.len;
+      x0=Math.min(x0,ex-hw); x1=Math.max(x1,ex+hw); y0=Math.min(y0,ey-hw); y1=Math.max(y1,ey+hw); }
+    const cx=(x0+x1)/2, cy=(y0+y1)/2, rx=(x1-x0)/2*1.08+10, ry=(y1-y0)/2*1.08+10;
+    parts.aura.setAttribute("d",auraPath(parts.shape,cx,cy,rx,ry));
   }
   if(!parts[0].hit) return;
   /* 丸はDOM順で手前の指に隠れる(部分的に重なれば部分的に隠れる)。描き順は小指(4)が奥・親指(0)が手前。
@@ -632,8 +681,9 @@ const playLose  =()=>{ note(392,196,.5,"triangle",.14); note(262,131,.6,"sine",.
 /* ===== ゲームの状態 =====
    side: "a"=部屋を作った側(ひとりで遊ぶ時は自分) / "b"=入った側(ロボット)。
    進行は「ホスト権威」=aの端末(またはひとりで遊ぶ時の自分)が判定して配る */
-const WIN_N=3;
-let mode="cpu", mySide="a", cpuLv=1, debugMode=false;
+const WIN_DEF=3, WIN_MIN=1, WIN_MAX=9;
+let winN=WIN_DEF;                                         /* 先取本数(ルールで変えられる・オンラインは部屋を作った側の値) */
+let mode="cpu", mySide="a", cpuLv=1;
 let phase="idle";                                        /* idle / ready(3カウント) / play / end / over */
 let round=0, count=0, score={a:0,b:0}, lastWinner=null, lastShapes={a:"paper",b:"paper"}, lastReason="", overWinner=null, endReason="";
 let tips={ a:newTips(), b:newTips() };                  /* 指先の位置(自分=入力・あいて=届いた値) */
@@ -652,12 +702,13 @@ const labelOf=s=>{
 };
 const amHost=()=>mode==="cpu"||isHost;
 const skinOf=s=>(s===mySide)?mySkin:((mode==="online")?(peerSkin||"#f6d0b0"):cpuSkin);   /* その人の手の色 */
-const canMoveMine=()=>debugMode||((phase==="ready"||phase==="play")&&!(mode==="online"&&!online));   /* 3カウントの間も動かせる */
+const canMoveMine=()=>(phase==="ready"||phase==="play")&&!(mode==="online"&&!online);   /* 3カウントの間も動かせる */
 
 /* ===== 手の描画・操作 ===== */
 const partsMe=buildHand($("handMe"),true);
 const partsFoe=buildHand($("handFoe"),false);
 const partsLogo=buildHand($("logoHand"),true);
+setAura(partsMe,"paper"); setAura(partsFoe,"paper"); setAura(partsLogo,"paper");
 const logoTips=newTips();                                /* タイトルの手=初期パァ・自由に動かせる */
 const logoStates=[false,false,false,false,false]; let logoShape="paper";
 drawHand(partsLogo,logoTips);
@@ -668,6 +719,7 @@ function judgeLogo(){                                    /* タイトルでも�
     logoShape=sh; const el=$("tShape"); el.textContent=SHAPE_NAME[sh];   /* 合わない時は「???」 */
     el.classList.toggle("none",sh==="none");
     el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop");
+    setAura(partsLogo,sh); drawHand(partsLogo,logoTips);
     playShape(sh);
   }else if(changed){
     playTick();
@@ -730,6 +782,7 @@ applySkins();
 const dragMe=attachDrag($("handMe"),()=>tips[mySide],canMoveMine,()=>{ myMoved=true; });
 attachDrag($("logoHand"),()=>logoTips,()=>true,()=>{ drawHand(partsLogo,logoTips); judgeLogo(); });
 function setWord(id,shape){                              /* 形の名前(合わない時は「???」) */
+  setAura(id==="shMe"?partsMe:id==="shFoe"?partsFoe:null,shape);
   const el=$(id), tx=el.querySelector(".sw-tx"), nm=SHAPE_NAME[shape];
   if(tx.textContent!==nm){ tx.textContent=nm; el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); }
   el.classList.toggle("none",shape==="none");
@@ -739,31 +792,15 @@ function renderStatic(){                                 /* 名前・本数・�
   const me=mySide, fo=foeSide(); applySkins();
   $("sideMe").className="side me "+me; $("sideFoe").className="side foe "+fo;
   $("pnMe").textContent=labelOf(me); $("pnFoe").textContent=labelOf(fo);
+  ["dotsMe","dotsFoe"].forEach(id=>{ const el=$(id); while(el.children.length<winN) el.appendChild(document.createElement("i")); while(el.children.length>winN) el.lastChild.remove(); });   /* 本数の丸=先取本数ぶん */
   [...$("dotsMe").children].forEach((d,i)=>d.classList.toggle("on",i<score[me]));
   [...$("dotsFoe").children].forEach((d,i)=>d.classList.toggle("on",i<score[fo]));
   document.documentElement.style.setProperty("--tc", me==="a"?"var(--a)":"var(--b)");
   document.documentElement.style.setProperty("--tc-d", me==="a"?"var(--a-d)":"var(--b-d)");
-  let tx="3本先取";
-  if(phase==="ready"||phase==="play") tx="ラウンド "+round;
-  else if(phase==="end") tx="ラウンド "+round+"　"+(lastWinner?labelOf(lastWinner)+"が1本":"");
-  else if(phase==="over") tx="対局終了";
-  $("roundTag").textContent=tx;
+  $("roundTag").textContent="ラウンド "+Math.max(1,round);   /* 常に「ラウンド N」だけ(「◯◯が1本」「対局終了」は出さない・2026-09-24) */
   $("handMe").classList.toggle("locked",!canMoveMine());
-  document.body.classList.toggle("dbg",debugMode);
-  $("giveBtn").textContent=debugMode?"タイトルへ":"降参";
-  $("giveBtn").disabled=!debugMode&&!(matchStarted&&phase!=="over");
+  $("giveBtn").disabled=!(matchStarted&&phase!=="over");
   $("seBtn").classList.toggle("off",!seOn); $("seTx").textContent=seOn?"効果音":"効果音OFF";
-}
-function renderDbg(){                                    /* デバッグ: 指ごとの伸び具合と判定を出す(位置固定・色は変えない) */
-  const st=states[mySide], tp=tips[mySide];
-  let h='<table>';
-  for(let i=0;i<5;i++){
-    const r=reach(FINGERS[i],tp[i]);
-    h+='<tr><td>'+FINGERS[i].n+'</td><td class="v">'+Math.round(clamp(r,-1,1)*100)+'%</td><td class="j">'+(st[i]?"曲げ":"伸ばし")+'</td></tr>';
-  }
-  h+='</table><div>いまの形：<b>'+SHAPE_NAME[shapes[mySide]]+'</b></div>'
-    +'<div class="note">%＝指先が「伸ばす向き」にどれだけ出ているか（伸ばし切り＝100%・初期＝100%・付け根の高さ＝0%・手のひら側はマイナス）<br>伸ばし判定 0%以上 ／ 曲げ判定 0%未満<br>グゥ＝5本とも0%未満（1本でも0%以上ならグゥにしない）／チョ＝人差し指・中指が0%以上でそれ以外が0%未満／パァ＝5本とも0%以上。どれにも合わない時は「???」（勝ち負けはつかない）</div>';
-  $("dbgPanel").innerHTML=h;
 }
 
 /* ===== ロボット ===== */
@@ -867,7 +904,7 @@ function roundWon(w,sh,reason){
   if(iWon) playRoundWin(); else playRoundLose();
   dragMe.clear();
   renderStatic(); hostBroadcast();
-  if(score[w]>=WIN_N){ setTimeout(()=>{ if(phase==="end") matchOver(w,"3本先取"); },1400); }
+  if(score[w]>=winN){ setTimeout(()=>{ if(phase==="end") matchOver(w,""); },1400); }
   else setTimeout(()=>{ if(phase==="end") nextRound(); },1700);
 }
 function matchOver(w,reason){
@@ -899,13 +936,12 @@ setInterval(()=>{
   }
   drawHand(partsMe,shown[me]); drawHand(partsFoe,shown[fo]);
   /* 形の更新(3カウント中も表示は更新・勝敗の判定はplayの間だけ・ホストだけ) */
-  if(phase==="play"||phase==="ready"||debugMode){
+  if(phase==="play"||phase==="ready"){
     for(const s of ["a","b"]){
       const ch=stepStates(states[s],tips[s]);
       if(ch){ const sh=shapeOf(states[s]); if(sh!==shapes[s]){ shapes[s]=sh; setWord(s===me?"shMe":"shFoe",sh); if(s===me) playShape(sh); } else if(s===me) playTick(); }
     }
     if(phase==="play"&&amHost()) judge();
-    if(debugMode) renderDbg();
   }
   /* 自分の指位置を相手へ(50msごと・動いた時だけ) */
   if(mode==="online"&&online&&started){
@@ -945,13 +981,13 @@ function leaveChannel(){
 function hostBroadcast(){                          /* ホスト→両者: いまの進行(届かなくても0.7秒ごとに送り直す) */
   if(mode!=="online"||!online||!isHost||!started) return;
   snapVer++; lastSnapAt=Date.now();
-  send("snap",{ v:snapVer, ph:phase, rd:round, ct:count, sa:score.a, sb:score.b, w:lastWinner, sh:lastShapes, rs:lastReason, ow:overWinner, er:endReason });
+  send("snap",{ v:snapVer, ph:phase, rd:round, ct:count, sa:score.a, sb:score.b, wn:winN, w:lastWinner, sh:lastShapes, rs:lastReason, ow:overWinner, er:endReason });
 }
 function applySnap(s){                             /* ゲスト: ホストの進行に合わせる */
   if(!s||typeof s.v!=="number") return;
   if(s.v<=lastVerSeen) return; lastVerSeen=s.v;
   const prevPh=phase, prevRd=round;
-  score.a=s.sa|0; score.b=s.sb|0;
+  score.a=s.sa|0; score.b=s.sb|0; if(s.wn&&s.wn!==winN) setWinN(s.wn);
   if(s.ph==="ready"){
     if(prevPh!=="ready"||prevRd!==s.rd){ round=s.rd|0; phase="ready"; lastWinner=null; resetHands(); myMoved=true; }
     if((s.ct|0)!==count){ count=s.ct|0; if(count>0) showCount(count); }   /* 3・2・1はホストの合図で出す */
@@ -993,6 +1029,7 @@ function joinRoom(code,asHost){
     if(!payload||isHost) return;
     if(typeof payload.pn==="string") peerName=payload.pn.slice(0,16);
     if(typeof payload.col==="string"&&/^#[0-9a-f]{6}$/i.test(payload.col)) peerSkin=payload.col;
+    if(payload.wn) setWinN(payload.wn);                  /* 部屋を作った側の先取本数に合わせる */
     send("nm",{pn:myAcctName(),col:mySkin});
     startOnlineGame();
   });
@@ -1046,9 +1083,9 @@ function onPresence(){
   }
   if(foe){ clearTimeout(goneT); goneT=0; }
   if(isHost&&!started&&arr.length>=2){
-    send("start",{pn:myAcctName(),col:mySkin});
+    send("start",{pn:myAcctName(),col:mySkin,wn:winN});
     startOnlineGame();
-    setTimeout(()=>send("start",{pn:myAcctName(),col:mySkin}),400);   /* 届かないことがあるので念のため2回 */
+    setTimeout(()=>send("start",{pn:myAcctName(),col:mySkin,wn:winN}),400);   /* 届かないことがあるので念のため2回 */
   }
   if(started&&phase!=="over"&&!foe&&!goneT){          /* 通信が一瞬切れただけの時もあるので15秒待つ */
     toast("あいての接続が切れました（15秒待ちます）");
@@ -1074,13 +1111,12 @@ function goTitle(){
   if(online&&started) send("bye",{id:myId});
   $("chatLog").innerHTML=""; $("chatIn").value=""; hidePop();
   leaveChannel();
-  clearReadyTimers(); phase="idle"; matchStarted=false; debugMode=false; fxOff(); resetGive();
-  document.body.classList.remove("dbg");
+  clearReadyTimers(); phase="idle"; matchStarted=false; fxOff(); resetGive();
   $("resultOv").classList.remove("on","peek");
   roomStatus("");
   $("makeRoomBtn").classList.remove("sel"); $("joinRoomBtn").classList.remove("sel");
   mySkin=randSkin(null); cpuSkin=randSkin(hueOf(mySkin)); applySkins();   /* タイトルに戻るたび手の色はランダム */
-  { const t=newTips(); for(let i=0;i<5;i++){ logoTips[i]=t[i]; logoStates[i]=false; } logoShape="paper"; $("tShape").textContent="パァ"; drawHand(partsLogo,logoTips); }
+  { const t=newTips(); for(let i=0;i<5;i++){ logoTips[i]=t[i]; logoStates[i]=false; } logoShape="paper"; $("tShape").textContent="パァ"; $("tShape").classList.remove("none"); setAura(partsLogo,"paper"); drawHand(partsLogo,logoTips); }
   showScene("titleScene");
 }
 function winnerLabel(){ return labelOf(overWinner)+"の勝ち"; }
@@ -1088,7 +1124,7 @@ function showResult(){
   const won=(overWinner===mySide);
   $("rTitle").textContent= won ? "あなたの勝ち" : labelOf(overWinner)+"の勝ち";
   $("rSa").textContent=score.a; $("rSb").textContent=score.b;
-  $("rSub").textContent=(endReason&&endReason!=="3本先取")?endReason:"";   /* 「3本先取」は出さない(降参などの理由だけ) */
+  $("rSub").textContent=endReason||"";   /* 降参などの理由だけ出す */
   $("rAgain").textContent="もう一回";
   $("rAgain").disabled=(mode==="online"&&!started);
   $("resultOv").classList.remove("peek"); $("resultOv").classList.add("on");
@@ -1096,7 +1132,7 @@ function showResult(){
 }
 function tryRematch(){
   if(!(againMe&&againFoe)) return;
-  if(isHost){ send("start",{pn:myAcctName(),col:mySkin}); startOnlineGame(); }
+  if(isHost){ send("start",{pn:myAcctName(),col:mySkin,wn:winN}); startOnlineGame(); }
   else $("rSub").textContent="あいてを待っています…";
 }
 function again(){
@@ -1115,22 +1151,27 @@ $("modeRow").addEventListener("click",e=>{
   mode=b.dataset.mode;
   [...$("modeRow").children].forEach(x=>x.classList.toggle("sel",x===b));
   ["cpu","online"].forEach(k=>$(k+"Setup").classList.toggle("on",k===mode));
+  document.body.classList.toggle("online-mode",mode==="online");   /* オンラインの時だけ「部屋を作った側のルール」の注記 */
   if(mode!=="online"){ leaveChannel(); roomStatus(""); $("makeRoomBtn").classList.remove("sel"); $("joinRoomBtn").classList.remove("sel"); }
 });
+function setWinN(n){
+  winN=Math.max(WIN_MIN,Math.min(WIN_MAX,n|0||WIN_DEF));
+  $("wnV").textContent=winN+"本"; $("wnDn").disabled=winN<=WIN_MIN; $("wnUp").disabled=winN>=WIN_MAX;
+  if($("gameScene").classList.contains("on")) renderStatic();
+}
+$("wnDn").addEventListener("click",()=>{ ensureAudio(); playSelect(); setWinN(winN-1); });
+$("wnUp").addEventListener("click",()=>{ ensureAudio(); playSelect(); setWinN(winN+1); });
+$("wnReset").addEventListener("click",()=>{ ensureAudio(); playSelect(); setWinN(WIN_DEF); });
+setWinN(WIN_DEF);
 $("lvRow").addEventListener("click",e=>{
   const b=e.target.closest(".fuda"); if(!b) return;
   ensureAudio(); playSelect(); cpuLv=+b.dataset.lv;
   [...$("lvRow").children].forEach(x=>x.classList.toggle("sel",x===b));
 });
 $("startCpu").addEventListener("click",()=>{
-  ensureAudio(); playSelect(); mode="cpu"; mySide="a"; isHost=false; debugMode=false;
+  ensureAudio(); playSelect(); mode="cpu"; mySide="a"; isHost=false;
   cpuSkin=randSkin(hueOf(mySkin));                       /* ロボットの手の色は対局ごとにランダム */
   showScene("gameScene"); startMatch();
-});
-$("dbgBtn").addEventListener("click",()=>{             /* デバッグ: 手を自由に動かして、どれくらいでグー/チョキ/パーになるかを見る */
-  ensureAudio(); playSelect(); leaveChannel();
-  mode="cpu"; mySide="a"; isHost=false; debugMode=true; matchStarted=false; phase="idle"; round=0; score={a:0,b:0};
-  resetHands(); fxOff(); showScene("gameScene"); renderStatic(); renderDbg();
 });
 function roomStatus(html){ $("roomArea").innerHTML=html||""; }
 function roomNote(tx,cls){
@@ -1193,7 +1234,6 @@ function resetGive(){ giveArm=0; const b=$("giveBtn"); if(b){ b.textContent="降
 document.addEventListener("pointerdown",e=>{ if(giveArm&&!(e.target.closest&&e.target.closest("#giveBtn"))) resetGive(); },true);
 $("giveBtn").addEventListener("click",()=>{
   ensureAudio();
-  if(debugMode){ playSelect(); goTitle(); return; }
   if(!matchStarted||phase==="over") return;
   if(!giveArm){ playSelect(); $("giveBtn").textContent="確定"; $("giveBtn").classList.add("deny"); giveArm=1; return; }
   resetGive();
