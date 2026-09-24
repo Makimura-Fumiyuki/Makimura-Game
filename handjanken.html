@@ -102,7 +102,9 @@
     padding:8px 12px; font-size:12.5px; font-weight:700; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,.14); line-height:1.7; pointer-events:none; }
   .dbg-win.on{ display:block; }
   body.in-game .dbg-win{ display:none; }   /* タイトル画面でだけ出す */
-  .dbg-win div{ display:flex; justify-content:space-between; gap:14px; }
+  .dbg-win div{ display:flex; justify-content:space-between; gap:12px; }
+  .dbg-win .hd{ font-size:10.5px; color:var(--sub); }
+  .dbg-win span{ min-width:2.4em; }
   .dbg-win b{ font-variant-numeric:tabular-nums; min-width:3.2em; text-align:right; }
   /* ルール(先取本数)=ひとり/オンライン共通。オンラインは部屋を作った側の値で遊ぶ(2026-09-24) */
   .rule-box{ display:flex; flex-direction:column; align-items:center; gap:10px; }
@@ -486,7 +488,7 @@ const P={x:167,y:249};                                   /* 手のひらの中�
 const PALM={ x:92, y:195, w:150, h:108, r:18 };
 const FINGERS=[                                          /* 0=親指 1=人差し指 2=中指 3=薬指 4=小指。b=付け根・a=伸ばした向き(度)・w=太さ・L=伸びる上限(2026-09-21=5本とも104) */
   { n:"親指",   b:{x:80,y:226},    a:-135, w:33, L:104, ja:180 },   /* 親指: 置き方(初期の向き)は斜め-135°のまま、判定は「手のひらに垂直＝真横(左)へ伸ばし切り=100%」(ja・2026-09-24) */
-  { n:"人差し指", b:{x:108.5,y:189}, a:-90,  w:33, L:104 },
+  { n:"人指", b:{x:108.5,y:189}, a:-90,  w:33, L:104 },
   { n:"中指",   b:{x:147.5,y:189}, a:-90,  w:33, L:104 },
   { n:"薬指",   b:{x:186.5,y:189}, a:-90,  w:33, L:104 },
   { n:"小指",   b:{x:225.5,y:189}, a:-90,  w:33, L:104 },
@@ -499,10 +501,23 @@ function bentTip(f){                                     /* 曲げた時の指�
   return { x:f.b.x+dx/d*40, y:f.b.y+dy/d*40 };
 }
 const SHAPE_TIPS={ paper:[1,1,1,1,1], rock:[0,0,0,0,0], scissors:[0,1,1,0,0] };   /* 1=伸ばし 0=曲げ */
-function tipsOfShape(k){ return FINGERS.map((f,i)=>SHAPE_TIPS[k][i]?extTip(f):bentTip(f)); }
+/* 正式な形(2026-09-24牧村指定)=[曲がり具合(判定の向きへの成分), 伸び具合(付け根からの距離)]。親指,人指,中指,薬指,小指の順。
+   ※グゥの人指〜小指は「-70%・長さ2/3」だが、長さ2/3では-67%までしか届かないので長さは|曲がり具合|まで伸ばす(=真下に-70%) */
+const POSES={
+  rock:     [[-.7,1],[-.7,2/3],[-.7,2/3],[-.7,2/3],[-.7,2/3]],
+  scissors: [[-1,1],[1,1],[1,1],[-.95,1],[-.95,1]],
+  paper:    [[.7,1],[1,1],[1,1],[1,1],[1,1]],
+};
+function poseTip(f,r,len){                               /* 判定の向きへr・横へ残り=長さlen(×L)。横は、伸ばす時は手のひらから離れる側・曲げる時は手のひら側 */
+  const a=rad(f.ja!=null?f.ja:f.a), ux=Math.cos(a), uy=Math.sin(a), px=-uy, py=ux;
+  const l=Math.max(len,Math.abs(r)), side=Math.sqrt(Math.max(0,l*l-r*r));
+  const toP=((P.x-f.b.x)*px+(P.y-f.b.y)*py)>=0?1:-1, sg=r<0?toP:-toP;
+  return { x:f.b.x+(ux*r+px*side*sg)*f.L, y:f.b.y+(uy*r+py*side*sg)*f.L };
+}
+function tipsOfShape(k){ return FINGERS.map((f,i)=>poseTip(f,POSES[k][i][0],POSES[k][i][1])); }
 const INIT_R=1;                                          /* 初期の指の長さ=上限いっぱい(伸ばし切ったパァ) */
 const initR=f=>(f.r0!=null?f.r0:INIT_R);
-function newTips(){ return FINGERS.map(f=>({ x:f.b.x+f.L*initR(f)*Math.cos(rad(f.a)), y:f.b.y+f.L*initR(f)*Math.sin(rad(f.a)) })); }
+function newTips(){ return tipsOfShape("paper"); }        /* ラウンドの始まり=正式なパァ(親指70%・他100%) */
 function tipFromPointer(f,pt){                           /* つまんだ位置 → 指先(付け根からLまで・向きは自由) */
   const dx=pt.x-f.b.x, dy=pt.y-f.b.y, d=Math.hypot(dx,dy);
   if(d<=f.L) return {x:pt.x,y:pt.y};
@@ -526,14 +541,15 @@ function buildHand(svg,mine){                            /* SVGの中身(手の�
    ★手の中心(パァの手を囲む最小の円の中心)から固定の正円=指を動かしても大きさは変わらない。
    3つとも「内側の半径AURA_RI〜外側の半径AURA_RO」の同じ帯の中に収めるので、形によるサイズの差は無い */
 const AURA_CX=163, AURA_CY=194, AURA_RI=156, AURA_RO=176;
-const ROCK_U=[1,.3,.6,1,.2,.75,1,.4,.55,1,.15,.7];   /* 岩のでこぼこ(0=内側〜1=外側)。上下左右は必ず外側=他の形と同じ大きさ */
+const ROCK_U=[1,.05,.6,0,1,.35,0,.8,1,.1,.7,0,1,.4,.02,.75];   /* 岩のでこぼこ(0=内側〜1=外側)。上下左右は必ず外側=他の形と同じ大きさ。16角・深め */
+const ROCK_RI=AURA_RO-40;                                /* 岩だけ内側を深く(外側の大きさは他と同じ) */
 function auraPath(shape){
   const cx=AURA_CX, cy=AURA_CY, RI=AURA_RI, RO=AURA_RO;
   const P=(t,r)=>[(cx+Math.cos(t)*r).toFixed(1),(cy+Math.sin(t)*r).toFixed(1)];
   let d="";
   if(shape==="rock"){
     const n=ROCK_U.length;
-    for(let i=0;i<n;i++){ const q=P(-Math.PI/2+i/n*Math.PI*2, RI+(RO-RI)*ROCK_U[i]); d+=(i?"L":"M")+q[0]+" "+q[1]; }
+    for(let i=0;i<n;i++){ const q=P(-Math.PI/2+i/n*Math.PI*2, ROCK_RI+(RO-ROCK_RI)*ROCK_U[i]); d+=(i?"L":"M")+q[0]+" "+q[1]; }
     return d+"Z";
   }
   if(shape==="scissors"){
@@ -1178,7 +1194,7 @@ $("modeRow").addEventListener("click",e=>{
 let dbgT=null;
 function renderDbg(){
   const tp=logoTips;
-  $("dbgWin").innerHTML=FINGERS.map((f,i)=>'<div><span>'+f.n+'</span><b>'+Math.round(reach(f,tp[i])*100)+'%</b></div>').join("");
+  $("dbgWin").innerHTML='<div class="hd"><span></span><b>曲がり</b><b>伸び</b></div>'+FINGERS.map((f,i)=>'<div><span>'+f.n+'</span><b>'+Math.round(reach(f,tp[i])*100)+'%</b><b>'+Math.round(Math.hypot(tp[i].x-f.b.x,tp[i].y-f.b.y)/f.L*100)+'%</b></div>').join("");   /* 曲がり=判定の向きへの成分・伸び=付け根からの距離(どちらも上限に対する%) */
 }
 document.addEventListener("keydown",e=>{
   if(e.isComposing||e.repeat) return;
