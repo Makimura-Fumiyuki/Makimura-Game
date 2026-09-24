@@ -913,8 +913,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
   let actx=null, master=null, noiseBuf=null, seBus=null;
   let seOn=localStorage.getItem("maigo.se")!=="0";
   function ensureAudio(){
-    if(actx) return;
-    try{
+    if(!actx) try{
       actx=new (window.AudioContext||window.webkitAudioContext)();
       master=actx.createGain(); master.gain.value=0.9;
       const comp=actx.createDynamicsCompressor(); comp.threshold.value=-10;
@@ -925,7 +924,18 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       const d=noiseBuf.getChannelData(0);
       for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
     }catch(e){}
+    if(actx&&actx.state!=="running"){ try{ var _p=actx.resume(); if(_p&&_p.catch) _p.catch(function(){}); }catch(e){} }   /* 一度作ったら終わりでなく、毎回「止まっていたら起こす」(iOSの"interrupted"も含む) */
   }
+  /* ★スマホで音が鳴らなくなる対策(2026-09-24牧村指摘「スマホだと音声が安定しない・ならないことが多々ある」)
+     スマホは「他のアプリの音・電話・画面ロック・タブの切り替え」で音の箱(AudioContext)が勝手に止まる。
+     止まったまま誰も起こさないと、そのあとの音は全部無音になる(とくにタイマーや通信で鳴る音)。
+     → ①画面のどこを触っても ②アプリから戻ってきても ③ページを表示し直しても 起こし直す。
+     ※音の箱を作れるのは「人が触った瞬間」だけなので、最初の1タップで必ず作られるようにもなる。 */
+  function audioWake(){ try{ ensureAudio(); }catch(e){} }
+  ["pointerdown","touchend","keydown"].forEach(function(t){ document.addEventListener(t,audioWake,{capture:true,passive:true}); });
+  document.addEventListener("visibilitychange",function(){ if(!document.hidden) audioWake(); });
+  window.addEventListener("pageshow",audioWake);
+  window.addEventListener("focus",audioWake);
   function note(f,t,dur,peak,type,bus){
     if(!actx) return;
     const o=actx.createOscillator(), g=actx.createGain();
