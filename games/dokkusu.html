@@ -2351,7 +2351,10 @@
     slots[dir]=dockedValue;
     // QUICK dock = docked within 1/10 of this round's limit (per-round modes only).
     // It's worth +2 and gets the special, brighter sound (the climb jumps two steps).
-    const quick = ((performance.now()-lastDock) < 680);  // quick (ALL modes): docked within 0.68s of the last dock
+    // 「前のドックから0.68秒以内」なので1本目はQUICKにしない(2026-09-24修正)。
+    // サーバー側の検証(dox_submit)は1本目の+2を必ず不正扱い(bad_quick)にして"プレイまるごと"を捨てるため、
+    // 開始直後にドックできた速い人の記録が丸ごとランキングに載らなくなっていた。
+    const quick = (dockCount>1) && ((performance.now()-lastDock) < 680);  // quick (ALL modes): docked within 0.68s of the last dock
     score += quick ? 2 : 1; logEv(quick?2:1);
     lastDock = performance.now();
     const others=dirs.map(d=>slots[d]);
