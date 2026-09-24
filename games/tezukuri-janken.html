@@ -354,10 +354,13 @@
      手の大きさは画面の高さから決める=2つ並べても、スクロールせずに両方見えるように
      (#gameSceneの上下パディング150/290はスクロール用なので触らない。150px引いた残りを2つで分ける) */
   @media (max-width:620px){
-    .arena{ flex-direction:column-reverse; align-items:center; gap:6px; }
+    /* 上のスクロール用の余白は、縦並びだと「ただの空白」になって手が小さくなるだけなので詰める。
+       左上の「あそびかた」と右上の「効果音」の下端が約52pxなので、54pxあれば重ならない(下の290pxはそのまま) */
+    #gameScene{ padding-top:54px; }
+    .arena{ flex-direction:column-reverse; align-items:center; gap:28px; }   /* 手と手の間隔(2026-09-24に6px→28px) */
     .side{ flex:none; width:100%; }
-    .side .hand{ width:min(88vw, 340px, max(190px, calc((100vh - 322px) / 2 * 1.1875))); }
-    .side .hand{ width:min(88vw, 340px, max(190px, calc((100svh - 322px) / 2 * 1.1875))); }
+    .side .hand{ width:min(96vw, 420px, max(190px, calc((100vh - 244px) / 2 * 1.1875))); }
+    .side .hand{ width:min(96vw, 420px, max(190px, calc((100svh - 244px) / 2 * 1.1875))); }
   }
 
   @media(hover:hover){
