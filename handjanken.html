@@ -105,7 +105,7 @@
   .dbg-win div{ display:flex; justify-content:space-between; gap:12px; }
   .dbg-win .hd{ font-size:10.5px; color:var(--sub); }
   .dbg-win span{ min-width:2.4em; }
-  .dbg-win b{ font-variant-numeric:tabular-nums; min-width:3.2em; text-align:right; }
+  .dbg-win b{ font-variant-numeric:tabular-nums; min-width:2.4em; text-align:right; }
   /* ルール(先取本数)=ひとり/オンライン共通。オンラインは部屋を作った側の値で遊ぶ(2026-09-24) */
   .rule-box{ display:flex; flex-direction:column; align-items:center; gap:10px; }
   .rule-frame{ display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 18px 12px; background:var(--card); border:2px solid var(--line); border-radius:13px; }
@@ -178,9 +178,9 @@
   .hand .aura.on.pop.paper{ animation:auraIn .45s cubic-bezier(.2,1.2,.4,1), auraPap 2.4s ease-in-out .45s infinite; }
   /* 消える=出る時の逆再生。★出る時と同じ名前(auraIn)に reverse を付けるだけだと、ブラウザは「同じアニメの向きを変えただけ」と見なして
      再生し直さず、終わった状態のまま一瞬で消える(2026-09-24のバグ)→ 別名のauraOutにして、カーブも前後反転した値にする */
-  .hand .aura.on.out.rock{ animation:auraOut .3s cubic-bezier(.6,0,.8,-.5) forwards; }
-  .hand .aura.on.out.scissors{ animation:auraOut .25s cubic-bezier(.6,0,.8,-.6) forwards; }
-  .hand .aura.on.out.paper{ animation:auraOut .45s cubic-bezier(.6,0,.8,-.2) forwards; }
+  .hand .aura.on.out.rock{ animation:auraOut .3s cubic-bezier(.2,.9,.4,1) forwards; }   /* 出る時と同じ長さ・同じ「最初が速い」カーブ=同じ速さに見える(2026-09-24) */
+  .hand .aura.on.out.scissors{ animation:auraOut .25s cubic-bezier(.2,.9,.4,1) forwards; }
+  .hand .aura.on.out.paper{ animation:auraOut .45s cubic-bezier(.2,.9,.4,1) forwards; }
   @keyframes auraIn{ 0%{ transform:scale(.7); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
   @keyframes auraOut{ 0%{ transform:scale(1); opacity:1; } 100%{ transform:scale(.7); opacity:0; } }
   @keyframes auraRock{ 0%{ transform:translate(-1px,1px); } 100%{ transform:translate(1px,-1px); } }
@@ -464,7 +464,7 @@
 <div class="ov" id="helpOv"><div class="help-card">
   <h2>あそびかた</h2>
   <p class="h-sec">基本ルール</p>
-  <p class="h-txt">リアルタイムに「グゥ / チョ / パァ」を作っていざ、じゃんけん！<br>指先を掴んで、相手に勝てる手を作ろう</p>
+  <p class="h-txt">リアルタイムに「グゥ / チョ / パァ」を作ってじゃんけん！<br>指先を掴んで、相手に勝てる手を作ろう</p>
   <button class="txt-btn close" id="helpClose" type="button">とじる</button>
 </div></div>
 
@@ -505,9 +505,9 @@ function bentTip(f){                                     /* 曲げた時の指�
 }
 const SHAPE_TIPS={ paper:[1,1,1,1,1], rock:[0,0,0,0,0], scissors:[0,1,1,0,0] };   /* 1=伸ばし 0=曲げ */
 /* 正式な形(2026-09-24牧村指定)=[曲がり具合(判定の向きへの成分), 伸び具合(付け根からの距離)]。親指,人指,中指,薬指,小指の順。
-   ※グゥの人指〜小指は「-70%・長さ2/3」だが、長さ2/3では-67%までしか届かないので長さは|曲がり具合|まで伸ばす(=真下に-70%) */
+   グゥ=5本とも曲がり-99・伸び100(2026-09-24変更) */
 const POSES={
-  rock:     [[-.7,1],[-.7,2/3],[-.7,2/3],[-.7,2/3],[-.7,2/3]],
+  rock:     [[-.99,1],[-.99,1],[-.99,1],[-.99,1],[-.99,1]],
   scissors: [[-1,1],[1,1],[1,1],[-.95,1],[-.95,1]],
   paper:    [[.7,1],[1,1],[1,1],[1,1],[1,1]],
 };
@@ -1197,7 +1197,7 @@ $("modeRow").addEventListener("click",e=>{
 let dbgT=null;
 function renderDbg(){
   const tp=logoTips;
-  $("dbgWin").innerHTML='<div class="hd"><span></span><b>曲がり</b><b>伸び</b></div>'+FINGERS.map((f,i)=>'<div><span>'+f.n+'</span><b>'+Math.round(reach(f,tp[i])*100)+'%</b><b>'+Math.round(Math.hypot(tp[i].x-f.b.x,tp[i].y-f.b.y)/f.L*100)+'%</b></div>').join("");   /* 曲がり=判定の向きへの成分・伸び=付け根からの距離(どちらも上限に対する%) */
+  $("dbgWin").innerHTML=FINGERS.map((f,i)=>'<div><span>'+f.n+'</span><b>'+Math.round(reach(f,tp[i])*100)+'</b><b>'+Math.round(Math.hypot(tp[i].x-f.b.x,tp[i].y-f.b.y)/f.L*100)+'</b></div>').join("");   /* 左=曲がり・右=伸び(上限に対する割合×100。見出しと%は出さない) */   /* 曲がり=判定の向きへの成分・伸び=付け根からの距離(どちらも上限に対する%) */
 }
 document.addEventListener("keydown",e=>{
   if(e.isComposing||e.repeat) return;
