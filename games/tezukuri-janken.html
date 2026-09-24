@@ -349,6 +349,17 @@
     opacity:0; pointer-events:none; transition:opacity .32s linear; }
   #titleScene.on ~ .home-foot{ opacity:1; pointer-events:auto; }
   .home-foot:hover{ color:var(--ink); }
+  /* ===== スマホ(狭い画面)=手を縦に並べ、自分の手を下にする(2026-09-24牧村指示) =====
+     DOMは「自分→あいて」の順なので column-reverse で自分が下に来る(.fxはabsoluteなので影響なし)。
+     手の大きさは画面の高さから決める=2つ並べても、スクロールせずに両方見えるように
+     (#gameSceneの上下パディング150/290はスクロール用なので触らない。150px引いた残りを2つで分ける) */
+  @media (max-width:620px){
+    .arena{ flex-direction:column-reverse; align-items:center; gap:6px; }
+    .side{ flex:none; width:100%; }
+    .side .hand{ width:min(88vw, 340px, max(190px, calc((100vh - 322px) / 2 * 1.1875))); }
+    .side .hand{ width:min(88vw, 340px, max(190px, calc((100svh - 322px) / 2 * 1.1875))); }
+  }
+
   @media(hover:hover){
     .fuda:hover{ transform:translateY(-3px); }
     .help-btn:hover,.snd-btn:hover{ background:#fff; }
