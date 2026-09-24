@@ -3,23 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>盤面人狼</title>
-<meta name="apple-mobile-web-app-title" content="盤面人狼">
+<title>盤上人狼</title>
+<meta name="apple-mobile-web-app-title" content="盤上人狼">
 <meta name="description" content="盤面をこっそり歩いて、占って、毒を盛る。話し合いで人狼を吊れるか">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="牧村が作ったゲーム集">
-<meta property="og:title" content="盤面人狼">
+<meta property="og:title" content="盤上人狼">
 <meta property="og:description" content="盤面をこっそり歩いて、占って、毒を盛る。話し合いで人狼を吊れるか">
 <meta name="twitter:card" content="summary">
 <meta name="robots" content="noindex">
-<link rel="canonical" href="https://makimura-gamehub.com/games/banmen-jinro">
-<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjMmEyMzQwIi8+PHRleHQgeD0iMTYiIHk9IjE2LjUiIGZvbnQtc2l6ZT0iMTciIGZvbnQtd2VpZ2h0PSI3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIiBmaWxsPSIjZmZmIiBmb250LWZhbWlseT0iJ0hpcmFnaW5vIFNhbnMnLCdOb3RvIFNhbnMgSlAnLHNhbnMtc2VyaWYiPueLvDwvdGV4dD48L3N2Zz4=">
+<link rel="canonical" href="https://makimura-gamehub.com/games/banjojinro">
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjZmY1ZDZjIi8+PHRleHQgeD0iMTYiIHk9IjE2LjUiIGZvbnQtc2l6ZT0iMTciIGZvbnQtd2VpZ2h0PSI3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIiBmaWxsPSIjZmZmIiBmb250LWZhbWlseT0iJ0hpcmFnaW5vIFNhbnMnLCdOb3RvIFNhbnMgSlAnLHNhbnMtc2VyaWYiPueLvDwvdGV4dD48L3N2Zz4=">
 <meta property="og:image" content="https://makimura-gamehub.com/img/icon.png">
 <!-- Google AdSense -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8539036056022595" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!--
-  盤面人狼（仮名称・2026-09-24着手）
+  盤上人狼（2026-09-24着手。旧仮名「盤面人狼」＝旧URL /games/banmen-jinro は_redirectsで301転送）
   ■ オンラインは「方式A=クライアント側の性善説」(牧村了承済み)
     ホストが盤面・役職・毒タイマーなど全部を持ち、スナップショットをそのまま全員に配る。
     フォグ・オブ・ウォー(見えない所を隠す)は各端末の表示だけで行っている。
@@ -30,26 +30,33 @@
 -->
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+  /* ===== 見た目: ポップの中にオオカミ感 =====
+     ・明るいクリームの地に、大きな満月・星・オオカミの足あと(背景はJSで散らす)
+     ・太めの紺のフチ+ぽってりした影(ずらし・ぼかさない)のカートゥーン調。角丸は大きめ
+     ・盤面は「見える所=クリームのマス／見えない所=星の出ている夜」 */
   :root{
-    --bg:#1e1a2e;
-    --card:#f4efe6;
-    --ink:#211d2b;
-    --gold:#e8b647;
-    --gold-d:#b8871f;
-    --red:#e3452f;
-    --wolf:#e0533d;
-    --seer:#4ea4e8;
-    --vil:#6cc47a;
+    --bg:#fff3de;
+    --ink:#2d2a4a;
+    --sub:#6f6a86;
+    --moon:#ffd84d;
+    --red:#ff5d6c;
+    --wolf:#ff5d6c;
+    --seer:#8b6cff;
+    --vil:#3bb273;
+    --gray:#8d93a6;
+    --night:#3f3d73;
     --uiw:min(94vw,500px);
   }
   *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;
      font-family:"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif; }
-  body{ min-height:100svh; background:var(--bg); color:var(--card);
+  body{ min-height:100svh; background:var(--bg); color:var(--ink);
     display:flex; flex-direction:column; align-items:center;
     user-select:none; -webkit-user-select:none; overflow-x:hidden; }
   input{ user-select:text; -webkit-user-select:text; }
-  body::before{ content:""; position:fixed; inset:0; z-index:-2; pointer-events:none;
-    background:radial-gradient(circle at 50% -10%, rgba(120,98,190,.28), transparent 60%); }
+  body::before{ content:""; position:fixed; inset:0; z-index:-3; pointer-events:none;
+    background:radial-gradient(circle at 50% 0%, #ffe7c2 0, transparent 60%), radial-gradient(circle at 0% 100%, #ffe0e3 0, transparent 45%); }
+  #bgDeco{ position:fixed; inset:0; z-index:-1; pointer-events:none; }
+  #bgDeco svg{ width:100%; height:100%; display:block; }
 
   .scene{ display:none; width:100%; flex-direction:column; align-items:center; padding:14px 0 40px; }
   .scene.on{ display:flex; animation:sceneIn .34s cubic-bezier(.2,.8,.3,1); }
@@ -58,228 +65,240 @@
   #gameScene{ padding-top:150px; padding-bottom:290px; }   /* 上下にスクロール余白(全ゲーム共通ルール) */
 
   /* ===== タイトル ===== */
-  .logo{ margin:9vh 0 4px; font-size:clamp(50px,14vw,80px); font-weight:900; letter-spacing:.06em;
-    text-shadow:0 5px 0 rgba(0,0,0,.35); }
-  .logo .l2{ color:var(--wolf); }
-  .t-sub{ font-size:13px; font-weight:700; letter-spacing:.12em; opacity:.6; margin-bottom:26px; }
-  .room-row{ display:flex; gap:10px; margin-top:6px; }
-  .room-row button{ padding:15px 12px; border:none; border-radius:14px; cursor:pointer; width:min(150px,calc((100vw - 42px)/2)); white-space:nowrap;
-    background:rgba(244,239,230,.13); color:var(--card); font-size:16px; font-weight:900; letter-spacing:.06em; }
-  .room-row button:active{ transform:translateY(2px); }
+  .logo{ margin:7vh 0 4px; display:flex; flex-direction:column; align-items:center; position:relative; }
+  .logo .wolf{ width:clamp(92px,24vw,124px); height:auto; display:block; margin-bottom:-6px; animation:wolfBob 2.6s ease-in-out infinite; }
+  @keyframes wolfBob{ 0%,100%{ transform:translateY(0) rotate(-2deg); } 50%{ transform:translateY(-5px) rotate(2deg); } }
+  .logo .lt{ display:flex; align-items:flex-end; gap:6px; }
+  .logo .l1{ font-size:clamp(26px,7.4vw,40px); font-weight:900; letter-spacing:.06em; color:var(--ink); margin-bottom:.34em; }
+  .logo .l2{ position:relative; font-size:clamp(54px,15vw,86px); font-weight:900; letter-spacing:.04em; line-height:1.05; color:var(--red);
+    -webkit-text-stroke:3px var(--ink); paint-order:stroke fill; text-shadow:0 6px 0 var(--ink); }
+  .logo .claw{ width:clamp(30px,8vw,44px); height:auto; align-self:center; margin-left:2px; }
+  .t-sub{ font-size:13px; font-weight:800; letter-spacing:.12em; color:var(--sub); margin:14px 0 24px; }
+  .room-row{ display:flex; gap:12px; margin-top:6px; }
+  .room-row button{ padding:14px 12px; cursor:pointer; width:min(150px,calc((100vw - 46px)/2)); white-space:nowrap;
+    background:#fff; color:var(--ink); border:3px solid var(--ink); border-radius:18px; box-shadow:0 5px 0 var(--ink);
+    font-size:16px; font-weight:900; letter-spacing:.06em; }
+  .room-row button:nth-child(1){ background:var(--moon); }
+  .room-row button:active{ box-shadow:0 1px 0 var(--ink); translate:0 4px; }
   #roomArea{ display:flex; flex-direction:column; align-items:center; gap:6px; width:var(--uiw); margin-top:14px; }
-  .dev-box{ margin-top:34px; width:var(--uiw); max-width:380px; border:1.5px dashed rgba(244,239,230,.3); border-radius:14px;
-    padding:12px 14px 14px; display:flex; flex-direction:column; align-items:center; gap:9px; opacity:.8; }
+  .dev-box{ margin-top:34px; width:var(--uiw); max-width:380px; border:2.5px dashed rgba(45,42,74,.4); border-radius:18px;
+    padding:12px 14px 14px; display:flex; flex-direction:column; align-items:center; gap:9px; background:rgba(255,255,255,.55); }
   #cpuRoleRow{ flex-wrap:nowrap; gap:5px; }
-  #cpuRoleRow .txt-btn{ padding:7px 10px; font-size:12.5px; white-space:nowrap; }
-  .dev-box .dev-h{ font-size:11.5px; font-weight:900; letter-spacing:.14em; opacity:.7; }
+  #cpuRoleRow .txt-btn{ padding:6px 10px; font-size:12.5px; white-space:nowrap; }
+  .dev-box .dev-h{ font-size:11.5px; font-weight:900; letter-spacing:.14em; color:var(--sub); }
 
-  .sec-label{ font-size:12px; font-weight:900; letter-spacing:.22em; opacity:.55; margin-bottom:9px; }
-  .rule-frame{ width:var(--uiw); background:rgba(0,0,0,.18); border:1.5px solid rgba(244,239,230,.18);
-    border-radius:16px; padding:14px 12px; display:grid; grid-template-columns:1fr 1fr; gap:12px 10px; }
+  .sec-label{ font-size:12px; font-weight:900; letter-spacing:.22em; color:var(--sub); margin-bottom:9px; }
+  .rule-frame{ width:var(--uiw); background:#fff; border:3px solid var(--ink); border-radius:20px; box-shadow:0 5px 0 var(--ink);
+    padding:14px 12px; display:grid; grid-template-columns:1fr 1fr; gap:12px 10px; }
   .rule-col{ display:flex; flex-direction:column; align-items:center; gap:6px; }
-  .rc-name{ font-size:12px; font-weight:800; letter-spacing:.08em; opacity:.7; }
+  .rc-name{ font-size:12px; font-weight:800; letter-spacing:.06em; color:var(--sub); }
   .rc-row{ display:flex; align-items:center; gap:8px; }
-  .rc-val{ min-width:72px; text-align:center; font-size:17px; font-weight:900; color:var(--gold); }
-  .stp{ width:34px; height:34px; border:none; border-radius:10px; cursor:pointer;
-    background:rgba(244,239,230,.14); color:var(--card); font-size:18px; font-weight:900; line-height:1; }
-  .stp:active{ transform:translateY(2px); }
+  .rc-val{ min-width:72px; text-align:center; font-size:17px; font-weight:900; color:var(--ink); }
+  .stp{ width:34px; height:34px; border:2.5px solid var(--ink); border-radius:11px; cursor:pointer; box-shadow:0 3px 0 var(--ink);
+    background:#fff; color:var(--ink); font-size:18px; font-weight:900; line-height:1; }
+  .stp:active{ box-shadow:0 0 0; translate:0 3px; }
   .stp:disabled{ opacity:.3; cursor:default; }
   .rule-reset{ display:block; margin:10px auto 0; border:none; background:none; padding:4px 2px;
-    font-size:12.5px; font-weight:800; color:var(--card); opacity:.85; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
-  .rule-sum{ font-size:12.5px; font-weight:700; opacity:.72; text-align:center; line-height:1.7; }
+    font-size:12.5px; font-weight:800; color:var(--ink); text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+  .rule-sum{ font-size:12.5px; font-weight:700; color:var(--sub); text-align:center; line-height:1.7; }
 
-  .btn-main{ width:var(--uiw); max-width:340px; margin-top:14px; padding:14px; border:none; border-radius:16px; cursor:pointer;
-    background:linear-gradient(165deg,#f4c85f,var(--gold) 55%,var(--gold-d));
-    color:#3a2a06; font-size:18px; font-weight:900; letter-spacing:.12em; box-shadow:0 5px 0 #8d6712; }
-  .btn-main:active{ transform:translateY(3px); box-shadow:0 2px 0 #8d6712; }
-  .btn-main:disabled{ filter:grayscale(1) brightness(.75); cursor:default; }
-  .txt-btn{ padding:9px 22px; border:1.5px solid rgba(244,239,230,.35); border-radius:999px;
-    background:transparent; color:var(--card); font-size:14px; font-weight:800; letter-spacing:.08em; cursor:pointer; }
-  .txt-btn:active{ transform:translateY(1px); }
-  .txt-btn.sel{ background:var(--gold); border-color:var(--gold); color:#3a2a06; }
+  .btn-main{ width:var(--uiw); max-width:340px; margin-top:14px; padding:13px; cursor:pointer;
+    background:var(--red); color:#fff; border:3px solid var(--ink); border-radius:18px; box-shadow:0 6px 0 var(--ink);
+    font-size:18px; font-weight:900; letter-spacing:.12em; }
+  .btn-main:active{ box-shadow:0 1px 0 var(--ink); translate:0 5px; }
+  .btn-main:disabled{ filter:grayscale(1); opacity:.45; cursor:default; }
+  .txt-btn{ padding:8px 20px; border:2.5px solid var(--ink); border-radius:999px; box-shadow:0 3px 0 var(--ink);
+    background:#fff; color:var(--ink); font-size:14px; font-weight:800; letter-spacing:.06em; cursor:pointer; white-space:nowrap; }
+  .txt-btn:active{ box-shadow:0 0 0; translate:0 3px; }
+  .txt-btn.sel{ background:var(--moon); }
+  .txt-btn:disabled{ opacity:.35; cursor:default; }
 
   /* ===== ロビー ===== */
   .lobby-title{ font-size:19px; font-weight:900; letter-spacing:.06em; margin-bottom:14px; }
   #lobbyBox{ display:flex; flex-direction:column; align-items:center; gap:13px; width:var(--uiw); }
-  .lobby-list{ display:flex; flex-direction:column; gap:7px; width:100%; }
-  .lobby-row{ display:flex; align-items:center; gap:10px; background:rgba(244,239,230,.1);
-    border-radius:11px; padding:9px 14px; font-size:15px; font-weight:800; }
+  .lobby-list{ display:flex; flex-direction:column; gap:8px; width:100%; }
+  .lobby-row{ display:flex; align-items:center; gap:10px; background:#fff; border:2.5px solid var(--ink); box-shadow:0 3px 0 var(--ink);
+    border-radius:14px; padding:8px 14px; font-size:15px; font-weight:800; }
   .lobby-row .nm{ flex:1; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .lobby-row .nm.undef{ opacity:.42; font-weight:700; }
-  .p-dot{ width:12px; height:12px; border-radius:50%; flex:none; }
-  .lobby-row .hostmark{ flex:none; font-size:11px; font-weight:900; color:#3a2a06; background:var(--gold); border-radius:999px; padding:2px 10px 3px; }
-  .lobby-row .you{ flex:none; font-size:11px; font-weight:900; color:var(--card); background:rgba(244,239,230,.28); border-radius:999px; padding:2px 10px 3px; }
-  .lobby-row .kick-btn{ flex:none; font-size:11px; font-weight:900; color:#ff8f7d; background:none;
-    border:1.5px solid rgba(255,143,125,.55); border-radius:999px; padding:3px 10px; cursor:pointer; }
+  .p-dot{ width:13px; height:13px; border-radius:50%; flex:none; border:2px solid var(--ink); }
+  .lobby-row .hostmark{ flex:none; font-size:11px; font-weight:900; color:var(--ink); background:var(--moon); border:2px solid var(--ink); border-radius:999px; padding:1px 9px 2px; }
+  .lobby-row .you{ flex:none; font-size:11px; font-weight:900; color:#fff; background:var(--ink); border-radius:999px; padding:2px 10px 3px; }
+  .lobby-row .kick-btn{ flex:none; font-size:11px; font-weight:900; color:var(--red); background:#fff;
+    border:2px solid var(--red); border-radius:999px; padding:2px 10px; cursor:pointer; }
   .code-row{ display:flex; align-items:center; gap:8px; }
-  .code-input{ width:170px; padding:11px 14px; border:2px solid rgba(244,239,230,.4); border-radius:12px;
+  .code-input{ width:170px; padding:10px 14px; border:3px solid var(--ink); border-radius:14px;
     background:#fff; color:var(--ink); font-size:19px; font-weight:900; letter-spacing:.24em; text-align:center; }
-  .paste-btn{ width:42px; height:42px; border:none; background:none; color:var(--card); cursor:pointer;
-    display:flex; align-items:center; justify-content:center; opacity:.8; }
+  .paste-btn{ width:42px; height:42px; border:none; background:none; color:var(--ink); cursor:pointer;
+    display:flex; align-items:center; justify-content:center; }
   .paste-btn svg{ width:22px; height:22px; }
-  .code-show{ display:flex; align-items:center; gap:10px; justify-content:center; cursor:pointer;
-    border:2px solid rgba(244,239,230,.4); border-radius:14px; padding:10px 22px; font-size:27px; font-weight:900; letter-spacing:.28em; }
+  .code-show{ display:flex; align-items:center; gap:10px; justify-content:center; cursor:pointer; background:#fff;
+    border:3px solid var(--ink); border-radius:16px; box-shadow:0 5px 0 var(--ink); padding:9px 22px; font-size:27px; font-weight:900; letter-spacing:.28em; }
   .code-show svg{ width:19px; height:19px; opacity:.7; }
-  .room-note{ font-size:12.5px; font-weight:700; letter-spacing:.05em; opacity:.7; text-align:center; }
-  .room-note.err{ color:#ff8f7d; opacity:1; }
+  .room-note{ font-size:12.5px; font-weight:700; letter-spacing:.05em; color:var(--sub); text-align:center; }
+  .room-note.err{ color:var(--red); }
 
   /* ===== ゲーム ===== */
   .top-bar{ width:var(--uiw); display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:8px; margin-bottom:10px; }
   .top-bar>:first-child{ justify-self:start; }
   .top-bar>:last-child{ justify-self:end; }
-  .pill{ font-size:12.5px; font-weight:900; letter-spacing:.06em; background:rgba(0,0,0,.24);
-    border:1.5px solid rgba(244,239,230,.2); border-radius:999px; padding:6px 12px; white-space:nowrap; }
-  .phase-tag{ font-size:17px; font-weight:900; letter-spacing:.1em; color:var(--gold); white-space:nowrap; }
-  .timer{ font-size:22px; font-weight:900; letter-spacing:.04em; font-variant-numeric:tabular-nums; }
-  .timer.warn{ color:#ff8f7d; }
-  /* 常設のプレイヤー一覧(死亡は議論のはじめにだけ公表) */
-  .roster{ width:var(--uiw); display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-bottom:12px; }
-  .ros{ display:flex; align-items:center; gap:6px; padding:5px 10px 5px 6px; border-radius:999px;
-    background:rgba(244,239,230,.1); font-size:12.5px; font-weight:800; max-width:48%; }
+  .pill{ font-size:12.5px; font-weight:900; letter-spacing:.06em; background:#fff; border:2.5px solid var(--ink);
+    border-radius:999px; padding:4px 12px; white-space:nowrap; box-shadow:0 3px 0 var(--ink); }
+  .phase-tag{ font-size:16px; font-weight:900; letter-spacing:.08em; white-space:nowrap; color:#fff; background:var(--ink);
+    border-radius:999px; padding:4px 14px; }
+  .timer{ font-size:23px; font-weight:900; letter-spacing:.04em; font-variant-numeric:tabular-nums; }
+  .timer.warn{ color:var(--red); }
+  /* 生存者リスト(議論の時だけ) */
+  .roster{ width:var(--uiw); display:flex; flex-wrap:wrap; gap:7px; justify-content:center; margin-bottom:12px; }
+  .ros{ display:flex; align-items:center; gap:6px; padding:3px 10px 3px 5px; border-radius:999px;
+    background:#fff; border:2.5px solid var(--ink); font-size:12.5px; font-weight:800; max-width:48%; }
   .ros .nm{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .ros .av{ width:20px; height:20px; border-radius:50%; flex:none; position:relative; }
-  .ros.dead{ opacity:.42; }
+  .ros .av{ width:19px; height:19px; border-radius:50%; flex:none; position:relative; border:2px solid var(--ink); }
+  .ros.dead{ opacity:.45; }
   .ros.dead .nm{ text-decoration:line-through; }
-  .ros.dead .av::after{ content:""; position:absolute; inset:-2px; background:
-    linear-gradient(45deg,transparent 44%,#fff 44%,#fff 56%,transparent 56%),
-    linear-gradient(-45deg,transparent 44%,#fff 44%,#fff 56%,transparent 56%); }
-  .ros .tg{ font-size:10.5px; font-weight:900; border-radius:999px; padding:1px 7px; flex:none; }
-  .tg.me{ background:rgba(244,239,230,.3); color:var(--card); }
+  .ros.dead .av::after{ content:""; position:absolute; inset:-3px; background:
+    linear-gradient(45deg,transparent 42%,var(--ink) 42%,var(--ink) 58%,transparent 58%),
+    linear-gradient(-45deg,transparent 42%,var(--ink) 42%,var(--ink) 58%,transparent 58%); }
+  .ros .tg{ font-size:10.5px; font-weight:900; border-radius:999px; padding:0 7px; flex:none; }
+  .tg.me{ background:var(--ink); color:#fff; }
   .tg.mate{ background:var(--wolf); color:#fff; }
-  .tg.white{ background:#fff; color:#222; }
-  .tg.black{ background:#111; color:#fff; border:1px solid rgba(255,255,255,.5); }
-  .tg.role{ background:rgba(0,0,0,.4); color:var(--card); }
+  .tg.white{ background:#fff; color:var(--ink); border:1.5px solid var(--ink); }
+  .tg.black{ background:var(--ink); color:#fff; }
+  .tg.role{ background:var(--moon); color:var(--ink); }
 
-  .my-role{ font-size:13px; font-weight:800; letter-spacing:.06em; opacity:.8; margin-bottom:8px; display:flex; gap:8px; align-items:center; }
-  .role-chip{ font-size:12px; font-weight:900; border-radius:999px; padding:3px 11px; color:#fff; }
+  .my-role{ font-size:13px; font-weight:800; letter-spacing:.06em; color:var(--sub); margin-bottom:10px; display:flex; gap:8px; align-items:center; }
+  .role-chip{ font-size:12px; font-weight:900; border-radius:999px; padding:2px 11px; color:#fff; border:2px solid var(--ink); }
   .role-chip.villager{ background:var(--vil); } .role-chip.seer{ background:var(--seer); } .role-chip.wolf{ background:var(--wolf); }
 
   .board-wrap{ width:min(94vw,460px); position:relative; }
-  #board{ display:block; width:100%; height:auto; touch-action:manipulation; border-radius:12px; overflow:hidden;
-    box-shadow:0 6px 20px rgba(0,0,0,.35); }
+  #board{ display:block; width:100%; height:auto; touch-action:manipulation; border-radius:16px; overflow:hidden;
+    border:3px solid var(--ink); box-shadow:0 7px 0 var(--ink); background:var(--night); }
   #board .cell{ cursor:default; }
   #board .cell.can, #board.mv, #board.mv .cell{ cursor:pointer; }
   #board .pc{ transition:transform .38s cubic-bezier(.3,.8,.3,1), opacity .3s; }
+  #board .pc text{ paint-order:stroke fill; stroke:rgba(45,42,74,.75); stroke-width:.55; }
   #board .pc.tg{ cursor:pointer; }
-  #board .ring{ fill:none; stroke:#fff; stroke-width:.8; stroke-dasharray:1.6 1.2; animation:ringSpin 3s linear infinite; }
+  #board .ring{ fill:none; stroke:var(--ink); stroke-width:.8; stroke-dasharray:1.6 1.2; animation:ringSpin 3s linear infinite; }
   @keyframes ringSpin{ to{ stroke-dashoffset:-11; } }
 
-  .ctrl{ width:var(--uiw); margin-top:14px; display:flex; flex-direction:column; align-items:center; gap:10px; min-height:120px; }
-  .hint{ font-size:13.5px; font-weight:800; letter-spacing:.04em; text-align:center; line-height:1.7; opacity:.88; }
-  .hint.sub{ font-size:12px; font-weight:700; opacity:.62; }
-  .pad{ display:grid; grid-template-columns:repeat(3,58px); grid-template-rows:repeat(3,52px); gap:6px; }
-  .pad button{ border:none; border-radius:12px; cursor:pointer; background:rgba(244,239,230,.13); color:var(--card);
+  .ctrl{ width:var(--uiw); margin-top:18px; display:flex; flex-direction:column; align-items:center; gap:10px; min-height:120px; }
+  .hint{ font-size:13.5px; font-weight:800; letter-spacing:.04em; text-align:center; line-height:1.7; }
+  .hint.sub{ font-size:12px; font-weight:700; color:var(--sub); }
+  .pad{ display:grid; grid-template-columns:repeat(3,58px); grid-template-rows:repeat(3,52px); gap:7px; }
+  .pad button{ border:2.5px solid var(--ink); border-radius:14px; cursor:pointer; background:#fff; color:var(--ink); box-shadow:0 4px 0 var(--ink);
     display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:900; }
   .pad button svg{ width:24px; height:24px; }
-  .pad button.sel{ background:var(--gold); color:#3a2a06; }
-  .pad button.pre{ box-shadow:inset 0 0 0 2.5px var(--gold); color:var(--gold); }     /* 1回目で選んだ(まだ決定していない) */
+  .pad button.sel{ background:var(--red); color:#fff; }
+  .pad button.pre{ background:var(--moon); }     /* 1回目で選んだ(まだ決定していない) */
+  .pad button:disabled{ opacity:.25; cursor:default; box-shadow:none; }
+  .pad button:active:not(:disabled){ box-shadow:0 0 0; translate:0 4px; }
   /* ささやき(となりの人に3文字まで) */
-  #whBox{ display:none; width:var(--uiw); max-width:380px; margin-top:12px; padding:10px 12px 12px; border-radius:14px;
-    background:rgba(0,0,0,.18); border:1.5px solid rgba(244,239,230,.14); flex-direction:column; align-items:center; gap:8px; }
+  #whBox{ display:none; width:var(--uiw); max-width:380px; margin-top:14px; padding:10px 12px 12px; border-radius:18px;
+    background:#fff; border:3px solid var(--ink); box-shadow:0 5px 0 var(--ink); flex-direction:column; align-items:center; gap:8px; }
   #whBox.on{ display:flex; }
-  #whBox .wh-h{ font-size:12px; font-weight:900; letter-spacing:.12em; opacity:.7; }
+  #whBox .wh-h{ font-size:12px; font-weight:900; letter-spacing:.1em; color:var(--sub); }
   #whBox .wh-row{ display:flex; gap:7px; align-items:center; }
-  #whIn{ width:96px; padding:8px 10px; border-radius:8px; border:none; font:inherit; font-size:16px; font-weight:800; text-align:center;
-    background:#fff; color:#23211f; box-shadow:0 2px 7px rgba(0,0,0,.25); }
-  #whGo{ padding:8px 14px; }
+  #whIn{ width:96px; padding:7px 10px; border-radius:12px; border:2.5px solid var(--ink); font:inherit; font-size:16px; font-weight:800; text-align:center;
+    background:#fff; color:var(--ink); }
+  #whGo{ padding:7px 14px; }
   #whBox.done #whIn, #whBox.done #whGo{ opacity:.35; pointer-events:none; }
-  .pad button:disabled{ opacity:.25; cursor:default; }
-  .pad button:active:not(:disabled){ transform:translateY(2px); }
   .opt-row{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
-  .tchip{ display:flex; align-items:center; gap:7px; padding:8px 14px 8px 9px; border-radius:999px; cursor:pointer;
-    border:2px solid rgba(244,239,230,.25); background:rgba(244,239,230,.08); color:var(--card); font-size:14px; font-weight:800; }
-  .tchip.sel{ border-color:var(--gold); background:rgba(232,182,71,.22); }
-  .tchip .av{ width:18px; height:18px; border-radius:50%; }
+  .tchip{ display:flex; align-items:center; gap:7px; padding:6px 14px 6px 7px; border-radius:999px; cursor:pointer;
+    border:2.5px solid var(--ink); background:#fff; color:var(--ink); font-size:14px; font-weight:800; box-shadow:0 3px 0 var(--ink); }
+  .tchip:active{ box-shadow:0 0 0; translate:0 3px; }
+  .tchip.sel{ background:var(--moon); }
+  .tchip .av{ width:18px; height:18px; border-radius:50%; border:2px solid var(--ink); }
   .sub-btns{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
   .sub-btns .txt-btn{ min-width:132px; }
-  .notes{ width:var(--uiw); margin-top:4px; font-size:12.5px; font-weight:700; line-height:1.8; opacity:.85; text-align:center; }
-  .vres{ width:var(--uiw); display:flex; flex-direction:column; gap:5px; }
-  .vres-row{ display:flex; align-items:center; gap:9px; padding:6px 12px; border-radius:10px; background:rgba(244,239,230,.08); font-size:14px; font-weight:800; }
+  .notes{ width:var(--uiw); margin-top:10px; font-size:12.5px; font-weight:800; line-height:1.8; text-align:center; }
+  .vres{ width:var(--uiw); display:flex; flex-direction:column; gap:6px; }
+  .vres-row{ display:flex; align-items:center; gap:9px; padding:6px 12px; border-radius:12px; background:#fff; border:2.5px solid var(--ink); font-size:14px; font-weight:800; }
   .vres-row .nm{ flex:1; text-align:left; }
-  .vres-row.top{ background:rgba(224,83,61,.28); }
+  .vres-row.top{ background:#ffd6da; }
   .big-msg{ font-size:22px; font-weight:900; letter-spacing:.06em; text-align:center; }
 
   /* 試作用(DEBUG)パネル */
-  .dbg{ width:var(--uiw); margin-top:18px; border:1.5px dashed rgba(244,239,230,.35); border-radius:14px; padding:10px 12px 12px; }
-  .dbg-h{ font-size:11.5px; font-weight:900; letter-spacing:.12em; opacity:.7; margin-bottom:7px; text-align:center; }
-  .dbg-row{ display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:9px; font-size:12.5px; font-weight:700; cursor:pointer; }
-  .dbg-row.act{ background:rgba(232,182,71,.24); }
+  .dbg{ width:var(--uiw); margin-top:22px; border:2.5px dashed rgba(45,42,74,.45); border-radius:18px; padding:10px 12px 12px; background:rgba(255,255,255,.6); }
+  .dbg-h{ font-size:11.5px; font-weight:900; letter-spacing:.12em; color:var(--sub); margin-bottom:7px; text-align:center; }
+  .dbg-row{ display:flex; align-items:center; gap:8px; padding:5px 8px; border-radius:10px; font-size:12.5px; font-weight:700; cursor:pointer; }
+  .dbg-row.act{ background:rgba(255,216,77,.6); }
   .dbg-row.dead{ opacity:.45; }
   .dbg-row .nm{ min-width:34px; font-weight:900; }
-  .dbg-row .inf{ flex:1; text-align:left; opacity:.85; }
+  .dbg-row .inf{ flex:1; text-align:left; }
   .dbg-row .ok{ font-size:11px; font-weight:900; color:var(--vil); }
-  .dbg-btns{ display:flex; flex-wrap:wrap; gap:7px; justify-content:center; margin-top:9px; }
-  .dbg-btns .txt-btn{ padding:6px 13px; font-size:12px; }
+  .dbg-btns{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:9px; }
+  .dbg-btns .txt-btn{ padding:5px 12px; font-size:12px; }
 
   .toast{ position:fixed; left:50%; bottom:38px; transform:translateX(-50%); z-index:90;
-    background:rgba(24,20,38,.96); border:1.5px solid rgba(244,239,230,.3); color:var(--card);
-    padding:11px 20px; border-radius:999px; font-size:14px; font-weight:800; letter-spacing:.05em;
+    background:var(--ink); color:#fff; border-radius:999px;
+    padding:10px 20px; font-size:14px; font-weight:800; letter-spacing:.05em;
     opacity:0; pointer-events:none; transition:opacity .2s; white-space:nowrap; max-width:92vw; }
   .toast.on{ opacity:1; }
   #bigFx{ position:fixed; inset:0; z-index:78; display:none; align-items:center; justify-content:center; pointer-events:none; }
   #bigFx.on{ display:flex; animation:bigFx 2.2s ease-out forwards; }
-  #bigFx span{ font-size:clamp(28px,8.6vw,48px); font-weight:900; letter-spacing:.1em; color:#fff; text-shadow:0 4px 0 rgba(0,0,0,.45);
-    background:rgba(20,16,32,.55); padding:10px 26px; border-radius:18px; }
-  @keyframes bigFx{ 0%{opacity:0; transform:scale(1.25);} 12%{opacity:1; transform:scale(1);} 80%{opacity:1;} 100%{opacity:0;} }
+  #bigFx span{ font-size:clamp(28px,8.6vw,48px); font-weight:900; letter-spacing:.1em; color:var(--ink);
+    background:var(--moon); border:3.5px solid var(--ink); box-shadow:0 7px 0 var(--ink); border-radius:22px; padding:10px 28px; }
+  @keyframes bigFx{ 0%{opacity:0; transform:scale(1.3) rotate(-4deg);} 12%{opacity:1; transform:scale(1) rotate(-2deg);} 80%{opacity:1;} 100%{opacity:0;} }
 
   .help-btn{ position:fixed; left:12px; top:12px; z-index:40; display:flex; align-items:center; gap:6px;
-    padding:7px 14px 7px 8px; border:none; border-radius:999px; cursor:pointer;
-    background:rgba(244,239,230,.12); color:var(--card); font-size:13px; font-weight:900; letter-spacing:.06em; }
-  .help-btn span{ width:20px; height:20px; border-radius:50%; background:var(--gold); color:#3a2a06;
-    display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:900; }
+    padding:5px 13px 5px 6px; border:2.5px solid var(--ink); border-radius:999px; cursor:pointer; box-shadow:0 3px 0 var(--ink);
+    background:#fff; color:var(--ink); font-size:13px; font-weight:900; letter-spacing:.06em; }
+  .help-btn span{ width:20px; height:20px; border-radius:50%; background:var(--moon); color:var(--ink); border:2px solid var(--ink);
+    display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; }
   .snd-btn{ position:fixed; right:12px; top:12px; z-index:40; display:flex; align-items:center; gap:6px;
-    padding:7px 14px; border:none; border-radius:999px; cursor:pointer;
-    background:rgba(244,239,230,.12); color:var(--card); font-size:13px; font-weight:900; letter-spacing:.06em; }
+    padding:5px 13px; border:2.5px solid var(--ink); border-radius:999px; cursor:pointer; box-shadow:0 3px 0 var(--ink);
+    background:#fff; color:var(--ink); font-size:13px; font-weight:900; letter-spacing:.06em; }
   .snd-btn svg{ width:17px; height:17px; }
   .snd-btn .slash{ display:none; }
   .snd-btn.off .wave{ display:none; }
   .snd-btn.off .slash{ display:block; }
-  #roleBtn{ top:54px; display:none; }
+  #roleBtn{ top:56px; display:none; }
   #gameScene.on ~ #roleBtn{ display:flex; }
 
   .overlay{ position:fixed; inset:0; z-index:80; display:flex; align-items:center; justify-content:center; padding:18px;
-    background:rgba(10,8,20,.72); opacity:0; pointer-events:none; transition:opacity .24s; }
+    background:rgba(45,42,74,.42); opacity:0; pointer-events:none; transition:opacity .24s; }
   .overlay.on{ opacity:1; pointer-events:auto; }
-  .r-card{ width:min(92vw,430px); max-height:82svh; overflow-y:auto; background:var(--card); color:var(--ink);
-    border-radius:18px; border-top:9px solid var(--gold); padding:24px 20px 20px; text-align:center;
+  .r-card{ width:min(92vw,430px); max-height:82svh; overflow-y:auto; background:#fff; color:var(--ink);
+    border:3.5px solid var(--ink); border-radius:24px; box-shadow:0 8px 0 var(--ink); padding:24px 20px 20px; text-align:center;
     transition:opacity .2s, transform .2s; }
   .r-card::-webkit-scrollbar{ width:7px; }
   .r-card::-webkit-scrollbar-track{ background:transparent; }
-  .r-card::-webkit-scrollbar-thumb{ background:rgba(33,29,43,.26); border-radius:99px; }
+  .r-card::-webkit-scrollbar-thumb{ background:rgba(45,42,74,.26); border-radius:99px; }
   .r-title{ font-size:24px; font-weight:900; letter-spacing:.1em; margin-bottom:12px; }
   .h-sec{ position:relative; text-align:left; font-size:15px; font-weight:900; letter-spacing:.08em; margin:14px 0 6px; padding-left:12px; }
-  .h-sec::before{ content:""; position:absolute; left:0; top:2px; bottom:2px; width:5px; border-radius:3px; background:var(--gold); }
+  .h-sec::before{ content:""; position:absolute; left:0; top:2px; bottom:2px; width:5px; border-radius:3px; background:var(--red); }
   .r-card p{ text-align:left; font-size:14px; font-weight:500; line-height:1.85; }
   .r-card .h-list{ text-align:left; font-size:14px; font-weight:500; line-height:1.85; margin:0 0 4px 18px; }
-  .r-card .close{ margin-top:16px; padding:10px 26px; border:none; border-radius:999px; cursor:pointer;
-    background:var(--gold); color:#3a2a06; font-size:15px; font-weight:900; letter-spacing:.1em; }
-  .r-btns{ display:flex; gap:10px; justify-content:center; margin-top:16px; flex-wrap:wrap; }
+  .r-card .close{ margin-top:16px; padding:9px 26px; border:3px solid var(--ink); border-radius:999px; cursor:pointer; box-shadow:0 4px 0 var(--ink);
+    background:var(--moon); color:var(--ink); font-size:15px; font-weight:900; letter-spacing:.1em; }
+  .r-card .close:active{ box-shadow:0 0 0; translate:0 4px; }
+  .r-btns{ display:flex; gap:12px; justify-content:center; margin-top:16px; flex-wrap:wrap; }
   .r-btns button{ margin-top:0 !important; }
-  .r-btns .ghost{ padding:10px 22px; border:1.5px solid rgba(33,29,43,.3); border-radius:999px; background:transparent; color:var(--ink);
-    font-size:14px; font-weight:900; cursor:pointer; }
-  .role-big{ font-size:40px; font-weight:900; letter-spacing:.12em; margin:6px 0 10px; }
-  .role-big.villager{ color:#2f9a47; } .role-big.seer{ color:#2b7fc2; } .role-big.wolf{ color:#c93b27; }
+  .r-btns .ghost{ padding:9px 22px; border:3px solid var(--ink); border-radius:999px; background:#fff; color:var(--ink);
+    font-size:14px; font-weight:900; cursor:pointer; box-shadow:0 4px 0 var(--ink); }
+  .role-big{ font-size:42px; font-weight:900; letter-spacing:.12em; margin:6px 0 10px; -webkit-text-stroke:2px var(--ink); paint-order:stroke fill; }
+  .role-big.villager{ color:var(--vil); } .role-big.seer{ color:var(--seer); } .role-big.wolf{ color:var(--wolf); }
   .role-desc{ font-size:14px; font-weight:600; line-height:1.85; text-align:left; }
-  .res-row{ display:flex; align-items:center; gap:9px; padding:7px 10px; border-radius:10px; background:rgba(33,29,43,.06); margin-top:6px; font-size:14px; font-weight:800; text-align:left; }
+  .res-row{ display:flex; align-items:center; gap:9px; padding:7px 10px; border-radius:14px; background:#fff; border:2.5px solid var(--ink); margin-top:7px; font-size:14px; font-weight:800; text-align:left; }
   .res-row .nm{ flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .res-row .rl{ font-size:12px; font-weight:900; border-radius:999px; padding:2px 9px; color:#fff; }
-  .res-row .cs{ font-size:11.5px; font-weight:700; opacity:.6; min-width:58px; text-align:right; }
-  .win-banner{ font-size:28px; font-weight:900; letter-spacing:.08em; margin-bottom:4px; }
-  .win-banner.village{ color:#2f9a47; } .win-banner.wolf{ color:#c93b27; }
+  .res-row .rl{ font-size:12px; font-weight:900; border-radius:999px; padding:1px 9px; color:#fff; border:2px solid var(--ink); }
+  .res-row .cs{ font-size:11.5px; font-weight:700; color:var(--sub); min-width:58px; text-align:right; }
+  .win-banner{ font-size:30px; font-weight:900; letter-spacing:.06em; margin-bottom:6px; -webkit-text-stroke:2px var(--ink); paint-order:stroke fill; }
+  .win-banner.village{ color:var(--vil); } .win-banner.wolf{ color:var(--wolf); }
   /* 結果は枠外タップで一時的に隠して盤面を見る(peek・全作品共通) */
   #resultOv.on.peek{ background:transparent; }
   #resultOv.on.peek .r-card{ opacity:0; transform:scale(.92); pointer-events:none; }
 
-  .home-foot{ margin-top:auto; padding:26px 0 16px; font-size:12px; font-weight:700; letter-spacing:.08em; color:rgba(244,239,230,.5); text-decoration:none; }
+  .home-foot{ margin-top:auto; padding:26px 0 16px; font-size:12px; font-weight:800; letter-spacing:.08em; color:var(--sub); text-decoration:underline; text-underline-offset:3px; }
   #gameScene.on ~ .home-foot{ display:none; }
 
   /* ===== スタンプ・チャット(全ゲーム共通の作り) ===== */
   .stamp-btn{ width:48px; height:48px; padding:0; border:none; border-radius:50%; cursor:pointer;
-    background:rgba(244,239,230,.92); box-shadow:0 3px 0 rgba(10,8,20,.5);
+    background:rgba(255,255,255,.96); box-shadow:0 3px 0 rgba(10,8,20,.5);
     display:flex; align-items:center; justify-content:center; font-size:27px; line-height:1; }
   .stamp-btn:active{ transform:translateY(1px) scale(.93); }
   .stamp-mute{ width:34px; height:34px; padding:0; border:none; border-radius:50%; cursor:pointer;
-    position:absolute; left:100%; top:7px; margin-left:9px; background:rgba(244,239,230,.92);
+    position:absolute; left:100%; top:7px; margin-left:9px; background:rgba(255,255,255,.96);
     box-shadow:0 3px 0 rgba(10,8,20,.5); display:flex; align-items:center; justify-content:center; color:#555; }
   .stamp-mute svg{ width:19px; height:19px; transform:translateY(1px); }
   .stamp-mute .mute-slash{ display:none; }
@@ -308,7 +327,7 @@
   .pop-line.out{ opacity:0; transition:opacity .14s linear; }
   @keyframes popIn{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
   .chat-log{ display:flex; flex-direction:column; width:100%; max-height:126px; overflow-y:auto; overscroll-behavior:contain;
-    background:rgba(255,255,255,.92); border-radius:8px; padding:9px 7px 9px 12px; border:none; color:#23211f;
+    background:rgba(255,255,255,.96); border-radius:8px; padding:9px 7px 9px 12px; border:none; color:#23211f;
     box-shadow:0 2px 7px rgba(35,33,31,.26); font-size:12px; line-height:1.6; }
   .chat-log:empty{ display:none; }
   .chat-log::-webkit-scrollbar{ width:9px; }
@@ -321,17 +340,17 @@
     border:1.1px solid rgba(35,33,31,.17); border-radius:5px; font-size:11.5px; font-weight:700; letter-spacing:.06em; color:rgba(35,33,31,.8); }
   .c-nm{ font-weight:900; margin-right:5px; color:rgba(35,33,31,.9); }
   .chat-in{ flex:1; min-width:0; border:none; border-radius:8px; padding:9px 12px; font-family:inherit;
-    font-size:13px; font-weight:700; background:rgba(255,255,255,.92); color:#23211f; box-shadow:0 2px 7px rgba(35,33,31,.26); }
+    font-size:13px; font-weight:700; background:rgba(255,255,255,.96); color:#23211f; box-shadow:0 2px 7px rgba(35,33,31,.26); }
   .chat-in::placeholder{ color:rgba(35,33,31,.45); font-weight:700; }
   .chat-in:focus{ outline:none; box-shadow:0 2px 7px rgba(35,33,31,.26), inset 0 0 0 1.6px rgba(35,33,31,.3); }
   .chat-send{ flex:none; padding:9px 14px; border:none; border-radius:8px; cursor:pointer; font-family:inherit;
-    background:rgba(255,255,255,.92); color:#23211f; font-size:12.5px; font-weight:900; white-space:nowrap; box-shadow:0 2px 7px rgba(35,33,31,.26); }
+    background:rgba(255,255,255,.96); color:#23211f; font-size:12.5px; font-weight:900; white-space:nowrap; box-shadow:0 2px 7px rgba(35,33,31,.26); }
   .chat-send:active{ transform:translateY(1px) scale(.96); }
   .stamp-fly{ position:fixed; bottom:-30px; width:96px; z-index:53; pointer-events:none;
     display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
-    filter:drop-shadow(0 5px 9px rgba(0,0,0,.3)); animation:stampFloat 2.2s cubic-bezier(.2,.75,.35,1) forwards; }
+    filter:drop-shadow(0 5px 9px rgba(0,0,0,.25)); animation:stampFloat 2.2s cubic-bezier(.2,.75,.35,1) forwards; }
   .stamp-fly .s-emoji{ font-size:80px; line-height:1; }
-  .stamp-fly .s-name{ margin-top:2px; font-size:15px; font-weight:900; color:#fff; white-space:nowrap; letter-spacing:.04em; }
+  .stamp-fly .s-name{ margin-top:2px; font-size:15px; font-weight:900; color:var(--ink); white-space:nowrap; letter-spacing:.04em; }   /* 明るい地なので名前は紺 */
   .stamp-fly.over-dialog{ z-index:82; }
   @keyframes stampFloat{
     0%{ transform:translate(0,96px) scale(.5); opacity:0; }
@@ -342,13 +361,25 @@
 </style>
 </head>
 <body>
+<div id="bgDeco"></div>
 
 <button class="help-btn" id="helpBtn"><span>?</span>あそびかた</button>
 <button class="snd-btn" id="seBtn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wave" d="M16 9c1.2.9 1.2 5.1 0 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="wave" d="M18.5 7c2.2 1.7 2.2 8.3 0 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><g class="slash" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="16" y1="9" x2="21" y2="15"/><line x1="21" y1="9" x2="16" y2="15"/></g></svg>効果音</button>
 
 <!-- ===== タイトル ===== -->
 <div class="scene on" id="titleScene">
-  <div class="logo">盤面<span class="l2">人狼</span></div>
+  <div class="logo"><svg class="wolf" viewBox="0 0 120 110" aria-hidden="true"><g stroke="#2d2a4a" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M22 52 L27 7 L54 34 Z" fill="#8d93a6"/><path d="M98 52 L93 7 L66 34 Z" fill="#8d93a6"/>
+    <path d="M31 40 L32 22 L44 34 Z" fill="#ffb3c1" stroke="none"/><path d="M89 40 L88 22 L76 34 Z" fill="#ffb3c1" stroke="none"/>
+    <path d="M60 28 C92 28 106 46 101 66 C97 84 79 97 60 99 C41 97 23 84 19 66 C14 46 28 28 60 28 Z" fill="#a8adbf"/>
+    <path d="M60 60 C79 60 87 72 83 83 C79 93 68 97 60 97 C52 97 41 93 37 83 C33 72 41 60 60 60 Z" fill="#fff"/>
+    <path d="M35 43 L50 47" stroke-width="3.5"/><path d="M85 43 L70 47" stroke-width="3.5"/>
+    <ellipse cx="44" cy="54" rx="6" ry="7" fill="#ffd84d" stroke-width="3"/><ellipse cx="76" cy="54" rx="6" ry="7" fill="#ffd84d" stroke-width="3"/>
+    <ellipse cx="45" cy="55" rx="2.3" ry="4" fill="#2d2a4a" stroke="none"/><ellipse cx="75" cy="55" rx="2.3" ry="4" fill="#2d2a4a" stroke="none"/>
+    <ellipse cx="60" cy="69" rx="7" ry="5" fill="#2d2a4a" stroke="none"/>
+    <path d="M60 74 L60 80 M51 82 Q60 89 69 82" fill="none" stroke-width="3"/>
+    <path d="M53.5 83.5 L55.5 90 L58 85" fill="#fff" stroke-width="2"/><path d="M66.5 83.5 L64.5 90 L62 85" fill="#fff" stroke-width="2"/>
+  </g></svg><div class="lt"><span class="l1">盤上</span><span class="l2">人狼</span><svg class="claw" viewBox="0 0 50 60" aria-hidden="true"><g stroke="#ff5d6c" stroke-width="5.5" stroke-linecap="round" fill="none"><path d="M10 6 Q17 30 8 54"/><path d="M24 3 Q31 30 22 57"/><path d="M38 6 Q45 30 36 54"/></g></svg></div></div>
   <div class="t-sub">こっそり歩いて、あばいて、吊るす</div>
   <div class="room-row">
     <button id="makeRoomBtn">部屋を作る</button>
@@ -851,6 +882,7 @@ let boardN=0, pieceEls={};
 function buildBoard(){
   const b=$("board"), N=G.N; b.innerHTML=""; pieceEls={}; boardN=N;
   b.setAttribute("viewBox","0 0 "+(N*10)+" "+(N*10));
+  const df=svgEl("defs",{}); df.innerHTML='<pattern id="fogPat" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#3f3d73"/><circle cx="2.6" cy="3" r=".55" fill="#fff" opacity=".85"/><circle cx="7.4" cy="7.2" r=".4" fill="#ffd84d"/><circle cx="7.8" cy="2.2" r=".25" fill="#fff" opacity=".6"/></pattern>'; b.appendChild(df);
   const cl=svgEl("g",{id:"cellL"}); b.appendChild(cl);
   for(let y=0;y<N;y++) for(let x=0;x<N;x++){
     const r=svgEl("rect",{x:x*10+.3,y:y*10+.3,width:9.4,height:9.4,rx:1.4,class:"cell","data-x":x,"data-y":y});
@@ -868,7 +900,7 @@ function renderBoard(){
   $("cellL").querySelectorAll(".cell").forEach(r=>{
     const x=+r.dataset.x, y=+r.dataset.y, vis=visibleCell(x,y);
     const can=canMoveTo(x,y);
-    r.setAttribute("fill", !vis? "#3a3450" : can? ((x+y)%2?"#f3d98e":"#f7e3a6") : ((x+y)%2?"#e9e2d4":"#f1ebdf"));   // 動けるマスはうすい金色
+    r.setAttribute("fill", !vis? "url(#fogPat)" : can? ((x+y)%2?"#ffe27a":"#ffd84d") : ((x+y)%2?"#fff0d6":"#fffaf0"));   // 見える所=クリーム・動ける所=月の黄色・見えない所=星の出ている夜
     r.classList.toggle("can", can);
   });
   /* 目印(移動先・自分の視界の縁) */
@@ -883,7 +915,7 @@ function renderBoard(){
   /* 1回目で選んだ移動先の予告(まだ決定していない) */
   if(m && m.alive && G.phase==="move" && sel.move && DIRS[sel.move] && sel.move!==confirmedMove()){
     const v=DIRS[sel.move], tx=m.x+v[0], ty=m.y+v[1];
-    mk.appendChild(svgEl("rect",{x:tx*10+.9,y:ty*10+.9,width:8.2,height:8.2,rx:1.6,fill:"rgba(232,182,71,.25)",stroke:"#e8b647","stroke-width":.9,"stroke-dasharray":"1.8 1.2",class:"pre-mark"}));
+    mk.appendChild(svgEl("rect",{x:tx*10+.9,y:ty*10+.9,width:8.2,height:8.2,rx:1.6,fill:"rgba(255,93,108,.22)",stroke:"#ff5d6c","stroke-width":.9,"stroke-dasharray":"1.8 1.2",class:"pre-mark"}));
   }
   $("board").classList.toggle("mv", !!(m&&m.alive&&G.phase==="move"));
   /* コマ: 見えるマスにいる生存者だけ(同じマスに複数いてよい) */
@@ -909,12 +941,12 @@ function renderBoard(){
       g.dataset.id=p.id;
       const body=g.querySelector(".body"), tx=g.querySelector("text"), ring=g.querySelector(".ring");
       body.setAttribute("r",r); body.setAttribute("fill",p.c);
-      body.setAttribute("stroke", m&&p.id===m.id? "#fff":"rgba(0,0,0,.35)"); body.setAttribute("stroke-width", m&&p.id===m.id? .7:.35);
+      body.setAttribute("stroke", "#2d2a4a"); body.setAttribute("stroke-width", m&&p.id===m.id? 1.05:.5);   // 自分のコマはフチを太く
       tx.textContent=p.lb||[...p.n][0]||"?"; tx.setAttribute("font-size",(r*1.05).toFixed(2));
       ring.setAttribute("r",(r+0.9).toFixed(2));
       const isTg=actTargets().some(t=>t.id===p.id);
       ring.style.display = isTg? "" : "none";
-      ring.setAttribute("stroke", (sel.tg===p.id)? "#e8b647" : "#fff");
+      ring.setAttribute("stroke", (sel.tg===p.id)? "#ff5d6c" : "#2d2a4a");
       g.classList.toggle("tg",isTg);
       const q=posOf(p);
       g.style.transform="translate("+(q.x*10+ox)+"px,"+(q.y*10+oy)+"px)";
@@ -929,7 +961,7 @@ function renderBoard(){
   bubbles.forEach(bb=>{ const p=pById(bb.f); if(!p||!p.alive||!visibleCell(p.x,p.y)) return;
     const q=posOf(p), w=Math.max(6,[...bb.t].length*3.1+2.4), cx=q.x*10+5, top=Math.max(.3,q.y*10-3.4);
     const g=svgEl("g",{class:"bub"});
-    g.appendChild(svgEl("rect",{x:cx-w/2,y:top,width:w,height:4.6,rx:1.4,fill:"#fff",stroke:p.c,"stroke-width":.5}));
+    g.appendChild(svgEl("rect",{x:cx-w/2,y:top,width:w,height:4.6,rx:1.4,fill:"#fff",stroke:"#2d2a4a","stroke-width":.45}));
     const t=svgEl("text",{x:cx,y:top+2.35,"text-anchor":"middle","dominant-baseline":"central","font-size":"2.9","font-weight":"900",fill:"#23211f"}); t.textContent=bb.t;
     g.appendChild(t); bl.appendChild(g); });
 }
@@ -1289,7 +1321,7 @@ function pickCode(t){                         // 招待メッセージを丸ご�
   const u=t.toUpperCase(); m=/合言葉[：:\s]*([A-Z0-9]{4,6})/.exec(u); if(m) return m[1];
   return u.replace(/[^A-Z0-9]/g,"");
 }
-function inviteText(c){ return "牧村が作った『盤面人狼』を一緒に遊ぼう！\n"+location.origin+location.pathname+"?join="+c+"\n\n合言葉："+c+"\n※リンクから参加できない時に使ってね"; }
+function inviteText(c){ return "牧村が作った『盤上人狼』を一緒に遊ぼう！\n"+location.origin+location.pathname+"?join="+c+"\n\n合言葉："+c+"\n※リンクから参加できない時に使ってね"; }
 let sb=null;
 function sbClient(){ if(!sb) sb=window.supabase.createClient(SB_URL, SB_KEY); return sb; }
 /* 名前はこのゲームだけのもの(ロビー系の共通ルール)。初期値はハブのアカウント名、無ければ「ゲスト」 */
@@ -1596,6 +1628,29 @@ render=function(){ if((isHost||debug)&&G) onState(); _render(); };
 window.addEventListener("pointerdown",ensureAudio,{passive:true});
 /* タブを閉じた/別ページへ移った=すぐに退出を知らせる(5分の猶予を待たせない)。一瞬の通信切れはpresenceの猶予で吸収する */
 window.addEventListener("pagehide",()=>{ if(ch){ try{ ch.send({type:"broadcast",event:"bye",payload:{id:myId}}); }catch(e){} } });
+/* ================= 背景: 大きな満月・星・オオカミの足あと(ポップの中のオオカミ感) =================
+   足あとは画面の端に寄せて散らす(真ん中のUIとなるべく重ねない)。画面サイズが変わったら描き直す */
+function drawBg(){
+  const W=window.innerWidth, H=window.innerHeight, R=Math.random, narrow=W<640;
+  const mr=Math.max(70,Math.min(150,W*.16)), mx=W-mr*.55, my=mr*.6;
+  let g='<circle cx="'+mx+'" cy="'+my+'" r="'+mr+'" fill="#ffd84d" stroke="#2d2a4a" stroke-width="4"/>'
+    +'<circle cx="'+(mx-mr*.35)+'" cy="'+(my+mr*.18)+'" r="'+(mr*.16)+'" fill="#f5c63a"/><circle cx="'+(mx+mr*.1)+'" cy="'+(my+mr*.45)+'" r="'+(mr*.1)+'" fill="#f5c63a"/><circle cx="'+(mx-mr*.05)+'" cy="'+(my-mr*.25)+'" r="'+(mr*.08)+'" fill="#f5c63a"/>';
+  const star=(x,y,r,c)=>'<path d="M'+x+' '+(y-r)+' Q'+x+' '+y+' '+(x+r)+' '+y+' Q'+x+' '+y+' '+x+' '+(y+r)+' Q'+x+' '+y+' '+(x-r)+' '+y+' Q'+x+' '+y+' '+x+' '+(y-r)+' Z" fill="'+c+'" stroke="#2d2a4a" stroke-width="2" stroke-linejoin="round"/>';
+  const ns=narrow?5:9;
+  for(let i=0;i<ns;i++){ const x= R()<.5? R()*W*.22 : W*(.78+R()*.2), y=R()*H*.55+10; g+=star(Math.round(x),Math.round(y),Math.round(7+R()*9), R()<.6?"#ffd84d":"#fff"); }   // ★数値で渡す(文字列だと足し算が文字の連結になって巨大な星になる)
+  const paw=(x,y,rot,sc,c)=>'<g transform="translate('+x+' '+y+') rotate('+rot+') scale('+sc+')" fill="'+c+'"><ellipse cx="0" cy="8" rx="11" ry="9"/><ellipse cx="-12" cy="-6" rx="4.6" ry="6"/><ellipse cx="-4" cy="-13" rx="4.6" ry="6.2"/><ellipse cx="5" cy="-13" rx="4.6" ry="6.2"/><ellipse cx="13" cy="-6" rx="4.6" ry="6"/></g>';
+  const np=Math.round(Math.max(8, Math.min(20, W*H/60000)));
+  for(let i=0;i<np;i++){
+    let x, y;
+    if(R()<.75){ x= R()<.5? R()*W*.16 : W*(.84+R()*.16); y=H*(.25+R()*.75); }
+    else { x= R()<.5? R()*W*.3 : W*(.7+R()*.3); y=H*(.88+R()*.12); }
+    const cols=["#c9c2e0","#f3b7bf","#bfe3d0","#e9d3b0"];
+    g+=paw(x.toFixed(0),y.toFixed(0),Math.floor(R()*360),(.8+R()*.7).toFixed(2),cols[Math.floor(R()*cols.length)]);
+  }
+  $("bgDeco").innerHTML='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="opacity:'+(narrow?.7:1)+'">'+g+'</svg>';
+}
+let bgT=0; window.addEventListener("resize",()=>{ clearTimeout(bgT); bgT=setTimeout(drawBg,250); });
+drawBg();
 renderSnd();
 })();
 </script>
