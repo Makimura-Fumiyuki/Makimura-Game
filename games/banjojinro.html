@@ -103,7 +103,7 @@
   .rtx{ flex:1; min-width:0; text-align:left; }
   .rname{ display:flex; align-items:center; gap:7px; font-size:14.5px; font-weight:900; letter-spacing:.04em; }
   .rbadge{ flex:none; width:72px; height:18px; display:inline-flex; align-items:center; justify-content:center; line-height:1; border-radius:999px; font-size:10.5px; font-weight:900; letter-spacing:.02em; }
-  .rbadge.one{ width:18px; font-size:10.5px; letter-spacing:0; }   /* ロビー=「白」「黒」の丸 */
+  .rbadge.one{ width:18px; font-size:10.5px; letter-spacing:0; box-shadow:none; }   /* ロビー=「白」「黒」の丸 */
   .rbadge.white{ background:#fff; color:#222; }
   .rbadge.black{ background:#111; color:#fff; box-shadow:inset 0 0 0 1px rgba(255,255,255,.55); }
   .rdesc{ margin-top:2px; font-size:11.5px; font-weight:600; line-height:1.5; opacity:.72; }
@@ -178,6 +178,7 @@
   .ros .r2 .tgs{ margin-left:auto; display:flex; gap:4px; align-items:center; }
   .ros .nm{ flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left; }
   .ros .av{ width:15px; height:15px; border-radius:50%; flex:none; position:relative; }
+  .ros .av svg{ position:absolute; left:-2px; top:-3px; width:19px; height:19px; }
   .ros.dead{ opacity:.42; }
   .ros.dead .nm{ text-decoration:line-through; text-decoration-thickness:2px; }
   .ros.dead .av::before, .ros.dead .av::after{ content:""; position:absolute; left:50%; top:-2px; bottom:-2px; width:2px; margin-left:-1px;
@@ -198,7 +199,7 @@
   .tg.poison{ padding:0 7px; background:#7a2540; color:#ffd9e4; box-shadow:inset 0 0 0 1px rgba(255,255,255,.35); }   /* ドクターにだけ見える「毒」 */
   .tg.white, .tg.black{ width:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; line-height:1; }   /* 占い結果は丸(文字は真ん中) */
   .tg.white{ background:#fff; color:#222; }
-  .tg.black{ background:#111; color:#fff; box-shadow:inset 0 0 0 1px rgba(255,255,255,.5); }
+  .tg.black{ background:#111; color:#fff; }
   .tg.vcnt{ width:26px; background:var(--gold); color:#3a2a06; }
   .ros .ck{ flex:none; width:16px; height:16px; display:flex; align-items:center; justify-content:center; }
   .ros .ck svg{ width:16px; height:16px; }
@@ -235,11 +236,12 @@
   /* 帯の中のボタン(サイズ固定) */
   .gbtn{ width:112px; height:30px; padding:0; border:1.5px solid rgba(244,239,230,.4); border-radius:999px; background:transparent;
     color:var(--card); font-size:12.5px; font-weight:900; letter-spacing:.04em; white-space:nowrap; cursor:pointer; }
+  .gbtn.wide{ width:150px; }   /* 議論好きの「議論強制スタート」と、その時の「何もしない」 */
   .gbtn.sel{ background:var(--gold); border-color:var(--gold); color:#3a2a06; }
   .gbtn:active{ transform:translateY(1px); }
   /* コマの横(基本は右・入らない時は左)に出す操作。上に「◯◯と接触」、ボタンは縦に並べる(全部同じサイズ・囲みの背景はなし) */
   /* コマから出ている吹き出し。右に出す時はしっぽが左、左に出す時はしっぽが右(--ty=しっぽの高さ) */
-  .pop{ position:absolute; z-index:4; display:flex; flex-direction:column; align-items:stretch; gap:5px; width:168px; transform:translateY(-50%); box-sizing:border-box;
+  .pop{ position:absolute; z-index:4; display:flex; flex-direction:column; align-items:stretch; gap:5px; width:183px; transform:translateY(-50%); box-sizing:border-box;
     background:rgba(24,20,38,.97); border:1.5px solid rgba(232,182,71,.55); border-radius:14px; padding:8px; box-shadow:0 8px 22px rgba(0,0,0,.45); }
   .pop::before, .pop::after{ content:""; position:absolute; top:var(--ty,50%); width:0; height:0; border:9px solid transparent; transform:translateY(-50%); }
   .pop.r::before{ right:100%; border-right-color:rgba(232,182,71,.55); }
@@ -247,7 +249,7 @@
   .pop.l::before{ left:100%; border-left-color:rgba(232,182,71,.55); }
   .pop.l::after{ left:calc(100% - 2px); border-left-color:rgba(24,20,38,.97); }
   .pop .pop-h{ font-size:12px; font-weight:900; letter-spacing:.02em; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--gold); padding:0 2px 2px; }
-  .pbtn{ width:150px; height:34px; padding:0 8px; border:none; border-radius:10px; background:rgba(244,239,230,.1); color:var(--card);
+  .pbtn{ width:165px; height:34px; padding:0 8px; border:none; border-radius:10px; background:rgba(244,239,230,.1); color:var(--card);
     box-shadow:inset 0 0 0 1.5px rgba(244,239,230,.18);
     display:flex; align-items:center; justify-content:center; gap:6px;
     font-size:11.5px; font-weight:900; letter-spacing:-.01em; white-space:nowrap; cursor:pointer; }
@@ -662,9 +664,9 @@ function playStep(){ if(!actx) return; const t=T0(); note(660,t,0.08,0.1,"triang
 function playMove(){ if(!actx) return; noiseHit(T0(),500,1800,0.9,0.12,0.3); }
 function playSeer(){ if(!actx) return; const t=T0(); [1047,1319,1568].forEach((f,i)=>note(f,t+i*0.07,0.4,0.09,"sine")); }
 function playPoison(){ if(!actx) return; const t=T0(); note(420,t,0.18,0.14,"sine",180); note(300,t+0.12,0.28,0.1,"triangle",120); }
-function playDeath(){ if(!actx) return; const t=T0(); note(220,t,0.7,0.18,"sawtooth",90); note(233,t,0.7,0.08,"sine",96); noiseHit(t,300,120,0.6,0.1,0.6); }
+function playDeath(){ if(!actx) return; const t=T0(); note(392,t,1.0,0.055,"sine",370); note(294,t+0.22,1.3,0.05,"sine",277); note(196,t+0.22,1.3,0.03,"sine"); }   // 死亡(吊り・敏感肌のお知らせも)=小さくやさしい下がる2音
 function playTalk(){ if(!actx) return; const t=T0(); [523,659,784].forEach((f,i)=>note(f,t+i*0.1,0.3,0.12,"triangle")); }
-function playVote(){ if(!actx) return; const t=T0(); note(392,t,0.16,0.14,"square"); note(294,t+0.14,0.3,0.12,"square"); }
+function playVote(){ if(!actx) return; const t=T0(); note(330,t,0.1,0.06,"triangle"); note(247,t+0.08,0.22,0.055,"sine"); }   // 投票の確定=低めでやわらかく
 function playWarn(){ if(!actx) return; note(880,T0(),0.06,0.09,"square"); }
 function playWin(){ if(!actx) return; const t=T0();
   [523,659,784,1047].forEach((f,i)=>note(f,t+i*0.09,0.22,0.14,"triangle"));
@@ -722,16 +724,18 @@ function roleErr(n){
 }
 /* 役職のアイコン(1つにつき2色=役職の色の丸+白の絵。細部は丸と同じ色で抜く)・短い説明・占い結果 */
 const ROLE_COL={ villager:"#5fb46e", seer:"#4a97d8", hawk:"#2a9a8c", wolf:"#d84c36", mad:"#8f55c4", medium:"#6f7fd0", doctor:"#8ab13a", talker:"#d89a3a", sensitive:"#d8729a", miner:"#a3342a" };
+/* ★人狼の役職アイコンは「左上にオオカミ(小さめ)+右下にその人狼を示す物」で統一(2026-09-25牧村指示)。新しい人狼を足す時もWOLF_Gを使う */
+const WOLF_G=c=>'<g transform="translate(.2 .2) scale(.8)"><path d="M6.2 4.8l3.1 3.5h5.4l3.1-3.5.6 7.3c0 3.6-2.9 6.7-6.4 7.2-3.5-.5-6.4-3.6-6.4-7.2z" fill="#fff"/><circle cx="9.8" cy="11.9" r="1.05" fill="'+c+'"/><circle cx="14.2" cy="11.9" r="1.05" fill="'+c+'"/><path d="M10.9 15h2.2l-1.1 1.3z" fill="'+c+'"/></g>';
 const ICON_G={
   villager:c=>'<circle cx="12" cy="8.8" r="3.5" fill="#fff"/><path d="M5.6 19.3c.6-3.5 3.1-5.5 6.4-5.5s5.8 2 6.4 5.5z" fill="#fff"/>',
   seer:c=>'<circle cx="12" cy="10.4" r="5.2" fill="#fff"/><path d="M7.6 19.4h8.8l-1.5-3h-5.8z" fill="#fff"/><path d="M10.1 7.6l.6 1.5 1.5.6-1.5.6-.6 1.5-.6-1.5-1.5-.6 1.5-.6z" fill="'+c+'"/>',
   hawk:c=>'<path d="M3.6 12c2.3-3.7 5.1-5.5 8.4-5.5s6.1 1.8 8.4 5.5c-2.3 3.7-5.1 5.5-8.4 5.5S5.9 15.7 3.6 12z" fill="#fff"/><circle cx="12" cy="12" r="2.9" fill="'+c+'"/><circle cx="13" cy="11" r=".9" fill="#fff"/>',
-  wolf:c=>'<g transform="translate(.2 .2) scale(.8)"><path d="M6.2 4.8l3.1 3.5h5.4l3.1-3.5.6 7.3c0 3.6-2.9 6.7-6.4 7.2-3.5-.5-6.4-3.6-6.4-7.2z" fill="#fff"/><circle cx="9.8" cy="11.9" r="1.05" fill="'+c+'"/><circle cx="14.2" cy="11.9" r="1.05" fill="'+c+'"/><path d="M10.9 15h2.2l-1.1 1.3z" fill="'+c+'"/></g><path d="M17.3 11.6c1.9 2.5 2.9 4.2 2.9 5.5a2.9 2.9 0 0 1-5.8 0c0-1.3 1-3 2.9-5.5z" fill="#fff" stroke="'+c+'" stroke-width="1.3" stroke-linejoin="round"/><path d="M16.1 16.6a1.3 1.3 0 0 0 1 1.5" fill="none" stroke="'+c+'" stroke-width="1" stroke-linecap="round"/>',   // 毒殺人狼=オオカミ+毒のしずく
+  wolf:c=>WOLF_G(c)+'<path d="M17.3 11.6c1.9 2.5 2.9 4.2 2.9 5.5a2.9 2.9 0 0 1-5.8 0c0-1.3 1-3 2.9-5.5z" fill="#fff" stroke="'+c+'" stroke-width="1.3" stroke-linejoin="round"/><path d="M16.1 16.6a1.3 1.3 0 0 0 1 1.5" fill="none" stroke="'+c+'" stroke-width="1" stroke-linecap="round"/>',   // 毒殺人狼=オオカミ+毒のしずく
   medium:c=>'<path d="M6 19.6V11a6 6 0 0 1 12 0v8.6l-1.5-1.6-1.5 1.6-1.5-1.6-1.5 1.6-1.5-1.6-1.5 1.6-1.5-1.6z" fill="#fff"/><circle cx="9.9" cy="10.9" r="1.1" fill="'+c+'"/><circle cx="14.1" cy="10.9" r="1.1" fill="'+c+'"/>',
   doctor:c=>'<path d="M9.2 3.6h5.6v1.7h-.9v4.2l4.8 7.8a1.8 1.8 0 0 1-1.5 2.7H6.8a1.8 1.8 0 0 1-1.5-2.7l4.8-7.8V5.3h-.9z" fill="#fff"/><path d="M8 14.3h8l2.2 3.6a1 1 0 0 1-.8 1.5H6.6a1 1 0 0 1-.8-1.5z" fill="'+c+'"/><circle cx="10.6" cy="16.8" r=".9" fill="#fff"/><circle cx="13.6" cy="15.9" r=".6" fill="#fff"/>',   // 科学者風=フラスコ
   talker:c=>'<path d="M4 6.2h16a1.4 1.4 0 0 1 1.4 1.4v7.6a1.4 1.4 0 0 1-1.4 1.4h-8.6L7 20.2V16.6H4a1.4 1.4 0 0 1-1.4-1.4V7.6A1.4 1.4 0 0 1 4 6.2z" fill="#fff"/><circle cx="8.4" cy="11.4" r="1.05" fill="'+c+'"/><circle cx="12" cy="11.4" r="1.05" fill="'+c+'"/><circle cx="15.6" cy="11.4" r="1.05" fill="'+c+'"/>',
   sensitive:c=>'<circle cx="12" cy="12" r="3.6" fill="#fff"/><path d="M7.4 7.8a6 6 0 0 0 0 8.4M16.6 7.8a6 6 0 0 1 0 8.4M4.7 5.3a9.6 9.6 0 0 0 0 13.4M19.3 5.3a9.6 9.6 0 0 1 0 13.4" stroke="#fff" stroke-width="1.9" fill="none" stroke-linecap="round"/>',
-  miner:c=>'<g transform="translate(0 1.3)"><path d="M12 4.4v3.2M5.3 7.5l2.2 2.2M18.7 7.5l-2.2 2.2M2.8 17.2h2.6M21.2 17.2h-2.6" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/><path d="M6 17.2a6 6 0 0 1 12 0z" fill="#fff"/><path d="M9.8 13.9h4.4v1.5H9.8z" fill="'+c+'"/></g>',   // 地面に置く半円
+  miner:c=>WOLF_G(c)+'<path d="M19.6 13.9c.4-1.3 1.2-1.9 2.3-1.9" fill="none" stroke="#fff" stroke-width="1.3" stroke-linecap="round"/><path d="M22.3 10.3l.35.95.95.35-.95.35-.35.95-.35-.95-.95-.35.95-.35z" fill="#fff"/><rect x="17.9" y="13.4" width="2.4" height="1.9" rx=".4" transform="rotate(45 19.1 14.35)" fill="#fff" stroke="'+c+'" stroke-width="1"/><circle cx="16.7" cy="17.5" r="3.6" fill="#fff" stroke="'+c+'" stroke-width="1.3"/><path d="M14.7 16.6a2.3 2.3 0 0 1 1.3-1.3" fill="none" stroke="'+c+'" stroke-width="1" stroke-linecap="round"/>',   // 地雷人狼=オオカミ+爆弾
   mad:c=>'<circle cx="12" cy="12" r="6.7" fill="#fff"/><circle cx="9.5" cy="10.3" r="1.25" fill="'+c+'"/><circle cx="14.7" cy="9.7" r=".8" fill="'+c+'"/><path d="M8.2 14.1l1.25 1.35 1.25-1.35 1.3 1.35 1.3-1.35 1.25 1.35 1.25-1.35" fill="none" stroke="'+c+'" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/>'
 };
 function roleIcon(r){ const c=ROLE_COL[r]||ROLE_COL.villager; return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="'+c+'"/>'+(ICON_G[r]||ICON_G.villager)(c)+'</svg>'; }   // 角丸四角
@@ -809,6 +813,7 @@ function seesPoison(m,t){ return !!m && !!t && m.role==="doctor" && m.alive && t
 function canMine(p){ return !!p && p.role==="miner" && (G.tick+1)-(p.lastMine==null?-99:p.lastMine)>=MINE_GAP; }
 function mineLeft(p){ return Math.max(0, MINE_GAP-((G.tick+1)-(p.lastMine==null?-99:p.lastMine))); }
 function mineOk(p,x,y){ return !!p && p.role==="miner" && x>=0&&y>=0&&x<G.N&&y<G.N && (Math.abs(p.x-x)+Math.abs(p.y-y))<=1; }   // 自分のマス＋となり4マス(ななめ不可)
+function mineEditable(m){ if(!m||!m.alive||G.phase!=="act"||m.role!=="miner"||!canMine(m)) return false; const st=actState(); return !st.auto && !st.none; }   // 行動が解決されるまで地雷は置き直せる
 function mineAt(x,y){ return (G.mines||[]).find(mn=>mn.x===x&&mn.y===y); }
 function seesMine(m){ return canSeeAll() || isWolf(m); }   // 地雷が見えるのは人狼だけ(観戦・決着後は全員)
 function corpseAt(x,y){ return (G.corpses||[]).filter(cp=>cp.x===x&&cp.y===y); }
@@ -1065,7 +1070,7 @@ function hostAct(a){
   if(a.t==="act" && G.phase==="act"){
     const cur=G.acts[p.id];
     if(cur && cur.auto) return;                                        // 自動スキップ。占う/毒殺は全員の行動がそろうまで相手を変えられる
-    if(a.k==="clear"){ if(cur && cur.k==="none" && !cur.byWh){ delete G.acts[p.id]; bump(); } return; }   // 「やっぱりなし」
+    if(a.k==="clear"){ if(cur && ((cur.k==="none" && !cur.byWh) || cur.k==="mine")){ delete G.acts[p.id]; bump(); } return; }   // 「やっぱりなし」・置いた地雷の取り消し   // 「やっぱりなし」
     const k=["none","seer","poison","cure","mine"].includes(a.k)? a.k : "none";
     let o={ k:"none" };
     if(k==="mine"){                                                    // ★地雷は相手ではなくマスを選ぶ
@@ -1115,6 +1120,8 @@ function pendingDone(p){                         // ゲストの送った入力�
   if(p.sk!==G.sk) return true;
   if(p.t==="vote") return G.votes[id]===p.tg;
   if(p.t==="act" && p.k==="clear") return !G.acts[id];
+  if(p.t==="act" && p.k==="mine"){ const c=G.acts[id]; return !!c && c.k==="mine" && c.mx===p.mx && c.my===p.my; }   // 置き直しがスナップに載ったか
+  if(p.t==="act" && (p.k==="seer"||p.k==="poison"||p.k==="cure")){ const c=G.acts[id]; return !!c && c.k===p.k && c.tg===p.tg; }
   return myInputIn();
 }
 function sendAct(o){ if(ch){ try{ ch.send({type:"broadcast",event:"act",payload:o}); }catch(e){} } }
@@ -1168,6 +1175,7 @@ function myVoteNow(){ const m=me(); if(!m) return null;             // 確定し
    バッジは右端に詰め、行動を終えた人はその右にチェック(チェックが無い時は右に詰めたまま)
    死亡は議論のはじめに公表されてから(1度公表された死亡は次のラウンド以降も出したまま)
    占い師には占い結果(丸)。議論 & 投票の間はここを押して投票(何度でも変えられる・同じ人をもう一度で取り消し) */
+const AV_CHECK='<svg viewBox="0 0 16 16"><path d="M3.6 8.4l2.9 2.9 5.9-6.4" fill="none" stroke="rgba(14,11,24,.55)" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.6 8.4l2.9 2.9 5.9-6.4" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';   // メンバーリスト: 行動済みはアイコンの丸の上にチェック
 const CHECK_SVG='<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="8" fill="#5fb46e"/><path d="M4.4 8.3l2.4 2.4 4.8-5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 function inputDone(id){ const ph=G.phase; return ph==="move"?G.moves[id]!==undefined : ph==="act"?G.acts[id]!==undefined : ph==="talk"?G.votes[id]!==undefined : false; }
 function renderRoster(){
@@ -1183,8 +1191,8 @@ function renderRoster(){
     const vc = (ph==="vres" && lv && lv.cnt[p.id])? '<span class="tg vcnt">'+lv.cnt[p.id]+'票</span>' : "";
     const can = canVote && p.alive && !self;
     return '<div class="ros'+(self?" self":"")+(deadShown?" dead":"")+(can?" can":"")+(can&&mv===p.id?" voted":(can&&pk===p.id?" pick":""))+'" data-pid="'+esc(p.id)+'">'
-      +'<div class="r1"><span class="av" style="background:'+p.c+'"></span><span class="nm">'+esc(p.n)+'</span>'+vc+'</div>'
-      +'<div class="r2">'+(done?'<span class="ck">'+CHECK_SVG+'</span>':'')+'<span class="tgs">'+tags+'</span></div></div>';
+      +'<div class="r1"><span class="av'+(done?" done":"")+'" style="background:'+p.c+'">'+(done?AV_CHECK:"")+'</span><span class="nm">'+esc(p.n)+'</span>'+vc+'</div>'
+      +'<div class="r2"><span class="tgs">'+tags+'</span></div></div>';
   }).join("")+(canVote? '<button type="button" class="skip-btn'+(mv==="skip"?" voted":pk==="skip"?" pick":"")+'" data-pid="skip">スキップ</button>' : "");
 }
 $("roster").addEventListener("click",e=>{
@@ -1209,7 +1217,7 @@ function buildBoard(){
   /* ★マスの通し番号(左上に小さく)。左上=1、右へ、はじまで行ったら次の行 */
   const nl=svgEl("g",{id:"noL","pointer-events":"none"}); b.appendChild(nl);
   for(let y=0;y<N;y++) for(let x=0;x<N;x++){
-    const t=svgEl("text",{x:x*10+1.25,y:y*10+2.55,"font-size":"1.9","font-weight":"700",class:"cno","data-x":x,"data-y":y});
+    const t=svgEl("text",{x:x*10+1.25,y:y*10+2.23,"font-size":"1.27","font-weight":"700",class:"cno","data-x":x,"data-y":y});
     t.textContent=String(y*N+x+1); nl.appendChild(t);
   }
   b.appendChild(svgEl("g",{id:"markL"}));
@@ -1248,19 +1256,17 @@ function renderBoard(){
   /* ★死体(霊感が強い人だけ)。コマより下のレイヤーに出す */
   if(seesCorpse(m)) (G.corpses||[]).forEach(cp=>{
     const cx=cp.x*10+5, cy=cp.y*10+5;
-    mk.appendChild(svgEl("circle",{cx,cy,r:3.2,fill:"rgba(30,26,44,.30)",stroke:cp.c,"stroke-width":2.5,"vector-effect":"non-scaling-stroke","stroke-dasharray":"2.4 2.2"}));
+    mk.appendChild(svgEl("circle",{cx,cy,r:3.2,fill:"rgba(30,26,44,.30)",stroke:"#cfc6b4","stroke-width":2.5,"vector-effect":"non-scaling-stroke","stroke-dasharray":"2.4 2.2"}));
     mk.appendChild(svgEl("path",{d:"M"+(cx-1.7)+" "+(cy-1.7)+"L"+(cx+1.7)+" "+(cy+1.7)+"M"+(cx+1.7)+" "+(cy-1.7)+"L"+(cx-1.7)+" "+(cy+1.7),stroke:"#fff","stroke-width":2.5,"vector-effect":"non-scaling-stroke","stroke-linecap":"round",opacity:.9}));
   });
-  /* ★地雷(人狼だけ見える) */
-  if(seesMine(m)) (G.mines||[]).forEach(mn=>{
-    const cx=mn.x*10+5, cy=mn.y*10+5;
-    mk.appendChild(svgEl("path",{d:"M"+cx+" "+(cy-3.6)+"v1.6M"+(cx-2.6)+" "+(cy-2.6)+"l1.15 1.15M"+(cx+2.6)+" "+(cy-2.6)+"l-1.15 1.15M"+(cx-3.6)+" "+cy+"h1.6M"+(cx+3.6)+" "+cy+"h-1.6",stroke:"#e8563f","stroke-width":2.5,"vector-effect":"non-scaling-stroke","stroke-linecap":"round"}));
-    mk.appendChild(svgEl("circle",{cx,cy:cy+.4,r:2.4,fill:"#2a1d1a",stroke:"#e8563f","stroke-width":2.5,"vector-effect":"non-scaling-stroke"}));
-  });
-  /* ★地雷を置ける場所（地雷人狼の行動フェーズ） */
-  if(m && m.alive && G.phase==="act" && m.role==="miner" && canMine(m) && !actState().exhausted){
+  /* ★地雷(人狼だけ見える)=爆弾。自分が置いた(まだ解決前の)地雷もその場に置いて見せる */
+  const ma=(m&&G.phase==="act")? myAct() : null, myMine=(ma&&ma.k==="mine")? ma : null;
+  if(seesMine(m)) (G.mines||[]).forEach(mn=>drawBomb(mk,mn.x,mn.y));
+  if(myMine && m.alive) drawBomb(mk,myMine.mx,myMine.my);
+  /* ★地雷を置ける場所（地雷人狼の行動フェーズ・解決されるまで置き直せる） */
+  if(mineEditable(m)){
     [[0,0],[1,0],[-1,0],[0,1],[0,-1]].forEach(d=>{ const x=m.x+d[0], y=m.y+d[1];
-      if(!mineOk(m,x,y) || mineAt(x,y)) return;
+      if(!mineOk(m,x,y) || mineAt(x,y) || (myMine && myMine.mx===x && myMine.my===y)) return;
       const on = sel.mine===x+","+y;
       mk.appendChild(svgEl("rect",{x:x*10+1,y:y*10+1,width:8,height:8,rx:1.5,fill:on?"rgba(232,86,63,.22)":"none",stroke:"#e8563f","stroke-width":on?3:2,"vector-effect":"non-scaling-stroke","stroke-dasharray":on?"5 4":"2.5 3",opacity:on?1:.65}));
     });
@@ -1291,11 +1297,12 @@ function renderBoard(){
         g.appendChild(t);
         g.appendChild(svgEl("circle",{cx:0,cy:0,r:4.4,class:"ring",style:"display:none"}));
         g.appendChild(svgEl("text",{x:0,y:0,"text-anchor":"middle","dominant-baseline":"central",class:"plb","font-size":"1.53"}));   // 札(2.3の2/3)
-        g.appendChild(svgEl("text",{x:0,y:0,"text-anchor":"middle","dominant-baseline":"central",class:"plb psn","font-size":"1.3",fill:"#ff8fb0"}));   // ドクターだけに見える毒「Nターン後 死亡」
+        g.appendChild(svgEl("text",{x:0,y:0,"text-anchor":"middle","dominant-baseline":"central",class:"plb psn","font-size":"1.3",fill:"#ff8fb0"}));
+        g.appendChild(svgEl("text",{x:0,y:0,"text-anchor":"middle","dominant-baseline":"central",class:"plb pln","font-size":"1.3",fill:"#f3c85a"}));   // 自分だけに見える「占い予定」など   // ドクターだけに見える毒「Nターン後 死亡」
         layer.appendChild(g); pieceEls[p.id]=g;
       }
       g.dataset.id=p.id;
-      const body=g.querySelector(".body"), tx=g.querySelector(".lb"), ring=g.querySelector(".ring"), lb=g.querySelector(".plb:not(.psn)"), ps=g.querySelector(".psn");
+      const body=g.querySelector(".body"), tx=g.querySelector(".lb"), ring=g.querySelector(".ring"), lb=g.querySelector(".plb:not(.psn):not(.pln)"), ps=g.querySelector(".psn"), pl=g.querySelector(".pln");
       body.setAttribute("r",r); body.setAttribute("fill",p.c);
       tx.textContent=p.lb||[...p.n][0]||"?"; tx.setAttribute("font-size",(r*1.05).toFixed(2));
       ring.setAttribute("r",(r+0.9).toFixed(2));
@@ -1304,15 +1311,14 @@ function renderBoard(){
       ring.setAttribute("stroke", (sel.tg===p.id || (a&&a.tg===p.id&&a.k!=="none"))? "#e8b647" : "#5ec8ff");   // 選べる相手=水色・選んだ相手=金
       g.classList.toggle("tg",isTg);
       const q=posOf(p), cy=q.y*10+oy;
+      /* コマの上の札: 下から「役職」「Nターン後 死亡(ドクター)」「占い予定など(自分の行動)」の順に積む。盤の上端では段ごと内側へ */
       const L=crowd? null : pieceLabel(p,m);
-      if(L){ lb.textContent=L.t; lb.setAttribute("fill",L.c); lb.style.display="";
-        lb.setAttribute("y", Math.max(-r-0.2, 0.95-cy).toFixed(2));         // いつもコマの上(コマに重なるくらい近づけた)。盤の上端からはみ出す時だけ内側に寄せる
-      } else lb.style.display="none";
-      /* ★ドクター: 視界にいる人の毒をコマの上に(札があればその上の段) */
-      if(!crowd && seesPoison(m,p)){ const gap=L? 1.9 : 0, py=Math.max(-r-0.2-gap, 0.95-cy);   // 盤の上端では段ごと内側へ
-        ps.textContent=p.poison.left+"ターン後 死亡"; ps.style.display=""; ps.setAttribute("y",py.toFixed(2));
-        if(L) lb.setAttribute("y",(py+gap).toFixed(2));
-      } else ps.style.display="none";
+      const plan=(!crowd && G.phase==="act" && a && a.tg===p.id && PLAN_TX[a.k])? PLAN_TX[a.k] : "";
+      const pz=(!crowd && seesPoison(m,p))? p.poison.left+"ターン後 死亡" : "";
+      const stk=[]; if(L) stk.push([lb,L.t,L.c]); if(pz) stk.push([ps,pz]); if(plan) stk.push([pl,plan]);
+      [lb,ps,pl].forEach(el=>{ if(el) el.style.display="none"; });
+      let y0=-r-0.2; const topY=y0-1.9*(stk.length-1), lim=0.95-cy; if(topY<lim) y0+=lim-topY;
+      stk.forEach((o,i)=>{ const el=o[0]; if(!el) return; el.textContent=o[1]; if(o[2]) el.setAttribute("fill",o[2]); el.style.display=""; el.setAttribute("y",(y0-1.9*i).toFixed(2)); });
       g.style.transform="translate("+(q.x*10+ox)+"px,"+cy+"px)";
       g.style.opacity="1";
       shown.add(p.id);
@@ -1329,6 +1335,13 @@ function renderBoard(){
     const t=svgEl("text",{x:cx,y:top+2.35,"text-anchor":"middle","dominant-baseline":"central","font-size":"2.9","font-weight":"900",fill:"#23211f"}); t.textContent=bb.t;
     g.appendChild(t); bl.appendChild(g); });
 }
+function drawBomb(mk,x,y){                                  // 地雷の見た目=丸に導火線の付いた爆弾
+  const cx=x*10+4.6, cy=y*10+5.6;
+  mk.appendChild(svgEl("path",{d:"M"+(cx+1.7)+" "+(cy-1.8)+"q.6-1.9 2.6-1.9",fill:"none",stroke:"#a8793f","stroke-width":2.2,"vector-effect":"non-scaling-stroke","stroke-linecap":"round"}));
+  mk.appendChild(svgEl("circle",{cx:cx+4.4,cy:cy-3.7,r:.75,fill:"#ffcf5a"}));
+  mk.appendChild(svgEl("circle",{cx,cy,r:2.7,fill:"#1d1622",stroke:"#e8563f","stroke-width":2,"vector-effect":"non-scaling-stroke"}));
+  mk.appendChild(svgEl("circle",{cx:cx-1,cy:cy-1,r:.6,fill:"rgba(255,255,255,.55)"}));
+}
 function cellNo(x,y){ return (y|0)*G.N+(x|0)+1; }          // マスの通し番号(左上=1、右へ、はじで次の行)
 function canMoveTo(x,y){
   const m=me(); if(!m||!m.alive||G.phase!=="move") return false;
@@ -1336,6 +1349,7 @@ function canMoveTo(x,y){
 }
 /* 行動: となりのコマを押す → そのコマの横に「話す」と役職の力(占う/毒殺)。話すは行動とは別に同時にできる
    占う・毒殺は1ターンに1人だけ(決めたら他の人には使えない)・話すも1ターンに1人だけ */
+const PLAN_TX={ seer:"占い予定", poison:"毒殺予定", cure:"治療予定" };   // 選んだ相手のコマの上に出す
 const POWER_NAME={ seer:"占う", wolf:"毒殺", doctor:"毒を治す", miner:"地雷" };
 function myAct(){ const m=me(); if(!m||!G||G.phase!=="act") return null;
   return G.acts[m.id]!==undefined? G.acts[m.id] : (pending&&pending.t==="act"&&pending.sk===G.sk&&pending.from===m.id&&pending.k!=="clear"? pending : null); }
@@ -1391,12 +1405,14 @@ $("board").addEventListener("click",e=>{
     const g=e.target.closest(".pc"), id=g&&g.dataset.id;
     if(!id || !actTargets().some(t=>t.id===id)){
       /* ★地雷人狼: コマのない所を押したら地雷を置く(1回目=選ぶ・同じ所をもう一度=決定) */
-      if(m.role==="miner" && canMine(m) && !actState().exhausted){
-        const c=cellFromEvent(e);
+      if(mineEditable(m)){
+        const c=cellFromEvent(e), ma=myAct();
+        if(c && ma && ma.k==="mine" && ma.mx===c.x && ma.my===c.y){   // 置いたマスをもう一度押す=取り消し
+          ensureAudio(); playSelect(); sel.mine=null; sel.tg=null; sel.pop=""; sel.side=""; submit({t:"act",k:"clear"}); render(); return; }
         if(c && mineOk(m,c.x,c.y) && !mineAt(c.x,c.y)){
           ensureAudio(); const k=c.x+","+c.y;
           if(sel.mine===k){ playPoison(); sel.mine=null; sel.tg=null; sel.pop=""; sel.side="";
-            toast("地雷を置く（"+cellNo(c.x,c.y)+"）"); submit({t:"act",k:"mine",mx:c.x,my:c.y}); render(); return; }
+            submit({t:"act",k:"mine",mx:c.x,my:c.y}); render(); return; }
           playTick(); sel.mine=k; sel.tg=null; sel.pop=""; sel.side=""; render(); return;
         }
       }
@@ -1458,7 +1474,7 @@ function renderPop(){
     }
     if(!sel.side){                                                                 // 右に出すのが基本。右2列にいる時と、右に入りきらない時だけ左。開いている間は向きを変えない
       const tr0=/translate\(([-\d.]+)px/.exec(pieceEls[t.id].style.transform)||[0,0], px=+tr0[1], r0=+pieceEls[t.id].querySelector(".body").getAttribute("r");
-      const bw0=$("boardWrap").clientWidth, sc0=bw0/(G.N*10), fits=(px+r0)*sc0+11+168 <= bw0-2;
+      const bw0=$("boardWrap").clientWidth, sc0=bw0/(G.N*10), fits=(px+r0)*sc0+11+183 <= bw0-2;
       sel.side = (Math.floor(px/10)>=G.N-2 || !fits)? "l" : "r"; }
     el.innerHTML=h; el.style.display="flex"; el.classList.toggle("talking", sel.pop==="talk");
     el.classList.toggle("r", sel.side==="r"); el.classList.toggle("l", sel.side==="l"); wirePop();
@@ -1483,12 +1499,13 @@ function wirePop(){
     if(k==="poison"){ if(!canPoison(m)){ playTick(); toast("再発動まで"+poisonLeft(m)+"ターン必要です"); return; } playSelect(); sel.pop="poison"; render(); return; }
     if(k==="seer"){ playSeer(); sel.tg=null; sel.pop=""; sel.side=""; submit({t:"act",k:"seer",tg}); render(); return; }
     if(k==="cure"){ if(!canCure(m)){ playTick(); toast("毒を治せるのは1ラウンドに1回までです"); return; }
-      playSeer(); sel.tg=null; sel.pop=""; sel.side=""; toast((t?t.n:"")+" の毒を治す"); submit({t:"act",k:"cure",tg}); render(); return; }
+      playSeer(); sel.tg=null; sel.pop=""; sel.side=""; submit({t:"act",k:"cure",tg}); render(); return; }
     if(k==="mine"){ if(!canMine(m)){ playTick(); toast("次に置けるまで"+mineLeft(m)+"ターン必要です"); return; }
-      playPoison(); sel.tg=null; sel.pop=""; sel.side=""; sel.mine=null; toast("地雷を置く（"+cellNo(t.x,t.y)+"）"); submit({t:"act",k:"mine",mx:t.x,my:t.y}); render(); return; }
+      { const ma=myAct(); if(ma && ma.k==="mine" && ma.mx===t.x && ma.my===t.y){ playSelect(); sel.tg=null; sel.pop=""; sel.side=""; sel.mine=null; submit({t:"act",k:"clear"}); render(); return; } }
+      playPoison(); sel.tg=null; sel.pop=""; sel.side=""; sel.mine=null; submit({t:"act",k:"mine",mx:t.x,my:t.y}); render(); return; }
   });
   el.querySelectorAll("[data-dl]").forEach(b=>b.onclick=()=>{ ensureAudio(); const tg=sel.tg, t=pById(tg), dl=+b.dataset.dl; if(!dlOk(dl)) return; playPoison();
-    sel.tg=null; sel.pop=""; sel.side=""; toast((t?t.n:"")+" を毒殺（"+(dl? dl+"ターン後に死亡":"即殺")+"）"); submit({t:"act",k:"poison",tg,dl}); render(); });
+    sel.tg=null; sel.pop=""; sel.side=""; submit({t:"act",k:"poison",tg,dl}); render(); });
   const wi=$("whIn"), go=$("whGo");
   if(wi){ let comp=false; wi.value=sel.tx||"";
     const fix=()=>{ const c=cleanMsg(wi.value); if(wi.value.trim()!==c) wi.value=c; sel.tx=c; };
@@ -1518,14 +1535,14 @@ function renderHud(){
     html= cur? hint(WAIT_TX,true) : hint("移動したいマスを選択"); }
   else if(ph==="act"){ const st=actState();
     const ftk = !!(m.role==="talker" && !m.usedFTalk);                                   // ★議論好き: ゲーム中1回だけ
-    const ftb = ftk? '<button class="gbtn" id="ftalkBtn">議論強制スタート</button>' : "";
+    const ftb = ftk? '<button class="gbtn wide" id="ftalkBtn">議論強制スタート</button>' : "";
     key+="|"+JSON.stringify([st.exhausted,st.none,st.done,ftk]);
     const row=b=>'<div class="hud-btns">'+b+'</div>';
     if(st.exhausted){ html=hint(WAIT_TX,true);
-      const nb=st.none? '<button class="gbtn sel" id="noneBtn">やっぱりなし</button>' : "";
+      const nb=st.none? '<button class="gbtn sel'+(ftk?" wide":"")+'" id="noneBtn">やっぱりなし</button>' : "";
       if(ftb||nb){ tall=true; html+=row(ftb+nb); } }                                     // 何もしないボタンの「左」に並べる
     else{ html=hint(m.role==="miner"&&canMine(m)? "接触したい人か、地雷を置くマスを選択" : "接触したい人を選択");
-      const nb=!st.done? '<button class="gbtn" id="noneBtn">何もしない</button>' : "";
+      const nb=!st.done? '<button class="gbtn'+(ftk?" wide":"")+'" id="noneBtn">何もしない</button>' : "";
       if(ftb||nb){ tall=true; html+=row(ftb+nb); } } }
   else if(ph==="talk"){ const cur=myVoteNow(); key+="|"+cur; html= cur? hint(WAIT_TX,true) : hint("怪しい人を投票"); }
   if(key!==hudKey){ hudKey=key; h.innerHTML=html; h.classList.toggle("tall",tall); wireHud(); }
@@ -1535,7 +1552,7 @@ function wireHud(){
   on("reopenRes",()=>{ playSelect(); openResult(); });
   on("noneBtn",()=>{ playSelect(); sel.tg=null; sel.pop=""; sel.mine=null; const st=actState(); submit({t:"act",k: st.none? "clear" : "none"}); });   // 押している間は「やっぱりなし」=取り消し
   on("ftalkBtn",()=>{ const m=me(); if(!m||m.role!=="talker"||m.usedFTalk) return;        // ★議論好き: その場で議論へ(1回だけ)
-    playTalk(); sel.tg=null; sel.pop=""; sel.mine=null; toast("議論を始めます"); submit({t:"ftalk"}); });
+    playTalk(); sel.tg=null; sel.pop=""; sel.mine=null; submit({t:"ftalk"}); });
 }
 
 /* ================= ★試作用(DEBUG): ひとりで全員を操作する ================= */
@@ -2338,6 +2355,8 @@ const RD=["doctor","wolf","villager","seer","hawk","mad"], RMi=["miner","village
 sc("追加の役職","ドクター：視界の人の毒（コマの上に表示）",()=>sgG(RD,{ set:g=>{ g.players[2].poison={ left:2, by:"g1" }; g.players[1].poison={ left:1, by:"g5" }; g.players[4].poison={ left:1, by:"g1" }; } }));
 sc("追加の役職","ドクター：いちばん上の段の人の毒",()=>sgG(RD,{ pos:[[3,1],[3,0],[4,1],[5,5],[1,5],[6,6]], set:g=>{ g.players[1].poison={ left:3, by:"g5" }; } }));
 sc("追加の役職","ドクター：毒の人を選んだ（話す・毒を治す）",()=>{ sgAct(RD,{ set:g=>{ g.players[2].poison={ left:2, by:"g1" }; } }); sgPop("g2"); });
+sc("追加の役職","ドクター：治療予定（毒の表示の上）",()=>sgAct(RD,{ set:g=>{ g.players[2].poison={ left:2, by:"g1" }; g.acts[myId]={ k:"cure", tg:"g2" }; } }));
+sc("追加の役職","毒殺人狼：毒殺予定",()=>sgAct(RW,{ pos:WPOS, set:g=>{ g.acts[myId]={ k:"poison", tg:"g1", dl:1 }; } }));
 sc("追加の役職","地雷人狼：置けるマス",()=>sgAct(RMi,{ pos:[[3,3],[5,3],[1,4],[5,5],[1,1],[6,6]] }));
 sc("追加の役職","地雷人狼：地雷を置いた",()=>sgAct(RMi,{ pos:[[3,3],[5,3],[1,4],[5,5],[1,1],[6,6]], set:g=>{ g.mines=[{ x:3, y:2, by:myId }]; g.acts[myId]={ k:"mine", mx:4, my:3 }; } }));
 sc("追加の役職","霊感が強い人：死体が見える",()=>sgG(RMe,{ set:g=>{ sgKill(g.players[2],"poison","g1",false); g.corpses=[{ x:3, y:4, id:"g2", n:g.players[2].n, c:g.players[2].c }]; } }));
