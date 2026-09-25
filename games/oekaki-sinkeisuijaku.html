@@ -413,6 +413,7 @@
   #sgPanel .sg-end{ align-self:stretch; }
   #sgPanel .sg-head, #sgPanel .sg-cur{ cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; }
   #sgPanel.dragging, #sgPanel.dragging *{ cursor:grabbing !important; }
+  #sgPanel.snapping{ transition:left .22s cubic-bezier(.2,.9,.3,1), top .22s cubic-bezier(.2,.9,.3,1); }
   #sgPanel .sg-grip{ width:8px; height:13px; flex:none; opacity:.35; }
 </style>
 </head>
@@ -1633,6 +1634,7 @@ function sgPanel(){
   $("sgCur").textContent=s.g+"：" +s.n;
   $("sgFold").textContent=el.classList.contains("fold")? "ひらく" : "たたむ";
   $("sgList").querySelectorAll("[data-i]").forEach(b=>b.classList.toggle("on",+b.dataset.i===sgIdx));
+  if(el._place) el._place();                                    // たたむ/ひらくで大きさが変わっても同じ端にくっつけ直す
   const on=$("sgList").querySelector(".sg-i.on"); if(on && !el.classList.contains("fold")){ const L=$("sgList"); if(on.offsetTop<L.scrollTop || on.offsetTop>L.scrollTop+L.clientHeight-30) L.scrollTop=on.offsetTop-L.clientHeight/2; }
 }
 function openGallery(){ gallery=true; let i=0; try{ i=parseInt(localStorage.getItem(SG_KEY),10)||0; }catch(e){} sgGo(i); }
@@ -1643,22 +1645,47 @@ document.addEventListener("keydown",e=>{
 });
 $("sgStart").onclick=()=>{ ensureAudio(); playSelect(); openGallery(); };
 /* ★デバッグ用の窓の共通部品(2026-09-25牧村指示)
-   ・dragWin(窓, つまむ所[], 保存キー)=つまんで動かせる。置いた場所は覚えておく(画面の外へは出さない)
+   ・dragWin(窓, つまむ所[], 保存キー)=つまんで動かせる。離すといちばん近い画面の端に吸い付く・置いた場所は覚えておく
    ・onSD(関数)=SとDを同時に押した時に呼ぶ(開く/閉じる)。入力欄の中では反応しない。キーの位置で見るので日本語入力中でも効く */
 function dragWin(el,handles,key){
-  const place=(x,y)=>{ const w=el.offsetWidth||200;
-    if(window.innerWidth>0&&window.innerHeight>0){ x=Math.max(60-w,Math.min(window.innerWidth-60,x)); y=Math.max(0,Math.min(window.innerHeight-30,y)); }   // 画面の大きさが分からない時(裏のタブ等)は縮めない
-    el.style.left=x+"px"; el.style.top=y+"px"; el.style.right="auto"; el.style.bottom="auto"; };
-  el._place=()=>{ if(el.style.left) place(parseFloat(el.style.left),parseFloat(el.style.top)); };
+  /* 離した時は上下左右でいちばん近い画面の端へ吸い付く(2026-09-25牧村指示)。
+     保存するのは{e:吸い付いた端(l/r/t/b), p:もう一方の向きの位置}=画面の大きさが変わっても同じ端にくっついたまま */
+  const M=8;                                                   // 端からのすき間
+  const vw=()=>window.innerWidth, vh=()=>window.innerHeight;
+  const set=(x,y)=>{ el.style.left=x+"px"; el.style.top=y+"px"; el.style.right="auto"; el.style.bottom="auto"; };
+  const fit=(v,max)=>Math.max(M,Math.min(max-M,v));            // 窓がまるごと画面に入る範囲
+  const stick=(e,p)=>{ const w=el.offsetWidth, h=el.offsetHeight;
+    if(!(vw()>0&&vh()>0)) return;                              // 画面の大きさが分からない時(裏のタブ等)は動かさない
+    if(e==="l") set(M, fit(p,vh()-h)); else if(e==="r") set(vw()-w-M, fit(p,vh()-h));
+    else if(e==="t") set(fit(p,vw()-w), M); else set(fit(p,vw()-w), vh()-h-M);
+    el._snap={ e, p }; };
+  const nearest=()=>{ const r=el.getBoundingClientRect();
+    /* 窓の「中心」が画面のどの端にいちばん近いかで決める(画面に対する割合で比べる)。
+       すき間の大きさで比べると、縦に長い窓は上下のすき間がいつも小さく、左右へ吸い付けなくなるため */
+    const cx=(r.left+r.width/2)/vw(), cy=(r.top+r.height/2)/vh();
+    const d={ l:cx, r:1-cx, t:cy, b:1-cy };
+    const e=Object.keys(d).reduce((a,k)=>d[k]<d[a]? k : a,"l");
+    return { e, p:(e==="l"||e==="r")? r.top : r.left }; };
+  el._place=()=>{ if(el._snap) stick(el._snap.e,el._snap.p); };
   el.dataset.drag="1";
-  try{ const sv=JSON.parse(localStorage.getItem(key)||"null"); if(sv) place(sv.x,sv.y); }catch(e){}
+  try{ const sv=JSON.parse(localStorage.getItem(key)||"null");
+    if(sv&&sv.e) stick(sv.e,sv.p);
+    else if(sv&&typeof sv.x==="number"){ set(sv.x,sv.y); if(vw()>0){ const n=nearest(); stick(n.e,n.p); } }   // 吸い付く前に保存された位置
+  }catch(e){}
   handles.forEach(h=>{ let d=null;
     h.addEventListener("pointerdown",e=>{ if(e.button!==0||e.target.closest("button")) return;
       const r=el.getBoundingClientRect(); d={ dx:e.clientX-r.left, dy:e.clientY-r.top, id:e.pointerId };
+      el.classList.remove("snapping");
       try{ h.setPointerCapture(e.pointerId); }catch(_){} el.classList.add("dragging"); e.preventDefault(); });
-    h.addEventListener("pointermove",e=>{ if(d&&e.pointerId===d.id) place(e.clientX-d.dx,e.clientY-d.dy); });
+    h.addEventListener("pointermove",e=>{ if(!d||e.pointerId!==d.id) return;
+      let x=e.clientX-d.dx, y=e.clientY-d.dy;
+      if(vw()>0&&vh()>0){ x=Math.max(-el.offsetWidth+60,Math.min(vw()-60,x)); y=Math.max(0,Math.min(vh()-30,y)); }
+      set(x,y); });
     const up=()=>{ if(!d) return; d=null; el.classList.remove("dragging");
-      try{ localStorage.setItem(key,JSON.stringify({ x:parseFloat(el.style.left), y:parseFloat(el.style.top) })); }catch(_){} };
+      if(!(vw()>0&&vh()>0)) return;
+      const n=nearest(); el.classList.add("snapping"); stick(n.e,n.p);                 // すっと端へ吸い付く
+      setTimeout(()=>el.classList.remove("snapping"),260);
+      try{ localStorage.setItem(key,JSON.stringify(el._snap)); }catch(_){} };
     ["pointerup","pointercancel","lostpointercapture"].forEach(t=>h.addEventListener(t,up));
   });
   if(!dragWin.rs){ dragWin.rs=1; window.addEventListener("resize",()=>document.querySelectorAll("[data-drag]").forEach(w=>w._place&&w._place())); }
