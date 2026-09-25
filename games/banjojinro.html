@@ -341,6 +341,26 @@
     70%{ opacity:1; }
     100%{ transform:translate(var(--dx,0),var(--rise,-40vh)) scale(1.02); opacity:0; }
   }
+  /* ===== ★試作用: シーン一覧のパネル(ゲームの見た目とは無関係の道具なので、どの作品でも同じ白いパネル) ===== */
+  #sgPanel{ position:fixed; right:8px; top:92px; z-index:300; width:252px; max-height:calc(100svh - 104px);
+    display:flex; flex-direction:column; gap:6px; padding:8px; border-radius:10px; text-align:left;
+    background:rgba(255,255,255,.97); color:#23211f; box-shadow:0 4px 18px rgba(0,0,0,.35); font-size:12px; line-height:1.4; }
+  #sgPanel.left{ right:auto; left:8px; }
+  #sgPanel.fold .sg-list, #sgPanel.fold .sg-end{ display:none; }
+  #sgPanel button{ font-family:inherit; font-size:11.5px; font-weight:800; color:#23211f; background:#fff; cursor:pointer; white-space:nowrap;
+    border:1px solid rgba(35,33,31,.25); border-radius:6px; padding:4px 8px; box-shadow:none; letter-spacing:0; }
+  #sgPanel .sg-head{ display:flex; align-items:center; gap:5px; }
+  #sgPanel .sg-head b{ flex:1; font-weight:900; font-size:12.5px; }
+  #sgPanel .sg-head span{ font-size:11px; font-weight:700; opacity:.6; }
+  #sgPanel .sg-nav{ display:flex; gap:6px; }
+  #sgPanel .sg-nav button{ flex:1; padding:6px 8px; }
+  #sgPanel .sg-cur{ font-weight:900; font-size:12.5px; }
+  #sgPanel .sg-list{ flex:1; min-height:0; overflow-y:auto; border-top:1px solid rgba(35,33,31,.12); padding-top:2px; position:relative; }
+  #sgPanel .sg-g{ margin:9px 0 2px; font-size:10.5px; font-weight:900; letter-spacing:.08em; opacity:.5; }
+  #sgPanel .sg-i{ display:block; width:100%; text-align:left; border:none; background:none; padding:3px 6px; border-radius:5px; font-weight:600; white-space:normal; }
+  #sgPanel .sg-i:hover{ background:rgba(35,33,31,.06); }
+  #sgPanel .sg-i.on{ background:#ffe08a; font-weight:900; }
+  #sgPanel .sg-end{ align-self:stretch; }
 </style>
 
 </head>
@@ -368,6 +388,7 @@
     </div>
     <button class="txt-btn" id="cpuStart">ロボットと遊ぶ（試作）</button>
     <button class="txt-btn" id="devStart">全員を操作する（試作）</button>
+    <button class="txt-btn" id="sgStart">シーン一覧（試作）</button>
   </div>
 </div>
 
@@ -625,6 +646,7 @@ function startStep(ph){
   bump();
 }
 function hostTick(){
+  if(gallery) return;                          // ★シーン一覧の間は進行を止める
   if(!G || !(isHost||debug) || G.phase==="over") return;
   if(cpuMode) cpuDrive();
   if(G && G.stepEnd && Date.now()>=G.stepEnd && G.phase!=="over") resolveNow();
@@ -1251,9 +1273,10 @@ $("roleBtn").onclick=()=>{ ensureAudio(); playSelect(); openRole(); };
 function causeText(p){ if(p.alive) return "生存"; const k=pById(p.killer);
   return p.cause==="poison"? "毒で死亡"+(k?"（"+esc(k.n)+"）":"") : p.cause==="hang"? "吊られた" : p.cause==="gone"? "退出" : "死亡"; }
 function openResult(){
+  if(!G||G.phase!=="over") return;             // 決着していない時(別の画面へ移ったあとの遅れた呼び出し)は開かない
   $("winBanner").className="win-banner "+G.winner; $("winBanner").textContent=winTx();
   const RC={villager:"var(--vil)",seer:"var(--seer)",wolf:"var(--wolf)",hawk:"var(--hawk)",mad:"var(--mad)"};
-  $("resList").innerHTML=G.players.map(p=>'<div class="res-row"><span class="p-dot" style="background:'+p.c+'"></span><span class="nm">'+esc(p.n)+(p.id===myId&&!debug?"（あなた）":"")+'</span>'
+  $("resList").innerHTML=G.players.map(p=>'<div class="res-row"><span class="p-dot" style="background:'+p.c+'"></span><span class="nm">'+esc(p.n)+(p.id===myId&&!debug&&p.n!=="あなた"?"（あなた）":"")+'</span>'
     +'<span class="rl" style="background:'+RC[p.role]+'">'+ROLE_NAME[p.role]+'</span><span class="cs">'+causeText(p)+'</span></div>').join("");
   /* 横並びの2択は決定(主ボタン)を右 */
   let b='<button class="ghost" id="resTitle">タイトルへ</button>';
@@ -1641,12 +1664,210 @@ $("helpBtn").onclick=()=>{ ensureAudio(); playSelect(); buildHelp(); $("helpOv")
 $("helpClose").onclick=()=>{ ensureAudio(); playSelect(); $("helpOv").classList.remove("on"); };
 $("helpOv").addEventListener("click",e=>{ if(e.target===$("helpOv")) $("helpOv").classList.remove("on"); });
 
+/* ================= ★試作用: シーン一覧(すべての画面・ダイアログ・文言の分岐を行き来する) =================
+   画面の多いゲームを調整するための道具。シーンを選ぶたびに状態を作り直して、その画面をそのまま出す。
+   ・進行は止めてある(タイマーは残り時間のまま止まる・締め切り/ロボット/自動の確定は動かない)。通信もしない
+   ・画面のボタンはふつうに押せる(そこから先も少しだけ触れる)。おかしくなったら同じシーンを選び直せば元どおり
+   入口=タイトルの試作用の枠「シーン一覧（試作）」か、URLに ?scenes=1。キーボードの [ ] で前後のシーンへ */
+let gallery=false, sgIdx=0, sgLeft=15, sgSeq=0;
+const SCENES=[];
+function sc(g,n,run){ SCENES.push({ g, n, run }); }
+function sgGo(i){
+  if(!SCENES.length) return;
+  sgIdx=(i+SCENES.length)%SCENES.length; try{ localStorage.setItem(SG_KEY,String(sgIdx)); }catch(e){}
+  sgLeft=15; sgReset();
+  try{ SCENES[sgIdx].run(); }catch(e){ console.error(e); toast("このシーンでエラー："+e.message,4000); }
+  sgPanel();
+}
+function sgPanel(){
+  let el=$("sgPanel");
+  if(!el){
+    el=document.createElement("div"); el.id="sgPanel"; if(window.innerWidth<700) el.classList.add("fold");
+    el.innerHTML='<div class="sg-head"><b>シーン一覧</b><span id="sgNo"></span><button id="sgSide" type="button"></button><button id="sgFold" type="button"></button></div>'
+      +'<div class="sg-nav"><button id="sgPrev" type="button">◀ 前</button><button id="sgNext" type="button">次 ▶</button></div>'
+      +'<div class="sg-cur" id="sgCur"></div><div class="sg-list" id="sgList"></div>'
+      +'<button id="sgEnd" class="sg-end" type="button">シーン一覧をやめる</button>';
+    document.body.appendChild(el);
+    let h="", last="";
+    SCENES.forEach((s,i)=>{ if(s.g!==last){ last=s.g; h+='<div class="sg-g">'+esc(s.g)+'</div>'; } h+='<button type="button" class="sg-i" data-i="'+i+'">'+esc(s.n)+'</button>'; });
+    $("sgList").innerHTML=h;
+    $("sgList").querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>sgGo(+b.dataset.i));
+    $("sgPrev").onclick=()=>sgGo(sgIdx-1);
+    $("sgNext").onclick=()=>sgGo(sgIdx+1);
+    $("sgFold").onclick=()=>{ el.classList.toggle("fold"); sgPanel(); };
+    $("sgSide").onclick=()=>{ el.classList.toggle("left"); sgPanel(); };
+    $("sgEnd").onclick=closeGallery;
+  }
+  const s=SCENES[sgIdx];
+  $("sgNo").textContent=(sgIdx+1)+" / "+SCENES.length;
+  $("sgCur").textContent=s.g+"：" +s.n;
+  $("sgFold").textContent=el.classList.contains("fold")? "ひらく" : "たたむ";
+  $("sgSide").textContent=el.classList.contains("left")? "右へ" : "左へ";
+  $("sgList").querySelectorAll("[data-i]").forEach(b=>b.classList.toggle("on",+b.dataset.i===sgIdx));
+  const on=$("sgList").querySelector(".sg-i.on"); if(on && !el.classList.contains("fold")){ const L=$("sgList"); if(on.offsetTop<L.scrollTop || on.offsetTop>L.scrollTop+L.clientHeight-30) L.scrollTop=on.offsetTop-L.clientHeight/2; }
+}
+function openGallery(){ gallery=true; let i=0; try{ i=parseInt(localStorage.getItem(SG_KEY),10)||0; }catch(e){} sgGo(i); }
+function closeGallery(){ gallery=false; const el=$("sgPanel"); if(el) el.remove(); sgReset(); }
+document.addEventListener("keydown",e=>{
+  if(!gallery||e.isComposing) return; const t=e.target; if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA")) return;
+  if(e.key==="]"){ e.preventDefault(); sgGo(sgIdx+1); } else if(e.key==="["){ e.preventDefault(); sgGo(sgIdx-1); }
+});
+$("sgStart").onclick=()=>{ ensureAudio(); playSelect(); openGallery(); };
+/* --- 盤上人狼のシーン --- */
+const SG_KEY="bj.sgIdx";
+const SG_NM=["まきむら","さくら","たろう","ゆい","けん","みお","そら","はる"];
+const SG_POS=[[3,3],[4,3],[3,4],[5,5],[1,1],[6,6]];      // あなたの右ととなり(下)に1人ずつ
+const WPOS=[[3,3],[4,3],[3,4],[3,1],[1,1],[6,6]];        // 毒殺人狼の視界で仲間(上2マス)が見える並び
+/* 役職の並び(先頭があなた) */
+const RV=["villager","wolf","villager","seer","hawk","mad"];   // 市民(右=毒殺人狼・下=市民)
+const RS=["seer","wolf","villager","villager","hawk","mad"];   // 占い師
+const RW=["wolf","villager","mad","wolf","seer","hawk"];       // 毒殺人狼(下=狂人・上2マス=仲間の毒殺人狼)
+const RH=["hawk","villager","wolf","seer","villager","mad"];   // 鷹の目
+const RM=["mad","wolf","villager","seer","hawk","wolf"];       // 狂人(右=毒殺人狼)
+function sgReset(){
+  clearTimeout(toastT); $("toast").classList.remove("on"); clearTimeout(fxT); $("bigFx").classList.remove("on");
+  goTitle();                                                     // 部屋・状態・チャット・ダイアログを片付けてタイトルへ
+  rules=Object.assign({},DEF_RULES); code=""; nameAsked=true; pending=null; bubbles=[]; resetSel(); dbgFog=false;
+  setMini(true);
+}
+function sgKill(p,cause,by,pub){ p.alive=false; p.cause=cause; p.killer=by||""; p.pub=pub!==false; }
+/* 盤面の状態を作って表示する。o.guest=参加者側で見る／o.set(G)=表示の前に状態をいじる */
+function sgG(roles,o){
+  o=o||{}; const pos=o.pos||SG_POS;
+  G={ gid:"sg"+(++sgSeq), rules:Object.assign({},DEF_RULES), N:7, round:o.round||1, turn:o.turn||3, tick:4, sk:5,
+      phase:o.phase||"move", stepEnd:o.phase==="over"? 0 : Date.now()+sgLeft*1000,
+      players:roles.map((r,i)=>({ id:i?"g"+i:myId, n:SG_NM[i], c:PCOL[i], role:r, x:pos[i][0], y:pos[i][1],
+        alive:true, pub:false, cause:"", killer:"", poison:null, lastPoison:-99, notes:[], lb:SG_NM[i][0] })),
+      moves:{}, acts:{}, votes:{}, ready:{}, lastVote:null, winner:o.winner||"", deathsThisRound:[], wh:[] };
+  isHost=!o.guest; online=!!o.guest; hostId=o.guest? "g1" : myId;
+  if(o.set) o.set(G);
+  enterGame(); sgPrime(); localEnd=G.stepEnd; render();
+  return G;
+}
+function sgPrime(){                     // 今の状態を「もう見た」ことにする(勝手に演出が出ないように)
+  seen={ gid:G.gid, sk:G.sk, tick:G.tick, phase:G.phase, notes:{}, alive:{}, over:G.phase==="over", wh:{}, gone:{} };
+  G.players.forEach(p=>{ seen.notes[p.id]=p.notes.length; seen.alive[p.id]=p.alive; if(p.cause==="gone") seen.gone[p.id]=1; });
+  (G.wh||[]).forEach(w=>{ seen.wh[w.id]=1; });
+}
+function sgFire(fn){ if(fn) fn(); onState(); render(); }                              // 変化を起こして、その時の演出を出す
+function sgPhaseIn(prev){ seen.sk=-1; seen.phase=prev||""; seen.over=false; onState(); render(); }   // そのフェーズに入った瞬間の演出
+function sgLobby(n,o){
+  o=o||{}; online=true; isHost=!o.guest; hostId=o.guest? "g1" : myId; code="HUBAP"; nameAsked=true;
+  const ids=[...Array(n)].map((_,i)=>i?"g"+i:myId);
+  if(o.guest){ ids[0]="g1"; ids[1]=myId; }                         // 参加者側: オーナー(さくら)が先頭
+  lobby=ids.map((id,i)=>({ id, n: (o.undef&&i===n-1)? "" : SG_NM[id===myId?0:+id.slice(1)], c:PCOL[i], t:i }));
+  if(o.roles) rules.roles=o.roles;
+  phaseUI="lobby"; showScene("lobbyScene"); renderLobby();
+}
+const sgAct=(roles,o)=>sgG(roles,Object.assign({ phase:"act" },o||{}));
+const sgTalk=(roles,o)=>{ sgLeft=105; return sgG(roles,Object.assign({ phase:"talk", turn:8 },o||{})); };
+const sgVote=(roles,o)=>{ sgLeft=25; return sgG(roles,Object.assign({ phase:"vote", turn:8 },o||{})); };
+const sgVres=(lv,o)=>{ sgLeft=4; return sgG(RV,Object.assign({ phase:"vres", turn:8, set:g=>{ g.lastVote=lv; const h=g.players.find(p=>p.id===lv.hanged); if(h) sgKill(h,"hang"); } },o||{})); };
+const sgOver=(win,o)=>sgG(RV,Object.assign({ phase:"over", turn:8, winner:win, set:g=>{ const P=g.players;
+  if(win==="village"){ sgKill(P[1],"hang"); sgKill(P[3],"poison","g1"); }
+  else { sgKill(P[0],"poison","g1"); sgKill(P[2],"poison","g1"); sgKill(P[3],"hang"); sgKill(P[4],"hang"); } } },o||{}));
+const sgClickPiece=id=>{ const pc=document.querySelector('#board .pc[data-id="'+id+'"]'); if(pc) pc.dispatchEvent(new MouseEvent("click",{bubbles:true})); };
+
+sc("タイトル・入室","タイトル",()=>{});
+sc("タイトル・入室","部屋に入る（合言葉の入力）",()=>{ $("joinRoomBtn").onclick(); });
+sc("タイトル・入室","合言葉が5文字でない",()=>{ $("joinRoomBtn").onclick(); $("codeInput").value="AB"; $("codeGo").onclick(); });
+sc("タイトル・入室","部屋がみつからない",()=>{ $("joinRoomBtn").onclick(); $("codeInput").value="HUBAP"; const nt=$("joinNote"); nt.textContent="部屋がみつからない。合言葉を確認しよう"; nt.className="room-note err"; });
+sc("タイトル・入室","満室で入れない",()=>{ roomStatus('<div class="room-note err">満室です（'+MAX_P+'人まで）</div>'); });
+sc("タイトル・入室","ゲーム中で入れない",()=>{ roomStatus('<div class="room-note err">今はゲーム中みたい。次のゲーム開始まで待ってね</div>'); });
+sc("タイトル・入室","通信失敗",()=>{ roomStatus('<div class="room-note err">通信失敗。通信環境を見直そう</div>'); });
+
+sc("ロビー","人数が足りない（オーナー）",()=>sgLobby(2));
+sc("ロビー","はじめられる（オーナー・役職は自動）",()=>sgLobby(6));
+sc("ロビー","名前を考え中の人がいる",()=>sgLobby(5,{ undef:true }));
+sc("ロビー","鷹の目と狂人を入れた",()=>sgLobby(7,{ roles:{ wolf:2, seer:1, hawk:1, mad:1 } }));
+sc("ロビー","毒殺人狼が多すぎる",()=>sgLobby(4,{ roles:{ wolf:2, seer:1, hawk:0, mad:0 } }));
+sc("ロビー","役職の数が人数より多い",()=>sgLobby(4,{ roles:{ wolf:1, seer:2, hawk:2, mad:0 } }));
+sc("ロビー","参加者側",()=>sgLobby(5,{ guest:true }));
+sc("ロビー","名前ダイアログ",()=>{ sgLobby(3); openNameOv(); });
+sc("ロビー","名前ダイアログ：空欄で決定",()=>{ sgLobby(3); openNameOv(); $("nameInput").value=""; $("nameGo").onclick(); });
+
+sc("移動","移動のはじまり",()=>{ sgG(RV); sgPhaseIn("act"); });
+sc("移動","選ぶ前",()=>sgG(RV));
+sc("移動","1回目で選んだ（予告）",()=>{ sgG(RV); sel.move="r"; render(); });
+sc("移動","決定した（ほかの人を待つ）",()=>sgG(RV,{ set:g=>{ g.moves[myId]="r"; g.moves.g1="s"; g.moves.g4="u"; } }));
+sc("移動","送信中（参加者側）",()=>{ sgG(RV,{ guest:true }); pending={ t:"move", d:"r", sk:G.sk, from:myId }; render(); });
+sc("移動","残り5秒",()=>{ sgLeft=4; sgG(RV); });
+sc("移動","自分が盤の下半分（操作は上に出る）",()=>sgG(RV,{ pos:[[3,5],[4,5],[3,6],[5,2],[1,1],[6,0]] }));
+sc("移動","同じマスに3人",()=>sgG(RV,{ pos:[[3,3],[3,3],[3,3],[5,5],[1,1],[6,6]] }));
+
+sc("視界・コマの札","市民（まわり8マス）",()=>sgG(RV));
+sc("視界・コマの札","毒殺人狼（21マス・仲間の札）",()=>sgG(RW,{ pos:WPOS }));
+sc("視界・コマの札","鷹の目（毒殺人狼と同じ視界）",()=>sgG(RH,{ pos:WPOS }));
+sc("視界・コマの札","狂人（仲間の札）",()=>sgG(RM));
+sc("視界・コマの札","いちばん上の段（札はコマの下）",()=>sgG(RW,{ pos:[[3,0],[4,0],[2,0],[3,2],[1,5],[6,6]] }));
+
+sc("アクション","占い師：選ぶ前",()=>sgAct(RS));
+sc("アクション","占い師：占うを選んだ",()=>{ sgAct(RS); sel.k="seer"; sel.tg="g1"; render(); });
+sc("アクション","占い師：決定した",()=>sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; g.acts.g4={ k:"none" }; } }));
+sc("アクション","毒殺人狼：選ぶ前",()=>sgAct(RW,{ pos:WPOS }));
+sc("アクション","毒殺人狼：毒を盛る（効くまでを選ぶ）",()=>{ sgAct(RW,{ pos:WPOS }); sel.k="poison"; sel.tg="g1"; sel.dl=1; render(); });
+sc("アクション","毒殺人狼：毒は休み中",()=>sgAct(RW,{ pos:WPOS, set:g=>{ g.players[0].lastPoison=g.tick; } }));
+sc("アクション","毒殺人狼：仲間（狂人）を押した",()=>{ sgAct(RW,{ pos:WPOS }); sel.k="poison"; render(); sgClickPiece("g2"); });
+sc("アクション","毒殺人狼：決定した（毒）",()=>sgAct(RW,{ pos:WPOS, set:g=>{ g.acts[myId]={ k:"poison", tg:"g1", dl:2 }; } }));
+sc("アクション","市民：メッセージだけ",()=>sgAct(RV));
+sc("アクション","メッセージ：入力中",()=>{ sgAct(RV); sel.k="wh"; sel.tg="g1"; sel.tx="やあ"; render(); });
+sc("アクション","メッセージ：漢字を入れた",()=>{ sgAct(RV); sel.k="wh"; sel.tg="g1"; render(); const wi=$("whIn"); if(wi){ wi.value="山やま"; wi.dispatchEvent(new Event("input",{bubbles:true})); } });
+sc("アクション","決定した：メッセージ",()=>sgAct(RV,{ set:g=>{ g.acts[myId]={ k:"wh", tg:"g1", tx:"にげて" }; } }));
+sc("アクション","決定した：何もしない",()=>sgAct(RV,{ set:g=>{ g.acts[myId]={ k:"none" }; } }));
+sc("アクション","自動スキップ（となりに誰もいない）",()=>sgAct(RV,{ pos:[[0,0],[4,3],[3,4],[5,5],[6,2],[6,6]], set:g=>{ g.acts[myId]={ k:"none", auto:true }; } }));
+sc("アクション","送信中（参加者側）",()=>{ sgAct(RS,{ guest:true }); sel.k="seer"; sel.tg="g1"; pending={ t:"act", k:"seer", tg:"g1", sk:G.sk, from:myId }; render(); });
+
+sc("アクションの結果","占い結果：白",()=>{ sgG(RS); sgFire(()=>me().notes.push({ r:1, t:3, tg:"g2", black:false })); });
+sc("アクションの結果","占い結果：黒",()=>{ sgG(RS); sgFire(()=>me().notes.push({ r:1, t:3, tg:"g1", black:true })); });
+sc("アクションの結果","メッセージを受け取った",()=>{ sgG(RV); sgFire(()=>G.wh.push({ id:"sgw"+sgSeq, f:"g1", to:myId, t:"にげて" })); });
+sc("アクションの結果","メッセージを送った",()=>{ sgG(RV); sgFire(()=>G.wh.push({ id:"sgw"+sgSeq, f:myId, to:"g2", t:"しろ?" })); });
+
+sc("議論","議論タイム（死亡した人がいる）",()=>{ sgTalk(RV,{ set:g=>{ sgKill(g.players[3],"poison","g1"); g.deathsThisRound=["g3"]; } }); sgPhaseIn("act"); });
+sc("議論","議論タイム（死亡した人はいない）",()=>{ sgTalk(RV); sgPhaseIn("act"); });
+sc("議論","チャットで話し合い中",()=>{ sgTalk(RV); setMini(false); addChat("さくら","占い師です。たろうは白でした",PCOL[1]); addChat("たろう","ゆいが見えなくなった",PCOL[2]); addChat("けん","さくら、あやしい",PCOL[4]); });
+sc("議論","投票へを押した",()=>sgTalk(RV,{ set:g=>{ g.ready[myId]=1; g.ready.g2=1; } }));
+sc("議論","占い師のメンバー一覧（白・黒）",()=>sgTalk(RS,{ set:g=>{ g.players[0].notes=[{ r:1, t:2, tg:"g1", black:true },{ r:1, t:5, tg:"g2", black:false }]; } }));
+sc("議論","人狼陣営のメンバー一覧（仲間）",()=>sgTalk(RW,{ pos:WPOS }));
+sc("議論","2ラウンド目（前の死亡は公表ずみ）",()=>sgTalk(RV,{ round:2, set:g=>{ sgKill(g.players[3],"poison","g1"); sgKill(g.players[4],"hang"); } }));
+sc("議論","退出した人がいる",()=>{ sgTalk(RV); sgFire(()=>sgKill(G.players[4],"gone")); });
+
+sc("投票","投票タイム（はじまり）",()=>{ sgVote(RV); sgPhaseIn("talk"); });
+sc("投票","選ぶ前",()=>sgVote(RV));
+sc("投票","投票した",()=>sgVote(RV,{ set:g=>{ g.votes[myId]="g1"; g.votes.g3="g1"; } }));
+sc("投票","投票しない",()=>sgVote(RV,{ set:g=>{ g.votes[myId]="skip"; } }));
+
+sc("投票結果","吊られた",()=>{ sgVres({ cnt:{ g1:3, g2:1 }, hanged:"g1", tie:false, votes:{} }); sgPhaseIn("vote"); });
+sc("投票結果","同数で誰も吊られない",()=>{ sgVres({ cnt:{ g1:2, g2:2 }, hanged:null, tie:true, votes:{} }); sgPhaseIn("vote"); });
+sc("投票結果","誰も吊られない",()=>{ sgVres({ cnt:{}, hanged:null, tie:false, votes:{} }); sgPhaseIn("vote"); });
+
+sc("死亡","毒を盛られた（その瞬間）",()=>{ sgG(RV); sgFire(()=>sgKill(me(),"poison","g1",false)); });
+sc("死亡","吊られた（その瞬間）",()=>{ sgVres({ cnt:{ [myId]:4 }, hanged:myId, tie:false, votes:{} }); seen.alive[myId]=true; sgPhaseIn("vote"); });
+sc("死亡","観戦中（毒で死んだ）",()=>sgG(RV,{ set:g=>sgKill(g.players[0],"poison","g1",false) }));
+sc("死亡","観戦中（議論）",()=>sgTalk(RV,{ set:g=>sgKill(g.players[0],"hang") }));
+
+sc("決着","市民陣営の勝ち",()=>{ sgOver("village"); sgPhaseIn("vres"); });
+sc("決着","人狼陣営の勝ち",()=>{ sgOver("wolf"); sgPhaseIn("act"); });
+sc("決着","結果を閉じて盤を見る",()=>{ sgOver("village"); openResult(); $("resultOv").classList.add("peek"); });
+sc("決着","参加者側の結果（オーナー待ち）",()=>{ sgOver("village",{ guest:true }); openResult(); });
+sc("決着","結果を閉じたあと",()=>sgOver("wolf"));
+
+sc("ダイアログ","役職：市民",()=>{ sgG(RV); openRole(); });
+sc("ダイアログ","役職：占い師",()=>{ sgG(RS); openRole(); });
+sc("ダイアログ","役職：鷹の目",()=>{ sgG(RH,{ pos:WPOS }); openRole(); });
+sc("ダイアログ","役職：毒殺人狼（仲間あり）",()=>{ sgG(RW,{ pos:WPOS }); openRole(); });
+sc("ダイアログ","役職：狂人",()=>{ sgG(RM); openRole(); });
+sc("ダイアログ","あそびかた",()=>{ buildHelp(); $("helpOv").classList.add("on"); });
+
+sc("試作","全員を操作する（試作パネル）",()=>startDebug(6));
+sc("試作","ロボットと遊ぶ（止めた状態）",()=>startCpu(6));
+
 /* ================= タイマー ================= */
 let lastWarnS=-1;
 tickIv=setInterval(()=>{
   hostTick();
   if(phaseUI==="game"&&G){
-    if(isHost||debug) localEnd=G.stepEnd||0;
+    if(gallery){ if(G.stepEnd) G.stepEnd=Date.now()+sgLeft*1000; localEnd=G.stepEnd; }   // ★シーン一覧: 残り時間は止めたまま
+    else if(isHost||debug) localEnd=G.stepEnd||0;
     renderTimer();
     const s=Math.ceil((localEnd-Date.now())/1000);
     const m=me(), mine = m && m.alive && ["move","act","vote","talk"].includes(G.phase) && !myInputIn();   // 警告音は自分がまだ入力していない時だけ
@@ -1661,6 +1882,7 @@ window.addEventListener("pointerdown",ensureAudio,{passive:true});
 window.addEventListener("pagehide",()=>{ if(ch){ try{ ch.send({type:"broadcast",event:"bye",payload:{id:myId}}); }catch(e){} } });
 renderSnd();
 renderDv();
+if(/[?&]scenes=1/.test(location.search)) setTimeout(openGallery,60);   // ★?scenes=1 でシーン一覧から始める
 })();
 </script>
 <script>/* 招待リンク(?join=合言葉)で来た人を自動で入室させる */

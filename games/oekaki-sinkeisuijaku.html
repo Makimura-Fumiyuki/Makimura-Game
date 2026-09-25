@@ -391,6 +391,26 @@
     70%{ opacity:1; }
     100%{ transform:translate(var(--dx,0),var(--rise,-40vh)) scale(1.02); opacity:0; }
   }
+  /* ===== ★試作用: シーン一覧のパネル(ゲームの見た目とは無関係の道具なので、どの作品でも同じ白いパネル) ===== */
+  #sgPanel{ position:fixed; right:8px; top:92px; z-index:300; width:252px; max-height:calc(100svh - 104px);
+    display:flex; flex-direction:column; gap:6px; padding:8px; border-radius:10px; text-align:left;
+    background:rgba(255,255,255,.97); color:#23211f; box-shadow:0 4px 18px rgba(0,0,0,.35); font-size:12px; line-height:1.4; }
+  #sgPanel.left{ right:auto; left:8px; }
+  #sgPanel.fold .sg-list, #sgPanel.fold .sg-end{ display:none; }
+  #sgPanel button{ font-family:inherit; font-size:11.5px; font-weight:800; color:#23211f; background:#fff; cursor:pointer; white-space:nowrap;
+    border:1px solid rgba(35,33,31,.25); border-radius:6px; padding:4px 8px; box-shadow:none; letter-spacing:0; }
+  #sgPanel .sg-head{ display:flex; align-items:center; gap:5px; }
+  #sgPanel .sg-head b{ flex:1; font-weight:900; font-size:12.5px; }
+  #sgPanel .sg-head span{ font-size:11px; font-weight:700; opacity:.6; }
+  #sgPanel .sg-nav{ display:flex; gap:6px; }
+  #sgPanel .sg-nav button{ flex:1; padding:6px 8px; }
+  #sgPanel .sg-cur{ font-weight:900; font-size:12.5px; }
+  #sgPanel .sg-list{ flex:1; min-height:0; overflow-y:auto; border-top:1px solid rgba(35,33,31,.12); padding-top:2px; position:relative; }
+  #sgPanel .sg-g{ margin:9px 0 2px; font-size:10.5px; font-weight:900; letter-spacing:.08em; opacity:.5; }
+  #sgPanel .sg-i{ display:block; width:100%; text-align:left; border:none; background:none; padding:3px 6px; border-radius:5px; font-weight:600; white-space:normal; }
+  #sgPanel .sg-i:hover{ background:rgba(35,33,31,.06); }
+  #sgPanel .sg-i.on{ background:#ffe08a; font-weight:900; }
+  #sgPanel .sg-end{ align-self:stretch; }
 </style>
 </head>
 <body>
@@ -414,6 +434,7 @@
     <div class="rc-row"><span class="rc-name">人数</span><button class="stp" id="dvMinus">−</button><span class="rc-val" id="dvN">4人</span><button class="stp" id="dvPlus">＋</button></div>
     <div class="rc-row"><span class="rc-name">お題（1人）</span><button class="stp" id="dkMinus">−</button><span class="rc-val" id="dkN">1個</span><button class="stp" id="dkPlus">＋</button></div>
     <button class="txt-btn" id="devStart">ひとりでためす（試作）</button>
+    <button class="txt-btn" id="sgStart">シーン一覧（試作）</button>
   </div>
 </div>
 
@@ -649,6 +670,7 @@ function newGame(members){
 function stepMs(){ if(debug) return 0; if(G.phase==="topic") return G.rules.topic*1000; if(G.phase==="match") return G.rules.turn*1000; return 0; }
 function startStep(ph){ G.phase=ph; G.sk++; const ms=stepMs(); G.stepEnd=ms? Date.now()+ms : 0; bump(); }
 function hostTick(){
+  if(gallery) return;                          // ★シーン一覧の間は進行を止める
   if(!G || !(isHost||debug) || G.phase==="over") return;
   const now=Date.now();
   if(G.phase==="topic" && G.stepEnd && now>=G.stepEnd) finishTopics();
@@ -909,7 +931,7 @@ function renderRoster(){
     if(ph==="draw"){ const cs=myCards(p.id), dn=cs.filter(c=>c.done).length; right= dn>=cs.length? '<span class="ok">完成</span>' : '<span class="sc">'+dn+'/'+cs.length+'</span>'; }
     if(ph==="match"||ph==="over") right='<span class="sc">'+p.score+'組</span>';
     const turn = ph==="match" && p.id===G.turn;
-    return '<div class="ros'+(turn?" turn":"")+(p.gone?" gone":"")+'"><span class="av" style="background:'+p.c+'"></span><span class="nm">'+esc(p.n)+(p.id===myId&&!debug?"（あなた）":"")+'</span>'+right+'</div>';
+    return '<div class="ros'+(turn?" turn":"")+(p.gone?" gone":"")+'"><span class="av" style="background:'+p.c+'"></span><span class="nm">'+esc(p.n)+(p.id===myId&&!debug&&p.n!=="あなた"?"（あなた）":"")+'</span>'+right+'</div>';
   }).join("");
   let st="";
   if(ph==="match"){ const t=pById(G.turn); if(t) st = (t.id===VID()&&!debug)? "あなたの番。2枚めくろう" : t.n+" の番"; }
@@ -1205,9 +1227,10 @@ function rankList(){
   let rk=0, prev=null; return ps.map((p,i)=>{ if(p.score!==prev){ rk=i+1; prev=p.score; } return { p, rk }; });
 }
 function openResult(){
+  if(!G||G.phase!=="over") return;             // 決着していない時(別の画面へ移ったあとの遅れた呼び出し)は開かない
   const rl=rankList(), top=rl.length? rl[0].p.score : 0, winners=rl.filter(r=>r.p.score===top).map(r=>r.p);
   $("winBanner").textContent= winners.length===1? winners[0].n+" の勝ち" : winners.map(p=>p.n).join("・")+" の勝ち";
-  $("resList").innerHTML=rl.map(r=>'<div class="res-row'+(r.p.score===top?" top":"")+'"><span class="rk">'+r.rk+'</span><span class="p-dot" style="background:'+r.p.c+'"></span><span class="nm">'+esc(r.p.n)+(r.p.id===myId&&!debug?"（あなた）":"")+'</span><span class="pt">'+r.p.score+'組</span></div>').join("");
+  $("resList").innerHTML=rl.map(r=>'<div class="res-row'+(r.p.score===top?" top":"")+'"><span class="rk">'+r.rk+'</span><span class="p-dot" style="background:'+r.p.c+'"></span><span class="nm">'+esc(r.p.n)+(r.p.id===myId&&!debug&&r.p.n!=="あなた"?"（あなた）":"")+'</span><span class="pt">'+r.p.score+'組</span></div>').join("");
   /* 横並びの2択は決定(主ボタン)を右 */
   let b='<button class="ghost" id="resTitle">タイトルへ</button>';
   if(debug) b+='<button class="close" id="resAgain">もう一回</button>';
@@ -1567,15 +1590,183 @@ $("helpBtn").onclick=()=>{ ensureAudio(); playSelect(); buildHelp(); $("helpOv")
 $("helpClose").onclick=()=>{ ensureAudio(); playSelect(); $("helpOv").classList.remove("on"); };
 $("helpOv").addEventListener("click",e=>{ if(e.target===$("helpOv")) $("helpOv").classList.remove("on"); });
 
+/* ================= ★試作用: シーン一覧(すべての画面・ダイアログ・文言の分岐を行き来する) =================
+   画面の多いゲームを調整するための道具。シーンを選ぶたびに状態を作り直して、その画面をそのまま出す。
+   ・進行は止めてある(タイマーは残り時間のまま止まる・締め切り/ロボット/自動の確定は動かない)。通信もしない
+   ・画面のボタンはふつうに押せる(そこから先も少しだけ触れる)。おかしくなったら同じシーンを選び直せば元どおり
+   入口=タイトルの試作用の枠「シーン一覧（試作）」か、URLに ?scenes=1。キーボードの [ ] で前後のシーンへ */
+let gallery=false, sgIdx=0, sgLeft=15, sgSeq=0;
+const SCENES=[];
+function sc(g,n,run){ SCENES.push({ g, n, run }); }
+function sgGo(i){
+  if(!SCENES.length) return;
+  sgIdx=(i+SCENES.length)%SCENES.length; try{ localStorage.setItem(SG_KEY,String(sgIdx)); }catch(e){}
+  sgLeft=15; sgReset();
+  try{ SCENES[sgIdx].run(); }catch(e){ console.error(e); toast("このシーンでエラー："+e.message,4000); }
+  sgPanel();
+}
+function sgPanel(){
+  let el=$("sgPanel");
+  if(!el){
+    el=document.createElement("div"); el.id="sgPanel"; if(window.innerWidth<700) el.classList.add("fold");
+    el.innerHTML='<div class="sg-head"><b>シーン一覧</b><span id="sgNo"></span><button id="sgSide" type="button"></button><button id="sgFold" type="button"></button></div>'
+      +'<div class="sg-nav"><button id="sgPrev" type="button">◀ 前</button><button id="sgNext" type="button">次 ▶</button></div>'
+      +'<div class="sg-cur" id="sgCur"></div><div class="sg-list" id="sgList"></div>'
+      +'<button id="sgEnd" class="sg-end" type="button">シーン一覧をやめる</button>';
+    document.body.appendChild(el);
+    let h="", last="";
+    SCENES.forEach((s,i)=>{ if(s.g!==last){ last=s.g; h+='<div class="sg-g">'+esc(s.g)+'</div>'; } h+='<button type="button" class="sg-i" data-i="'+i+'">'+esc(s.n)+'</button>'; });
+    $("sgList").innerHTML=h;
+    $("sgList").querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>sgGo(+b.dataset.i));
+    $("sgPrev").onclick=()=>sgGo(sgIdx-1);
+    $("sgNext").onclick=()=>sgGo(sgIdx+1);
+    $("sgFold").onclick=()=>{ el.classList.toggle("fold"); sgPanel(); };
+    $("sgSide").onclick=()=>{ el.classList.toggle("left"); sgPanel(); };
+    $("sgEnd").onclick=closeGallery;
+  }
+  const s=SCENES[sgIdx];
+  $("sgNo").textContent=(sgIdx+1)+" / "+SCENES.length;
+  $("sgCur").textContent=s.g+"：" +s.n;
+  $("sgFold").textContent=el.classList.contains("fold")? "ひらく" : "たたむ";
+  $("sgSide").textContent=el.classList.contains("left")? "右へ" : "左へ";
+  $("sgList").querySelectorAll("[data-i]").forEach(b=>b.classList.toggle("on",+b.dataset.i===sgIdx));
+  const on=$("sgList").querySelector(".sg-i.on"); if(on && !el.classList.contains("fold")){ const L=$("sgList"); if(on.offsetTop<L.scrollTop || on.offsetTop>L.scrollTop+L.clientHeight-30) L.scrollTop=on.offsetTop-L.clientHeight/2; }
+}
+function openGallery(){ gallery=true; let i=0; try{ i=parseInt(localStorage.getItem(SG_KEY),10)||0; }catch(e){} sgGo(i); }
+function closeGallery(){ gallery=false; const el=$("sgPanel"); if(el) el.remove(); sgReset(); }
+document.addEventListener("keydown",e=>{
+  if(!gallery||e.isComposing) return; const t=e.target; if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA")) return;
+  if(e.key==="]"){ e.preventDefault(); sgGo(sgIdx+1); } else if(e.key==="["){ e.preventDefault(); sgGo(sgIdx-1); }
+});
+$("sgStart").onclick=()=>{ ensureAudio(); playSelect(); openGallery(); };
+/* --- おえかき神経衰弱のシーン --- */
+const SG_KEY="os.sgIdx";
+const SG_NM=["まきむら","さくら","たろう","ゆい","けん","みお","そら","はる"];
+const SG_TOP=["ねこ","ロケット","おにぎり","かさ","ぞう","ラーメン","ひまわり","おばけ","くるま","りんご","ペンギン","さかな"];
+function sgReset(){
+  clearTimeout(toastT); $("toast").classList.remove("on"); clearTimeout(fxT); $("bigFx").className="";
+  goTitle();                                                     // 部屋・状態・チャット・ダイアログ・絵を片付けてタイトルへ
+  rules=Object.assign({},DEF_RULES); code=""; nameAsked=true; pending=null; dbgShow=false;
+  erasing=false; penCol=INK[0]; penW=W_DEF; resetClear(); updateTools(); setMini(true);
+}
+/* 状態を作る。o.guest=参加者側で見る／o.k=1人のお題の数 */
+function sgG(n,o){
+  o=o||{};
+  G={ gid:"sg"+(++sgSeq), rules:Object.assign({},DEF_RULES,{ k:o.k||1 }),
+      players:[...Array(n)].map((_,i)=>({ id:i?"g"+i:myId, n:SG_NM[i], c:PCOL[i], score:0, gone:false })),
+      phase:o.phase||"topic", sk:5, stepEnd:0, topics:{}, tp:[], cards:[], board:[], pairTotal:0, taken:{},
+      turn:"", flip:[], resAt:0, getN:0, missN:0, last:null, drawEnd:0 };
+  isHost=!o.guest; online=!!o.guest; hostId=o.guest? "g1" : myId;
+  return G;
+}
+function sgDeal(){                      // 全員のお題を決めて、描く人を割り振る
+  let t=0; activePs().forEach(p=>{ G.topics[p.id]=[]; for(let i=0;i<G.rules.k;i++) G.topics[p.id].push(SG_TOP[(t++)%SG_TOP.length]); });
+  G.tp=[]; activePs().forEach(p=>G.topics[p.id].forEach(x=>G.tp.push({ t:x, by:p.id })));
+  buildCards();
+  myCards(myId).forEach(c=>{ if(c.tp<0){ const r=G.cards.find(x=>x.dr!==myId&&x.tp>=0); if(r){ const tmp=c.tp; c.tp=r.tp; r.tp=tmp; } } });   // 自分の分はお題ありにそろえる
+}
+function sgArtsAll(){ G.cards.forEach(c=>{ arts[c.id]=encodeArt(autoArt(c.tp>=0? G.tp[c.tp].t : "fake"+c.id)); c.done=true; }); }
+function sgBoard(){                     // 神経衰弱の盤を作る(最初はあなたの番)
+  G.board=shuffle(G.cards.filter(c=>!c.gone).map(c=>c.id));
+  const cnt={}; G.cards.forEach(c=>{ const k2=cardKey(c); if(k2) cnt[k2]=(cnt[k2]||0)+1; });
+  G.pairTotal=Object.values(cnt).reduce((s2,v)=>s2+Math.floor(v/2),0); G.turn=myId;
+}
+function sgGroups(){ const grp={}; G.board.forEach(cid=>{ const k2=cardKey(cById(cid)); if(k2) (grp[k2]=grp[k2]||[]).push(cid); }); return Object.values(grp).filter(g=>g.length>=2); }
+function sgTake(pr,pid){ G.taken[pr[0]]=pid; G.taken[pr[1]]=pid; pById(pid).score++; }
+function sgPrime(){
+  seen={ gid:G.gid, sk:G.sk, phase:G.phase, getN:G.getN, missN:G.missN, turn:G.turn+"|"+G.sk, over:G.phase==="over", gone:{} };
+  G.players.forEach(p=>{ if(p.gone) seen.gone[p.id]=1; });
+}
+function sgShow(){ if(G.phase==="topic"||G.phase==="match") G.stepEnd=Date.now()+sgLeft*1000; enterGame(); sgPrime(); localEnd=G.stepEnd; render();
+  if(G.phase==="draw"){ const c0=curDrawCard(); if(c0){ drawStart[c0.id]=Date.now()-(G.rules.draw-sgLeft)*1000; renderTimer(); } } }
+function sgFire(fn){ if(fn) fn(); onState(); render(); }
+function sgPhaseIn(){ seen.phase=""; seen.over=false; onState(); render(); }
+function sgLobby(n,o){
+  o=o||{}; online=true; isHost=!o.guest; hostId=o.guest? "g1" : myId; code="HUBAP"; nameAsked=true;
+  const ids=[...Array(n)].map((_,i)=>i?"g"+i:myId);
+  if(o.guest && n>1){ ids[0]="g1"; ids[1]=myId; }
+  lobby=ids.map((id,i)=>({ id, n:(o.undef&&i===n-1)? "" : SG_NM[id===myId?0:+id.slice(1)], c:PCOL[i], t:i }));
+  if(o.k) rules.k=o.k;
+  phaseUI="lobby"; showScene("lobbyScene"); renderLobby();
+}
+const sgTopic=(n,o)=>{ sgG(n,o); if(o&&o.set) o.set(G); sgShow(); };
+const sgDraw=(o)=>{ o=o||{}; sgG(4,Object.assign({ phase:"draw" },o)); sgDeal(); if(o.set) o.set(G); sgShow(); };
+const sgMatch=(o)=>{ o=o||{}; sgG(4,Object.assign({ phase:"match", k:2 },o)); sgDeal(); sgArtsAll(); sgBoard(); if(o.set) o.set(G); sgShow(); };
+const sgOverG=(scores,o)=>{ o=o||{}; sgG(4,Object.assign({ phase:"over", k:2 },o)); sgDeal(); sgArtsAll(); sgBoard();
+  const gs=sgGroups(); let gi=0; scores.forEach((n,pi)=>{ for(let j=0;j<n&&gi<gs.length;j++) sgTake(gs[gi++],G.players[pi].id); });
+  G.turn=""; sgShow(); };
+
+sc("タイトル・入室","タイトル",()=>{});
+sc("タイトル・入室","部屋に入る（合言葉の入力）",()=>{ $("joinRoomBtn").onclick(); });
+sc("タイトル・入室","合言葉が5文字でない",()=>{ $("joinRoomBtn").onclick(); $("codeInput").value="AB"; $("codeGo").onclick(); });
+sc("タイトル・入室","部屋がみつからない",()=>{ $("joinRoomBtn").onclick(); $("codeInput").value="HUBAP"; const nt=$("joinNote"); nt.textContent="部屋がみつからない。合言葉を確認しよう"; nt.className="room-note err"; });
+sc("タイトル・入室","満室で入れない",()=>{ roomStatus('<div class="room-note err">満室です（'+MAX_P+'人まで）</div>'); });
+sc("タイトル・入室","ゲーム中で入れない",()=>{ roomStatus('<div class="room-note err">今はゲーム中みたい。次のゲーム開始まで待ってね</div>'); });
+sc("タイトル・入室","通信失敗",()=>{ roomStatus('<div class="room-note err">通信失敗。通信環境を見直そう</div>'); });
+
+sc("ロビー","人数が足りない（オーナー）",()=>sgLobby(1));
+sc("ロビー","はじめられる（オーナー）",()=>sgLobby(4));
+sc("ロビー","人数が多いのでお題が減る",()=>sgLobby(10,{ k:4 }));
+sc("ロビー","名前を考え中の人がいる",()=>sgLobby(4,{ undef:true }));
+sc("ロビー","参加者側",()=>sgLobby(4,{ guest:true }));
+sc("ロビー","名前ダイアログ",()=>{ sgLobby(3); openNameOv(); });
+sc("ロビー","名前ダイアログ：空欄で決定",()=>{ sgLobby(3); openNameOv(); $("nameInput").value=""; $("nameGo").onclick(); });
+
+sc("お題づくり","お題づくりのはじまり",()=>{ sgLeft=60; sgTopic(4); sgPhaseIn(); });
+sc("お題づくり","入力前（1個）",()=>{ sgLeft=52; sgTopic(4); });
+sc("お題づくり","入力前（3個）",()=>{ sgLeft=52; sgTopic(4,{ k:3 }); });
+sc("お題づくり","入力の途中",()=>{ sgLeft=40; sgTopic(4,{ k:2 }); const ins=[...document.querySelectorAll("#tpRows .tp-in")]; if(ins[0]) ins[0].value="ねこ"; });
+sc("お題づくり","空欄のまま決定",()=>{ sgTopic(4,{ k:2 }); const ins=[...document.querySelectorAll("#tpRows .tp-in")]; if(ins[0]) ins[0].value="ねこ"; $("tpGo").onclick(); });
+sc("お題づくり","同じお題が2つ",()=>{ sgTopic(4,{ k:2 }); document.querySelectorAll("#tpRows .tp-in").forEach(x=>x.value="ねこ"); $("tpGo").onclick(); });
+sc("お題づくり","決定した（ほかの人を待つ）",()=>sgTopic(4,{ set:g=>{ g.topics[myId]=["ねこ"]; g.topics.g2=["ぞう"]; } }));
+sc("お題づくり","送信中（参加者側）",()=>{ sgTopic(4,{ guest:true }); pending={ t:"topics", l:["ねこ"], sk:G.sk, from:myId }; render(); });
+sc("お題づくり","残り5秒",()=>{ sgLeft=4; sgTopic(4); });
+
+sc("お絵かき","お絵かきタイムのはじまり",()=>{ sgDraw(); sgPhaseIn(); });
+sc("お絵かき","描く前（1枚目）",()=>sgDraw());
+sc("お絵かき","描いている途中",()=>{ sgDraw(); if(curCid){ drafts[curCid]=autoArt(G.tp[cById(curCid).tp].t); redrawCv(); } });
+sc("お絵かき","2枚目のお題",()=>sgDraw({ k:2, set:g=>{ const c=myCards(myId)[0]; c.done=true; arts[c.id]=encodeArt(autoArt("x")); localDone[c.id]=true; } }));
+sc("お絵かき","お題なし（どれともペアにならない絵）",()=>sgDraw({ set:g=>{ myCards(myId)[0].tp=-1; } }));
+sc("お絵かき","消しゴムを選んだ",()=>{ sgDraw(); if(curCid){ drafts[curCid]=autoArt("ねこ"); redrawCv(); } erasing=true; updateTools(); });
+sc("お絵かき","太い線・自由な色",()=>{ sgDraw(); penCol="#00a0a0"; setW(20); updateTools(); });
+sc("お絵かき","全部消す（確定待ち）",()=>{ sgDraw(); if(curCid){ drafts[curCid]=autoArt("ねこ"); redrawCv(); } $("clearBtn").onclick(); });
+sc("お絵かき","残り5秒",()=>{ sgLeft=4; sgDraw(); });
+sc("お絵かき","描き終わった（ほかの人を待つ）",()=>sgDraw({ set:g=>{ myCards(myId).forEach(c=>{ c.done=true; localDone[c.id]=true; arts[c.id]=""; }); } }));
+
+sc("神経衰弱","神経衰弱のはじまり",()=>{ sgMatch(); sgPhaseIn(); });
+sc("神経衰弱","自分の番",()=>sgMatch());
+sc("神経衰弱","自分の番になった（知らせ）",()=>{ sgMatch(); seen.turn="g2|0"; sgFire(); });
+sc("神経衰弱","ほかの人の番",()=>sgMatch({ set:g=>{ g.turn="g2"; } }));
+sc("神経衰弱","1枚めくった",()=>sgMatch({ set:g=>{ g.flip=[g.board[0]]; } }));
+sc("神経衰弱","2枚めくった（はずれ）",()=>sgMatch({ set:g=>{ const gs=sgGroups(); g.flip=[gs[0][0],gs[1][0]]; g.resAt=Date.now()+1e9; } }));
+sc("神経衰弱","そろった（GET）",()=>{ sgMatch(); const pr=sgGroups()[0]; sgFire(()=>{ sgTake(pr,myId); G.getN++; G.last={ tp:cById(pr[0]).tp, by:myId, a:pr[0], b:pr[1] }; }); });
+sc("神経衰弱","ほかの人がそろえた",()=>{ sgMatch({ set:g=>{ g.turn="g1"; } }); const pr=sgGroups()[0]; sgFire(()=>{ sgTake(pr,"g1"); G.getN++; G.last={ tp:cById(pr[0]).tp, by:"g1", a:pr[0], b:pr[1] }; }); });
+sc("神経衰弱","途中（いくつかそろった）",()=>sgMatch({ set:g=>{ const gs=sgGroups(); sgTake(gs[0],myId); sgTake(gs[1],"g2"); sgTake(gs[2],"g2"); g.turn="g3"; } }));
+sc("神経衰弱","残り5秒",()=>{ sgLeft=4; sgMatch(); });
+sc("神経衰弱","退出した人がいる",()=>{ sgMatch(); sgFire(()=>{ G.players[3].gone=true; }); });
+
+sc("結果","1人の勝ち",()=>{ sgOverG([3,2,2,1]); sgPhaseIn(); });
+sc("結果","同点で2人の勝ち",()=>{ sgOverG([3,3,1,1]); sgPhaseIn(); });
+sc("結果","ほかの人の勝ち",()=>{ sgOverG([1,4,2,1]); sgPhaseIn(); });
+sc("結果","結果を閉じて盤を見る",()=>{ sgOverG([3,2,2,1]); openResult(); $("resultOv").classList.add("peek"); });
+sc("結果","参加者側の結果（オーナー待ち）",()=>{ sgOverG([3,2,2,1],{ guest:true }); openResult(); });
+sc("結果","結果を閉じたあと",()=>sgOverG([3,2,2,1]));
+
+sc("ダイアログ","あそびかた",()=>{ buildHelp(); $("helpOv").classList.add("on"); });
+
+sc("試作","ひとりでためす（試作パネル）",()=>startDebug(4,1));
+
 /* ================= タイマー ================= */
 let lastWarnS=-1;
 tickIv=setInterval(()=>{
   hostTick();
   if(phaseUI==="game"&&G){
-    if(isHost||debug) localEnd=G.stepEnd||0;
+    if(gallery){ if(G.stepEnd) G.stepEnd=Date.now()+sgLeft*1000; localEnd=G.stepEnd;   // ★シーン一覧: 残り時間は止めたまま
+      if(G.phase==="draw"){ const c0=curDrawCard(); if(c0) drawStart[c0.id]=Date.now()-(G.rules.draw-sgLeft)*1000; } }
+    else if(isHost||debug) localEnd=G.stepEnd||0;
     renderTimer();
     let ms=-1;
-    if(G.phase==="draw"){ const c=curDrawCard(); if(c&&!debug){ ms=drawLeftMs(c); if(ms<=0){ finishCard(c.id); } } }   // 1枚ごとの時間切れ=その時点の絵で確定
+    if(G.phase==="draw"){ const c=curDrawCard(); if(c&&!debug){ ms=drawLeftMs(c); if(ms<=0&&!gallery){ finishCard(c.id); } } }   // 1枚ごとの時間切れ=その時点の絵で確定
     else if(G.stepEnd && !G.resAt){                  // 警告音は自分に関係ある時だけ(ほかの人の番の時間切れで鳴り続けないように)
       const mine = G.phase==="topic"? !G.topics[VID()] : G.phase==="match"? G.turn===VID() : false;
       if(mine) ms=localEnd-Date.now();
@@ -1619,6 +1810,7 @@ let dodT=0; window.addEventListener("resize",()=>{ clearTimeout(dodT); dodT=setT
 drawDoodles();
 updateTools();
 renderSnd();
+if(/[?&]scenes=1/.test(location.search)) setTimeout(openGallery,60);   // ★?scenes=1 でシーン一覧から始める
 })();
 </script>
 <script>/* 招待リンク(?join=合言葉)で来た人を自動で入室させる */
