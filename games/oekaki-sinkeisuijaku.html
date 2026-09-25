@@ -1648,8 +1648,8 @@ $("sgStart").onclick=()=>{ ensureAudio(); playSelect(); openGallery(); };
    ・dragWin(窓, つまむ所[], 保存キー)=つまんで動かせる。離すといちばん近い画面の端に吸い付く・置いた場所は覚えておく
    ・onSD(関数)=SとDを同時に押した時に呼ぶ(開く/閉じる)。入力欄の中では反応しない。キーの位置で見るので日本語入力中でも効く */
 function dragWin(el,handles,key){
-  /* 離した時は上下左右でいちばん近い画面の端へ吸い付く(2026-09-25牧村指示)。
-     保存するのは{e:吸い付いた端(l/r/t/b), p:もう一方の向きの位置}=画面の大きさが変わっても同じ端にくっついたまま */
+  /* 離した時は左右どちらか近い方の画面の端へ吸い付く(2026-09-25牧村指示。上下には張り付かない=上下の位置は置いた所のまま)。
+     保存するのは{e:吸い付いた端(l/r), p:上下の位置}=画面の大きさが変わっても同じ端にくっついたまま */
   const M=8;                                                   // 端からのすき間
   const vw=()=>window.innerWidth, vh=()=>window.innerHeight;
   const set=(x,y)=>{ el.style.left=x+"px"; el.style.top=y+"px"; el.style.right="auto"; el.style.bottom="auto"; };
@@ -1659,17 +1659,13 @@ function dragWin(el,handles,key){
     if(e==="l") set(M, fit(p,vh()-h)); else if(e==="r") set(vw()-w-M, fit(p,vh()-h));
     else if(e==="t") set(fit(p,vw()-w), M); else set(fit(p,vw()-w), vh()-h-M);
     el._snap={ e, p }; };
-  const nearest=()=>{ const r=el.getBoundingClientRect();
-    /* 窓の「中心」が画面のどの端にいちばん近いかで決める(画面に対する割合で比べる)。
-       すき間の大きさで比べると、縦に長い窓は上下のすき間がいつも小さく、左右へ吸い付けなくなるため */
-    const cx=(r.left+r.width/2)/vw(), cy=(r.top+r.height/2)/vh();
-    const d={ l:cx, r:1-cx, t:cy, b:1-cy };
-    const e=Object.keys(d).reduce((a,k)=>d[k]<d[a]? k : a,"l");
-    return { e, p:(e==="l"||e==="r")? r.top : r.left }; };
+  const nearest=()=>{ const r=el.getBoundingClientRect();   // 窓の中心が画面の左半分なら左端・右半分なら右端
+    return { e: (r.left+r.width/2)<=vw()/2? "l" : "r", p:r.top }; };
   el._place=()=>{ if(el._snap) stick(el._snap.e,el._snap.p); };
   el.dataset.drag="1";
   try{ const sv=JSON.parse(localStorage.getItem(key)||"null");
-    if(sv&&sv.e) stick(sv.e,sv.p);
+    if(sv&&(sv.e==="l"||sv.e==="r")) stick(sv.e,sv.p);
+    else if(sv&&(sv.e==="t"||sv.e==="b")){ set(sv.p, sv.e==="t"? M : Math.max(M,vh()-el.offsetHeight-M)); if(vw()>0){ const n=nearest(); stick(n.e,n.p); } }   // 上下に張り付いていた古い保存は左右へ直す
     else if(sv&&typeof sv.x==="number"){ set(sv.x,sv.y); if(vw()>0){ const n=nearest(); stick(n.e,n.p); } }   // 吸い付く前に保存された位置
   }catch(e){}
   handles.forEach(h=>{ let d=null;
