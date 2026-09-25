@@ -133,7 +133,7 @@
   .lobby-row{ display:flex; align-items:center; gap:10px; background:rgba(244,239,230,.1);
     border-radius:11px; padding:9px 14px; font-size:15px; font-weight:800; }
   .lobby-row .nm{ flex:1; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .lobby-row .p-dot.mine{ width:18px; height:18px; cursor:pointer; box-shadow:0 0 0 2px rgba(244,239,230,.5); }   /* 自分の色は押すと変えられる */
+  .lobby-row .p-dot.mine{ cursor:pointer; }   /* 自分の色は押すと変えられる(見た目はほかの人と同じ) */
   .lobby-row .nm.undef{ opacity:.42; font-weight:700; }
   .p-dot{ width:12px; height:12px; border-radius:50%; flex:none; }
   .lobby-row .hostmark{ flex:none; font-size:11px; font-weight:900; color:#3a2a06; background:var(--gold); border-radius:999px; padding:2px 10px 3px; }
@@ -169,11 +169,12 @@
   .roster{ width:100%; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; background:rgba(0,0,0,.2);
     border:1.5px solid rgba(244,239,230,.12); border-radius:12px; padding:6px; }
   .stage.talk .roster{ order:1; } .stage.talk .board-wrap{ order:2; }    /* 議論 & 投票の間はメンバーリストを盤の上に */
-  .ros{ display:flex; flex-direction:column; justify-content:space-between; height:50px; padding:5px 6px; border-radius:9px; min-width:0;
+  .ros{ display:flex; flex-direction:column; justify-content:space-between; height:54px; padding:5px 6px; border-radius:9px; min-width:0;
     background:rgba(244,239,230,.08); border:1.5px solid transparent; font-size:12px; font-weight:800; }
   .ros.self{ background:rgba(232,182,71,.17); }                        /* 自分の枠だけ色を変える */
   .ros .r1{ display:flex; align-items:center; gap:5px; min-width:0; }
-  .ros .r2{ display:flex; align-items:center; justify-content:flex-end; gap:4px; height:18px; }   /* バッジは右端に詰める(チェックが付いたら左へ) */
+  .ros .r2{ display:flex; align-items:center; gap:4px; height:18px; }   /* チェックは左下・バッジは右下 */
+  .ros .r2 .tgs{ margin-left:auto; display:flex; gap:4px; align-items:center; }
   .ros .nm{ flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left; }
   .ros .av{ width:15px; height:15px; border-radius:50%; flex:none; position:relative; }
   .ros.dead{ opacity:.42; }
@@ -210,9 +211,11 @@
   @keyframes ringSpin{ to{ stroke-dashoffset:-11; } }
   #board .plb{ font-weight:900; paint-order:stroke fill; stroke:rgba(14,11,24,.92); stroke-width:4px; vector-effect:non-scaling-stroke; stroke-linejoin:round; pointer-events:none; }   /* ふちは見た目で2px(半分は文字の下に隠れる) */
   /* ターンのはじめに画面の真ん中へ大きな数字(残りターン)。残り3ターンから赤くなっていく */
-  #turnFx{ position:fixed; inset:0; z-index:70; display:none; align-items:center; justify-content:center; pointer-events:none; }
+  /* 盤の真ん中。「のこり」+数字(旧・画面の真ん中の2/3の大きさ) */
+  #turnFx{ position:absolute; inset:0; z-index:2; display:none; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; color:var(--tc,#fff); opacity:.5; }
   #turnFx.on{ display:flex; animation:turnFx 1.8s ease-out forwards; }
-  #turnFx span{ font-size:min(78vw,62vh); font-weight:900; line-height:1; color:var(--tc,#fff); opacity:.5; }
+  #turnFx small{ font-size:min(7vw,32px); font-weight:900; letter-spacing:.2em; line-height:1; margin-bottom:-.2em; }
+  #turnFx span{ font-size:min(52vw,41vh,300px); font-weight:900; line-height:1; }
   @keyframes turnFx{ 0%{ opacity:0; transform:scale(1.25); } 15%{ opacity:1; transform:scale(1); } 70%{ opacity:1; } 100%{ opacity:0; transform:scale(.96); } }
   /* ガイド=操作の補助だけ。盤の中の下(自分のコマが下半分の時は上)に、盤より細い角丸の帯で出す。ボタンだけが押せる */
   .hud{ position:absolute; left:50%; transform:translateX(-50%); bottom:15px; z-index:3; pointer-events:none;
@@ -231,7 +234,7 @@
   .gbtn:active{ transform:translateY(1px); }
   /* コマの横(基本は右・入らない時は左)に出す操作。上に「◯◯と接触」、ボタンは縦に並べる(全部同じサイズ・囲みの背景はなし) */
   /* コマから出ている吹き出し。右に出す時はしっぽが左、左に出す時はしっぽが右(--ty=しっぽの高さ) */
-  .pop{ position:absolute; z-index:4; display:flex; flex-direction:column; align-items:stretch; gap:5px; width:158px; transform:translateY(-50%); box-sizing:border-box;
+  .pop{ position:absolute; z-index:4; display:flex; flex-direction:column; align-items:stretch; gap:5px; width:168px; transform:translateY(-50%); box-sizing:border-box;
     background:rgba(24,20,38,.97); border:1.5px solid rgba(232,182,71,.55); border-radius:14px; padding:8px; box-shadow:0 8px 22px rgba(0,0,0,.45); }
   .pop::before, .pop::after{ content:""; position:absolute; top:var(--ty,50%); width:0; height:0; border:9px solid transparent; transform:translateY(-50%); }
   .pop.r::before{ right:100%; border-right-color:rgba(232,182,71,.55); }
@@ -239,7 +242,7 @@
   .pop.l::before{ left:100%; border-left-color:rgba(232,182,71,.55); }
   .pop.l::after{ left:calc(100% - 2px); border-left-color:rgba(24,20,38,.97); }
   .pop .pop-h{ font-size:12px; font-weight:900; letter-spacing:.02em; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--gold); padding:0 2px 2px; }
-  .pbtn{ width:140px; height:34px; padding:0 8px; border:none; border-radius:10px; background:rgba(244,239,230,.1); color:var(--card);
+  .pbtn{ width:150px; height:34px; padding:0 8px; border:none; border-radius:10px; background:rgba(244,239,230,.1); color:var(--card);
     box-shadow:inset 0 0 0 1.5px rgba(244,239,230,.18);
     display:flex; align-items:center; justify-content:center; gap:6px;
     font-size:11.5px; font-weight:900; letter-spacing:-.01em; white-space:nowrap; cursor:pointer; }
@@ -345,11 +348,11 @@
   .rd-desc .lead{ font-size:14.5px; font-weight:900; margin-bottom:4px; }
   .rd-desc .note{ font-size:11.5px; font-weight:600; opacity:.55; margin-top:3px; }
   /* 視界と動ける範囲=内容の下。左に盤・右に凡例 */
-  .rd-vis{ display:flex; align-items:center; gap:14px; margin-top:14px; }
+  .rd-vis{ display:flex; align-items:flex-end; gap:14px; margin-top:14px; }   /* 凡例は盤の下端にそろえる */
   .rd-vis svg{ width:clamp(130px,42vw,170px); height:auto; flex:none; display:block; border-radius:8px; }
   .rd-leg{ display:flex; flex-direction:column; gap:7px; font-size:12px; font-weight:800; }
   .rd-leg span{ display:flex; align-items:center; gap:7px; white-space:nowrap; }
-  .rd-leg i{ width:14px; height:14px; border-radius:3px; flex:none; box-shadow:0 0 0 1.5px rgba(244,239,230,.75); }   /* アウトラインで背景と見分ける */
+  .rd-leg i{ width:14px; height:14px; border-radius:3px; flex:none; box-shadow:0 0 0 1px #fff; }   /* 白の1pxのアウトラインで背景と見分ける */
   .role-card .close{ display:block; margin:16px auto 0; }
   /* 占い結果(画面の真ん中) */
   .seer-card{ width:min(80vw,300px); }
@@ -520,7 +523,7 @@
   <div class="day-title" id="dayTitle"></div>
   <div class="stage">
     <div class="phase-row"><span class="phase-tag" id="phaseTag"></span><span class="timer" id="timer"></span></div>
-    <div class="board-wrap" id="boardWrap"><svg id="board" xmlns="http://www.w3.org/2000/svg"></svg><div class="hud" id="hud"></div><div class="pop" id="pop" style="display:none;"></div></div>
+    <div class="board-wrap" id="boardWrap"><svg id="board" xmlns="http://www.w3.org/2000/svg"></svg><div class="hud" id="hud"></div><div class="pop" id="pop" style="display:none;"></div><div id="turnFx"><small>のこり</small><span id="turnFxTx"></span></div></div>
     <div class="roster" id="roster"></div>
   </div>
   <div class="dbg" id="dbg" style="display:none;"></div>
@@ -547,7 +550,7 @@
 
 <div class="toast" id="toast"></div>
 <div id="bigFx"><span id="bigFxTx"></span></div>
-<div id="turnFx"><span id="turnFxTx"></span></div>
+
 
 <div class="overlay" id="roleOv">
   <div class="r-card role-card">
@@ -925,7 +928,6 @@ function resolveAct(){
   const newPoison=[], whs=[];
   alivePs().forEach(p=>{
     const w=(G.whs||{})[p.id];
-    if(w && w.tx){ const t=pById(w.tg); if(t&&t.alive&&t.id!==p.id&&dist(p,t)<=1) whs.push({ id:G.gid+":"+G.tick+":"+p.id, f:p.id, to:t.id, t:w.tx }); }
     const a=G.acts[p.id]; if(!a||!a.tg||a.k==="none") return;
     const t=pById(a.tg); if(!t||!t.alive||t.id===p.id||dist(p,t)>1) return;
     if(a.k==="seer" && p.role==="seer") p.notes.push({ r:G.round, t:G.turn, tg:t.id, black:isWolf(t) });
@@ -939,7 +941,6 @@ function resolveAct(){
     if(o.dl===0) die(t,"poison",o.by);
     else if(!t.poison || t.poison.left>o.dl) t.poison={ left:o.dl, by:o.by };   // 2回盛られたら早い方
   });
-  G.wh=(G.wh||[]).concat(whs); while(G.wh.length>60) G.wh.shift();
   if(checkWin()) return;
   if(G.turn>=G.rules.turns){ startTalk(); return; }
   G.turn++; startStep("move");
@@ -1004,6 +1005,7 @@ function hostAct(a){
     G.whs=G.whs||{}; if(G.whs[p.id]) return;                         // 話すのも1ターンに1人まで
     if(!t||!t.alive||t.id===p.id||dist(t,p)>1||!tx) return;
     G.whs[p.id]={ tg:t.id, tx };
+    G.wh=(G.wh||[]).concat([{ id:G.gid+":"+G.sk+":"+p.id, f:p.id, to:t.id, t:tx }]); while(G.wh.length>60) G.wh.shift();   // 話すは送った瞬間に届く(行動の解決を待たない)
     if(!hasPower(p) && G.acts[p.id]===undefined) G.acts[p.id]={ k:"none", byWh:1 };
     bump(); if(allIn(G.acts)) resolveAct(); return;
   }
@@ -1096,7 +1098,7 @@ function renderRoster(){
     const can = canVote && p.alive && !self;
     return '<div class="ros'+(self?" self":"")+(deadShown?" dead":"")+(can?" can":"")+(can&&mv===p.id?" voted":(can&&pk===p.id?" pick":""))+'" data-pid="'+esc(p.id)+'">'
       +'<div class="r1"><span class="av" style="background:'+p.c+'"></span><span class="nm">'+esc(p.n)+'</span>'+vc+'</div>'
-      +'<div class="r2">'+tags+(done?'<span class="ck">'+CHECK_SVG+'</span>':'')+'</div></div>';
+      +'<div class="r2">'+(done?'<span class="ck">'+CHECK_SVG+'</span>':'')+'<span class="tgs">'+tags+'</span></div></div>';
   }).join("")+(canVote? '<button type="button" class="skip-btn'+(mv==="skip"?" voted":pk==="skip"?" pick":"")+'" data-pid="skip">スキップ</button>' : "");
 }
 $("roster").addEventListener("click",e=>{
@@ -1120,7 +1122,6 @@ function buildBoard(){
   }
   b.appendChild(svgEl("g",{id:"markL"}));
   b.appendChild(svgEl("g",{id:"pieceL"}));
-  b.appendChild(svgEl("g",{id:"cntL"}));
   b.appendChild(svgEl("g",{id:"bubL"}));
 }
 /* コマの上の札(いつもコマの上): 役職を知っている人だけ役職名(自分=自分の役職・毒殺人狼どうし)／決着後・観戦中=全員の役職 */
@@ -1151,7 +1152,7 @@ function renderBoard(){
   /* 1回目で選んだ移動先の予告(まだ決定していない) */
   if(m && m.alive && G.phase==="move" && sel.move && DIRS[sel.move] && sel.move!==confirmedMove()){
     const v=DIRS[sel.move], tx=m.x+v[0], ty=m.y+v[1];
-    mk.appendChild(svgEl("rect",{x:tx*10+.9,y:ty*10+.9,width:8.2,height:8.2,rx:1.6,fill:"rgba(232,182,71,.25)",stroke:"#e8b647","stroke-width":.9,"stroke-dasharray":"1.8 1.2",class:"pre-mark"}));
+    mk.appendChild(svgEl("rect",{x:tx*10+.9,y:ty*10+.9,width:8.2,height:8.2,rx:1.6,fill:"rgba(232,182,71,.25)",stroke:"#e8b647","stroke-width":3,"vector-effect":"non-scaling-stroke","stroke-dasharray":"5 4",class:"pre-mark"}));
   }
   $("board").classList.toggle("mv", !!(m&&m.alive&&G.phase==="move"));
   /* コマ: 見えるマスにいる生存者だけ(同じマスに複数いてよい) */
@@ -1159,18 +1160,13 @@ function renderBoard(){
   const posOf=p=> prov[p.id] || p;
   G.players.forEach(p=>{ if(!p.alive) return; if(!visibleCell(p.x,p.y)) return; const q=posOf(p), k=q.x+","+q.y; (byCell[k]=byCell[k]||[]).push(p); });
   const shown=new Set(), tgs=actTargets(), a=myAct();
-  const cntL=$("cntL"); if(cntL) cntL.innerHTML="";
   Object.keys(byCell).forEach(k=>{
     const list=byCell[k], n=list.length, crowd=n>=5;
-    /* 同じマスに5人以上=3×3のすき間なしの並び(札は出さない)。右下のあき(最大8人なのでいつも空く)に人数を出す */
-    const lay = n===1? [[5,5,3.5]] : n===2? [[3,5,2.4],[7,5,2.4]] : n<=4? [[3,3,2.1],[7,3,2.1],[3,7,2.1],[7,7,2.1]] : null;
-    if(crowd && cntL){ const [cx,cy]=k.split(",").map(Number), g=svgEl("g",{});
-      g.appendChild(svgEl("circle",{cx:cx*10+8.1,cy:cy*10+8.1,r:1.35,fill:"rgba(20,16,32,.85)"}));
-      const t=svgEl("text",{x:cx*10+8.1,y:cy*10+8.15,"text-anchor":"middle","dominant-baseline":"central","font-size":"1.5","font-weight":"900",fill:"#fff"}); t.textContent=n;
-      g.appendChild(t); cntL.appendChild(g); }
+    /* 同じマスに複数=コマどうしが重ならないようすき間をあける(重なるとふちが太く見える)。5人以上は3×3の並びで札は出さない */
+    const lay = n===1? [[5,5,3.5]] : n===2? [[2.6,5,2.2],[7.4,5,2.2]] : n<=4? [[2.7,2.7,2],[7.3,2.7,2],[2.7,7.3,2],[7.3,7.3,2]] : null;
     list.forEach((p,i)=>{
       let ox,oy,r;
-      if(lay){ [ox,oy,r]=lay[i]; } else { const c=i%3, rr=Math.floor(i/3); ox=1.9+c*3.1; oy=1.9+rr*3.1; r=1.45; }
+      if(lay){ [ox,oy,r]=lay[i]; } else { const c=i%3, rr=Math.floor(i/3); ox=1.9+c*3.1; oy=1.9+rr*3.1; r=1.25; }
       let g=pieceEls[p.id];
       if(!g){
         g=svgEl("g",{class:"pc"});
@@ -1324,7 +1320,7 @@ function renderPop(){
     }
     if(!sel.side){                                                                 // 右に出すのが基本。右2列にいる時と、右に入りきらない時だけ左。開いている間は向きを変えない
       const tr0=/translate\(([-\d.]+)px/.exec(pieceEls[t.id].style.transform)||[0,0], px=+tr0[1], r0=+pieceEls[t.id].querySelector(".body").getAttribute("r");
-      const bw0=$("boardWrap").clientWidth, sc0=bw0/(G.N*10), fits=(px+r0)*sc0+11+158 <= bw0-2;
+      const bw0=$("boardWrap").clientWidth, sc0=bw0/(G.N*10), fits=(px+r0)*sc0+11+168 <= bw0-2;
       sel.side = (Math.floor(px/10)>=G.N-2 || !fits)? "l" : "r"; }
     el.innerHTML=h; el.style.display="flex"; el.classList.toggle("talking", sel.pop==="talk");
     el.classList.toggle("r", sel.side==="r"); el.classList.toggle("l", sel.side==="l"); wirePop();
@@ -1347,7 +1343,7 @@ function wirePop(){
   el.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{ ensureAudio(); const k=b.dataset.p, tg=sel.tg, t=pById(tg);
     if(k==="talk"){ playSelect(); sel.pop="talk"; render(); setTimeout(()=>{ const i=$("whIn"); if(i) i.focus(); },30); return; }
     if(k==="poison"){ if(!canPoison(m)){ playTick(); toast("再発動まで"+poisonLeft(m)+"ターン必要です"); return; } playSelect(); sel.pop="poison"; render(); return; }
-    if(k==="seer"){ playSeer(); sel.tg=null; sel.pop=""; sel.side=""; toast((t?t.n:"")+" を占う（全員の行動がそろうまで変えられる）"); submit({t:"act",k:"seer",tg}); render(); }
+    if(k==="seer"){ playSeer(); sel.tg=null; sel.pop=""; sel.side=""; submit({t:"act",k:"seer",tg}); render(); }
   });
   el.querySelectorAll("[data-dl]").forEach(b=>b.onclick=()=>{ ensureAudio(); const tg=sel.tg, t=pById(tg), dl=+b.dataset.dl; if(!dlOk(dl)) return; playPoison();
     sel.tg=null; sel.pop=""; sel.side=""; toast((t?t.n:"")+" を毒殺（"+(dl? dl+"ターン後に死亡":"即殺")+"）"); submit({t:"act",k:"poison",tg,dl}); render(); });
@@ -1361,7 +1357,7 @@ function wirePop(){
   }
   if(go) go.onclick=()=>{ ensureAudio(); const tx=cleanMsg(wi.value); if(!tx){ toast("3文字までで入力"); return; }
     const tg=sel.tg, t=pById(tg); playWhisper(); sel.tg=null; sel.pop=""; sel.tx=""; sel.side="";
-    toast((t?t.n:"")+" と話した（行動のおわりに届く）"); submit({t:"wh",tg,tx}); render(); };
+    submit({t:"wh",tg,tx}); render(); };
 }
 window.addEventListener("resize",()=>{ if(G&&phaseUI==="game") placePop(); });
 
@@ -1380,7 +1376,7 @@ function renderHud(){
     html= cur? hint(WAIT_TX,true) : hint("移動したいマスを選択"); }
   else if(ph==="act"){ const st=actState(); key+="|"+JSON.stringify([st.exhausted,st.none,st.done]);
     if(st.exhausted){ html=hint(WAIT_TX,true); if(st.none){ tall=true; html+='<button class="gbtn sel" id="noneBtn">やっぱりなし</button>'; } }
-    else{ html=hint("接触したい人を選択",st.done); if(!st.done){ tall=true; html+='<button class="gbtn" id="noneBtn">何もしない</button>'; } } }
+    else{ html=hint("接触したい人を選択"); if(!st.done){ tall=true; html+='<button class="gbtn" id="noneBtn">何もしない</button>'; } } }
   else if(ph==="talk"){ const cur=myVoteNow(); key+="|"+cur; html= cur? hint(WAIT_TX,true) : hint("怪しい人を投票"); }
   if(key!==hudKey){ hudKey=key; h.innerHTML=html; h.classList.toggle("tall",tall); wireHud(); }
 }
