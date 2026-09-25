@@ -908,7 +908,7 @@
     <div class="score-pos" id="scorePos"><div class="score-wrap"><div class="score-core"><div class="score" id="score"></div><div class="score-stars" id="scoreStars"></div><div class="score-crown" id="scoreCrown"><svg viewBox="0 0 130 64"><path d="M8 54 L8 14 L36 36 L65 14 L94 36 L122 14 L122 54 Z" fill="url(#crownGrad)"/></svg></div></div></div></div>
     <div class="howto" id="howto"><span class="howto-sway">いちばん近い数字にドッキング</span></div>
     <div class="hud-mode" id="hudMode"></div>
-    <div class="hud-esc" id="hudEsc"><span class="key">Esc</span>タイトルに戻る</div>
+    <div class="hud-esc" id="hudEsc"><span class="key">Esc</span>やめる</div>
     <div class="player-info" id="playerInfo">   <!-- top-left: Esc key + player name (title/result) -->
       <div class="hud-name" id="hudName"><span class="key">Esc</span></div>
       <div class="pi-name" id="piName">名前を登録しよう</div>
@@ -1109,11 +1109,11 @@
   };
   // ===== i18n: all the in-game Japanese text, plus an English localisation (季語 = placeholder = Japanese for now) =====
   const I18N = {
-    ja:{ howto:"いちばん近い数字にドッキング", hudBack:"タイトルに戻る", best3:"ベスト3", recent3:"最近の3回",
+    ja:{ howto:"いちばん近い数字にドッキング", hudBack:"やめる", best3:"ベスト3", recent3:"最近の3回",
          mode_score:"はじめてモード", mode_speed:"スピードモード", mode_endless:"エンドレスモード",
          desc_score:"ちょっとの失敗は気にせずドッキング", desc_speed:"30秒でたくさんドッキング", desc_endless:"慎重に失敗するまでドッキング",
          vol1:"何も聞こえない", vol2:"ちょっと小さい", vol3:"ふつう", vol4:"ちょっと大きい", vol5:"大ボリューム",
-         r_again:"もういっかい遊ぶ", r_home:"タイトルに戻る", r_yt:"作者のYoutube", r_yt_desc:"いかがでしょうか", decide:"決定",
+         r_again:"もういっかい遊ぶ", r_home:"やめる", r_yt:"作者のYoutube", r_yt_desc:"いかがでしょうか", decide:"決定",
          nameRegister:"スコアを出して名前登録", namePlaceholder:"あなたの名前", nameTaken:"この名前は使われています", nameNote:"登録した名前はオンラインランキングで他のプレイヤーに公開されます", volTitle:"音量レベル", delTitle:"記録をすべて消す？", confirmMsg:"記録を、すべて消しますか？", delNo:"やっぱなし", delYes:"本当に消す", rmNone:"記録なし", loading:"読み込み中…", loadFail:"読み込みに失敗しました（通信環境を確認）", noPlayers:"まだ誰も遊んでないよ...", rankPre:"", rankSuf:"位", outMark:"圏外", nameNeeded:"名前を入力してください", rotate:"画面を横向きにしてね", others:"その他", optDelete:"データ削除", optData:"データ", optRank:"ランキング", optVol:"音量", optLang:"言語",
          tips:["%A% でも遊べるよ","%W% でも遊べるよ","マウスでも遊べるよ",'ゲーム中 %E% でタイトルに戻れるよ','ゲーム中 %S% でタイトルに戻れるよ'] },
     en:{ howto:"Dock with the closest number", hudBack:"Back to title", best3:"BEST 3", recent3:"Last 3",
@@ -3027,7 +3027,7 @@
   // ----- result menu: same panel mechanism as the title, for the retry/home/promote options -----
   const RESULT_INFO = {
     up:    { icon:"retry",   name:"もういっかい遊ぶ" },
-    left:  { icon:"home",    name:"タイトルに戻る" },
+    left:  { icon:"home",    name:"やめる" },
     right: { icon:"youtube", name:"作者のYoutube", desc:"いかがでしょうか" },
   };
   const RESULT_SIDE = { up:"bottom", left:"right", right:"left" };   // up slides in from below — same as the title's up option

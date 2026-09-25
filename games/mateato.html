@@ -706,7 +706,7 @@
     <div class="sec-label">ロビー</div>
     <div class="lobby-title">メンバーを待っています</div>
     <div id="lobbyBox"></div>
-    <button class="txt-btn" id="lobbyBack">← タイトルにもどる</button>
+    <button class="txt-btn" id="lobbyBack">やめる</button>
   </div>
 
   <!-- ===== ゲーム ===== -->
@@ -872,7 +872,7 @@
       <div class="r-sub" id="rCount" style="display:none;"></div>
       <div class="r-sub" id="rWaitNote" style="display:none;">部屋主の「もう一回」を待っています…</div>
       <div class="sub-btns">
-        <button class="txt-btn" id="rHomeBtn">タイトルに戻る</button>
+        <button class="txt-btn" id="rHomeBtn">やめる</button>
         <button class="txt-btn emph" id="againBtn">もう一回</button>
       </div>
     </div>
@@ -1687,7 +1687,7 @@ function showResult(st, showAgain){
   else{ $("rCount").textContent="達成お題"+Math.max(0,roundNo-1)+"個"; $("rCount").style.display=""; }
   $("againBtn").style.display=showAgain?"":"none";
   $("rWaitNote").style.display=showAgain?"none":"";
-  $("rHomeBtn").textContent = online ? "ロビーに戻る" : "タイトルに戻る";
+  $("rHomeBtn").textContent = online ? "ロビーに戻る" : "やめる";
   $("rHomeBtn").style.display = (online && !isHost) ? "none" : "";   // オンラインは部屋主が全員をロビーへ戻す
   $("resultOverlay").classList.add("on");
   if(st.some(s=>s.dobon)) playDobon(); else playWin();

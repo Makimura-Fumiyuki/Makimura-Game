@@ -447,7 +447,7 @@
   <div class="sec-label">ロビー</div>
   <div class="lobby-title">メンバーを待っています</div>
   <div id="lobbyBox"></div>
-  <button class="txt-btn" id="lobbyBack" style="margin-top:14px;">← タイトルにもどる</button>
+  <button class="txt-btn" id="lobbyBack" style="margin-top:14px;">やめる</button>
 </div>
 
 <!-- ===== ゲーム ===== -->
@@ -1236,7 +1236,7 @@ function openResult(){
   $("winBanner").textContent= winners.length===1? winners[0].n+" の勝ち" : winners.map(p=>p.n).join("・")+" の勝ち";
   $("resList").innerHTML=rl.map(r=>'<div class="res-row'+(r.p.score===top?" top":"")+'"><span class="rk">'+r.rk+'</span><span class="p-dot" style="background:'+r.p.c+'"></span><span class="nm">'+esc(r.p.n)+(r.p.id===myId&&!debug&&r.p.n!=="あなた"?"（あなた）":"")+'</span><span class="pt">'+r.p.score+'組</span></div>').join("");
   /* 横並びの2択は決定(主ボタン)を右 */
-  let b='<button class="ghost" id="resTitle">タイトルへ</button>';
+  let b='<button class="ghost" id="resTitle">やめる</button>';
   if(debug) b+='<button class="close" id="resAgain">もう一回</button>';
   else if(isHost) b+='<button class="close" id="resLobby">ロビーへもどる（全員）</button>';
   $("resBtns").innerHTML=b+(!debug&&!isHost?'<div class="rule-sum" style="width:100%; color:var(--ink);">オーナーがロビーに戻すのを待っています</div>':"");
