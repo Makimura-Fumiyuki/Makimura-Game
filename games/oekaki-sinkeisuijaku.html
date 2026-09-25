@@ -411,6 +411,9 @@
   #sgPanel .sg-i:hover{ background:rgba(35,33,31,.06); }
   #sgPanel .sg-i.on{ background:#ffe08a; font-weight:900; }
   #sgPanel .sg-end{ align-self:stretch; }
+  #sgPanel .sg-head, #sgPanel .sg-cur{ cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; }
+  #sgPanel.dragging, #sgPanel.dragging *{ cursor:grabbing !important; }
+  #sgPanel .sg-grip{ width:8px; height:13px; flex:none; opacity:.35; }
 </style>
 </head>
 <body>
@@ -1594,7 +1597,8 @@ $("helpOv").addEventListener("click",e=>{ if(e.target===$("helpOv")) $("helpOv")
    画面の多いゲームを調整するための道具。シーンを選ぶたびに状態を作り直して、その画面をそのまま出す。
    ・進行は止めてある(タイマーは残り時間のまま止まる・締め切り/ロボット/自動の確定は動かない)。通信もしない
    ・画面のボタンはふつうに押せる(そこから先も少しだけ触れる)。おかしくなったら同じシーンを選び直せば元どおり
-   入口=タイトルの試作用の枠「シーン一覧（試作）」か、URLに ?scenes=1。キーボードの [ ] で前後のシーンへ */
+   入口=SとDを同時に押す(もう一度で閉じる)・タイトルの試作用の枠「シーン一覧（試作）」・URLに ?scenes=1。キーボードの [ ] で前後のシーンへ
+   パネルは頭の部分をつまんで動かせる(置いた場所は覚えておく) */
 let gallery=false, sgIdx=0, sgLeft=15, sgSeq=0;
 const SCENES=[];
 function sc(g,n,run){ SCENES.push({ g, n, run }); }
@@ -1609,7 +1613,7 @@ function sgPanel(){
   let el=$("sgPanel");
   if(!el){
     el=document.createElement("div"); el.id="sgPanel"; if(window.innerWidth<700) el.classList.add("fold");
-    el.innerHTML='<div class="sg-head"><b>シーン一覧</b><span id="sgNo"></span><button id="sgSide" type="button"></button><button id="sgFold" type="button"></button></div>'
+    el.innerHTML='<div class="sg-head"><svg class="sg-grip" viewBox="0 0 10 16" aria-hidden="true"><g fill="currentColor"><circle cx="3" cy="3" r="1.4"/><circle cx="7" cy="3" r="1.4"/><circle cx="3" cy="8" r="1.4"/><circle cx="7" cy="8" r="1.4"/><circle cx="3" cy="13" r="1.4"/><circle cx="7" cy="13" r="1.4"/></g></svg><b>シーン一覧</b><span id="sgNo"></span><button id="sgFold" type="button"></button></div>'
       +'<div class="sg-nav"><button id="sgPrev" type="button">◀ 前</button><button id="sgNext" type="button">次 ▶</button></div>'
       +'<div class="sg-cur" id="sgCur"></div><div class="sg-list" id="sgList"></div>'
       +'<button id="sgEnd" class="sg-end" type="button">シーン一覧をやめる</button>';
@@ -1621,14 +1625,13 @@ function sgPanel(){
     $("sgPrev").onclick=()=>sgGo(sgIdx-1);
     $("sgNext").onclick=()=>sgGo(sgIdx+1);
     $("sgFold").onclick=()=>{ el.classList.toggle("fold"); sgPanel(); };
-    $("sgSide").onclick=()=>{ el.classList.toggle("left"); sgPanel(); };
+    dragWin(el,[el.querySelector(".sg-head"),$("sgCur")],"os.sgPos");   // 頭の部分をつまんで動かす
     $("sgEnd").onclick=closeGallery;
   }
   const s=SCENES[sgIdx];
   $("sgNo").textContent=(sgIdx+1)+" / "+SCENES.length;
   $("sgCur").textContent=s.g+"：" +s.n;
   $("sgFold").textContent=el.classList.contains("fold")? "ひらく" : "たたむ";
-  $("sgSide").textContent=el.classList.contains("left")? "右へ" : "左へ";
   $("sgList").querySelectorAll("[data-i]").forEach(b=>b.classList.toggle("on",+b.dataset.i===sgIdx));
   const on=$("sgList").querySelector(".sg-i.on"); if(on && !el.classList.contains("fold")){ const L=$("sgList"); if(on.offsetTop<L.scrollTop || on.offsetTop>L.scrollTop+L.clientHeight-30) L.scrollTop=on.offsetTop-L.clientHeight/2; }
 }
@@ -1639,6 +1642,39 @@ document.addEventListener("keydown",e=>{
   if(e.key==="]"){ e.preventDefault(); sgGo(sgIdx+1); } else if(e.key==="["){ e.preventDefault(); sgGo(sgIdx-1); }
 });
 $("sgStart").onclick=()=>{ ensureAudio(); playSelect(); openGallery(); };
+/* ★デバッグ用の窓の共通部品(2026-09-25牧村指示)
+   ・dragWin(窓, つまむ所[], 保存キー)=つまんで動かせる。置いた場所は覚えておく(画面の外へは出さない)
+   ・onSD(関数)=SとDを同時に押した時に呼ぶ(開く/閉じる)。入力欄の中では反応しない。キーの位置で見るので日本語入力中でも効く */
+function dragWin(el,handles,key){
+  const place=(x,y)=>{ const w=el.offsetWidth||200;
+    if(window.innerWidth>0&&window.innerHeight>0){ x=Math.max(60-w,Math.min(window.innerWidth-60,x)); y=Math.max(0,Math.min(window.innerHeight-30,y)); }   // 画面の大きさが分からない時(裏のタブ等)は縮めない
+    el.style.left=x+"px"; el.style.top=y+"px"; el.style.right="auto"; el.style.bottom="auto"; };
+  el._place=()=>{ if(el.style.left) place(parseFloat(el.style.left),parseFloat(el.style.top)); };
+  el.dataset.drag="1";
+  try{ const sv=JSON.parse(localStorage.getItem(key)||"null"); if(sv) place(sv.x,sv.y); }catch(e){}
+  handles.forEach(h=>{ let d=null;
+    h.addEventListener("pointerdown",e=>{ if(e.button!==0||e.target.closest("button")) return;
+      const r=el.getBoundingClientRect(); d={ dx:e.clientX-r.left, dy:e.clientY-r.top, id:e.pointerId };
+      try{ h.setPointerCapture(e.pointerId); }catch(_){} el.classList.add("dragging"); e.preventDefault(); });
+    h.addEventListener("pointermove",e=>{ if(d&&e.pointerId===d.id) place(e.clientX-d.dx,e.clientY-d.dy); });
+    const up=()=>{ if(!d) return; d=null; el.classList.remove("dragging");
+      try{ localStorage.setItem(key,JSON.stringify({ x:parseFloat(el.style.left), y:parseFloat(el.style.top) })); }catch(_){} };
+    ["pointerup","pointercancel","lostpointercapture"].forEach(t=>h.addEventListener(t,up));
+  });
+  if(!dragWin.rs){ dragWin.rs=1; window.addEventListener("resize",()=>document.querySelectorAll("[data-drag]").forEach(w=>w._place&&w._place())); }
+}
+function onSD(fn){
+  const held=new Set();
+  document.addEventListener("keydown",e=>{
+    if(e.ctrlKey||e.metaKey||e.altKey||e.repeat) return;
+    const t=e.target; if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.isContentEditable)) return;
+    if(e.code!=="KeyS"&&e.code!=="KeyD") return;
+    held.add(e.code); if(held.has("KeyS")&&held.has("KeyD")){ held.clear(); e.preventDefault(); fn(); }
+  });
+  document.addEventListener("keyup",e=>held.delete(e.code));
+  window.addEventListener("blur",()=>held.clear());
+}
+onSD(()=>{ ensureAudio(); if(gallery) closeGallery(); else openGallery(); });   // S+Dで開く/閉じる(はじめは閉じている)
 /* --- おえかき神経衰弱のシーン --- */
 const SG_KEY="os.sgIdx";
 const SG_NM=["まきむら","さくら","たろう","ゆい","けん","みお","そら","はる"];
