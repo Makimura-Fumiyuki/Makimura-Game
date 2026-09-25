@@ -103,6 +103,7 @@
   .rtx{ flex:1; min-width:0; text-align:left; }
   .rname{ display:flex; align-items:center; gap:7px; font-size:14.5px; font-weight:900; letter-spacing:.04em; }
   .rbadge{ flex:none; width:72px; height:18px; display:inline-flex; align-items:center; justify-content:center; line-height:1; border-radius:999px; font-size:10.5px; font-weight:900; letter-spacing:.02em; }
+  .rbadge.one{ width:18px; font-size:10.5px; letter-spacing:0; }   /* ロビー=「白」「黒」の丸 */
   .rbadge.white{ background:#fff; color:#222; }
   .rbadge.black{ background:#111; color:#fff; box-shadow:inset 0 0 0 1px rgba(255,255,255,.55); }
   .rdesc{ margin-top:2px; font-size:11.5px; font-weight:600; line-height:1.5; opacity:.72; }
@@ -725,12 +726,12 @@ const ICON_G={
   villager:c=>'<circle cx="12" cy="8.8" r="3.5" fill="#fff"/><path d="M5.6 19.3c.6-3.5 3.1-5.5 6.4-5.5s5.8 2 6.4 5.5z" fill="#fff"/>',
   seer:c=>'<circle cx="12" cy="10.4" r="5.2" fill="#fff"/><path d="M7.6 19.4h8.8l-1.5-3h-5.8z" fill="#fff"/><path d="M10.1 7.6l.6 1.5 1.5.6-1.5.6-.6 1.5-.6-1.5-1.5-.6 1.5-.6z" fill="'+c+'"/>',
   hawk:c=>'<path d="M3.6 12c2.3-3.7 5.1-5.5 8.4-5.5s6.1 1.8 8.4 5.5c-2.3 3.7-5.1 5.5-8.4 5.5S5.9 15.7 3.6 12z" fill="#fff"/><circle cx="12" cy="12" r="2.9" fill="'+c+'"/><circle cx="13" cy="11" r=".9" fill="#fff"/>',
-  wolf:c=>'<path d="M6.2 4.8l3.1 3.5h5.4l3.1-3.5.6 7.3c0 3.6-2.9 6.7-6.4 7.2-3.5-.5-6.4-3.6-6.4-7.2z" fill="#fff"/><circle cx="9.8" cy="11.9" r="1" fill="'+c+'"/><circle cx="14.2" cy="11.9" r="1" fill="'+c+'"/><path d="M10.9 15h2.2l-1.1 1.3z" fill="'+c+'"/>',
-  medium:c=>'<path d="M6 19.6V11a6 6 0 0 1 12 0v8.6l-2-1.5-2 1.5-2-1.5-2 1.5z" fill="#fff"/><circle cx="9.9" cy="10.9" r="1.1" fill="'+c+'"/><circle cx="14.1" cy="10.9" r="1.1" fill="'+c+'"/>',
-  doctor:c=>'<rect x="4" y="4" width="16" height="16" rx="4.2" fill="#fff"/><path d="M10.6 7h2.8v3.6H17v2.8h-3.6V17h-2.8v-3.6H7v-2.8h3.6z" fill="'+c+'"/>',
+  wolf:c=>'<g transform="translate(.2 .2) scale(.8)"><path d="M6.2 4.8l3.1 3.5h5.4l3.1-3.5.6 7.3c0 3.6-2.9 6.7-6.4 7.2-3.5-.5-6.4-3.6-6.4-7.2z" fill="#fff"/><circle cx="9.8" cy="11.9" r="1.05" fill="'+c+'"/><circle cx="14.2" cy="11.9" r="1.05" fill="'+c+'"/><path d="M10.9 15h2.2l-1.1 1.3z" fill="'+c+'"/></g><path d="M17.3 11.6c1.9 2.5 2.9 4.2 2.9 5.5a2.9 2.9 0 0 1-5.8 0c0-1.3 1-3 2.9-5.5z" fill="#fff" stroke="'+c+'" stroke-width="1.3" stroke-linejoin="round"/><path d="M16.1 16.6a1.3 1.3 0 0 0 1 1.5" fill="none" stroke="'+c+'" stroke-width="1" stroke-linecap="round"/>',   // 毒殺人狼=オオカミ+毒のしずく
+  medium:c=>'<path d="M6 19.6V11a6 6 0 0 1 12 0v8.6l-1.5-1.6-1.5 1.6-1.5-1.6-1.5 1.6-1.5-1.6-1.5 1.6-1.5-1.6z" fill="#fff"/><circle cx="9.9" cy="10.9" r="1.1" fill="'+c+'"/><circle cx="14.1" cy="10.9" r="1.1" fill="'+c+'"/>',
+  doctor:c=>'<path d="M9.2 3.6h5.6v1.7h-.9v4.2l4.8 7.8a1.8 1.8 0 0 1-1.5 2.7H6.8a1.8 1.8 0 0 1-1.5-2.7l4.8-7.8V5.3h-.9z" fill="#fff"/><path d="M8 14.3h8l2.2 3.6a1 1 0 0 1-.8 1.5H6.6a1 1 0 0 1-.8-1.5z" fill="'+c+'"/><circle cx="10.6" cy="16.8" r=".9" fill="#fff"/><circle cx="13.6" cy="15.9" r=".6" fill="#fff"/>',   // 科学者風=フラスコ
   talker:c=>'<path d="M4 6.2h16a1.4 1.4 0 0 1 1.4 1.4v7.6a1.4 1.4 0 0 1-1.4 1.4h-8.6L7 20.2V16.6H4a1.4 1.4 0 0 1-1.4-1.4V7.6A1.4 1.4 0 0 1 4 6.2z" fill="#fff"/><circle cx="8.4" cy="11.4" r="1.05" fill="'+c+'"/><circle cx="12" cy="11.4" r="1.05" fill="'+c+'"/><circle cx="15.6" cy="11.4" r="1.05" fill="'+c+'"/>',
   sensitive:c=>'<circle cx="12" cy="12" r="3.6" fill="#fff"/><path d="M7.4 7.8a6 6 0 0 0 0 8.4M16.6 7.8a6 6 0 0 1 0 8.4M4.7 5.3a9.6 9.6 0 0 0 0 13.4M19.3 5.3a9.6 9.6 0 0 1 0 13.4" stroke="#fff" stroke-width="1.9" fill="none" stroke-linecap="round"/>',
-  miner:c=>'<path d="M12 2.9v3.4M4.6 5.9l2.4 2.4M19.4 5.9l-2.4 2.4M2.6 13.4h3.4M21.4 13.4H18" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="13.8" r="5.6" fill="#fff"/><path d="M9.6 12.2h4.8v1.5H9.6zM11.3 15h1.5v1.5h-1.5z" fill="'+c+'"/>',
+  miner:c=>'<g transform="translate(0 1.3)"><path d="M12 4.4v3.2M5.3 7.5l2.2 2.2M18.7 7.5l-2.2 2.2M2.8 17.2h2.6M21.2 17.2h-2.6" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/><path d="M6 17.2a6 6 0 0 1 12 0z" fill="#fff"/><path d="M9.8 13.9h4.4v1.5H9.8z" fill="'+c+'"/></g>',   // 地面に置く半円
   mad:c=>'<circle cx="12" cy="12" r="6.7" fill="#fff"/><circle cx="9.5" cy="10.3" r="1.25" fill="'+c+'"/><circle cx="14.7" cy="9.7" r=".8" fill="'+c+'"/><path d="M8.2 14.1l1.25 1.35 1.25-1.35 1.3 1.35 1.3-1.35 1.25 1.35 1.25-1.35" fill="none" stroke="'+c+'" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/>'
 };
 function roleIcon(r){ const c=ROLE_COL[r]||ROLE_COL.villager; return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="'+c+'"/>'+(ICON_G[r]||ICON_G.villager)(c)+'</svg>'; }   // 角丸四角
@@ -743,10 +744,10 @@ const ROLE_SHORT={
   wolf:"隣の人を、毒殺できる",
   mad:"人狼陣営の勝利が自分の勝利",
   medium:"消えたはずの死体が見える",
-  doctor:"毒に気づき、治すことができる",
+  doctor:"毒に気づくし、治せたり",
   talker:"好きなタイミングで議論を始められる",
   sensitive:"誰かが死ぬと、すぐに分かる",
-  miner:"地雷を置いて、踏ませる"
+  miner:"地雷を置いて、爆殺できる"
 };
 /* 役職の詳細の本文。n:1=「※」の注記(小さめ・うすい色) */
 const ROLE_DETAIL={
@@ -755,15 +756,15 @@ const ROLE_DETAIL={
   hawk:[{t:"状況把握のプロ"}],
   wolf:[{t:"死亡までのターンを0~2ターンで選ぶことができます"},{t:"ただし、再発動には1ターンのインターバルが必要"}],
   mad:[{t:"ただし、人狼が誰なのか分からず、人狼側も誰が狂人なのかは知りません"}],
-  medium:[{t:"殺害された死体が、その場に残って見えます"},{t:"※ほかの人には見えません。議論を1度はさむと、その死体も消えます",n:1}],
-  doctor:[{t:"視界にいる人が毒に侵されていると、コマの上に「Nターン後 死亡」と見えます"},{t:"となりの人の毒を治せます（1ラウンドに1回まで）"},{t:"※自分の毒だけは気づけず、治すこともできません",n:1}],
-  talker:[{t:"ゲーム中に1度だけ、行動フェーズの「議論強制スタート」で議論に移せます"},{t:"※使えるのは1回だけ。残りターンがあっても、その場で議論に入ります",n:1}],
-  sensitive:[{t:"メンバーリストの死亡がリアルタイムで更新されます"},{t:"誰かが死亡すると、その場で「◯◯が死亡しました」と知らせが出ます"},{t:"※誰に殺されたかまでは分かりません",n:1}],
-  miner:[{t:"自分のマスと、となり4マスに地雷を置けます（2ターンに1回）"},{t:"すでに誰かが立っているマスに置くと、その場で発動します"},{t:"※人狼どうしは地雷が見え、踏んでも死にません。議論を1度はさむと、置いた地雷は消えます",n:1}]
+  medium:[{t:"殺害された死体が盤上に残り、それを見ることができる"},{t:"※議論を挟むと、死体が消える",n:1}],
+  doctor:[{t:"視界内にいる人が毒に侵されていて、何ターン後に死亡するかまで分かる"},{t:"また、1ラウンドにつき1回まで隣接するプレイヤーの毒を治せる"},{t:"※自分の毒には気付けず、治すこともできない",n:1}],
+  talker:[{t:"ゲーム中に1度だけ、行動フェーズ中に議論&投票フェーズを開始できる"}],
+  sensitive:[{t:"メンバーリストの死亡がリアルタイムで更新されます"},{t:"誰かが死亡すると、その場で「◯◯が死亡」とお知らせが届きます"},{t:"※誰に、どのように倒されたかは分かりません",n:1}],
+  miner:[{t:"自分のマスと、隣接する4マスに地雷を設置でき、このマス踏んだプレイヤーを爆殺する"},{t:"ただし、再発動には2ターンのインターバルが必要"},{t:"※人狼同士は地雷が見え、踏んでも死亡しない",n:1},{t:"※議論を1度はさむと、置いていた地雷は消滅する",n:1}]
 };
 const SPEECH_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5.5h16a1.5 1.5 0 0 1 1.5 1.5v8.5A1.5 1.5 0 0 1 20 17h-9l-4.5 3.5V17H4a1.5 1.5 0 0 1-1.5-1.5V7A1.5 1.5 0 0 1 4 5.5z"/></svg>';
 /* 占いで黒になるのは人狼(毒殺人狼・地雷人狼) */
-function seerBadge(r){ const b=(r==="wolf"||r==="miner"); return '<span class="rbadge '+(b?"black":"white")+'">占い結果 '+(b?"黒":"白")+'</span>'; }
+function seerBadge(r,one){ const b=(r==="wolf"||r==="miner"); return '<span class="rbadge '+(b?"black":"white")+(one?" one":"")+'">'+(one?"":"占い結果 ")+(b?"黒":"白")+'</span>'; }   // one=ロビー用(「白」「黒」の1文字)
 
 /* ================= 状態 =================
    G=ゲームの全状態。ホスト(と試作モード)が正で、ゲストはスナップショットで同じものを持つ(方式A) */
@@ -1606,7 +1607,7 @@ function roleFrameHTML(n,ro){
   const r=roleCounts(n), err=(n>=MIN_P)? roleErr(n) : "", vil=Math.max(0,n-roleSum(r)), mx=roleMax(n);
   const row=k=>{ const fixed=k==="villager", cnt=fixed? vil : (r[k]|0);
     return '<div class="rrow"><button type="button" class="ricon" data-ri="'+k+'" aria-label="'+ROLE_NAME[k]+'の詳細">'+roleIcon(k)+'</button>'
-      +'<div class="rtx"><div class="rname">'+ROLE_NAME[k]+seerBadge(k)+'</div><div class="rdesc">'+ROLE_SHORT[k]+'</div></div>'
+      +'<div class="rtx"><div class="rname">'+ROLE_NAME[k]+seerBadge(k,true)+'</div><div class="rdesc">'+ROLE_SHORT[k]+'</div></div>'
       +'<div class="rcnt"><span class="rc-val">'+cnt+'人</span><div class="rc-row">'
       +'<button class="stp'+(fixed?" hide":"")+'" data-rk="'+k+'" data-s="-1"'+(fixed||cnt<=0?" disabled":"")+'>−</button>'
       +'<button class="stp'+(fixed?" hide":"")+'" data-rk="'+k+'" data-s="1"'+(fixed||cnt>=mx?" disabled":"")+'>＋</button></div></div></div>'; };
