@@ -103,9 +103,9 @@
   .rtx{ flex:1; min-width:0; text-align:left; }
   .rname{ display:flex; align-items:center; gap:7px; font-size:14.5px; font-weight:900; letter-spacing:.04em; }
   .rbadge{ flex:none; width:72px; height:18px; display:inline-flex; align-items:center; justify-content:center; line-height:1; border-radius:999px; font-size:10.5px; font-weight:900; letter-spacing:.02em; }
-  .rbadge.one{ width:18px; font-size:10.5px; letter-spacing:0; box-shadow:none; }   /* ロビー=「白」「黒」の丸 */
   .rbadge.white{ background:#fff; color:#222; }
   .rbadge.black{ background:#111; color:#fff; box-shadow:inset 0 0 0 1px rgba(255,255,255,.55); }
+  .rbadge.one{ width:18px; font-size:8.4px; letter-spacing:0; box-shadow:none; }   /* ロビー=「白」「黒」の丸(ふちなし・文字0.8倍)。.blackより後ろに書くこと */
   .rdesc{ margin-top:2px; font-size:11.5px; font-weight:600; line-height:1.5; opacity:.72; }
   .rcnt{ flex:none; width:78px; display:flex; flex-direction:column; align-items:center; gap:4px; }
   .rcnt .rc-val{ min-width:0; width:66px; font-size:12px; line-height:1.4; }   /* 押せそうに見えないよう地は付けない(−＋と同じ横幅) */
@@ -198,6 +198,7 @@
   .tg.rl.medium{ background:#6f7fd0; } .tg.rl.doctor{ background:#8ab13a; } .tg.rl.talker{ background:#d89a3a; } .tg.rl.miner{ background:#a3342a; } .tg.rl.sensitive{ background:#d8729a; }
   .tg.poison{ padding:0 7px; background:#7a2540; color:#ffd9e4; box-shadow:inset 0 0 0 1px rgba(255,255,255,.35); }   /* ドクターにだけ見える「毒」 */
   .tg.white, .tg.black{ width:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; line-height:1; }   /* 占い結果は丸(文字は真ん中) */
+  .ros .tg.white, .ros .tg.black{ font-size:7.6px; }   /* メンバーリストの白黒の丸も文字0.8倍 */
   .tg.white{ background:#fff; color:#222; }
   .tg.black{ background:#111; color:#fff; }
   .tg.vcnt{ width:26px; background:var(--gold); color:#3a2a06; }
@@ -725,17 +726,17 @@ function roleErr(n){
 /* 役職のアイコン(1つにつき2色=役職の色の丸+白の絵。細部は丸と同じ色で抜く)・短い説明・占い結果 */
 const ROLE_COL={ villager:"#5fb46e", seer:"#4a97d8", hawk:"#2a9a8c", wolf:"#d84c36", mad:"#8f55c4", medium:"#6f7fd0", doctor:"#8ab13a", talker:"#d89a3a", sensitive:"#d8729a", miner:"#a3342a" };
 /* ★人狼の役職アイコンは「左上にオオカミ(小さめ)+右下にその人狼を示す物」で統一(2026-09-25牧村指示)。新しい人狼を足す時もWOLF_Gを使う */
-const WOLF_G=c=>'<g transform="translate(.2 .2) scale(.8)"><path d="M6.2 4.8l3.1 3.5h5.4l3.1-3.5.6 7.3c0 3.6-2.9 6.7-6.4 7.2-3.5-.5-6.4-3.6-6.4-7.2z" fill="#fff"/><circle cx="9.8" cy="11.9" r="1.05" fill="'+c+'"/><circle cx="14.2" cy="11.9" r="1.05" fill="'+c+'"/><path d="M10.9 15h2.2l-1.1 1.3z" fill="'+c+'"/></g>';
+const WOLF_G=c=>'<g transform="translate(1.1 1.1) scale(.5)"><path d="M6.2 4.8l3.1 3.5h5.4l3.1-3.5.6 7.3c0 3.6-2.9 6.7-6.4 7.2-3.5-.5-6.4-3.6-6.4-7.2z" fill="#fff"/><circle cx="9.8" cy="11.9" r="1.05" fill="'+c+'"/><circle cx="14.2" cy="11.9" r="1.05" fill="'+c+'"/><path d="M10.9 15h2.2l-1.1 1.3z" fill="'+c+'"/></g>';
 const ICON_G={
   villager:c=>'<circle cx="12" cy="8.8" r="3.5" fill="#fff"/><path d="M5.6 19.3c.6-3.5 3.1-5.5 6.4-5.5s5.8 2 6.4 5.5z" fill="#fff"/>',
   seer:c=>'<circle cx="12" cy="10.4" r="5.2" fill="#fff"/><path d="M7.6 19.4h8.8l-1.5-3h-5.8z" fill="#fff"/><path d="M10.1 7.6l.6 1.5 1.5.6-1.5.6-.6 1.5-.6-1.5-1.5-.6 1.5-.6z" fill="'+c+'"/>',
   hawk:c=>'<path d="M3.6 12c2.3-3.7 5.1-5.5 8.4-5.5s6.1 1.8 8.4 5.5c-2.3 3.7-5.1 5.5-8.4 5.5S5.9 15.7 3.6 12z" fill="#fff"/><circle cx="12" cy="12" r="2.9" fill="'+c+'"/><circle cx="13" cy="11" r=".9" fill="#fff"/>',
-  wolf:c=>WOLF_G(c)+'<path d="M17.3 11.6c1.9 2.5 2.9 4.2 2.9 5.5a2.9 2.9 0 0 1-5.8 0c0-1.3 1-3 2.9-5.5z" fill="#fff" stroke="'+c+'" stroke-width="1.3" stroke-linejoin="round"/><path d="M16.1 16.6a1.3 1.3 0 0 0 1 1.5" fill="none" stroke="'+c+'" stroke-width="1" stroke-linecap="round"/>',   // 毒殺人狼=オオカミ+毒のしずく
+  wolf:c=>WOLF_G(c)+'<path d="M10.8 16.6l9.6 5.2M20.4 16.6l-9.6 5.2" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/><circle cx="10.4" cy="16.1" r="1" fill="#fff"/><circle cx="10.4" cy="22.3" r="1" fill="#fff"/><circle cx="20.8" cy="16.1" r="1" fill="#fff"/><circle cx="20.8" cy="22.3" r="1" fill="#fff"/><path d="M15.6 8.6a4.9 4.9 0 0 1 4.9 4.9c0 1.7-.8 3-2 3.8v2.2h-5.8v-2.2c-1.2-.8-2-2.1-2-3.8a4.9 4.9 0 0 1 4.9-4.9z" fill="#fff" stroke="'+c+'" stroke-width="1.1" stroke-linejoin="round"/><circle cx="13.8" cy="13.6" r="1.35" fill="'+c+'"/><circle cx="17.4" cy="13.6" r="1.35" fill="'+c+'"/><path d="M15.6 15.4l.8 1.2h-1.6z" fill="'+c+'"/><path d="M14.5 17.9v1.6M15.6 17.9v1.6M16.7 17.9v1.6" stroke="'+c+'" stroke-width=".7"/>',   // 毒殺人狼=オオカミ+ドクロ
   medium:c=>'<path d="M6 19.6V11a6 6 0 0 1 12 0v8.6l-1.5-1.6-1.5 1.6-1.5-1.6-1.5 1.6-1.5-1.6-1.5 1.6-1.5-1.6z" fill="#fff"/><circle cx="9.9" cy="10.9" r="1.1" fill="'+c+'"/><circle cx="14.1" cy="10.9" r="1.1" fill="'+c+'"/>',
   doctor:c=>'<path d="M9.2 3.6h5.6v1.7h-.9v4.2l4.8 7.8a1.8 1.8 0 0 1-1.5 2.7H6.8a1.8 1.8 0 0 1-1.5-2.7l4.8-7.8V5.3h-.9z" fill="#fff"/><path d="M8 14.3h8l2.2 3.6a1 1 0 0 1-.8 1.5H6.6a1 1 0 0 1-.8-1.5z" fill="'+c+'"/><circle cx="10.6" cy="16.8" r=".9" fill="#fff"/><circle cx="13.6" cy="15.9" r=".6" fill="#fff"/>',   // 科学者風=フラスコ
   talker:c=>'<path d="M4 6.2h16a1.4 1.4 0 0 1 1.4 1.4v7.6a1.4 1.4 0 0 1-1.4 1.4h-8.6L7 20.2V16.6H4a1.4 1.4 0 0 1-1.4-1.4V7.6A1.4 1.4 0 0 1 4 6.2z" fill="#fff"/><circle cx="8.4" cy="11.4" r="1.05" fill="'+c+'"/><circle cx="12" cy="11.4" r="1.05" fill="'+c+'"/><circle cx="15.6" cy="11.4" r="1.05" fill="'+c+'"/>',
   sensitive:c=>'<circle cx="12" cy="12" r="3.6" fill="#fff"/><path d="M7.4 7.8a6 6 0 0 0 0 8.4M16.6 7.8a6 6 0 0 1 0 8.4M4.7 5.3a9.6 9.6 0 0 0 0 13.4M19.3 5.3a9.6 9.6 0 0 1 0 13.4" stroke="#fff" stroke-width="1.9" fill="none" stroke-linecap="round"/>',
-  miner:c=>WOLF_G(c)+'<path d="M19.6 13.9c.4-1.3 1.2-1.9 2.3-1.9" fill="none" stroke="#fff" stroke-width="1.3" stroke-linecap="round"/><path d="M22.3 10.3l.35.95.95.35-.95.35-.35.95-.35-.95-.95-.35.95-.35z" fill="#fff"/><rect x="17.9" y="13.4" width="2.4" height="1.9" rx=".4" transform="rotate(45 19.1 14.35)" fill="#fff" stroke="'+c+'" stroke-width="1"/><circle cx="16.7" cy="17.5" r="3.6" fill="#fff" stroke="'+c+'" stroke-width="1.3"/><path d="M14.7 16.6a2.3 2.3 0 0 1 1.3-1.3" fill="none" stroke="'+c+'" stroke-width="1" stroke-linecap="round"/>',   // 地雷人狼=オオカミ+爆弾
+  miner:c=>WOLF_G(c)+'<path d="M19.3 10.7c.5-1.6 1.5-2.4 2.8-2.4" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/><path d="M22.4 5.6l.45 1.2 1.2.45-1.2.45-.45 1.2-.45-1.2-1.2-.45 1.2-.45z" fill="#fff"/><rect x="17.3" y="10.4" width="3" height="2.4" rx=".5" transform="rotate(45 18.8 11.6)" fill="#fff" stroke="'+c+'" stroke-width="1.1"/><circle cx="14.9" cy="16.3" r="5.4" fill="#fff" stroke="'+c+'" stroke-width="1.3"/><path d="M11.9 15a3.4 3.4 0 0 1 1.8-1.9" fill="none" stroke="'+c+'" stroke-width="1.2" stroke-linecap="round"/>',   // 地雷人狼=オオカミ+爆弾
   mad:c=>'<circle cx="12" cy="12" r="6.7" fill="#fff"/><circle cx="9.5" cy="10.3" r="1.25" fill="'+c+'"/><circle cx="14.7" cy="9.7" r=".8" fill="'+c+'"/><path d="M8.2 14.1l1.25 1.35 1.25-1.35 1.3 1.35 1.3-1.35 1.25 1.35 1.25-1.35" fill="none" stroke="'+c+'" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/>'
 };
 function roleIcon(r){ const c=ROLE_COL[r]||ROLE_COL.villager; return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="'+c+'"/>'+(ICON_G[r]||ICON_G.villager)(c)+'</svg>'; }   // 角丸四角
