@@ -404,6 +404,17 @@
   .ch-row.armed{ background:#ffd9c9; border:1.6px solid var(--red); }
   .ch-row .pickmark{ font-size:11px; font-weight:900; color:var(--red); margin-left:auto; white-space:nowrap; flex:none; }
   .ch-row.ansrow{ border:1.6px solid rgba(226,71,46,.55); background:rgba(255,240,234,.65); }   /* 回答だったチャット */
+  .spec-badge{ position:fixed; left:10px; top:52px; z-index:60; display:none; align-items:center; gap:5px; cursor:pointer;
+    padding:4px 10px 4px 8px; border-radius:999px; border:none; font-family:inherit;
+    background:rgba(90,70,50,.5); color:#fff; font-size:13px; font-weight:900; }
+  .spec-badge svg{ width:16px; height:16px; }
+  .spec-list{ width:100%; display:flex; flex-direction:column; gap:6px; max-height:44vh; overflow-y:auto; }
+  .spec-row{ display:flex; align-items:center; gap:8px; padding:7px 9px; border-radius:10px; background:rgba(0,0,0,.05); }
+  .sr-ico{ flex:none; width:16px; height:16px; opacity:.5; }
+  .sr-nm{ flex:1; min-width:0; text-align:left; font-size:14px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sr-me{ flex:none; font-size:11px; font-weight:800; opacity:.5; }
+  .kick-btn2{ flex:none; width:68px; height:28px; border:none; border-radius:999px; font-size:12px; font-weight:900; color:#fff; background:#e2472e; }
+  .spec-empty{ font-size:13.5px; font-weight:700; opacity:.55; padding:8px 0; }
   /* 観戦者の発言(目のアイコン+うすい地。将棋onビンゴ・盤上人狼と同じ考え方) */
   .ch-row.c-spec, .pop-line.c-spec{ background:rgba(138,90,46,.10); }
   .ch-row.c-spec b::before, .pop-line.c-spec > span:first-child::before{ content:""; display:inline-block; width:12px; height:12px; margin-right:4px; vertical-align:-1px; opacity:.85;
@@ -804,11 +815,19 @@
 
   <button class="help-btn" id="helpBtn"><span>?</span>あそびかた</button>
   <div class="snd-btns">
+    <button type="button" class="spec-badge" id="specBadge" aria-label="観戦者"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span id="specNum">0</span></button>
     <button class="snd-btn" id="seBtn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wave" d="M16 9c1.2.9 1.2 5.1 0 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="wave" d="M18.5 7c2.2 1.7 2.2 8.3 0 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>効果音</button>
   </div>
   <button class="score-btn" id="scoreBtn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 20V10h3.4v10zM10.3 20V4h3.4v16zM15.6 20v-7h3.4v7z"/></svg>得点確認</button>
 
   <!-- ===== なまえを決める(ロビーで) ===== -->
+  <div class="overlay" id="specOv">
+    <div class="r-card">
+      <div class="r-title" style="font-size:20px">観戦者</div>
+      <div class="spec-list" id="specList"></div>
+      <div class="sub-btns"><button class="txt-btn" id="specClose">とじる</button></div>
+    </div>
+  </div>
   <div class="overlay" id="nameOv">
     <div class="r-card">
       <div class="r-title" style="font-size:22px;">名前を考えよう</div>
@@ -1086,7 +1105,52 @@ function dotStyle(c){ return "background:radial-gradient(circle at 35% 30%, "+ti
 /* ================= シーン ================= */
 const titleScene=$("titleScene"), lobbyScene=$("lobbyScene"), gameScene=$("gameScene");
 function showScene(s){ [titleScene,lobbyScene,gameScene].forEach(x=>x.classList.toggle("on",x===s)); }
-function goTitle(){
+const SPEC_EYE='<svg class="sr-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+function specIds(){   /* 観戦者=playersに入っていない在室者。名前が無い人は「ゲスト1」… */
+  try{
+    const st=ch?ch.presenceState():{}, out=[];
+    Object.keys(st).forEach(k=>{ const p=(st[k]&&st[k][0])||{}; const id=p.id||k;
+      if(players.some(q=>q.id===id)) return;
+      out.push({ id:id, nm:String(p.n||"").slice(0,16), t:p.t||0 }); });
+    out.sort((a,b)=>(a.t-b.t)||(a.id<b.id?-1:1));
+    let g=0; out.forEach(o=>{ if(!o.nm) o.nm="ゲスト"+(++g); });
+    return out;
+  }catch(e){ return []; }
+}
+function specMyName(){ const m=specIds().filter(o=>o.id===myId)[0]; return m? m.nm : (myName||"ゲスト"); }
+function renderSpecList(){
+  const box=$("specList"); if(!box) return;
+  const list=specIds(), canKick = online && !spectating && isHost;   /* 追放できるのはオーナーだけ */
+  if(!list.length){ box.innerHTML='<div class="spec-empty">まだ誰も見ていません</div>'; return; }
+  box.innerHTML="";
+  list.forEach(o=>{
+    const row=document.createElement("div"); row.className="spec-row"; row.innerHTML=SPEC_EYE;
+    const n=document.createElement("span"); n.className="sr-nm"; n.textContent=o.nm; row.appendChild(n);
+    if(o.id===myId){ const m=document.createElement("span"); m.className="sr-me"; m.textContent="じぶん"; row.appendChild(m); }
+    else if(canKick){ const b=document.createElement("button"); b.type="button"; b.className="kick-btn2"; b.textContent="追放";
+      b.addEventListener("click",()=>{ ensureAudio(); playSelect(); kickSpec(o.id,o.nm); }); row.appendChild(b); }
+    box.appendChild(row);
+  });
+}
+function kickSpec(id,nm){
+  if(!ch||!online||spectating||!isHost) return;
+  try{ ch.send({type:"broadcast",event:"kick",payload:{to:id}}); }catch(e){}
+  showToast(nm+"を追放しました");
+  setTimeout(()=>{ updateSpecBadge(); renderSpecList(); },700);
+}
+function updateSpecBadge(){
+  const b=$("specBadge"); if(!b) return;
+  const show = online && !!ch && $("gameScene").classList.contains("on");
+  const n = show ? specIds().length : 0;
+  if(!show || n<=0){ b.style.display="none"; $("specOv").classList.remove("on"); return; }
+  $("specNum").textContent=n; b.style.display="flex";
+  if($("specOv").classList.contains("on")) renderSpecList();
+}
+$("specBadge").addEventListener("click",()=>{ ensureAudio(); playSelect(); renderSpecList(); $("specOv").classList.add("on"); });
+$("specClose").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("specOv").classList.remove("on"); });
+$("specOv").addEventListener("click",e=>{ if(e.target===$("specOv")) $("specOv").classList.remove("on"); });
+setInterval(updateSpecBadge, 2000);   /* 人数は定期的に描き直す */
+function goTitle(){ $("specBadge").style.display="none"; $("specOv").classList.remove("on");
   stopTimer(); stopErase(true); pourStop(); stopDrawFlush(); clearTimeout(celebTmr); clearTimeout(topicTmr);
   leaveChannel();
   spectating=false;
@@ -1911,7 +1975,7 @@ function openChannel(c, onReady){
   let readyDone=false;
   ch.subscribe(async status=>{
     if(status==="SUBSCRIBED"){
-      try{ await ch.track({id:myId}); }catch(e){}
+      try{ await ch.track({id:myId, n:myName, t:Date.now()}); }catch(e){}
       if(readyDone){ if(isHost) sendSnap(); else { try{ ch.send({type:"broadcast",event:"hello",payload:{id:myId,n:myName}}); }catch(e){} } return; }   // 再接続=進行中の状態は壊さない
       readyDone=true; if(onReady) onReady();
     }

@@ -269,6 +269,23 @@
     border:1.1px solid rgba(35,33,31,.17); border-radius:5px;
     font-size:11.5px; font-weight:700; letter-spacing:.06em; color:var(--sub); }
   .c-nm{ font-weight:900; margin-right:5px; }
+  /* ===== 観戦者(2026-09-27) ===== */
+  .c-line.c-spec, .pop-line.c-spec{ background:rgba(90,70,50,.12); border-radius:5px; padding:1px 6px; margin:1px -4px; color:#5a4632; }
+  .pop-line.c-spec{ margin:0; padding:8px 11px; }
+  .c-spec .c-nm::before{ content:""; display:inline-block; width:13px; height:13px; margin-right:4px; vertical-align:-2px; opacity:.85;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235a4632' stroke-width='2.4'%3E%3Cpath d='M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E") center/contain no-repeat; }
+  .spec-badge{ position:fixed; left:10px; top:52px; z-index:40; display:none; align-items:center; gap:5px; cursor:pointer;
+    padding:4px 10px 4px 8px; border-radius:999px; border:none; font-family:inherit;
+    background:rgba(35,33,31,.42); color:#fff; font-size:13px; font-weight:900; }
+  .spec-badge svg{ width:16px; height:16px; }
+  .spec-list{ width:100%; display:flex; flex-direction:column; gap:6px; max-height:44vh; overflow-y:auto; }
+  .spec-row{ display:flex; align-items:center; gap:8px; padding:7px 9px; border-radius:10px; background:rgba(0,0,0,.05); }
+  .sr-ico{ flex:none; width:16px; height:16px; opacity:.5; }
+  .sr-nm{ flex:1; min-width:0; text-align:left; font-size:14px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sr-me{ flex:none; font-size:11px; font-weight:800; opacity:.5; }
+  .kick-btn{ flex:none; width:68px; height:28px; border:none; border-radius:999px; font-size:12px; font-weight:900; color:#fff; background:#c0392b; }
+  .kick-btn:active{ transform:translateY(1px); }
+  .spec-empty{ font-size:13.5px; font-weight:700; opacity:.55; padding:8px 0; }
   .c-nm.a{ color:var(--a); } .c-nm.b{ color:var(--b); }
   .chat-in{ flex:1; min-width:0; border:none; border-radius:8px; padding:9px 12px;
     font-size:13px; font-weight:700; background:rgba(255,255,255,.92); color:var(--ink);
@@ -373,6 +390,7 @@
 </head>
 <body>
 <button class="help-btn" id="helpBtn" type="button"><span class="q">?</span>あそびかた</button>
+<button type="button" class="spec-badge" id="specBadge" aria-label="観戦者"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span id="specNum">0</span></button>
 <div class="snd-btns"><button class="snd-btn" id="seBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h3l5 4V5L7 9H4z" fill="currentColor" stroke="none"/><path class="w1" d="M16.5 9.5a3.5 3.5 0 0 1 0 5"/><path class="w2" d="M19 7a7 7 0 0 1 0 10"/></svg><span id="seTx">効果音</span></button></div>
 
 <!-- ===== タイトル ===== -->
@@ -475,6 +493,12 @@
     <button class="txt-btn" id="rBack" type="button">やめる</button>
     <button class="txt-btn" id="rAgain" type="button">もう一回</button>
   </div>
+</div></div>
+
+<div class="ov" id="specOv"><div class="r-card">
+  <div class="r-title" style="font-size:20px">観戦者</div>
+  <div class="spec-list" id="specList"></div>
+  <div class="r-btns"><button class="txt-btn" id="specClose" type="button">とじる</button></div>
 </div></div>
 
 <div class="ov" id="helpOv"><div class="help-card">
@@ -754,12 +778,13 @@ const foeSide=()=>other(mySide);
 const LV_NAMES=["初級","中級","上級"];
 const robotName=()=>"ロボット（"+LV_NAMES[cpuLv]+"）";
 const labelOf=s=>{
+  if(spectating) return specNames[s] || (s==="a"?"先攻":"後攻");
   if(s===mySide) return myAcctName()||"あなた";
   return mode==="cpu" ? robotName() : foeLabel();
 };
 const amHost=()=>mode==="cpu"||isHost;
-const skinOf=s=>(s===mySide)?mySkin:((mode==="online")?(peerSkin||"#f6d0b0"):cpuSkin);   /* その人の手の色 */
-const canMoveMine=()=>(phase==="ready"||phase==="play")&&!(mode==="online"&&!online);   /* 3カウントの間も動かせる */
+const skinOf=s=>spectating?(specSkins[s]||"#f6d0b0"):((s===mySide)?mySkin:((mode==="online")?(peerSkin||"#f6d0b0"):cpuSkin));   /* その人の手の色 */
+const canMoveMine=()=>!spectating&&(phase==="ready"||phase==="play")&&!(mode==="online"&&!online);   /* 3カウントの間も動かせる。★観戦者は動かせない */
 
 /* ===== 手の描画・操作 ===== */
 const partsMe=buildHand($("handMe"),true);
@@ -863,7 +888,7 @@ function renderStatic(){                                 /* 名前・本数・�
   document.documentElement.style.setProperty("--tc-d", me==="a"?"var(--a-d)":"var(--b-d)");
   $("roundTag").textContent="ラウンド "+Math.max(1,round);   /* 常に「ラウンド N」だけ(「◯◯が1本」「対局終了」は出さない・2026-09-24) */
   $("handMe").classList.toggle("locked",!canMoveMine());
-  $("giveBtn").disabled=!(matchStarted&&phase!=="over");
+  $("giveBtn").disabled=spectating||!(matchStarted&&phase!=="over");   /* ★観戦者は降参できない */
   $("seBtn").classList.toggle("off",!seOn); $("seTx").textContent=seOn?"効果音":"効果音OFF";
 }
 
@@ -1064,10 +1089,11 @@ setInterval(()=>{
   if(mode==="cpu"&&(phase==="play"||phase==="ready")) cpuTick(now,dt);
   /* 自分の手=そのまま。あいての手=届いた値へなめらかに寄せる */
   const me=mySide, fo=foeSide();
+  const kk=(mode==="cpu")?1:Math.min(1,dt*18);
   for(let i=0;i<5;i++){
-    shown[me][i].x=tips[me][i].x; shown[me][i].y=tips[me][i].y;
-    const k=(mode==="cpu")?1:Math.min(1,dt*18);
-    shown[fo][i].x+=(tips[fo][i].x-shown[fo][i].x)*k; shown[fo][i].y+=(tips[fo][i].y-shown[fo][i].y)*k;
+    if(spectating){ shown[me][i].x+=(tips[me][i].x-shown[me][i].x)*kk; shown[me][i].y+=(tips[me][i].y-shown[me][i].y)*kk; }
+    else{ shown[me][i].x=tips[me][i].x; shown[me][i].y=tips[me][i].y; }
+    shown[fo][i].x+=(tips[fo][i].x-shown[fo][i].x)*kk; shown[fo][i].y+=(tips[fo][i].y-shown[fo][i].y)*kk;
   }
   drawHand(partsMe,shown[me]); drawHand(partsFoe,shown[fo]);
   /* 形の更新(3カウント中も表示は更新・勝敗の判定はplayの間だけ・ホストだけ) */
@@ -1079,7 +1105,7 @@ setInterval(()=>{
     if(phase==="play"&&amHost()) judge();
   }
   /* 自分の指位置を相手へ(50msごと・動いた時だけ) */
-  if(mode==="online"&&online&&started){
+  if(mode==="online"&&online&&started&&!spectating){   /* ★観戦者は自分の指を送らない */
     netAcc+=dt*1000;
     if(netAcc>=50){ netAcc=0; if(myMoved){ myMoved=false; send("fin",{id:myId,rd:round,t:tips[me].map(p=>[Math.round(p.x),Math.round(p.y)])}); } }
     if(isHost&&now-lastSnapAt>700) hostBroadcast();
@@ -1092,6 +1118,10 @@ const SB_KEY="sb_publishable_cak3-W9Mmgahnwawreoa1Q_CVuhmkKL";
 let sb=null, ch=null, online=false, isHost=false, roomCode="", started=false;
 const myId=Math.random().toString(36).slice(2,10);
 let goneT=0, againMe=false, againFoe=false, snapVer=0, lastSnapAt=0, lastVerSeen=-1;
+/* ===== 観戦モード(2026-09-27。将棋onビンゴと同じ考え方) =====
+   対局が始まったあとに入った人は観戦者。★本編にはいっさい介入できない
+   (指を動かせない・finを送らない・降参/もう一回を押せない。受け取る側でも「対局者のidか」を必ず確かめる) */
+let spectating=false, foeId="", specSeat={}, specNames={a:"",b:""}, specSkins={a:"",b:""};
 const CODE_CHARS="ABCDEFGHJKMNPRSTUVWXYZ";   /* 合言葉はアルファベットだけ・紛らわしいQ/I/O/Lは除外 */
 function sbClient(){ if(!sb) sb=supabase.createClient(SB_URL,SB_KEY,{realtime:{params:{eventsPerSecond:40}}}); return sb; }
 function genCode(){ let c=""; for(let i=0;i<5;i++) c+=CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)]; return c; }
@@ -1148,12 +1178,54 @@ function applySnap(s){                             /* ゲスト: ホストの進
 }
 function startOnlineGame(){
   againMe=false; againFoe=false; started=true; snapVer=0; lastVerSeen=-1; lastSnapAt=0;
-  mySide=isHost?"a":"b";
+  mySide=spectating?"a":(isHost?"a":"b");
   showScene("gameScene"); $("resultOv").classList.remove("on","peek");
   if(isHost) startMatch();
   else{ phase="idle"; round=0; score={a:0,b:0}; matchStarted=true; resultLogged=false; resetGive();
         if($("chatLog").children.length) addSys("── あたらしい対局 ──"); resetHands(); renderStatic(); }
 }
+const SPEC_EYE='<svg class="sr-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+function specIds(){   /* 観戦者=対局者2人以外。入室が早い順・名前が無い人は「ゲスト1」「ゲスト2」… */
+  try{
+    const st=ch?ch.presenceState():{}, arr=[];
+    Object.keys(st).forEach(k=>{ const p=st[k][0]; if(p&&p.id) arr.push(p); });
+    arr.sort((a,b)=>(a.t||0)-(b.t||0));
+    const out=arr.slice(2).map(p=>({ id:p.id, nm:(typeof p.n==="string"?p.n:"").slice(0,16) }));
+    let g=0; out.forEach(o=>{ if(!o.nm) o.nm="ゲスト"+(++g); });
+    return out;
+  }catch(e){ return []; }
+}
+function specMyName(){ const m=specIds().filter(o=>o.id===myId)[0]; return m? m.nm : (myAcctName()||MK_GUEST); }
+function renderSpecList(){
+  const box=$("specList"); if(!box) return;
+  const list=specIds(), canKick = online && !spectating && isHost;   /* 追放できるのはオーナーだけ */
+  if(!list.length){ box.innerHTML='<div class="spec-empty">まだ誰も見ていません</div>'; return; }
+  box.innerHTML="";
+  list.forEach(o=>{
+    const row=document.createElement("div"); row.className="spec-row"; row.innerHTML=SPEC_EYE;
+    const n=document.createElement("span"); n.className="sr-nm"; n.textContent=o.nm; row.appendChild(n);
+    if(o.id===myId){ const m=document.createElement("span"); m.className="sr-me"; m.textContent="じぶん"; row.appendChild(m); }
+    else if(canKick){ const b=document.createElement("button"); b.type="button"; b.className="kick-btn"; b.textContent="追放";
+      b.addEventListener("click",()=>{ ensureAudio(); playSelect(); kickSpec(o.id,o.nm); }); row.appendChild(b); }
+    box.appendChild(row);
+  });
+}
+function kickSpec(id,nm){
+  if(!ch||!online||spectating||!isHost) return;
+  send("kick",{to:id}); toast(nm+"を追放しました");
+  setTimeout(()=>{ updateSpecBadge(); renderSpecList(); },700);
+}
+function updateSpecBadge(){
+  const b=$("specBadge"); if(!b) return;
+  const show = online && !!ch && $("gameScene").classList.contains("on");
+  const n = show ? specIds().length : 0;
+  if(!show || n<=0){ b.style.display="none"; $("specOv").classList.remove("on"); return; }
+  $("specNum").textContent=n; b.style.display="flex";
+  if($("specOv").classList.contains("on")) renderSpecList();
+}
+$("specBadge").addEventListener("click",()=>{ ensureAudio(); playSelect(); renderSpecList(); $("specOv").classList.add("on"); });
+$("specClose").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("specOv").classList.remove("on"); });
+$("specOv").addEventListener("click",e=>{ if(e.target===$("specOv")) $("specOv").classList.remove("on"); });
 function joinRoom(code,asHost){
   leaveChannel();
   roomCode=code; isHost=asHost; online=true; started=false; peerName=""; peerSkin="";
@@ -1162,6 +1234,7 @@ function joinRoom(code,asHost){
   ch.on("presence",{event:"leave"},onPresence);
   ch.on("broadcast",{event:"start"},({payload})=>{
     if(!payload||isHost) return;
+    if(spectating){ startOnlineGame(); return; }   /* 観戦のまま次の対局へ */
     if(typeof payload.pn==="string") peerName=payload.pn.slice(0,16);
     if(typeof payload.col==="string"&&/^#[0-9a-f]{6}$/i.test(payload.col)) peerSkin=payload.col;
     if(payload.wn) setWinN(payload.wn);                  /* 部屋を作った側の先取本数に合わせる */
@@ -1172,12 +1245,15 @@ function joinRoom(code,asHost){
   ch.on("broadcast",{event:"fin"},({payload})=>{     /* あいての指位置 */
     if(!payload||payload.id===myId||!started||!Array.isArray(payload.t)) return;
     if(isHost&&(payload.rd|0)!==round) return;          /* 前のラウンドの古い値は無視(リセット直後の誤判定を防ぐ) */
-    const fo=foeSide();
+    let fo;
+    if(spectating){ fo=specSeat[payload.id]; if(!fo) return; }           /* 観戦者は両者の手を席ごとに受ける */
+    else{ if(foeId && payload.id!==foeId) return; fo=foeSide(); }        /* ★対局者以外(観戦者)の指は受け付けない */
     for(let i=0;i<5;i++){ const q=payload.t[i]; if(!Array.isArray(q)) continue; const x=+q[0], y=+q[1]; if(isFinite(x)&&isFinite(y)) tips[fo][i]=tipFromPointer(FINGERS[i],{x:x,y:y}); }
   });
-  ch.on("broadcast",{event:"snap"},({payload})=>{ if(isHost||!started) return; applySnap(payload); });
+  ch.on("broadcast",{event:"snap"},({payload})=>{ if(isHost||!started) return; applySnap(payload); });   /* 観戦者もこれで進行に追いつく */
   ch.on("broadcast",{event:"again"},({payload})=>{
     if(!payload||payload.id===myId) return;
+    if(spectating||(foeId&&payload.id!==foeId)) return;   /* ★観戦者の「もう一回」は効かない */
     againFoe=true;
     if(againMe) tryRematch();
     else $("rSub").textContent="あいてが「もう一回」を希望";
@@ -1185,20 +1261,26 @@ function joinRoom(code,asHost){
   ch.on("broadcast",{event:"chat"},({payload})=>{
     if(!payload||payload.id===myId) return;
     const tx=String(payload.t||"").slice(0,40);
-    addChat(foeLabel(),tx,foeSide());
-    if($("chatBox").classList.contains("mini")) showPop(foeLabel(),tx,foeSide());
+    const nm=payload.w||(payload.sp?"観戦者":foeLabel()), sd=payload.sp?"":foeSide();
+    addChat(nm,tx,sd,!!payload.sp);
+    if($("chatBox").classList.contains("mini")) showPop(nm,tx,sd,!!payload.sp);
     playChat();
   });
   ch.on("broadcast",{event:"stamp"},({payload})=>{
     if(!payload||payload.id===myId) return;
-    speakStamp(payload.i|0); spawnStamp(payload.i|0,foeLabel());
+    speakStamp(payload.i|0); spawnStamp(payload.i|0,payload.w||(payload.sp?"観戦者":foeLabel()));
   });
   ch.on("broadcast",{event:"give"},({payload})=>{     /* あいてが降参 */
     if(!payload||payload.id===myId||!started||phase==="over") return;
+    if(spectating||(foeId&&payload.id!==foeId)) return;   /* ★観戦者は降参させられない */
     if(isHost){ matchOver(mySide, foeLabel()+"の降参"); }
     else{ phase="over"; overWinner=mySide; endReason=foeLabel()+"の降参"; fxOff(); playWin(); renderStatic(); showResult(); }
   });
-  ch.on("broadcast",{event:"bye"},()=>{ if(!started) return; foeLeft(); });
+  ch.on("broadcast",{event:"kick"},({payload})=>{   /* オーナーに追放された観戦者はタイトルへ */
+    if(!payload||payload.to!==myId||!spectating) return;
+    toast("オーナーから追放されました"); setTimeout(goTitle,900);
+  });
+  ch.on("broadcast",{event:"bye"},({payload})=>{ if(!started) return; if(payload&&payload.spec){ setTimeout(updateSpecBadge,300); return; } if(payload&&foeId&&payload.id&&payload.id!==foeId) return; foeLeft(); });   /* ★観戦者が抜けても対局は続く */
   ch.subscribe(async st=>{
     if(st!=="SUBSCRIBED") return;
     try{ await ch.track({ id:myId, n:myAcctName(), col:mySkin, host:asHost, t:Date.now() }); }catch(e){}
@@ -1210,19 +1292,32 @@ function onPresence(){
   const st=ch.presenceState(), arr=[];
   Object.keys(st).forEach(k=>{ const p=st[k][0]; if(p&&p.id) arr.push(p); });
   arr.sort((a,b)=>(a.t||0)-(b.t||0));
-  const foe=arr.find(p=>p.id!==myId);
+  const players=arr.slice(0,2);                       /* 入室が早い2人が対局者。それ以外は観戦者 */
+  const host=players.find(p=>p.host)||players[0];
+  specSeat={}; specNames={a:"",b:""}; specSkins={a:"",b:""};
+  players.forEach(p=>{ const seat=(host&&p.id===host.id)?"a":"b"; specSeat[p.id]=seat;
+    specNames[seat]=(typeof p.n==="string"&&p.n)?p.n.slice(0,16):MK_GUEST;
+    specSkins[seat]=(typeof p.col==="string"&&/^#[0-9a-f]{6}$/i.test(p.col))?p.col:"#f6d0b0"; });
+  const foe=players.find(p=>p.id!==myId);
+  foeId=foe?foe.id:"";
   if(foe&&typeof foe.n==="string"&&foe.n) peerName=foe.n.slice(0,16);
   if(foe&&typeof foe.col==="string"&&/^#[0-9a-f]{6}$/i.test(foe.col)){ peerSkin=foe.col; applySkins(); }
-  if(arr.length>2&&arr.slice(0,2).every(p=>p.id!==myId)){
-    toast("部屋がいっぱいです"); leaveChannel(); goTitle(); return;
+  if(!isHost && players.length>=2 && players.every(p=>p.id!==myId)){   /* ★自分は対局者ではない=観戦者になる(部屋を作った人は必ず対局者。人数0のうちは判定しない) */
+    if(!spectating){
+      spectating=true; started=true; matchStarted=true; snapVer=0; lastVerSeen=-1;
+      showScene("gameScene"); $("resultOv").classList.remove("on","peek");
+      toast("とちゅうから観戦しています");
+    }
+    mySide="a"; applySkins(); renderStatic(); updateSpecBadge(); return;
   }
+  updateSpecBadge();
   if(foe){ clearTimeout(goneT); goneT=0; }
-  if(isHost&&!started&&arr.length>=2){
+  if(isHost&&!started&&players.length>=2){
     send("start",{pn:myAcctName(),col:mySkin,wn:winN});
     startOnlineGame();
     setTimeout(()=>send("start",{pn:myAcctName(),col:mySkin,wn:winN}),400);   /* 届かないことがあるので念のため2回 */
   }
-  if(started&&phase!=="over"&&!foe&&!goneT){          /* 通信が一瞬切れただけの時もあるので15秒待つ */
+  if(started&&phase!=="over"&&!foe&&!goneT&&!spectating){   /* 通信が一瞬切れただけの時もあるので15秒待つ */
     toast("あいての接続が切れました（15秒待ちます）");
     goneT=setTimeout(()=>{ goneT=0; foeLeft(); },15000);
   }
@@ -1244,9 +1339,11 @@ function showScene(id){
   window.scrollTo(0,0);
 }
 function goTitle(){
-  if(online&&started) send("bye",{id:myId});
+  if(online&&started) send("bye",{id:myId,spec:spectating?1:0});
   $("chatLog").innerHTML=""; $("chatIn").value=""; hidePop();
   leaveChannel();
+  spectating=false; foeId=""; specSeat={}; specNames={a:"",b:""}; specSkins={a:"",b:""};
+  $("specOv").classList.remove("on"); $("specBadge").style.display="none";
   clearReadyTimers(); phase="idle"; matchStarted=false; fxOff(); resetGive();
   $("resultOv").classList.remove("on","peek");
   roomStatus("");
@@ -1262,7 +1359,7 @@ function showResult(){
   $("rSa").textContent=score.a; $("rSb").textContent=score.b;
   $("rSub").textContent=endReason||"";   /* 降参などの理由だけ出す */
   $("rAgain").textContent="もう一回";
-  $("rAgain").disabled=(mode==="online"&&!started);
+  $("rAgain").disabled=spectating||(mode==="online"&&!started);   /* ★観戦者は「もう一回」を押せない */
   $("resultOv").classList.remove("peek"); $("resultOv").classList.add("on");
   if(!resultLogged){ resultLogged=true; addSys(winnerLabel(),"c-res"); }
 }
@@ -1459,9 +1556,9 @@ window.addEventListener("pagehide",()=>{ if(online&&started) send("bye",{id:myId
 
 /* ===== チャット(全ゲーム共通。スタンプもこの枠の中) ===== */
 const playChat=()=>{ note(700,700,.06,"sine",.10); note(980,980,.07,"sine",.08,.05); };
-function addChat(name,text,side){
+function addChat(name,text,side,spec){
   const log=$("chatLog");
-  const d=document.createElement("div"); d.className="c-line";
+  const d=document.createElement("div"); d.className="c-line"+(spec?" c-spec":"");
   const n=document.createElement("span"); n.className="c-nm"+(side?" "+side:""); n.textContent=name+"：";
   const t=document.createElement("span"); t.textContent=text;
   d.appendChild(n); d.appendChild(t); log.appendChild(d);
@@ -1479,8 +1576,8 @@ function sendChat(){
   const el=$("chatIn"), t=(el.value||"").trim().slice(0,40);
   if(!t) return;
   el.value="";
-  addChat(meLabel(), t, mySide);
-  if(mode==="online"&&online&&ch) send("chat",{t:t,id:myId});
+  addChat(spectating?specMyName():meLabel(), t, spectating?"":mySide, spectating);
+  if(mode==="online"&&online&&ch) send("chat",{t:t,id:myId,w:(spectating?specMyName():null),sp:spectating?1:0});
 }
 $("chatGo").addEventListener("click",()=>{ ensureAudio(); sendChat(); });
 $("chatIn").addEventListener("keydown",e=>{
@@ -1529,8 +1626,8 @@ function spawnStamp(i,who,self){
 }
 function sendStamp(i){
   speakStamp(i);
-  spawnStamp(i,meLabel(),true);
-  if(mode==="online"&&online&&ch) send("stamp",{i:i,id:myId});
+  spawnStamp(i,spectating?specMyName():meLabel(),true);
+  if(mode==="online"&&online&&ch) send("stamp",{i:i,id:myId,w:(spectating?specMyName():null),sp:spectating?1:0});
 }
 document.querySelectorAll("#stampBar .stamp-btn").forEach(b=>{
   b.textContent=STAMP_SVGS[+b.dataset.i];
@@ -1550,9 +1647,9 @@ function setMini(mini){
 $("chatTog").addEventListener("click",()=>{ ensureAudio(); playSelect(); setMini(!$("chatBox").classList.contains("mini")); });
 const POP_MS=4200, POP_FADE=150, POP_MAX=3;
 function hidePop(){ const el=$("chatPop"); [...el.children].forEach(c=>clearTimeout(c._t)); el.innerHTML=""; }
-function showPop(name,text,side){
+function showPop(name,text,side,spec){
   const el=$("chatPop");
-  const d=document.createElement("div"); d.className="pop-line";
+  const d=document.createElement("div"); d.className="pop-line"+(spec?" c-spec":"");
   const n=document.createElement("span"); n.className="c-nm"+(side?" "+side:""); n.textContent=name+"：";
   const t=document.createElement("span"); t.textContent=text;
   d.appendChild(n); d.appendChild(t); el.appendChild(d);
