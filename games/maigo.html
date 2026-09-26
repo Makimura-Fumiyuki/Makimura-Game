@@ -826,6 +826,9 @@ function readPeerName(){   // presenceからあいての名前を取り込む
   let board=[], stones=[], turn=BLACK, human=BLACK, cpuLv=1;
   const LV_NAMES=["初級","中級","上級"];
   let undoUsed=false;   // ロボット戦で一手戻るを使ったか(結果画面で「待ったなし」自慢に使う)
+  let anim=false;     // 石を置く演出の最中(この間だけ一手戻るを待たせる)
+  const UNDO_MAX=3;   // 一手戻るの申請は1ターンにつき3回まで(2026-09-26牧村指示)
+  let undoTries=0;    // この手番で何回申請したか(手番が変わるとゼロに戻る)
   let prob=0, over=false, busy=false;
   let capB=0, capW=0;   // とった石の数(黒がとった数 / 白がとった数)
   let local=false;   // 1台で遊ぶ(交互に打つ)モード
@@ -1046,7 +1049,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     board=[]; for(let r=0;r<N;r++){ board.push(new Array(N).fill(EMPTY)); }
     stones=[]; for(let r=0;r<N;r++){ stones.push(new Array(N).fill(null)); }
     cells.forEach(row=>row.forEach(d=>{ d.innerHTML=""; d.classList.remove("taken"); }));
-    over=false; busy=false; turn=BLACK; hist=[]; capB=0; capW=0; undoUsed=false;
+    over=false; busy=false; turn=BLACK; hist=[]; capB=0; capW=0; undoUsed=false; anim=false; undoTries=0;
     myRematch=false; peerRematch=false; undoPending=false; peerGone=false;
     clearTimeout(moveResendTimer); moveResendTimer=0; mySeq=0; lastRecvSeq=0; pendingSeq=0;
     undoBtn.style.display = "";   // 一手戻るは全モードで使える(オンラインは相手の許可制)
@@ -1068,6 +1071,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     startTurn();
   }
   function startTurn(){
+    anim=false;
     if(over) return;
     rollProb(); setTurnLabel();
     if(!legalCells(board,turn).length){ finishByCount(); return; }   // 打てる場所が無い → とった数で勝負あり
@@ -1076,9 +1080,9 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     else if(turn!==human){ busy=true; setTimeout(cpuMove, 750+Math.random()*550); }
     else busy=false;
     boardEl.classList.toggle("myturn", !busy);        // 打てる時だけhoverの赤丸を出す
-    undoBtn.disabled = busy || !hist.length || undoPending;   // 相手のターン中・戻す手がない・待った返事待ちは押せない
+    undoBtn.disabled = over || !hist.length || undoPending;   // 一手戻るは「あいての手番」でも押せる(2026-09-26牧村指示)
   }
-  function switchTurn(){ turn=(turn===BLACK)?WHITE:BLACK; startTurn(); }
+  function switchTurn(){ turn=(turn===BLACK)?WHITE:BLACK; undoTries=0; startTurn(); }   // 手番が変わったら申請回数はリセット
 
   function humanPlace(r,c){
     if(over||busy||undoPending) return;   // 待ったの返事待ち中は打てない(打てると相手の許可と噛み合わなくなる)
@@ -1266,7 +1270,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
   /* 石を置く(迷子判定込み)。人間/ロボット/通信相手 共通
      maigo: 迷子になって歩いて行き、盤から消える / fake: きょろきょろだけして結局そこに座る(いや迷子にならんのかい！) */
   function tryPlace(r,c,forcedMaigo,forcedFake,forcedDR,forcedDC){
-    busy=true; boardEl.classList.remove("myturn");
+    busy=true; anim=true; boardEl.classList.remove("myturn");
     const me=turn;
     const maigo=(forcedMaigo===undefined) ? (Math.random()*100)<prob : forcedMaigo;
     // 石をとる一手・アタリの味方を助ける一手は必ず「きょろきょろ」を入れる(本物でも嘘でも)。通常の嘘きょろきょろは5%
@@ -1459,8 +1463,8 @@ function readPeerName(){   // presenceからあいての名前を取り込む
   /* 碁笥の上のラベル: 手番の名前 + とった石の数/ノルマ */
   function renderBowlTags(){
     const foe = (!local && !online) ? ("ロボット（"+LV_NAMES[cpuLv]+"）") : (online?foeLabel():"あいて");   // ロボット戦は相手の碁笥に階級を常時表示
-    const lb= local ? "先攻" : (human===BLACK)?(online?meLabel():"自分"):foe;
-    const lw= local ? "後攻" : (human===WHITE)?(online?meLabel():"自分"):foe;
+    const lb= local ? "先攻" : (human===BLACK)?meLabel():foe;   // ロボット戦でもアカウント名を出す(2026-09-26)
+    const lw= local ? "後攻" : (human===WHITE)?meLabel():foe;
     document.getElementById("bowlTagB").innerHTML=lb+"<b>"+capB+"/"+normNum+"</b>";
     document.getElementById("bowlTagW").innerHTML=lw+"<b>"+capW+"/"+normNum+"</b>";
   }
@@ -1536,23 +1540,25 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     startTurn();
   }
   undoBtn.addEventListener("click",()=>{
-    if(over||busy||!hist.length) return;
+    if(over||anim||!hist.length) return;   // 石を置く演出の最中だけ待たせる(あいての手番でも押せる)
     ensureAudio(); playSelect();
+    if(undoTries>=UNDO_MAX){ showToast("一手戻るは1ターンに"+UNDO_MAX+"回まで"); return; }
     if(online){
-      if(turn!==human || undoPending) return;
-      // オンラインは相手の許可制(待った)。申し込んで返事を待つ
+      if(undoPending) return;
+      // オンラインは相手の許可制(待った)。あいての手番でも申し込める=成立すれば自分の直前の一手まで戻る
+      undoTries++;
       undoPending=true; undoBtn.disabled=true;
       if(ch) ch.send({ type:"broadcast", event:"undoreq", payload:{} });
       showToast("一手戻したいと伝えた。"+foeLabel()+"の返事を待て");
       return;
     }
+    undoTries++;
     if(local){
       const m=hist.pop(); if(m){ restoreState(m); turn=m.p; }   // 戻した手の持ち主の番からやり直し
       startTurn();
     } else {
-      if(turn!==human) return;
       undoUsed=true;   // ロボット戦で待った使用
-      undoToPlayer(human);   // ロボットの応手＋自分の一手を戻す
+      undoToPlayer(human);   // ロボットの手番でも押せる=ロボットの応手＋自分の一手を戻す
     }
   });
   function setGiveupVisible(v){   // 終局後は降参・一手戻るを隠す(盤面眺めモードで違和感が出るため)
@@ -1879,7 +1885,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     return s;
   }
   function cpuMove(){
-    if(over) return;
+    if(over||turn===human) return;   // 一手戻るで自分の手番に戻った後の空振りを防ぐ
     const mv=pickMove();
     if(!mv){ finishByCount(); return; }
     tryPlace(mv[0], mv[1]);
@@ -2205,7 +2211,7 @@ setMini(true);   /* ★毎回「チャット欄 表示」の畳んだ状態で�
     const central=1-Math.abs(hx-0.5)*2;                      // 0(両端)〜1(中央)
     el.style.setProperty("--rise", "-"+(24+(1-central)*16).toFixed(0)+"vh");   // 中央は低め(盤の下側に少しかぶる程度)・両端は高め(従来通り)
     el.style.setProperty("--dx", (Math.random()*24-12).toFixed(0)+"px");
-    el.innerHTML='<span class="s-emoji">'+STAMP_SVGS[i]+'</span><span class="s-name">'+(who||(online?meLabel():"自分"))+'</span>';
+    el.innerHTML='<span class="s-emoji">'+STAMP_SVGS[i]+'</span><span class="s-name">'+(who||(local?"自分":meLabel()))+'</span>';
     if(seOn && !stampMuted) playStamp(i);   // スタンプ別の効果音
     const overlayOpen=document.getElementById("resultOverlay").classList.contains("on")||document.getElementById("confirmOverlay").classList.contains("on");
     if(overlayOpen){ el.classList.add("over-dialog"); document.body.appendChild(el); }

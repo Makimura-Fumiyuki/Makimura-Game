@@ -667,6 +667,8 @@ const playLose  =()=>{ note(392,196,.5,"triangle",.14); note(262,131,.6,"sine",.
 let S=newS();
 let mode="local", mySide="o", cpuSide="x", cpuLv=1, sideWish="o";
 let turn="o", phase="place", over=null, endReason="", winCells=[], hist=[], turnNo=1;
+const UNDO_MAX=3;   // 一手戻るの申請は1ターンにつき3回まで(2026-09-26牧村指示)
+let undoTries=0;    // この手番で何回使ったか(手番が変わるとゼロに戻る)
 var resultLogged=false;                          /* 勝敗のログは1局に1回だけ */
 let skipNote=false, curT=null, thinking=false, cpuT=[];
 let lastPlaced=null;                        /* 置いたばかりのマス=もう一度押すと取り消し */
@@ -748,7 +750,7 @@ function render(){
   $("tbMark").innerHTML=over?"":mark(turn);
   $("turnBar").classList.toggle("gray",over==="draw");
 
-  $("undoBtn").disabled=(mode==="online")||!!over||thinking||!hist.length;
+  $("undoBtn").disabled=(mode==="online")||!!over||!hist.length;   // ロボットの手番でも押せる(2026-09-26牧村指示)
   $("giveBtn").disabled=!!over;
   $("seBtn").classList.toggle("off",!seOn); $("seTx").textContent=seOn?"効果音":"効果音OFF";
 }
@@ -832,7 +834,7 @@ function endTurn(){
     return finish(foe[0].p,foe,"");
   }
   noPlace=(curT&&curT.to==null)? noPlace+1 : 0;
-  curT=null; lastPlaced=null; turn=other(turn); phase="place"; turnNo++;
+  curT=null; lastPlaced=null; turn=other(turn); phase="place"; turnNo++; undoTries=0;   // 手番が変わったら申請回数はリセット
   skipNote=!emptyW(S).length;
   if(skipNote) phase="shift";                   /* 3×3が満杯の番はステージを動かすだけ */
   if(S.b.indexOf(null)<0) return finishDraw();
@@ -854,6 +856,8 @@ function onCell(i){
 function undo(){                               /* 一手戻る=コマ+ステージ移動をまるごと1手ぶん */
   if(mode==="online"){ toast("オンラインでは使えません"); playNg(); return; }
   if(!hist.length){ toast("戻せる手がありません"); playNg(); return; }
+  if(undoTries>=UNDO_MAX){ toast("一手戻るは1ターンに"+UNDO_MAX+"回まで"); playNg(); return; }
+  undoTries++;
   cpuT.forEach(clearTimeout); cpuT=[]; thinking=false; curT=null; clearWinLine();
   let g=0;
   do{ loadSnap(hist.pop()); }while(hist.length&&phase!=="place"&&g++<8);
@@ -1104,7 +1108,7 @@ function setBoardN(n){                         /* ステージの広さ(5/7/9)�
 function newGame(){
   setBoardN(boardN);
   S=newS(); turn="o"; phase="place"; over=null; endReason=""; winCells=[];
-  hist=[]; turnNo=1; skipNote=false; curT=null; thinking=false; lastPlaced=null; noPlace=0; clearWinLine();
+  hist=[]; turnNo=1; undoTries=0; skipNote=false; curT=null; thinking=false; lastPlaced=null; noPlace=0; clearWinLine();
   cpuT.forEach(clearTimeout); cpuT=[]; resetGive();
   resultLogged=false;
   if($("chatLog").children.length) addSys("── あたらしい対局 ──");
