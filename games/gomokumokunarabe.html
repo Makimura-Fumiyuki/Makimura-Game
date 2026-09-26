@@ -186,9 +186,8 @@
   .home-foot:hover{ color:#fff; }
 
   /* ===== 対局画面 ===== */
-  #gameScene{ padding:12px 10px 30px; gap:10px; justify-content:center; }
-  /* 画面が狭い/低い時は下に余白を足して、スタンプ/チャットのぶんだけ余分にスクロールできるようにする(2026-09-10) */
-  @media (max-width:820px), (max-height:820px){ #gameScene{ padding-top:150px; padding-bottom:290px; } }   /* 上は「あそびかた」「効果音」ボタンのぶんだけ余分にスクロールできる(2026-09-10) */
+  /* 上下のスクロール余白は画面の大きさに関係なくいつも取る(2026-09-27牧村指示。旧・狭い画面だけの@mediaは廃止=広い画面で上にスクロールできなかった) */
+  #gameScene{ padding:150px 10px 290px; gap:10px; justify-content:center; justify-content:safe center; }
   /* 現在ルールの表示(上部・2枚): ボタンに見えない「貼り紙」風。2枚は同サイズ */
   .rule-tags{ display:flex; gap:12px; justify-content:center; width:min(94vw, 380px); }
   .rule-tag{
@@ -492,7 +491,7 @@
   #stampBar .stamp-btn{ width:34px; height:34px; font-size:19px; }
   #stampBar .stamp-mute{ width:26px; height:26px; top:4px; }
   /* 碁笥(左下の絶対配置)に重ならないよう、この作品だけチャット枠を碁笥の上に置く */
-  #chatBox{ position:fixed; left:10px; bottom:calc(28px + clamp(62px,17vw,102px)); z-index:58; display:none;
+  #chatBox{ position:fixed; left:10px; bottom:10px; z-index:58; display:none;
     flex-direction:column; align-items:flex-start; gap:7px; width:min(84vw,300px); text-align:left; }
   #chatBox.on{ display:flex; }
   #chatBox.mini .chat-log, #chatBox.mini .chat-row{ display:none; }
@@ -732,10 +731,10 @@
   <!-- ===== 待った(一手戻る)の確認 ===== -->
   <div id="undoOverlay">
     <div class="r-card">
-      <div class="cf-msg" id="undoMsg">一手戻ることを許可しますか？</div>
+      <div class="cf-msg" id="undoMsg">あいてが一手戻りたいようです</div>
       <div class="sub-btns">
-        <button class="txt-btn" id="undoYes">許可</button>
-        <button class="txt-btn deny" id="undoNo">却下</button>
+        <button class="txt-btn" id="undoYes">◯ 許可</button>
+        <button class="txt-btn deny" id="undoNo">× 却下</button>
       </div>
     </div>
   </div>
@@ -1670,6 +1669,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     // 待った(一手戻る)の申し込みが相手から届いた → 許可を尋ねる
     ch.on("broadcast",{event:"undoreq"},()=>{
       if(!online||over||spectating||!hist.length) return;   // ★観戦者は許可/却下を押せない
+      var um=document.getElementById("undoMsg"); if(um) um.textContent=foeLabel()+"が一手戻りたいようです";
       undoOverlay.classList.add("on");
     });
     // 相手が許可 → 双方が同じ手数だけ巻き戻す(棋譜が一致しているので結果も一致)

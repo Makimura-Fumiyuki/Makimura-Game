@@ -724,10 +724,10 @@
 <!-- 待った(オンライン: あいてに確認) -->
 <div class="overlay" id="undoOv">
   <div class="r-card">
-    <div class="cf-msg">一手戻ることを許可しますか？</div>
+    <div class="cf-msg" id="undoMsg">あいてが一手戻りたいようです</div>
     <div class="sub-btns">
-      <button class="txt-btn" id="undoYes">許可</button>
-      <button class="txt-btn deny" id="undoNo">却下</button>
+      <button class="txt-btn" id="undoYes">◯ 許可</button>
+      <button class="txt-btn deny" id="undoNo">× 却下</button>
     </div>
   </div>
 </div>
@@ -1786,6 +1786,7 @@ function openChannel(code, asHost){
     if(spectating){ specUndoIdx=ti; return; }          // ★観戦者はダイアログを出さない(いいよ/だめを押せた=介入バグの修正)。成立したら盤だけ追従する
     if(phase!=="idle") return;
     peerUndoIdx = ti>=0? ti : undoTargetIdx(1-mySide);
+    var um=$("undoMsg"); if(um) um.textContent=foeLabel()+"が一手戻りたいようです";
     $("undoOv").classList.add("on");
   });
   ch.on("broadcast",{event:"undoyes"},()=>{
