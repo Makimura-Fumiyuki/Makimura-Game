@@ -238,15 +238,15 @@
   }
   .help-btn:active{ transform:translateY(1px); }
   /* あそびかた説明のオーバーレイ(結果ダイアログと同じ挙動) */
-  #helpOverlay, #undoOverlay{
+  #helpOverlay, #undoOverlay, #specOv{
     position:fixed; inset:0; z-index:60; display:flex;
     align-items:center; justify-content:center;
     background:rgba(30,26,20,.55);
     opacity:0; pointer-events:none; transition:opacity .25s linear;
   }
-  #helpOverlay.on, #undoOverlay.on{ opacity:1; pointer-events:auto; }
-  #helpOverlay .r-card, #undoOverlay .r-card{ transform:scale(.6); opacity:0; }
-  #helpOverlay.on .r-card, #undoOverlay.on .r-card{ transform:scale(1); opacity:1; }
+  #helpOverlay.on, #undoOverlay.on, #specOv.on{ opacity:1; pointer-events:auto; }
+  #helpOverlay .r-card, #undoOverlay .r-card, #specOv .r-card{ transform:scale(.6); opacity:0; }
+  #helpOverlay.on .r-card, #undoOverlay.on .r-card, #specOv.on .r-card{ transform:scale(1); opacity:1; }
   .help-card{ width:min(88vw, 420px); align-items:stretch; }
   .help-title{ font-size:22px; letter-spacing:.12em; text-align:center; color:var(--shu); font-weight:700; }
   #helpOverlay .help-body{ font-size:14px; line-height:1.95; letter-spacing:.03em; text-align:left; }
@@ -551,6 +551,25 @@
     border:1.1px solid rgba(35,33,31,.17); border-radius:5px;
     font-size:11.5px; font-weight:700; letter-spacing:.06em; color:rgba(35,33,31,.8); }
   .c-nm{ font-weight:900; margin-right:5px; color:rgba(35,33,31,.9); }
+  /* ===== 観戦者(2026-09-27) ===== */
+  .c-line.c-spec, .pop-line.c-spec{ background:rgba(63,107,51,.10); border-radius:5px; padding:1px 6px; margin:1px -4px; color:#3f6b33; }
+  .pop-line.c-spec{ margin:0; padding:8px 11px; }
+  .c-spec .c-nm::before{ content:""; display:inline-block; width:13px; height:13px; margin-right:4px; vertical-align:-2px; opacity:.85;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233f6b33' stroke-width='2.4'%3E%3Cpath d='M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E") center/contain no-repeat; }
+  .spec-badge{ position:fixed; left:10px; top:52px; z-index:40; display:none; align-items:center; gap:5px; cursor:pointer;
+    padding:4px 10px 4px 8px; border-radius:999px; border:none; font-family:inherit;
+    background:rgba(35,33,31,.42); color:#fff; font-size:13px; font-weight:900; }
+  .spec-badge svg{ width:16px; height:16px; }
+  .spec-list{ width:100%; display:flex; flex-direction:column; gap:6px; max-height:44vh; overflow-y:auto; }
+  .spec-row{ display:flex; align-items:center; gap:8px; padding:7px 9px; border-radius:10px; background:#eef3e8; }
+  .sr-ico{ flex:none; width:16px; height:16px; opacity:.5; }
+  .sr-nm{ flex:1; min-width:0; text-align:left; font-size:14px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sr-me{ flex:none; font-size:11px; font-weight:800; opacity:.5; }
+  .kick-btn{ flex:none; width:68px; height:28px; border:none; border-radius:999px; font-size:12px; font-weight:900;
+    color:#fff; background:#3f6b33; }
+  .kick-btn:active{ transform:translateY(1px); }
+  .spec-empty{ font-size:13.5px; font-weight:700; opacity:.55; padding:8px 0; }
+
   .chat-in{ flex:1; min-width:0; border:none; border-radius:8px; padding:9px 12px; font-family:inherit;
     font-size:13px; font-weight:700; background:rgba(255,255,255,.92); color:#23211f;
     box-shadow:0 2px 7px rgba(35,33,31,.26); }
@@ -707,6 +726,9 @@
   <!-- 全画面共通: あそびかた(左上)。タイトルでも対局中でも見られる -->
   <button class="help-btn" id="helpBtn" aria-label="あそびかた"><span>？</span>あそびかた</button>
 
+  <!-- 観戦者の人数(押すと一覧。0人のときは出ない) -->
+  <button type="button" class="spec-badge" id="specBadge" aria-label="観戦者"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span id="specNum">0</span></button>
+
   <!-- 全画面共通: 効果音のON/OFF -->
   <div class="snd-btns">
     <button class="snd-btn" id="seBtn"><svg viewBox="0 0 25 24"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor"/><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M15 9.4c1.3 1.3 1.3 3.9 0 5.2"/><path d="M17.6 7.6c2.2 2.2 2.2 6.6 0 8.8"/><path d="M20.2 5.8c3.1 3.1 3.1 9.3 0 12.4"/></g></svg>効果音</button>
@@ -724,13 +746,22 @@
     </div>
   </div>
 
+  <!-- ===== 観戦者の一覧(バッジを押すと出る。オーナーは追放できる) ===== -->
+  <div id="specOv">
+    <div class="r-card">
+      <div class="cf-msg">観戦者</div>
+      <div class="spec-list" id="specList"></div>
+      <div class="sub-btns"><button class="txt-btn" id="specClose">とじる</button></div>
+    </div>
+  </div>
+
   <!-- ===== 待った(一手戻る)の確認 ===== -->
   <div id="undoOverlay">
     <div class="r-card">
-      <div class="cf-msg" id="undoMsg">一手戻すのを許すか？</div>
+      <div class="cf-msg" id="undoMsg">一手戻ることを許可しますか？</div>
       <div class="sub-btns">
-        <button class="txt-btn deny" id="undoNo">断る</button>
-        <button class="txt-btn" id="undoYes">許す</button>
+        <button class="txt-btn" id="undoYes">許可</button>
+        <button class="txt-btn deny" id="undoNo">却下</button>
       </div>
     </div>
   </div>
@@ -827,7 +858,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
   const LV_NAMES=["初級","中級","上級"];
   let undoUsed=false;   // ロボット戦で一手戻るを使ったか(結果画面で「待ったなし」自慢に使う)
   let anim=false;     // 石を置く演出の最中(この間だけ一手戻るを待たせる)
-  const UNDO_MAX=3;   // 一手戻るの申請は1ターンにつき3回まで(2026-09-26牧村指示)
+  const UNDO_MAX=1;   // 一手戻るは1ターンにつき1回まで(2026-09-27牧村指示。使ったらボタンをグレーアウト)
   let undoTries=0;    // この手番で何回申請したか(手番が変わるとゼロに戻る)
   let prob=0, over=false, busy=false;
   let capB=0, capW=0;   // とった石の数(黒がとった数 / 白がとった数)
@@ -1079,12 +1110,14 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     else if(online){ busy=(turn!==human); }           // オンライン: 相手の手はbroadcastで届く
     else if(turn!==human){ busy=true; setTimeout(cpuMove, 750+Math.random()*550); }
     else busy=false;
+    if(spectating) busy=true;                       // ★観戦者はいつでも打てない(赤丸のカーソルも出さない)
     boardEl.classList.toggle("myturn", !busy);        // 打てる時だけhoverの赤丸を出す
-    undoBtn.disabled = over || !hist.length || undoPending;   // 一手戻るは「あいての手番」でも押せる(2026-09-26牧村指示)
+    undoBtn.disabled = over || !hist.length || undoPending || undoTries>=UNDO_MAX;   // 「あいての手番」でも押せる/1ターン1回使ったらグレーアウト
   }
   function switchTurn(){ turn=(turn===BLACK)?WHITE:BLACK; undoTries=0; startTurn(); }   // 手番が変わったら申請回数はリセット
 
   function humanPlace(r,c){
+    if(spectating) return;                 // ★観戦者は石を置けない
     if(over||busy||undoPending) return;   // 待ったの返事待ち中は打てない(打てると相手の許可と噛み合わなくなる)
     if(!local && turn!==human) return;   // ならんで遊ぶ: どちらの手番でもタップで打てる
     if(board[r][c]!==EMPTY) return;
@@ -1096,7 +1129,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       let dr=-1, dc=-1;
       if(maigo && maigoStay){ const d=pickDest(human,r,c); if(d){ dr=d[0]; dc=d[1]; } }   // 盤内移動ルール: 行き先も打った側が決めて送る
       mySeq++; pendingSeq=mySeq;
-      sendMove({ r,c,maigo,fake,dr,dc,seq:mySeq });
+      sendMove({ r,c,maigo,fake,dr,dc,seq:mySeq,from:myId,p:human });
       tryPlace(r,c,maigo,fake,dr,dc);
       return;
     }
@@ -1463,8 +1496,8 @@ function readPeerName(){   // presenceからあいての名前を取り込む
   /* 碁笥の上のラベル: 手番の名前 + とった石の数/ノルマ */
   function renderBowlTags(){
     const foe = (!local && !online) ? ("ロボット（"+LV_NAMES[cpuLv]+"）") : (online?foeLabel():"あいて");   // ロボット戦は相手の碁笥に階級を常時表示
-    const lb= local ? "先攻" : (human===BLACK)?meLabel():foe;   // ロボット戦でもアカウント名を出す(2026-09-26)
-    const lw= local ? "後攻" : (human===WHITE)?meLabel():foe;
+    const lb= (local||spectating) ? "先攻" : (human===BLACK)?meLabel():foe;   // ロボット戦でもアカウント名を出す(2026-09-26)
+    const lw= (local||spectating) ? "後攻" : (human===WHITE)?meLabel():foe;
     document.getElementById("bowlTagB").innerHTML=lb+"<b>"+capB+"/"+normNum+"</b>";
     document.getElementById("bowlTagW").innerHTML=lw+"<b>"+capW+"/"+normNum+"</b>";
   }
@@ -1538,8 +1571,10 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     restoreState(h);
     turn=requester; over=false;
     startTurn();
+    resyncSpecs();   // 観戦者の盤も合わせ直す
   }
   undoBtn.addEventListener("click",()=>{
+    if(spectating){ showToast("観戦中は操作できません"); return; }   // ★観戦者は介入できない
     if(over||anim||!hist.length) return;   // 石を置く演出の最中だけ待たせる(あいての手番でも押せる)
     ensureAudio(); playSelect();
     if(undoTries>=UNDO_MAX){ showToast("一手戻るは1ターンに"+UNDO_MAX+"回まで"); return; }
@@ -1623,6 +1658,78 @@ function readPeerName(){   // presenceからあいての名前を取り込む
   function roomStatus(html){ roomArea.innerHTML=html; }
   function presenceCount(){ try{ return Object.keys(ch.presenceState()).length; }catch(e){ return 0; } }
 
+  /* ===== 観戦モード(2026-09-27。将棋onビンゴと同じ考え方) =====
+     対局が始まったあとに同じ合言葉で入った人は観戦者になる。
+     ★観戦者はゲーム本編にいっさい介入できない(石を置く・一手戻る・降参・ackを返す のすべてを止める) */
+  let spectating=false, specKnown=new Set(), specPlayers=[], lastSeqFrom={};
+  const SPEC_EYE='<svg class="sr-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  function playerIds(){ if(specPlayers.length>=2) return specPlayers.slice(); return [myId]; }
+  function specIds(){   // 観戦者=対局者以外。入室が早い順に並べ、名前が無い人だけ「ゲスト1」「ゲスト2」…
+    try{
+      const st=ch?ch.presenceState():{}, pl=playerIds(), out=[];
+      Object.keys(st).forEach(k=>{ if(pl.indexOf(k)>=0) return;
+        const p=(st[k]&&st[k][0])||{}; out.push({ id:k, nm:(typeof p.n==="string"?p.n:"").slice(0,16), t:p.t||0 }); });
+      out.sort((a,b)=> (a.t-b.t) || (a.id<b.id?-1:1));
+      let g=0; out.forEach(o=>{ if(!o.nm) o.nm="ゲスト"+(++g); });
+      return out;
+    }catch(e){ return []; }
+  }
+  function specMyName(){ const m=specIds().filter(o=>o.id===myId)[0]; return m? m.nm : (myAcctName()||"ゲスト"); }
+  function renderSpecList(){
+    const box=document.getElementById("specList"); if(!box) return;
+    const list=specIds(), canKick = online && !spectating && isHost;   // 追放できるのはオーナーだけ
+    if(!list.length){ box.innerHTML='<div class="spec-empty">まだ誰も見ていません</div>'; return; }
+    box.innerHTML="";
+    list.forEach(o=>{
+      const row=document.createElement("div"); row.className="spec-row"; row.innerHTML=SPEC_EYE;
+      const n=document.createElement("span"); n.className="sr-nm"; n.textContent=o.nm; row.appendChild(n);
+      if(o.id===myId){ const m=document.createElement("span"); m.className="sr-me"; m.textContent="じぶん"; row.appendChild(m); }
+      else if(canKick){ const b=document.createElement("button"); b.type="button"; b.className="kick-btn"; b.textContent="追放";
+        b.addEventListener("click",()=>{ ensureAudio(); playSelect(); kickSpec(o.id,o.nm); }); row.appendChild(b); }
+      box.appendChild(row);
+    });
+  }
+  function kickSpec(id,nm){
+    if(!ch||!online||spectating||!isHost) return;
+    try{ ch.send({ type:"broadcast", event:"kick", payload:{ to:id } }); }catch(e){}
+    showToast(nm+"を追放しました");
+    setTimeout(()=>{ updateSpecBadge(); renderSpecList(); },700);
+  }
+  function updateSpecBadge(){
+    const b=document.getElementById("specBadge"); if(!b) return;
+    const show = online && !!ch && document.getElementById("gameScene").classList.contains("on");
+    const n = show ? specIds().length : 0;
+    if(!show || n<=0){ b.style.display="none"; document.getElementById("specOv").classList.remove("on"); return; }
+    document.getElementById("specNum").textContent=n; b.style.display="flex";
+    if(document.getElementById("specOv").classList.contains("on")) renderSpecList();
+  }
+  function specState(){   // 観戦者へ渡す今の局面
+    return { b:board.map(r=>r.slice()), turn:turn, over:!!over, ps:specPlayers, cb:capB, cw:capW, ...rulePayload() };
+  }
+  function sendSpec(to){ if(!ch||!isHost) return; try{ ch.send({ type:"broadcast", event:"spec", payload:{ to:to, st:specState() } }); }catch(e){} }
+  function resyncSpecs(){   // 一手戻る等で局面が飛んだ時に観戦者を合わせ直す
+    if(!isHost||!ch) return;
+    specKnown.forEach(k=>{ if(k!==myId) sendSpec(k); });
+  }
+  function applySpecState(st){   // 観戦者: 届いた局面をそのまま盤に置く(演出なし)
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+      board[r][c]=st.b[r][c];
+      const cell=cells[r][c]; cell.innerHTML=""; cell.classList.remove("taken"); stones[r][c]=null;
+      if(board[r][c]!==EMPTY){
+        const el=document.createElement("div"); el.className="stone "+(board[r][c]===BLACK?"b":"w");
+        el.style.animation="none"; cell.appendChild(el); cell.classList.add("taken"); stones[r][c]=el;
+      }
+    }
+    capB=st.cb|0; capW=st.cw|0;
+    turn=st.turn; over=!!st.over; hist=[]; undoTries=0; undoPending=false; markLast(null);
+    busy=true;                       // ★観戦者はいつでも打てない
+    startTurn(); busy=true;          // startTurnがbusyを戻すので必ず立て直す
+    setGiveupVisible(false);         // 一手戻る・降参は出さない
+    if(redrawNames) redrawNames();
+    updateSpecBadge();
+  }
+
+
   function openChannel(code, asHost, onReady){
     leaveChannel();
     isHost=asHost;
@@ -1631,15 +1738,28 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     ch.on("presence",{event:"join"},()=>{ readPeerName(); });
     ch.on("presence",{event:"sync"},()=>{
       readPeerName();
+      setTimeout(updateSpecBadge,50);
       if(isHost && !startSent && presenceCount()>=2){
         startSent=true;
+        try{ const ps=ch.presenceState();
+          specPlayers=Object.keys(ps).sort((a,b)=>(((ps[a]&&ps[a][0]||{}).t||0)-((ps[b]&&ps[b][0]||{}).t||0))).slice(0,2);
+          if(specPlayers.indexOf(myId)<0) specPlayers=[myId].concat(specPlayers).slice(0,2);
+          specPlayers.forEach(k=>specKnown.add(k));
+        }catch(e){}   // 入室が早い2人が対局者。それ以外は観戦者
         const hc=(Math.random()<0.5)?BLACK:WHITE;   // 先手(黒)はランダム
-        ch.send({ type:"broadcast", event:"start", payload:{ pn:myAcctName(), hc, ...rulePayload() } });
+        ch.send({ type:"broadcast", event:"start", payload:{ hc, pn:myAcctName(), ps:specPlayers, ...rulePayload() } });
         beginOnline(hc);
       }
+      if(isHost && startSent){   // 対局中に入ってきた人=観戦者。今の局面を渡す
+        try{ Object.keys(ch.presenceState()).forEach(k=>{ if(k===myId||specKnown.has(k)) return; specKnown.add(k); sendSpec(k); }); }catch(e){}
+      }
     });
-    ch.on("presence",{event:"leave"},()=>{
-      if(!online || presenceCount()>=2) return;
+    ch.on("presence",{event:"leave"},({key})=>{
+      setTimeout(updateSpecBadge,50);
+      if(!online) return;
+      if(spectating){ if(key && specPlayers.indexOf(key)>=0) opponentLeft(); return; }   // 観戦中は対局者が抜けた時だけ終わる
+      if(specPlayers.length>=2 && key && specPlayers.indexOf(key)<0) return;             // ★観戦者が抜けただけ=対局は続く
+      if(presenceCount()>=2 && specPlayers.length<2) return;
       if(over){   // 決着後の退出: 結果はそのまま、再戦だけ不可に
         online=false; peerGone=true; leaveChannel();
         if(resultOverlay.classList.contains("on")) rSub.textContent=foeLabel()+"は退出しました";
@@ -1648,8 +1768,10 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       opponentLeft();   // 対局中の退出
     });
     // あいてがタイトルへ戻った(明示の退出通知。presenceのleaveより確実・即時)
-    ch.on("broadcast",{event:"bye"},()=>{
+    ch.on("broadcast",{event:"bye"},({payload})=>{
       if(!online) return;
+      if(payload&&payload.spec){ setTimeout(updateSpecBadge,300); return; }   // ★観戦者が抜けても対局は続く
+      if(spectating) return;
       if(over){
         online=false; peerGone=true; leaveChannel();
         if(resultOverlay.classList.contains("on")) rSub.textContent=foeLabel()+"は退出しました";
@@ -1662,21 +1784,52 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       if(payload&&typeof payload.pn==="string") peerName=payload.pn.slice(0,16);   // 部屋主の名前
       try{ ch.send({ type:"broadcast", event:"nm", payload:{ pn:myAcctName() } }); }catch(e){}   // 自分の名前を返す
       if(isHost) return;
+      if(payload&&payload.ps&&payload.ps.length>=2){ specPlayers=payload.ps.slice(); }
+      if(specPlayers.length>=2 && specPlayers.indexOf(myId)<0){   // ★自分は対局者ではない=観戦者になるのを待つ(3人目が対局者になってしまうのを防ぐ)
+        if(spectating){ applyNetRules(payload); beginOnline(BLACK); busy=true; setGiveupVisible(false); updateSpecBadge(); }
+        return;
+      }
       applyNetRules(payload);   // 部屋主のルールを受け取って揃える
+      if(payload&&payload.ps&&payload.ps.length>=2) specPlayers=payload.ps.slice();   // 対局者2人=これ以外は観戦者
+      if(payload&&typeof payload.pn==="string"){ peerName=payload.pn.slice(0,16); }   // 部屋主の名前
       beginOnline(payload && payload.hc===BLACK ? WHITE : BLACK);
     });
     ch.on("broadcast",{event:"move"},({payload})=>{
       if(!online||!payload) return;
-      if(ch) ch.send({ type:"broadcast", event:"moveack", payload:{ seq:payload.seq } });   // 届いたことを必ず伝える(届かなければ相手が送り直してくる)
+      if(ch && !spectating) ch.send({ type:"broadcast", event:"moveack", payload:{ seq:payload.seq } });   // ★観戦者はackを返さない(相手の送り直しを誤って止めない)
       if(over) return;
       if(typeof payload.seq==="number"){
-        if(payload.seq<=lastRecvSeq) return;   // 送り直しの重複 → ackだけ返して無視(二重に打たれるのを防ぐ)
-        lastRecvSeq=payload.seq;
+        if(spectating){   // 観戦者は両者の手を受けるので「誰の何手目か」で重複を弾く
+          const k=payload.from||"?";
+          if(payload.seq<=(lastSeqFrom[k]||0)) return;
+          lastSeqFrom[k]=payload.seq;
+        }else{
+          if(payload.seq<=lastRecvSeq) return;   // 送り直しの重複 → ackだけ返して無視(二重に打たれるのを防ぐ)
+          lastRecvSeq=payload.seq;
+        }
       }
-      if(turn===human) turn=(human===BLACK)?WHITE:BLACK;   // 手番のズレを検知したら、届いた一手を信頼して補正する(自己修復)
+      if(spectating){ if(payload.p===BLACK||payload.p===WHITE) turn=payload.p; }   // 観戦者は送り主の色に合わせる
+      else if(turn===human) turn=(human===BLACK)?WHITE:BLACK;   // 手番のズレを検知したら、届いた一手を信頼して補正する(自己修復)
       const r=payload.r|0, c=payload.c|0;
       if(r<0||r>=N||c<0||c>=N||board[r][c]!==EMPTY) return;
       tryPlace(r, c, !!payload.maigo, !!payload.fake, (payload.dr==null)?-1:(payload.dr|0), (payload.dc==null)?-1:(payload.dc|0));
+    });
+    ch.on("broadcast",{event:"spec"},({payload})=>{   // 対局中に入った人=観戦者。今の局面を受け取る
+      if(!payload || payload.to!==myId || !payload.st) return;
+      if(online && !spectating) return;              // 対局者には効かない
+      const st=payload.st;
+      if(!spectating){
+        clearTimeout(joinWatch);
+        spectating=true; specPlayers=st.ps||[]; lastSeqFrom={};
+        applyNetRules(st);
+        beginOnline(BLACK);                          // 盤を作る(操作はできない)
+        showToast("とちゅうから観戦しています");
+      }
+      applySpecState(st);
+    });
+    ch.on("broadcast",{event:"kick"},({payload})=>{   // オーナーに追放された観戦者はタイトルへ
+      if(!payload||payload.to!==myId||!spectating) return;
+      showToast("オーナーから追放されました"); setTimeout(goTitle,900);
     });
     ch.on("broadcast",{event:"moveack"},({payload})=>{
       if(payload && payload.seq===pendingSeq){ clearTimeout(moveResendTimer); moveResendTimer=0; }
@@ -1688,8 +1841,8 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       rTitle.textContent=foeLabel()+"の降参"; rTitle.className="r-title win";
       rSub.textContent="あなたの勝ち"; playWin(); bumpRoomStats("win"); logResult(); document.getElementById("resultOverlay").classList.add("on");
     });
-    ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) speakStamp(payload.i|0); if(payload) spawnStamp(payload.i|0, foeLabel()); });
-    ch.on("broadcast",{event:"chat"},({payload})=>{ if(payload&&payload.t) recvChat(foeLabel(), String(payload.t).slice(0,40)); });
+    ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) speakStamp(payload.i|0); if(payload) spawnStamp(payload.i|0, (payload&&payload.w)||(payload&&payload.sp?"観戦者":foeLabel())); });
+    ch.on("broadcast",{event:"chat"},({payload})=>{ if(payload&&payload.t) recvChat(payload.w||(payload.sp?"観戦者":foeLabel()), String(payload.t).slice(0,40), "", !!payload.sp); });
     ch.on("broadcast",{event:"rematch"},()=>{
       peerRematch=true;
       if(myRematch){ if(isHost) hostRestart(); }   // 両者合意: 部屋主が先手後手を引き直して開始合図を送る
@@ -1698,6 +1851,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     ch.on("broadcast",{event:"restart"},({payload})=>{   // 再戦: 先手後手は毎回引き直し。ルールも部屋主のものに揃え直す
       if(isHost) return;
       applyNetRules(payload);
+      if(spectating){ beginOnline(BLACK); busy=true; setGiveupVisible(false); updateSpecBadge(); return; }   // 観戦のまま次の対局へ
       beginOnline(payload && payload.hc===BLACK ? WHITE : BLACK);
     });
     // 部屋主がルールを変えた(次の一局から反映)
@@ -1708,7 +1862,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     });
     // 待った(一手戻る)の申し込みが相手から届いた → 許可を尋ねる
     ch.on("broadcast",{event:"undoreq"},()=>{
-      if(!online||over||!hist.length) return;
+      if(!online||over||spectating||!hist.length) return;   // ★観戦者は許可/却下を押せない
       undoOverlay.classList.add("on");
     });
     // 相手が許可 → 双方が同じ手数だけ巻き戻す(棋譜が一致しているので結果も一致)
@@ -1724,7 +1878,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       showToast("一手戻すのは断られた");
     });
     ch.subscribe(async (status)=>{
-      if(status==="SUBSCRIBED"){ try{ await ch.track({ n:myAcctName() }); }catch(e){} if(onReady) onReady(); }
+      if(status==="SUBSCRIBED"){ try{ await ch.track({ n:myAcctName(), t:Date.now() }); }catch(e){} if(onReady) onReady(); }
       else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){
         roomStatus('<div class="room-note err">通信失敗。通信環境を見直すのだ</div>');
       }
@@ -2052,6 +2206,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
   document.addEventListener("pointerdown",function(e){ if(gvArm&&!(e.target.closest&&e.target.closest("#giveupBtn"))) resetGv(); },true);
   function resetGv(){ gvArm=0; var b=document.getElementById("giveupBtn"); if(b){ b.textContent="降参"; b.classList.remove("deny"); } }
   document.getElementById("giveupBtn").addEventListener("click",()=>{
+    if(spectating){ showToast("観戦中は操作できません"); return; }   // ★観戦者は降参できない
     if(over) return; ensureAudio();
     if(!gvArm){                                   /* 1回目=「確定」に変わる・ほかを押すと解除 */
       playSelect();
@@ -2145,9 +2300,9 @@ function logResult(){                                /* 勝敗をチャットに
 }
 var resultLogged=false;
 function chatDing(){ try{ playSelect(); }catch(e){} }
-function addChat(name,text,color){                   /* 本文は必ずtextContent(HTMLを書かれても壊れない) */
+function addChat(name,text,color,spec){              /* 本文は必ずtextContent。spec=観戦者の発言 */
   var log=document.getElementById("chatLog"); if(!log) return;
-  var d=document.createElement("div"); d.className="c-line";
+  var d=document.createElement("div"); d.className="c-line"+(spec?" c-spec":"");
   var n=document.createElement("span"); n.className="c-nm"; if(color) n.style.color=color;
   n.textContent=name+"：";
   var t=document.createElement("span"); t.textContent=text;
@@ -2164,9 +2319,9 @@ function addSys(tx,cls){                             /* システムのお知ら
 }
 function clearChat(){ var l=document.getElementById("chatLog"); if(l) l.innerHTML=""; var i=document.getElementById("chatIn"); if(i) i.value=""; hidePop(); }
 function hidePop(){ var el=document.getElementById("chatPop"); if(!el) return; [].slice.call(el.children).forEach(function(c){ clearTimeout(c._t); }); el.innerHTML=""; }
-function showPop(name,text,color){                   /* 非表示中に届いたチャットを数秒だけ(続けて届いたら下へ積む) */
+function showPop(name,text,color,spec){              /* 非表示中に届いたチャットを数秒だけ(続けて届いたら下へ積む) */
   var el=document.getElementById("chatPop"); if(!el) return;
-  var d=document.createElement("div"); d.className="pop-line";
+  var d=document.createElement("div"); d.className="pop-line"+(spec?" c-spec":"");
   var n=document.createElement("span"); n.className="c-nm"; if(color) n.style.color=color;
   n.textContent=name+"：";
   var t=document.createElement("span"); t.textContent=text;
@@ -2183,16 +2338,16 @@ function setMini(mini){
   document.getElementById("chatTog").innerHTML="<span>"+(mini?"チャット欄 表示":"チャット欄 非表示")+"</span>"+(mini?EYE_OPEN:EYE_OFF);
   if(!mini) hidePop();
 }
-function recvChat(name,text,color){                  /* 相手から届いた時 */
-  addChat(name,text,color); chatDing();
-  if(document.getElementById("chatBox").classList.contains("mini")) showPop(name,text,color);
+function recvChat(name,text,color,spec){             /* 相手から届いた時 */
+  addChat(name,text,color,spec); chatDing();
+  if(document.getElementById("chatBox").classList.contains("mini")) showPop(name,text,color,spec);
 }
 function sendChat(){
   var el=document.getElementById("chatIn"); if(!el) return;
   var t=(el.value||"").trim().slice(0,40); if(!t) return;
   el.value="";
-  addChat(meLabel(), t, "");
-  if(online&&ch){ try{ ch.send({ type:"broadcast", event:"chat", payload:{ t:t } }); }catch(e){} }   /* ロストしても実害なし */
+  addChat(spectating?specMyName():meLabel(), t, "", spectating);
+  if(online&&ch){ try{ ch.send({ type:"broadcast", event:"chat", payload:{ t:t, w:(spectating?specMyName():null), sp:spectating?1:0 } }); }catch(e){} }   /* ロストしても実害なし */
 }
 document.getElementById("chatTog").addEventListener("click",function(){ try{ ensureAudio(); playSelect(); }catch(e){}
   setMini(!document.getElementById("chatBox").classList.contains("mini")); });
@@ -2236,8 +2391,8 @@ setMini(true);   /* ★毎回「チャット欄 表示」の畳んだ状態で�
   }
   function sendStamp(i){
     speakStamp(i);   // 読み上げ(やめてよぉ/すごい/わらえる)。届いたスタンプも受け側で読み上げる(2026-09-05)
-    spawnStamp(i, online?meLabel():"自分", true);
-    if(online && ch){ try{ ch.send({ type:"broadcast", event:"stamp", payload:{ i } }); }catch(e){} }   // 相手にも届ける(ロストしても実害なし)
+    spawnStamp(i, spectating?specMyName():(local?"自分":meLabel()), true);
+    if(online && ch){ try{ ch.send({ type:"broadcast", event:"stamp", payload:{ i, w:(spectating?specMyName():null), sp:spectating?1:0 } }); }catch(e){} }   // 相手にも届ける(ロストしても実害なし)
   }
   let stampMuted=false;   /* ★毎回ミュートOFFで始める(2026-09-10牧村指示。前回ONのまま次回も止まる、を無くす=保存しない) */
   (function(){ const mb=document.getElementById("stampMute"); if(!mb) return;
@@ -2262,14 +2417,20 @@ setMini(true);   /* ★毎回「チャット欄 表示」の畳んだ状態で�
     b.addEventListener("click",()=>{ ensureAudio(); sendStamp(i); });
   });
 
+  document.getElementById("specBadge").addEventListener("click",()=>{ ensureAudio(); playSelect(); renderSpecList(); document.getElementById("specOv").classList.add("on"); });
+  document.getElementById("specClose").addEventListener("click",()=>{ ensureAudio(); playSelect(); document.getElementById("specOv").classList.remove("on"); });
+  document.getElementById("specOv").addEventListener("click",e=>{ if(e.target===document.getElementById("specOv")) document.getElementById("specOv").classList.remove("on"); });
   function goTitle(){
     { const sb=document.getElementById("chatBox"); if(sb) sb.classList.remove("on"); } clearChat();   // タイトルに戻ったらスタンプバーを隠す
     over=true; stopVictory();
-    if(online && ch){ try{ ch.send({ type:"broadcast", event:"bye", payload:{} }); }catch(e){} }   // あいてに「退出したよ」を明示的に伝える
+    if(online && ch){ try{ ch.send({ type:"broadcast", event:"bye", payload:{ spec:spectating?1:0 } }); }catch(e){} }   // あいてに「退出したよ」を明示的に伝える
     document.getElementById("confirmOverlay").classList.remove("on");
     resultOverlay.classList.remove("on","peek");
     gameScene.classList.remove("on"); titleScene.classList.add("on");
     leaveChannel();
+    spectating=false; specKnown=new Set(); specPlayers=[]; lastSeqFrom={};
+    document.getElementById("specOv").classList.remove("on");
+    document.getElementById("specBadge").style.display="none";
     roomStatus("");   // 合言葉表示をリセット
   }
   window.addEventListener("pointerdown", ensureAudio, {passive:true});

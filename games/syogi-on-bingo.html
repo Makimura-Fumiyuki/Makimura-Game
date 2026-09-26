@@ -724,10 +724,10 @@
 <!-- 待った(オンライン: あいてに確認) -->
 <div class="overlay" id="undoOv">
   <div class="r-card">
-    <div class="cf-msg">あいてが一手戻したいそうです</div>
+    <div class="cf-msg">一手戻ることを許可しますか？</div>
     <div class="sub-btns">
-      <button class="txt-btn deny" id="undoNo">だめ</button>
-      <button class="txt-btn" id="undoYes">いいよ</button>
+      <button class="txt-btn" id="undoYes">許可</button>
+      <button class="txt-btn deny" id="undoNo">却下</button>
     </div>
   </div>
 </div>
@@ -915,7 +915,7 @@ let sbc=null, ch=null, online=false, isHost=false, startSent=false, mySide=0, pe
 let mySeq=0, pendingSeq=-1, lastRecvSeq=-1, moveResendTimer=0, joinWatch=0;
 let myRematch=false, peerRematch=false, queuedMove=null, lastNetMove=null;
 let undoPending=false, undoIdx=-1, peerUndoIdx=-1;   // オンラインの待った(あいての同意を待っている間)
-const UNDO_MAX=3;   // 一手戻るの申請は1ターンにつき3回まで(2026-09-26牧村指示)
+const UNDO_MAX=1;   // 一手戻るは1ターンにつき1回まで(2026-09-27牧村指示。使ったらボタンをグレーアウト)
 let undoTries=0;    // この手番で何回申請したか(手番が変わるとゼロに戻る)
 let undoQueued=false;   // 抽選の演出中に押された=演出が終わってから実行する
 let spectating=false, specKnown=new Set(), specPlayers=[], lastSeqFrom={}, oppId=null, specUndoIdx=-1;   // 観戦モード(対局中に入室した人)
@@ -1139,7 +1139,7 @@ function renderCaps(){
 function updateBtns(){
   const busy = phase!=="idle" || (mode==="cpu"&&turn!==humanSide);
   // 一手戻るはいつでも押せる(2026-09-26牧村指示)。抽選の演出中に押した時は予約して演出後に実行する
-  $("undoBtn").disabled = !hist.length || undoPending || undoQueued || spectating || phase==="over";
+  $("undoBtn").disabled = !hist.length || undoPending || undoQueued || spectating || phase==="over" || undoTries>=UNDO_MAX;
   $("giveupBtn").disabled = phase!=="idle" || spectating;
   if($("giveupBtn").disabled) resetGv();
   { const b=$("stampCheck"), ck=canCallCheck();   // 王手している側だけ、そのスタンプ枠が「王手」ボタンに変わる(ふだんは🤣)
@@ -1612,7 +1612,7 @@ function specIds(){     // 観戦者=対局者以外。入室が早い順に並�
 function specMyName(){ const m=specIds().filter(o=>o.id===myId)[0]; return m? m.nm : (myAcctName()||"ゲスト"); }
 function renderSpecList(){
   const box=$("specList"); if(!box) return;
-  const list=specIds(), canKick = online && !spectating;   // 追放できるのは対局者だけ
+  const list=specIds(), canKick = online && !spectating && isHost;   // 追放できるのはオーナー(部屋を作った側)だけ(2026-09-27牧村指示)
   if(!list.length){ box.innerHTML='<div class="spec-empty">まだ誰も見ていません</div>'; return; }
   box.innerHTML="";
   list.forEach(o=>{
@@ -1628,7 +1628,7 @@ function renderSpecList(){
   });
 }
 function kickSpec(id, nm){
-  if(!ch||!online||spectating) return;
+  if(!ch||!online||spectating||!isHost) return;
   try{ ch.send({ type:"broadcast", event:"kick", payload:{ to:id } }); }catch(e){}
   toast(nm+"を追放しました");
   setTimeout(()=>{ updateSpecBadge(); renderSpecList(); },700);
@@ -1638,6 +1638,7 @@ function updateSpecBadge(){   // 観戦者の人数(対局中のオンライン�
   const show = online && !!ch && $("gameScene").classList.contains("on");
   if(!show){ b.style.display="none"; $("specOv").classList.remove("on"); return; }
   const n = playerIds().length>=2 ? specIds().length : Math.max(0, presenceCount()-2);
+  if(n<=0){ b.style.display="none"; $("specOv").classList.remove("on"); return; }   // 0人のときは出さない(2026-09-27牧村指示)
   $("specNum").textContent=n; b.style.display="flex";
   if($("specOv").classList.contains("on")) renderSpecList();
 }
@@ -1730,7 +1731,7 @@ function openChannel(code, asHost){
   ch.on("broadcast",{event:"bye"},({payload})=>{ if(!online) return; if(payload&&payload.spec){ setTimeout(updateSpecBadge,300); return; } opponentLeft(); });   // ★観戦者が抜けても対局は続く
   ch.on("broadcast",{event:"kick"},({payload})=>{   // 対局者に追放された観戦者はタイトルへ
     if(!payload||payload.to!==myId||!spectating) return;
-    toast("対局者に退出させられました"); setTimeout(toTitle,900);
+    toast("オーナーから追放されました"); setTimeout(toTitle,900);
   });
   ch.on("broadcast",{event:"spec"},({payload})=>{
     if(!payload || payload.to!==myId || online) return;
@@ -1785,7 +1786,6 @@ function openChannel(code, asHost){
     if(spectating){ specUndoIdx=ti; return; }          // ★観戦者はダイアログを出さない(いいよ/だめを押せた=介入バグの修正)。成立したら盤だけ追従する
     if(phase!=="idle") return;
     peerUndoIdx = ti>=0? ti : undoTargetIdx(1-mySide);
-    { const m=$("undoOv").querySelector(".cf-msg"); if(m) m.textContent=foeLabel()+"が一手戻したいそうです"; }
     $("undoOv").classList.add("on");
   });
   ch.on("broadcast",{event:"undoyes"},()=>{

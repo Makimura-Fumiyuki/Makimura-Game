@@ -667,7 +667,7 @@ const playLose  =()=>{ note(392,196,.5,"triangle",.14); note(262,131,.6,"sine",.
 let S=newS();
 let mode="local", mySide="o", cpuSide="x", cpuLv=1, sideWish="o";
 let turn="o", phase="place", over=null, endReason="", winCells=[], hist=[], turnNo=1;
-const UNDO_MAX=3;   // 一手戻るの申請は1ターンにつき3回まで(2026-09-26牧村指示)
+const UNDO_MAX=1;   // 一手戻るは1ターンにつき1回まで(2026-09-27牧村指示。使ったらボタンをグレーアウト)
 let undoTries=0;    // この手番で何回使ったか(手番が変わるとゼロに戻る)
 var resultLogged=false;                          /* 勝敗のログは1局に1回だけ */
 let skipNote=false, curT=null, thinking=false, cpuT=[];
@@ -750,7 +750,7 @@ function render(){
   $("tbMark").innerHTML=over?"":mark(turn);
   $("turnBar").classList.toggle("gray",over==="draw");
 
-  $("undoBtn").disabled=(mode==="online")||!!over||!hist.length;   // ロボットの手番でも押せる(2026-09-26牧村指示)
+  $("undoBtn").disabled=(mode==="online")||!!over||!hist.length||undoTries>=UNDO_MAX;   // ロボットの手番でも押せる/1ターン1回
   $("giveBtn").disabled=!!over;
   $("seBtn").classList.toggle("off",!seOn); $("seTx").textContent=seOn?"効果音":"効果音OFF";
 }

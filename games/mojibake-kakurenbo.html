@@ -720,7 +720,7 @@ function joinRoom(code,asHost){
   ch.on("broadcast",{event:"act"},({payload})=>{ if(payload&&isHost()) hostAct(payload); });
   ch.on("broadcast",{event:"hello"},({payload})=>{ if(!isHost()||!payload) return; const known=members.some(m=>m.id===payload.id)||hiders.some(h=>h.id===payload.id); if(phase!=="lobby"&&!known){ send("busy",{to:payload.id}); } else { sendSnap(); } });   // 既にいる人(再接続)は追い返さない
   ch.on("broadcast",{event:"busy"},({payload})=>{ if(payload&&payload.to===myId){ toast("次のゲーム開始まで待ってね"); goTitle(); } });
-  ch.on("broadcast",{event:"kick"},({payload})=>{ if(payload&&payload.to===myId){ toast("オーナーに退出させられました"); goTitle(); } });
+  ch.on("broadcast",{event:"kick"},({payload})=>{ if(payload&&payload.to===myId){ toast("オーナーから追放されました"); goTitle(); } });
   ch.on("broadcast",{event:"host"},({payload})=>{ if(!payload) return; hostId=payload.to; clearTimeout(noHostT); noHostT=0; if(payload.to===myId){ hostAt=Date.now(); try{ ch.track(myPresence()); }catch(e){} startHeartbeat(); toast("オーナーになった"); } renderMembers(); });
   ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload&&payload.from!==myId){ speakStamp(payload.i|0); spawnStamp(payload.i|0, payload.n||"？", false, payload.c); } });   // 届いたスタンプも読み上げる
   ch.on("broadcast",{event:"chat"},({payload})=>{ if(payload&&payload.t&&payload.from!==myId) recvChat(payload.n||"？", String(payload.t).slice(0,40), payload.c||""); });

@@ -1901,7 +1901,7 @@ function openChannel(c, onReady){
   });
   ch.on("broadcast",{event:"reset"},()=>{ if(!isHost){ clearArt(); drawCrema(); drawSwirl(); resetTable(); } });
   ch.on("broadcast",{event:"bye"},({payload})=>{ if(payload) onLeave(payload.id); });
-  ch.on("broadcast",{event:"kick"},({payload})=>{ if(payload && payload.to===myId && !isHost){ showToast("部屋主に退出させられました"); goTitle(); } });
+  ch.on("broadcast",{event:"kick"},({payload})=>{ if(payload && payload.to===myId && !isHost){ showToast("オーナーから追放されました"); goTitle(); } });
   ch.on("presence",{event:"leave"},({leftPresences})=>{
     (leftPresences||[]).forEach(p=>{ if(p && p.id) markGone(p.id); });   // すぐには抜けたと決めない(猶予20秒)
   });
