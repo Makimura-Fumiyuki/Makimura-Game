@@ -1352,7 +1352,7 @@ function renderBoard(){
       const plan=(mine && !pois && PLAN_TX[mine.k])? PLAN_TX[mine.k] : "";
       const pz=(!crowd && seesPoison(m,p))? p.poison.left+"ターン後 死亡" : "";
       const stk=[]; if(L) stk.push([lb,L.t,L.c,1.6]); if(pz) stk.push([ps,pz,null,1.4]); if(plan) stk.push([pl,plan,null,1.4]);
-      if(pois) stk.push([pg,(mine.dl? mine.dl+"ターン後" : "即殺"),"pill",2.2]);
+      if(pois) stk.push([pg,(mine.dl? mine.dl+"ターン後" : "即殺"),"pill",2.8]);
       [lb,ps,pl,pg].forEach(el=>{ if(el) el.style.display="none"; });
       const ys=[]; let yy=-r-0.2; stk.forEach((o,i)=>{ if(i) yy-=(stk[i-1][3]+o[3])/2+0.25; ys.push(yy); });
       const topY=ys.length? ys[ys.length-1]-stk[stk.length-1][3]/2+0.8 : 0, lim=0.95-cy, sh=(ys.length && topY<lim)? lim-topY : 0;
@@ -1377,9 +1377,9 @@ function renderBoard(){
 }
 /* 毒殺予定の札: 地つきのピルに「Nターン後」＋毒殺人狼のアイコンのドクロ(絵文字は使わない) */
 function drawPoisonPill(el,tx,y){
-  const fs=1.25, tw=[...tx].reduce((w,ch)=>w+(/[0-9]/.test(ch)? fs*.62 : fs),0), sk=2.1, gap=.35, pad=.7, w=tw+gap+sk+pad*2, h=2.1, bg="#8c2230";
+  const fs=1.25, tw=[...tx].reduce((w,ch)=>w+(/[0-9]/.test(ch)? fs*.62 : fs),0), sk=2.1, gap=.5, pad=1.15, w=tw+gap+sk+pad*2, h=2.8, bg="#d4453a";
   el.innerHTML=""; el.setAttribute("transform","translate(0 "+y.toFixed(2)+")");
-  el.appendChild(svgEl("rect",{x:-w/2,y:-h/2,width:w,height:h,rx:h/2,fill:bg,stroke:"rgba(14,11,24,.9)","stroke-width":1.5,"vector-effect":"non-scaling-stroke"}));
+  el.appendChild(svgEl("rect",{x:-w/2,y:-h/2,width:w,height:h,rx:h/2,fill:bg,stroke:"rgba(14,11,24,.9)","stroke-width":2,"vector-effect":"non-scaling-stroke"}));
   const t=svgEl("text",{x:-w/2+pad,y:0,"dominant-baseline":"central","font-size":fs,"font-weight":"900",fill:"#fff"}); t.textContent=tx; el.appendChild(t);
   const ic=svgEl("g",{transform:"translate("+(-w/2+pad+tw+gap)+" "+(-sk/2)+") scale("+(sk/24)+")"}); ic.innerHTML=ICON_G.wolf(bg); el.appendChild(ic);
 }
