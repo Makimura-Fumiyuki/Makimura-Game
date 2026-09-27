@@ -361,9 +361,12 @@
   .rl-btns .ghost{ width:170px; height:42px; padding:0; border:1.5px solid rgba(244,239,230,.35); border-radius:14px; background:transparent;
     color:rgba(244,239,230,.82); font-size:13px; font-weight:800; cursor:pointer; }   /* とじるより控えめ */
   .rl-ic{ position:relative; }
-  .rl-you{ position:absolute; bottom:2px; left:50%; transform:translateX(-50%); height:12px; padding:0 3px; line-height:12px; border-radius:999px; background:var(--gold); color:#3a2a06; font-size:7.5px; letter-spacing:-.02em; font-weight:900; white-space:nowrap; }   /* あなた=アイコンの中の下の真ん中 */
-  .rl-cnt{ position:absolute; right:3px; bottom:1px; font-size:11px; font-weight:900; line-height:1; color:#fff; text-shadow:0 0 2px rgba(0,0,0,.8),0 0 2px rgba(0,0,0,.8); }   /* 今回の人数=アイコンの中の右下 */
-  .rl-item.off{ opacity:.32; filter:grayscale(1); }   /* 全役職を確認: 今回いない役職 */
+  .rl-you{ position:absolute; bottom:5px; left:50%; transform:translateX(-50%); height:11px; padding:0 2px; line-height:11px; border-radius:999px; background:var(--gold); color:#3a2a06; font-size:7px; letter-spacing:-.04em; font-weight:900; white-space:nowrap; }   /* あなた=アイコンの中の下の真ん中 */
+  .rl-cnt{ position:absolute; right:1px; bottom:0; font-size:9px; letter-spacing:-.06em; font-weight:900; line-height:1; color:#fff; text-shadow:0 0 2px rgba(0,0,0,.8),0 0 2px rgba(0,0,0,.8); }   /* 今回の人数=アイコンの中の右下 */
+  .rl-item.off{ opacity:.32; filter:grayscale(1); }
+  .rl-item.me .rl-ic{ border-radius:12px; box-shadow:0 0 0 2.5px var(--gold),0 0 14px rgba(232,182,71,.75); animation:rlMe 1.6s ease-in-out infinite; }   /* 自分の役職=金の輪で目立たせる */
+  .rl-item.me .rl-nm{ color:var(--gold); }
+  @keyframes rlMe{ 0%,100%{ box-shadow:0 0 0 2.5px var(--gold),0 0 8px rgba(232,182,71,.45); } 50%{ box-shadow:0 0 0 2.5px var(--gold),0 0 18px rgba(232,182,71,.95); } }   /* 全役職を確認: 今回いない役職 */
   .rd-icon svg{ width:100%; height:100%; display:block; }
   .rd-badges{ display:flex; gap:6px; flex-wrap:wrap; }
   .team-badge{ width:72px; height:20px; line-height:20px; text-align:center; border-radius:999px; font-size:11px; font-weight:900; color:#fff; }
@@ -757,7 +760,7 @@ const ICON_G={
   villager:c=>'<circle cx="12" cy="8.8" r="3.5" fill="#fff"/><path d="M5.6 19.3c.6-3.5 3.1-5.5 6.4-5.5s5.8 2 6.4 5.5z" fill="#fff"/>',
   seer:c=>'<circle cx="12" cy="10.4" r="5.2" fill="#fff"/><path d="M7.6 19.4h8.8l-1.5-3h-5.8z" fill="#fff"/><path d="M10.1 7.6l.6 1.5 1.5.6-1.5.6-.6 1.5-.6-1.5-1.5-.6 1.5-.6z" fill="'+c+'"/>',
   hawk:c=>'<path d="M3.6 12c2.3-3.7 5.1-5.5 8.4-5.5s6.1 1.8 8.4 5.5c-2.3 3.7-5.1 5.5-8.4 5.5S5.9 15.7 3.6 12z" fill="#fff"/><circle cx="12" cy="12" r="2.9" fill="'+c+'"/><circle cx="13" cy="11" r=".9" fill="#fff"/>',
-  wolf:c=>'<g transform="translate(12 12) scale(1.12) translate(-15.6 -15.45)"><path d="M10.8 16.6l9.6 5.2M20.4 16.6l-9.6 5.2" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/><circle cx="10.4" cy="16.1" r="1" fill="#fff"/><circle cx="10.4" cy="22.3" r="1" fill="#fff"/><circle cx="20.8" cy="16.1" r="1" fill="#fff"/><circle cx="20.8" cy="22.3" r="1" fill="#fff"/><path d="M15.6 8.6a4.9 4.9 0 0 1 4.9 4.9c0 1.7-.8 3-2 3.8v2.2h-5.8v-2.2c-1.2-.8-2-2.1-2-3.8a4.9 4.9 0 0 1 4.9-4.9z" fill="#fff" stroke="'+c+'" stroke-width="1.1" stroke-linejoin="round"/><circle cx="13.8" cy="13.6" r="1.35" fill="'+c+'"/><circle cx="17.4" cy="13.6" r="1.35" fill="'+c+'"/><path d="M15.6 15.4l.8 1.2h-1.6z" fill="'+c+'"/><path d="M14.5 17.9v1.6M15.6 17.9v1.6M16.7 17.9v1.6" stroke="'+c+'" stroke-width=".7"/></g>',   // 毒殺人狼=ドクロ
+  wolf:c=>'<g transform="translate(12 10.5) scale(1.12) translate(-15.6 -15.45)"><path d="M10.8 16.6l9.6 5.2M20.4 16.6l-9.6 5.2" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/><circle cx="10.4" cy="16.1" r="1" fill="#fff"/><circle cx="10.4" cy="22.3" r="1" fill="#fff"/><circle cx="20.8" cy="16.1" r="1" fill="#fff"/><circle cx="20.8" cy="22.3" r="1" fill="#fff"/><path d="M15.6 8.6a4.9 4.9 0 0 1 4.9 4.9c0 1.7-.8 3-2 3.8v2.2h-5.8v-2.2c-1.2-.8-2-2.1-2-3.8a4.9 4.9 0 0 1 4.9-4.9z" fill="#fff" stroke="'+c+'" stroke-width="1.1" stroke-linejoin="round"/><circle cx="13.8" cy="13.6" r="1.35" fill="'+c+'"/><circle cx="17.4" cy="13.6" r="1.35" fill="'+c+'"/><path d="M15.6 15.4l.8 1.2h-1.6z" fill="'+c+'"/><path d="M14.5 17.9v1.6M15.6 17.9v1.6M16.7 17.9v1.6" stroke="'+c+'" stroke-width=".7"/></g>',   // 毒殺人狼=ドクロ
   medium:c=>'<path d="M6 19.6V11a6 6 0 0 1 12 0v8.6l-1.5-1.6-1.5 1.6-1.5-1.6-1.5 1.6-1.5-1.6-1.5 1.6-1.5-1.6z" fill="#fff"/><circle cx="9.9" cy="10.9" r="1.1" fill="'+c+'"/><circle cx="14.1" cy="10.9" r="1.1" fill="'+c+'"/>',
   doctor:c=>'<path d="M9.2 3.6h5.6v1.7h-.9v4.2l4.8 7.8a1.8 1.8 0 0 1-1.5 2.7H6.8a1.8 1.8 0 0 1-1.5-2.7l4.8-7.8V5.3h-.9z" fill="#fff"/><path d="M8 14.3h8l2.2 3.6a1 1 0 0 1-.8 1.5H6.6a1 1 0 0 1-.8-1.5z" fill="'+c+'"/><circle cx="10.6" cy="16.8" r=".9" fill="#fff"/><circle cx="13.6" cy="15.9" r=".6" fill="#fff"/>',   // 科学者風=フラスコ
   talker:c=>'<g transform="translate(12 12) scale(.8) translate(-12 -12)"><path d="M4 6.2h16a1.4 1.4 0 0 1 1.4 1.4v7.6a1.4 1.4 0 0 1-1.4 1.4h-8.6L7 20.2V16.6H4a1.4 1.4 0 0 1-1.4-1.4V7.6A1.4 1.4 0 0 1 4 6.2z" fill="#fff"/><circle cx="8.4" cy="11.4" r="1.05" fill="'+c+'"/><circle cx="12" cy="11.4" r="1.05" fill="'+c+'"/><circle cx="15.6" cy="11.4" r="1.05" fill="'+c+'"/></g>',
@@ -765,14 +768,15 @@ const ICON_G={
   miner:c=>'<g transform="translate(12 12) scale(1.12) translate(-15.6 -15)"><path d="M19.3 10.7c.5-1.6 1.5-2.4 2.8-2.4" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/><rect x="17.3" y="10.4" width="3" height="2.4" rx=".5" transform="rotate(45 18.8 11.6)" fill="#fff" stroke="'+c+'" stroke-width="1.1"/><circle cx="14.9" cy="16.3" r="5.4" fill="#fff" stroke="'+c+'" stroke-width="1.3"/><path d="M11.9 15a3.4 3.4 0 0 1 1.8-1.9" fill="none" stroke="'+c+'" stroke-width="1.2" stroke-linecap="round"/></g>',   // 地雷人狼=爆弾(着火の火花なし)
   mad:c=>'<circle cx="12" cy="12" r="6.7" fill="#fff"/><circle cx="9.5" cy="10.3" r="1.25" fill="'+c+'"/><circle cx="14.7" cy="9.7" r=".8" fill="'+c+'"/><path d="M8.2 14.1l1.25 1.35 1.25-1.35 1.3 1.35 1.3-1.35 1.25 1.35 1.25-1.35" fill="none" stroke="'+c+'" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/>'
 };
-/* 役職アイコン=陣営の色の角丸四角(市民=緑・人狼=赤・第三=黄)＋役職ごとの色の絵(2026-09-27)。
-   絵の色は地の色と同系にならないものを選ぶ(白のままでもよい)。絵の中の抜き(目など)は地の色で塗る */
-const TEAM_BG={ village:"#3b8f4f", wolf:"#c9432f", third:"#d9a520" };
-const GLYPH_COL={ villager:"#ffffff", seer:"#cfe8ff", hawk:"#fff0a0", medium:"#e4ddff", doctor:"#ffe0bd", talker:"#ffd36b", sensitive:"#ffd0e3",
-  wolf:"#231c26", miner:"#231c26", mad:"#fff0a0" };
-function roleIcon(r){ const tm=TEAM_OF[r]||"village", bg=TEAM_BG[tm], gc=GLYPH_COL[r]||"#fff";
-  const g=(ICON_G[r]||ICON_G.villager)(bg).replace(/#fff\b/g,gc);
-  return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="'+bg+'"/>'+g+'</svg>'; }
+/* 役職アイコン=役職ごとの色の角丸四角＋白い絵＋陣営の色の枠(市民=緑・人狼=赤・第三=黄。陣営名の文字は入れない)。plain=枠なし(ボタンの中の小さいアイコン用) */
+const TEAM_FRAME={ village:"#34c35e", wolf:"#ff4a36", third:"#f2c230" };
+function roleIcon(r,plain){ const c=ROLE_COL[r]||ROLE_COL.villager, g=(ICON_G[r]||ICON_G.villager)(c);
+  if(plain) return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="'+c+'"/>'+g+'</svg>';
+  const f=TEAM_FRAME[TEAM_OF[r]||"village"];
+  return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" rx="5.4" fill="'+c+'"/>'
+    +'<g transform="translate(12 12) scale(.86) translate(-12 -12)">'+g+'</g>'
+    +'<rect x="1.95" y="1.95" width="20.1" height="20.1" rx="4.6" fill="none" stroke="rgba(15,12,24,.45)" stroke-width=".5"/>'
+    +'<rect x="1" y="1" width="22" height="22" rx="5.4" fill="none" stroke="'+f+'" stroke-width="1.8"/></svg>'; }
 const TEAM_OF={ villager:"village", seer:"village", hawk:"village", medium:"village", doctor:"village", talker:"village", sensitive:"village", wolf:"wolf", miner:"wolf", mad:"wolf" };   // 第三陣営を足す時は"third"(黄色)
 const TEAM_NAME={ village:"市民陣営", wolf:"人狼陣営", third:"第三陣営" };
 const ROLE_SHORT={
@@ -1705,8 +1709,8 @@ function openRole(){ const m=me(); if(!m) return; showRoleOv(m.role,"あなた�
 /* 役職確認: 今回いる役職を陣営ごとのグリッドで(自分の役職は先頭に「あなた」バッジ)。いない役職は「未使用役職も確認」から別のダイアログで。
    役職を押すと詳細、詳細を閉じると(枠外タップも)元の一覧に戻る */
 let roleBack=null;
-function rlCell(r,mine,cnt){ return '<button type="button" class="rl-item'+(cnt?"":" off")+'" data-rr="'+r+'"><span class="rl-ic">'+roleIcon(r)
-  +(r===mine?'<span class="rl-you">あなた</span>':'')+(cnt?'<span class="rl-cnt">'+cnt+'</span>':'')+'</span><span class="rl-nm">'+ROLE_NAME[r]+'</span></button>'; }   // cnt=今回の人数(0=いない→グレー)
+function rlCell(r,mine,cnt){ return '<button type="button" class="rl-item'+(cnt?"":" off")+(r===mine?" me":"")+'" data-rr="'+r+'"><span class="rl-ic">'+roleIcon(r)
+  +(r===mine?'<span class="rl-you">あなた</span>':'')+(cnt?'<span class="rl-cnt">×'+cnt+'</span>':'')+'</span><span class="rl-nm">'+ROLE_NAME[r]+'</span></button>'; }   // cnt=今回の人数(0=いない→グレー)
 function rlCounts(){ const c={}; (G? G.players : []).forEach(p=>{ c[p.role]=(c[p.role]||0)+1; }); return c; }
 function rlUsed(){ return new Set(Object.keys(rlCounts())); }
 const RL_TEAMS=[["village","市民陣営"],["wolf","人狼陣営"],["third","第三陣営"]];
