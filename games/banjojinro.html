@@ -377,8 +377,19 @@
   .snd-btn .slash{ display:none; }
   .snd-btn.off .wave{ display:none; }
   .snd-btn.off .slash{ display:block; }
-  #roleBtn{ top:12px; display:none; }
-  #gameScene.on ~ #roleBtn{ display:flex; }
+  #roleBtn, #memBtn{ top:12px; display:none; width:96px; justify-content:center; padding:7px 0; }
+  #memBtn{ top:54px; }                                            /* 参加者=役職確認の下 */
+  #gameScene.on ~ #roleBtn, #gameScene.on ~ #memBtn{ display:flex; }
+  .mem-list{ display:flex; flex-direction:column; gap:6px; margin:2px 0 4px; }
+  .mem-row{ display:flex; align-items:center; gap:8px; height:40px; padding:0 8px 0 12px; border-radius:10px; background:rgba(244,239,230,.07); font-size:13.5px; font-weight:800; }
+  .mem-row .p-dot{ width:12px; height:12px; border-radius:50%; flex:none; }
+  .mem-row .nm{ flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left; }
+  .mem-row .mt{ flex:none; height:18px; line-height:18px; padding:0 7px; border-radius:999px; font-size:9.5px; font-weight:900; background:rgba(244,239,230,.14); color:var(--card); }
+  .mem-row .mt.own{ background:var(--gold); color:#3a2a06; }
+  .mem-row .mt.gone{ background:none; color:rgba(244,239,230,.5); }
+  .mem-kick{ flex:none; width:64px; height:28px; padding:0; border-radius:999px; border:1.5px solid rgba(224,83,61,.75); background:transparent; color:#ff8a74;
+    font-size:11.5px; font-weight:900; cursor:pointer; }
+  .mem-kick.arm{ background:#c9432f; border-color:#c9432f; color:#fff; }   /* 1回目=「確定」に変わる */
 
   .overlay{ position:fixed; inset:0; z-index:80; display:flex; align-items:center; justify-content:center; padding:18px;
     background:rgba(10,8,20,.72); opacity:0; pointer-events:none; transition:opacity .24s; }
@@ -627,7 +638,7 @@
   <div class="dbg" id="dbg" style="display:none;"></div>
 </div>
 
-<button class="snd-btn" id="roleBtn">役職確認</button>
+<button class="snd-btn" id="roleBtn">役職確認</button><button class="snd-btn" id="memBtn">参加者</button>
 <a class="home-foot" href="../index.html">牧村が作ったゲーム集へ</a>
 
 <div id="chatBox">
@@ -653,6 +664,10 @@
 <div class="overlay" id="roleListOv">
   <div class="r-card rl-card"><div id="roleList"></div>
     <div class="rl-btns"><button class="ghost" id="roleUnusedBtn">全役職を確認</button><button class="close" id="roleListClose">とじる</button></div></div>
+</div>
+<div class="overlay" id="memOv">
+  <div class="r-card rl-card"><div class="rl-sec">参加者</div><div class="mem-list" id="memList"></div>
+    <div class="rl-btns"><button class="close" id="memClose">とじる</button></div></div>
 </div>
 <div class="overlay" id="roleUnusedOv">
   <div class="r-card rl-card"><div id="roleUnused"></div><div class="rl-btns"><button class="close" id="roleUnusedClose">とじる</button></div></div>
@@ -838,12 +853,13 @@ const ICON_G={
 };
 /* 役職アイコン=役職ごとの色の角丸四角＋白い絵＋陣営の色の枠(市民=緑・人狼=赤・第三=黄。陣営名の文字は入れない)。plain=枠なし(ボタンの中の小さいアイコン用) */
 const TEAM_FRAME={ village:"#34c35e", wolf:"#ff4a36", third:"#f2c230" };
+let RI_N=0;
 function roleIcon(r,plain){ const c=ROLE_COL[r]||ROLE_COL.villager, g=(ICON_G[r]||ICON_G.villager)(c);
   if(plain) return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="'+c+'"/>'+g+'</svg>';
-  const f=TEAM_FRAME[TEAM_OF[r]||"village"];
-  return '<svg viewBox="0 0 24 24" aria-hidden="true" style="overflow:visible"><rect x="1" y="1" width="22" height="22" rx="5.4" fill="'+c+'"/>'
+  const f=TEAM_FRAME[TEAM_OF[r]||"village"], cid="ric"+(++RI_N);
+  return '<svg viewBox="0 0 24 24" aria-hidden="true"><defs><clipPath id="'+cid+'"><rect x="1" y="1" width="22" height="22" rx="5.4"/></clipPath></defs><rect x="1" y="1" width="22" height="22" rx="5.4" fill="'+c+'"/>'
     +'<g transform="translate(12 12) scale(.86) translate(-12 -12)">'+g+'</g>'
-    +'<rect x="1" y="1" width="22" height="22" rx="5.4" fill="none" stroke="#fff" stroke-width="3" vector-effect="non-scaling-stroke"/>'   // ★白い線=枠の内側と外側に画面上で0.5pxずつ(白3pxの上に本線2px)
+    +'<rect x="1" y="1" width="22" height="22" rx="5.4" fill="none" stroke="#fff" stroke-width="3.6" vector-effect="non-scaling-stroke" clip-path="url(#'+cid+')"/>'   // ★白い線=枠の内側だけ画面上で0.8px(白3.6pxを内側だけ切り抜き、上に本線2px)
     +'<rect x="1" y="1" width="22" height="22" rx="5.4" fill="none" stroke="'+f+'" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>'; }   // 枠=画面上で2px・地と同じ形の上に重ねるのですき間なし
 const TEAM_OF={ villager:"village", seer:"village", hawk:"village", medium:"village", doctor:"village", talker:"village", sensitive:"village", wolf:"wolf", miner:"wolf", mad:"wolf" };   // 第三陣営を足す時は"third"(黄色)
 const TEAM_NAME={ village:"市民陣営", wolf:"人狼陣営", third:"第三陣営" };
@@ -1901,6 +1917,28 @@ document.querySelectorAll(".overlay").forEach(o=>{ if(o.id==="resultOv") return;
 function openRoleInfo(role,pid){ const m=me(); if(m && pid===m.id){ openRole(); return; } showRoleOv(role,"役職"); }
 $("roleClose").onclick=()=>{ ensureAudio(); playSelect(); closeRoleOv(); };
 $("roleBtn").onclick=()=>{ ensureAudio(); playSelect(); openRoleList(); };
+/* ★参加者一覧(2026-09-28)=誰がいるか・オーナーは追放できる(2回押し=1回目で「確定」)。死亡は出さない(公表前の死亡が分かってしまうため) */
+let memArm="";
+function renderMem(){ if(!G) return;
+  const canKick = online && isHost && !debug && !cpuMode;
+  $("memList").innerHTML=G.players.map(p=>{ const me0=p.id===myId, gone=p.cause==="gone";
+    const tag = gone? '<span class="mt gone">退出</span>' : (p.id===hostId? '<span class="mt own">オーナー</span>' : "") + (me0? '<span class="mt">あなた</span>' : "");
+    const kb = (canKick && !me0 && !gone)? '<button class="mem-kick'+(memArm===p.id?" arm":"")+'" data-kk="'+esc(p.id)+'">'+(memArm===p.id?"確定":"追放")+'</button>' : "";
+    return '<div class="mem-row"><span class="p-dot" style="background:'+p.c+'"></span><span class="nm">'+esc(p.n)+'</span>'+tag+kb+'</div>'; }).join("");
+  $("memList").querySelectorAll("[data-kk]").forEach(b=>b.onclick=e=>{ e.stopPropagation(); ensureAudio(); const id=b.dataset.kk;
+    if(memArm!==id){ playTick(); memArm=id; renderMem(); return; }
+    memArm=""; playSelect(); kickPlayer(id); renderMem(); });
+}
+function kickPlayer(id){                       // オーナーが対戦中に追放=その人は「退出」で死亡あつかい(すぐ公表)
+  if(!isHost||!ch||id===myId) return;
+  kickedAt[id]=Date.now();
+  try{ ch.send({type:"broadcast",event:"kick",payload:{to:id}}); }catch(e){}
+  lobby=lobby.filter(q=>q.id!==id);
+  const p=G&&pById(id); if(p && p.alive){ die(p,"gone"); p.pub=true; if(!checkWin()) bump(); } else if(G) bump();
+}
+$("memBtn").onclick=()=>{ ensureAudio(); playSelect(); memArm=""; renderMem(); $("memOv").classList.add("on"); };
+$("memClose").onclick=()=>{ ensureAudio(); playSelect(); memArm=""; $("memOv").classList.remove("on"); };
+$("memOv").addEventListener("click",e=>{ if(memArm && !e.target.closest("[data-kk]")){ memArm=""; renderMem(); } });
 function causeText(p){ if(p.alive) return "生存"; const k=pById(p.killer);
   return p.cause==="poison"? (k? esc(k.n)+"が毒殺" : "毒殺") : p.cause==="hang"? "吊られた" : p.cause==="mine"? "地雷を踏んだ" : p.cause==="gone"? "退出" : "死亡"; }
 function openResult(){
@@ -1997,6 +2035,7 @@ function onState(){
     if(mineIn && !debug) playWhisper();
   });
   G.players.forEach(p=>{ if(!p.alive && p.cause==="gone" && !(seen.gone||(seen.gone={}))[p.id]){ seen.gone[p.id]=1; addSys(p.n+" が退出した"); toast(p.n+" が退出した"); } });
+  if($("memOv").classList.contains("on")) renderMem();   // 参加者一覧を開いている間も最新に
 }
 
 /* ================= チャット/スタンプの使い方(2026-09-25) =================
@@ -2095,6 +2134,7 @@ function onLeave(id){
   lobby=lobby.filter(q=>q.id!==id);   // 「◯◯ が退出した」はonStateで全員の画面に出す
   if(!checkWin()) bump();
 }
+var kickedAt={};   // 追放した人(自動の名乗り直しで戻ってこないように60秒おぼえる)
 let earlyLobby=false;   // 参加者が結果から先にロビーへ戻っている(オーナーはまだ結果画面)
 function guestEarlyLobby(){ earlyLobby=true; G=null; phaseUI="lobby"; document.querySelectorAll(".overlay").forEach(o=>o.classList.remove("on","peek")); showScene("lobbyScene"); renderLobby(); }
 function hostToLobby(){
@@ -2144,6 +2184,7 @@ function openChannel(c,onReady){
   ch=sbClient().channel("bj-"+c,{ config:{ presence:{ key:myId } } });
   ch.on("broadcast",{event:"hello"},({payload})=>{
     if(!isHost||!payload) return; cancelGone(payload.id);
+    if(kickedAt[payload.id] && Date.now()-kickedAt[payload.id]<60000){ try{ ch.send({type:"broadcast",event:"kick",payload:{to:payload.id}}); }catch(e){} return; }   // 追放した人は戻さない
     if(lobbyById(payload.id)){ sendSnap(); return; }                       // もういる(再接続)
     if(phaseUI==="game"||lobby.length>=MAX_P){ try{ ch.send({type:"broadcast",event:"locked",payload:{to:payload.id,full:phaseUI!=="game"}}); }catch(e){} return; }
     lobby.push({ id:payload.id, n:String(payload.n||"").slice(0,16), c:nextColor(), t:Date.now() });
@@ -2172,7 +2213,7 @@ function openChannel(c,onReady){
       startHb(); renderLobby(); sendSnap(); toast("あなたがオーナーになりました"); }
     else if(payload.from!==myId && hostId!==payload.to){ hostId=payload.to; lastVer=-1; const p=lobbyById(payload.to); toast((p&&p.n||"")+" がオーナーになりました"); renderLobby(); } });
   ch.on("broadcast",{event:"bye"},({payload})=>{ if(payload) onLeave(payload.id); });
-  ch.on("broadcast",{event:"kick"},({payload})=>{ if(payload&&payload.to===myId&&!isHost){ toast("オーナーに退出させられました"); goTitle(); } });
+  ch.on("broadcast",{event:"kick"},({payload})=>{ if(payload&&payload.to===myId&&!isHost){ toast("オーナーから追放されました"); goTitle(); } });
   ch.on("presence",{event:"leave"},({leftPresences})=>{ (leftPresences||[]).forEach(p=>{ if(!p||!p.id) return;
     markGone(p.id, phaseUI==="lobby"? LOBBY_GRACE : GONE_GRACE); }); });
   ch.on("presence",{event:"join"},({newPresences})=>{ (newPresences||[]).forEach(p=>{ if(p&&p.id) cancelGone(p.id); }); });
@@ -2257,7 +2298,7 @@ function renderLobby(){
   $("ruleReset").onclick=()=>{ ensureAudio(); playSelect(); rules=Object.assign({},DEF_RULES); renderLobby(); sendSnap(); };
   $("lobbyBox").querySelectorAll("[data-xfer]").forEach(b=>b.onclick=()=>{ ensureAudio(); playSelect(); transferHost(b.dataset.xfer); });
   $("lobbyBox").querySelectorAll("[data-kick]").forEach(b=>b.onclick=()=>{ ensureAudio(); playSelect(); const id=b.dataset.kick;
-    lobby=lobby.filter(p=>p.id!==id); try{ ch.send({type:"broadcast",event:"kick",payload:{to:id}}); }catch(e){} renderLobby(); sendSnap(); });
+    kickedAt[id]=Date.now(); lobby=lobby.filter(p=>p.id!==id); try{ ch.send({type:"broadcast",event:"kick",payload:{to:id}}); }catch(e){} renderLobby(); sendSnap(); });
   const ls=$("lobbyStart"); if(ls) ls.onclick=()=>{ ensureAudio(); playSelect();
     if(!(lobby.length>=MIN_P&&lobby.length<=MAX_P)) return;
     const e=roleErr(lobby.length); if(e){ toast(e); return; }
@@ -2691,6 +2732,9 @@ sc("ダイアログ","役職：毒殺人狼（仲間あり）",()=>{ sgG(RW,{ po
 sc("ダイアログ","役職：狂人",()=>{ sgG(RM); openRole(); });
 sc("ダイアログ","役職確認（占い師）",()=>{ sgG(RS); openRoleList(); });
 sc("ダイアログ","役職確認（毒殺人狼）",()=>{ sgG(RW,{ pos:WPOS }); openRoleList(); });
+sc("ダイアログ","参加者（オーナー＝追放できる）",()=>{ sgG(RV,{ set:g=>{ sgKill(g.players[5],"gone"); } }); online=true; isHost=true; hostId=myId; renderMem(); $("memOv").classList.add("on"); });
+sc("ダイアログ","参加者（追放の確定待ち）",()=>{ sgG(RV); online=true; isHost=true; hostId=myId; memArm="g2"; renderMem(); $("memOv").classList.add("on"); });
+sc("ダイアログ","参加者（参加者側）",()=>{ sgG(RV); online=true; isHost=false; hostId="g1"; renderMem(); $("memOv").classList.add("on"); });
 sc("ダイアログ","役職確認：全役職",()=>{ sgG(RS); openRoleUnused(); });
 sc("ダイアログ","役職確認（占い師が2人・毒殺人狼が2人）",()=>{ sgG(["seer","wolf","seer","villager","wolf","mad","hawk"],{ pos:[[3,3],[4,3],[3,4],[5,5],[1,1],[6,6],[0,6]] }); openRoleList(); });
 sc("ダイアログ","全役職（占い師が2人・毒殺人狼が2人）",()=>{ sgG(["seer","wolf","seer","villager","wolf","mad","hawk"],{ pos:[[3,3],[4,3],[3,4],[5,5],[1,1],[6,6],[0,6]] }); openRoleUnused(); });
