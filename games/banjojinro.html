@@ -425,8 +425,8 @@
   .rl-ic{ position:relative; }
   .rl-cnt{ position:absolute; right:0; bottom:0; font-size:11.5px; letter-spacing:-.06em; font-weight:900; line-height:1; color:#fff; text-shadow:0 0 2px rgba(0,0,0,.8),0 0 2px rgba(0,0,0,.8); }   /* 今回の人数=アイコンの中の右下 */
   .rl-item.off{ opacity:.32; filter:grayscale(1); }
-  .rl-you{ position:absolute; left:0; bottom:-1px; height:13px; line-height:13px; padding:0 4px; border-radius:999px; background:var(--gold); color:#3a2a06;
-    font-size:8.5px; font-weight:900; letter-spacing:.02em; box-shadow:0 0 0 1.5px rgba(20,16,32,.55); }   /* 自分の役職=左下(×Nと同じ高さ) */
+  .rl-you{ position:absolute; left:-2px; bottom:-.35px; height:11.7px; line-height:11.7px; padding:0 3.6px; border-radius:999px; background:var(--gold); color:#3a2a06;
+    font-size:7.65px; font-weight:900; letter-spacing:.02em; }   /* 自分の役職=左下(×Nと同じ高さ) */
   /* 全役職を確認: 今回いない役職 */
   .rd-icon svg{ width:100%; height:100%; display:block; }
   .rd-badges{ display:flex; gap:6px; flex-wrap:wrap; }
@@ -837,14 +837,13 @@ const ICON_G={
 };
 /* 役職アイコン=役職ごとの色の角丸四角＋白い絵＋陣営の色の枠(市民=緑・人狼=赤・第三=黄。陣営名の文字は入れない)。plain=枠なし(ボタンの中の小さいアイコン用) */
 const TEAM_FRAME={ village:"#34c35e", wolf:"#ff4a36", third:"#f2c230" };
-let RI_N=0;
 function roleIcon(r,plain){ const c=ROLE_COL[r]||ROLE_COL.villager, g=(ICON_G[r]||ICON_G.villager)(c);
   if(plain) return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="'+c+'"/>'+g+'</svg>';
-  const f=TEAM_FRAME[TEAM_OF[r]||"village"], cid="ric"+(++RI_N);
-  return '<svg viewBox="0 0 24 24" aria-hidden="true"><defs><clipPath id="'+cid+'"><rect x="1" y="1" width="22" height="22" rx="5.4"/></clipPath></defs><rect x="1" y="1" width="22" height="22" rx="5.4" fill="'+c+'"/>'
+  const f=TEAM_FRAME[TEAM_OF[r]||"village"];
+  return '<svg viewBox="0 0 24 24" aria-hidden="true" style="overflow:visible"><rect x="1" y="1" width="22" height="22" rx="5.4" fill="'+c+'"/>'
     +'<g transform="translate(12 12) scale(.86) translate(-12 -12)">'+g+'</g>'
-    +'<rect x="1" y="1" width="22" height="22" rx="5.4" fill="none" stroke="#fff" stroke-width="4" vector-effect="non-scaling-stroke" clip-path="url(#'+cid+')"/>'   // ★白い線=枠の内側に画面上で1px(内側だけ見えるように切り抜く)
-    +'<rect x="1" y="1" width="22" height="22" rx="5.4" fill="none" stroke="'+f+'" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>'; }   // 枠=画面上で2px・地と同じ形の上に重ねるのですき間なし
+    +'<rect x="1" y="1" width="22" height="22" rx="5.4" fill="none" stroke="#fff" stroke-width="5" vector-effect="non-scaling-stroke"/>'   // ★白い線=枠の内側と外側に画面上で1pxずつ(白5pxの上に本線3px)
+    +'<rect x="1" y="1" width="22" height="22" rx="5.4" fill="none" stroke="'+f+'" stroke-width="3" vector-effect="non-scaling-stroke"/></svg>'; }   // 枠=画面上で2px・地と同じ形の上に重ねるのですき間なし
 const TEAM_OF={ villager:"village", seer:"village", hawk:"village", medium:"village", doctor:"village", talker:"village", sensitive:"village", wolf:"wolf", miner:"wolf", mad:"wolf" };   // 第三陣営を足す時は"third"(黄色)
 const TEAM_NAME={ village:"市民陣営", wolf:"人狼陣営", third:"第三陣営" };
 const ROLE_SHORT={
@@ -1424,7 +1423,7 @@ function renderBoard(){
         g.appendChild(svgEl("circle",{cx:0,cy:0,r:4.4,class:"ring",style:"display:none"}));
         g.appendChild(svgEl("text",{x:0,y:0,"text-anchor":"middle","dominant-baseline":"central",class:"plb","font-size":"1.53"}));   // 札(2.3の2/3)
         g.appendChild(svgEl("text",{x:0,y:0,"text-anchor":"middle","dominant-baseline":"central",class:"plb psn","font-size":"1.3",fill:"#ff8fb0"}));
-        g.appendChild(svgEl("text",{x:0,y:0,"text-anchor":"middle","dominant-baseline":"central",class:"plb pln","font-size":"1.3",fill:"#f3c85a"}));
+        g.appendChild(svgEl("g",{class:"pln",style:"display:none"}));   // 自分だけに見える「占い予定」「治療予定」=地つきのバッジ
         g.appendChild(svgEl("g",{class:"pgp",style:"display:none"}));   // 毒殺予定=「Nターン後 ☠」の札(地つき)   // 自分だけに見える「占い予定」など   // ドクターだけに見える毒「Nターン後 死亡」
         layer.appendChild(g); pieceEls[p.id]=g;
       }
@@ -1445,15 +1444,17 @@ function renderBoard(){
       const pEff=(!crowd && !pois && pg && m && p.poison && p.poison.by===m.id && p.poison.left>0)? p.poison.left : 0;   // ★盛った毒が効いている間も(自分が盛った相手だけ)
       const plan=(mine && !pois && PLAN_TX[mine.k])? PLAN_TX[mine.k] : "";
       const pz=(!crowd && seesPoison(m,p))? p.poison.left+"ターン後 死亡" : "";
-      const stk=[]; if(L) stk.push([lb,L.t,L.c,1.6]); if(plan) stk.push([pl,plan,null,1.4]);
+      const PLAN_IC={ seer:"seer", cure:"doctor", mine:"miner" };
+      const stk=[]; if(L) stk.push([lb,L.t,L.c,1.6]); if(plan) stk.push([pl,plan,{ ic:PLAN_IC[mine.k]||"seer" },2.8]);
       if(pois) stk.push([pg,(mine.dl? mine.dl+"ターン後" : "即殺"),"pill",2.8]);
       else if(pEff) stk.push([pg,pEff+"ターン後","pill",2.8]);
-      else if(pz) stk.push([pg,p.poison.left+"ターン後","pill",2.8]);   // ★ドクターの見え方も毒殺人狼と同じ「Nターン後 ☠」の札
+      else if(pz && !(mine && mine.k==="cure")) stk.push([pg,p.poison.left+"ターン後","pill",2.8]);   // ★治療予定を出す相手は「Nターン後 ☠」を出さない   // ★ドクターの見え方も毒殺人狼と同じ「Nターン後 ☠」の札
       [lb,ps,pl,pg].forEach(el=>{ if(el) el.style.display="none"; });
       const ys=[]; let yy=-r-0.2; stk.forEach((o,i)=>{ if(i) yy-=(stk[i-1][3]+o[3])/2+0.25; ys.push(yy); });
       const topY=ys.length? ys[ys.length-1]-stk[stk.length-1][3]/2+0.8 : 0, lim=0.95-cy, sh=(ys.length && topY<lim)? lim-topY : 0;
       stk.forEach((o,i)=>{ const el=o[0], y=ys[i]+sh; if(!el) return; el.style.display="";
         if(o[2]==="pill"){ drawPoisonPill(el,o[1],y); return; }
+        if(o[2] && o[2].ic){ drawPoisonPill(el,o[1],y,o[2].ic); return; }
         el.textContent=o[1]; if(o[2]) el.setAttribute("fill",o[2]); el.setAttribute("y",y.toFixed(2)); });
       g.style.transform="translate("+(q.x*10+ox)+"px,"+cy+"px)";
       g.style.opacity="1";
@@ -1472,12 +1473,12 @@ function renderBoard(){
     g.appendChild(t); bl.appendChild(g); });
 }
 /* 毒殺予定の札: 地つきのピルに「Nターン後」＋毒殺人狼のアイコンのドクロ(絵文字は使わない) */
-function drawPoisonPill(el,tx,y){
-  const fs=1.25, tw=[...tx].reduce((w,ch)=>w+(/[0-9]/.test(ch)? fs*.62 : fs),0), sk=2.1, gap=.5, pad=1.15, w=tw+gap+sk+pad*2, h=2.8, bg="#d4453a";
+function drawPoisonPill(el,tx,y,ic){                    // ic=役職(占い予定=seer・治療予定=doctor)。省略時は毒殺(赤+ドクロ)
+  const fs=1.25, tw=[...tx].reduce((w,ch)=>w+(/[0-9]/.test(ch)? fs*.62 : fs),0), sk=2.1, gap=.5, pad=1.15, w=tw+gap+sk+pad*2, h=2.8, bg=ic? ROLE_COL[ic] : "#d4453a";
   el.innerHTML=""; el.setAttribute("transform","translate(0 "+y.toFixed(2)+")");
   el.appendChild(svgEl("rect",{x:-w/2,y:-h/2,width:w,height:h,rx:h/2,fill:bg,stroke:"rgba(14,11,24,.9)","stroke-width":2,"vector-effect":"non-scaling-stroke"}));
   const t=svgEl("text",{x:-w/2+pad,y:0,"dominant-baseline":"central","font-size":fs,"font-weight":"900",fill:"#fff"}); t.textContent=tx; el.appendChild(t);
-  const ic=svgEl("g",{transform:"translate("+(-w/2+pad+tw+gap)+" "+(-sk/2)+") scale("+(sk/24)+")"}); ic.innerHTML=ICON_G.wolf(bg); el.appendChild(ic);
+  const icg=svgEl("g",{transform:"translate("+(-w/2+pad+tw+gap)+" "+(-sk/2)+") scale("+(sk/24)+")"}); icg.innerHTML=(ICON_G[ic||"wolf"]||ICON_G.wolf)(bg); el.appendChild(icg);
 }
 /* 毒殺の演出=そのマスから毒のしずくが飛び散る(盤の上に重ねる・1.1秒で消える) */
 function poisonSplat(x,y,col){
