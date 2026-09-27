@@ -816,7 +816,7 @@ let myName=""; try{ myName=(localStorage.getItem("bj.name")||"").slice(0,16); }c
 let lobby=[];                   // ロビーのメンバー [{id,n,c,t}]
 let localEnd=0;                 // このステップの締め切り(自分の端末の時計で)
 let pending=null, pendingSent=0; // ゲストの未確認の入力(スナップに載るまで送り直す)
-let pendWh=null, pendWhSent=0;   // ゲストの未確認の「話す」(行動とは別に送り直す)
+let pendWh={}, pendWhSent=0;   // pendWh=話した相手→送った入力(スナップに載るまで送り直す)   // ゲストの未確認の「話す」(行動とは別に送り直す)
 let sel={};                      // 画面での選択中(move=1回目で選んだ移動先・tg=コマのまわりの操作を出している相手・pop=menu/poison/talk・tx=話す3文字)
 let bubbles=[];                  // 盤面に出すメッセージの吹き出し [{f,t,until}]
 let seen={ gid:"", sk:-1, tick:-1, phase:"", notes:{}, alive:{}, over:false };   // notes/alive=人ごと(試作モードで操作する人を切り替えても古い結果を出さない)
@@ -871,7 +871,7 @@ function newGame(members,fixRole){           // fixRole={id,role}=その人の�
       round:1, turn:1, tick:0, sk:0, phase:"move", stepEnd:0,
       players:members.map((m,i)=>({ id:m.id, n:m.n||("P"+(i+1)), c:m.c||PCOL[i%PCOL.length], role:roles[i],
         x:cells[i%cells.length][0], y:cells[i%cells.length][1], alive:true, pub:false, cause:"", killer:"", poison:null, lastPoison:-99, lastMine:-99, lastCureRound:0, usedFTalk:false, notes:[] })),
-      moves:{}, acts:{}, whs:{}, votes:{}, ready:{}, lastVote:null, winner:"", deathsThisRound:[], wh:[], mines:[], corpses:[] };
+      moves:{}, acts:{}, whs:{}, votes:{}, ready:{}, done:{}, lastVote:null, winner:"", deathsThisRound:[], wh:[], mines:[], corpses:[] };
   /* コマに書く1文字=名前の頭文字。頭文字がかぶる人がいたら、その人たちは番号にする */
   const heads=G.players.map(p=>[...p.n][0]||"?");
   G.players.forEach((p,i)=>{ p.lb = heads.filter(h=>h===heads[i]).length>1 ? String(i+1) : heads[i]; });
@@ -881,7 +881,7 @@ function newGame(members,fixRole){           // fixRole={id,role}=その人の�
 function stepMs(){ if(debug) return 0; return G.phase==="talk"? G.rules.talk*1000 : G.phase==="vres"? VRES_MS : G.rules.step*1000; }   // 議論と投票は1つ(talk)
 function startStep(ph){
   G.phase=ph; G.sk++;
-  G.moves={}; G.acts={}; G.whs={}; G.votes={}; G.ready={};
+  G.moves={}; G.acts={}; G.whs={}; G.votes={}; G.ready={}; G.done={};
   const ms=(ph==="vres")? VRES_MS : stepMs();   // 投票結果の表示だけは試作モードでも自動で進める
   G.stepEnd= ms? Date.now()+ms : 0;
   bump();
@@ -937,7 +937,8 @@ function cpuAct(p){                            // 行動と、ときどき「話
       const r=Math.random(); let dl= r<.35?0 : r<.75?1 : 2; while(dl>0 && !dlOk(dl)) dl--; return { k:"poison", tg:pick(c).id, dl, wh }; } }
   return { k:"none", wh };
 }
-function cpuSendAct(p,sk,a){ if(a.wh) hostAct({ t:"wh", from:p.id, sk, tg:a.wh.tg, tx:a.wh.tx }); if(G && G.sk===sk) hostAct({ t:"act", from:p.id, sk, k:a.k, tg:a.tg, dl:a.dl, mx:a.mx, my:a.my }); }
+function cpuSendAct(p,sk,a){ if(a.wh) hostAct({ t:"wh", from:p.id, sk, tg:a.wh.tg, tx:a.wh.tx }); if(G && G.sk===sk) hostAct({ t:"act", from:p.id, sk, k:a.k, tg:a.tg, dl:a.dl, mx:a.mx, my:a.my });
+  if(G && G.sk===sk && G.phase==="act" && !(G.done||{})[p.id]) hostAct({ t:"act", from:p.id, sk, k:"end" }); }   // ロボットは行動したら終了する
 function cpuClaimsAtTalk(){                     // 議論のはじめ: 占い師(と、ときどき人狼陣営の偽の占い師)が結果をチャットで言う
   if(cpuMem.talked===G.round) return; cpuMem.talked=G.round;
   let faked=false;
@@ -1016,8 +1017,8 @@ function resolveMove(){
   }
   startStep("act");
   /* となり(同じマスも含む)に誰もいない人は、行動を自動でスキップ。★地雷人狼は相手がいなくても置けるのでスキップしない */
-  alivePs().forEach(p=>{ if(!neighbors(p).length && !(p.role==="miner"&&canMine(p))) G.acts[p.id]={ k:"none", auto:true }; });
-  if(allIn(G.acts)) resolveAct(); else bump();
+  alivePs().forEach(p=>{ if(!neighbors(p).length && !(p.role==="miner"&&canMine(p))){ G.acts[p.id]={ k:"none", auto:true }; G.done[p.id]="auto"; } });
+  if(actAllDone()) resolveAct(); else bump();
 }
 function die(p,cause,by){ if(!p.alive) return; p.alive=false; p.cause=cause; p.killer=by||""; p.poison=null; G.deathsThisRound.push(p.id);
   /* 霊感が強い人だけが見える死体。吊りは議論中なので盤には残さない(議論をはさむと消えるため) */
@@ -1097,6 +1098,13 @@ function checkWin(){                         // 毒殺・吊り・退出の直�
   G.phase="over"; G.sk++; G.stepEnd=0; bump(); return true;
 }
 function allIn(obj){ return alivePs().every(p=>obj[p.id]!==undefined); }
+/* ★行動の完了(2026-09-27)=「力(占う・毒殺など)を使い切った＋となり全員に話した」か「何もしない」「行動を終了する」を押した時だけ。
+   G.done[id]=auto(自動)/none(何もしない)/end(行動を終了する)。行動のフェーズは全員がdoneになったら解決する */
+function whMap(id){ const w=(G.whs||{})[id]; if(!w) return {}; if(w.tg){ const o={}; o[w.tg]=w.tx; return o; } return w; }   // 話した相手→3文字(旧形式{tg,tx}も読める)
+function roleActed(p){ const a=G.acts[p.id]; return !!(a && ["seer","poison","cure","mine"].includes(a.k)); }
+function autoDone(p){ if(!G||G.phase!=="act"||!p||!p.alive||G.done[p.id]) return;
+  const talked=whMap(p.id); if((roleActed(p)||!hasPower(p)) && neighbors(p).every(q=>talked[q.id]!==undefined)) G.done[p.id]="auto"; }
+function actAllDone(){ return alivePs().every(p=>G.done && G.done[p.id]); }
 function hostAct(a){
   if(!G || a.sk!==G.sk) return;              // 前のステップの入力は捨てる
   const p=pById(a.from); if(!p||!p.alive) return;
@@ -1104,7 +1112,12 @@ function hostAct(a){
   if(a.t==="act" && G.phase==="act"){
     const cur=G.acts[p.id];
     if(cur && cur.auto) return;                                        // 自動スキップ。占う/毒殺は全員の行動がそろうまで相手を変えられる
-    if(a.k==="clear"){ if(cur && ((cur.k==="none" && !cur.byWh) || cur.k==="mine")){ delete G.acts[p.id]; bump(); } return; }   // 「やっぱりなし」・置いた地雷の取り消し   // 「やっぱりなし」
+    if(a.k==="clear"){                                                 // 「やっぱりなし」(何もしない・行動を終了するの取り消し)・置いた地雷の取り消し
+      const d=G.done[p.id];
+      if(cur && cur.k==="mine"){ delete G.acts[p.id]; if(d==="auto") delete G.done[p.id]; bump(); return; }
+      if(d==="none"||d==="end"){ if(cur && cur.k==="none") delete G.acts[p.id]; delete G.done[p.id]; bump(); }
+      return; }
+    if(a.k==="end"){ G.done[p.id]="end"; bump(); if(actAllDone()) resolveAct(); return; }   // ★行動を終了する(使い切っていなくても完了)   // 「やっぱりなし」・置いた地雷の取り消し   // 「やっぱりなし」
     const k=["none","seer","poison","cure","mine"].includes(a.k)? a.k : "none";
     let o={ k:"none" };
     if(k==="mine"){                                                    // ★地雷は相手ではなくマスを選ぶ
@@ -1119,17 +1132,19 @@ function hostAct(a){
       o={ k, tg:t.id };
       if(k==="poison") o.dl=Math.max(0,Math.min(2,a.dl|0));
     }
-    G.acts[p.id]=o; bump(); if(allIn(G.acts)) resolveAct(); return;
+    G.acts[p.id]=o;
+    if(o.k==="none") G.done[p.id]="none"; else autoDone(p);
+    bump(); if(actAllDone()) resolveAct(); return;
   }
   if(a.t==="wh" && G.phase==="act"){                                  // 話す(3文字)。行動とは別。力のない人はこれで行動を終えたことにする
     if(G.acts[p.id] && G.acts[p.id].auto) return;
     const t=pById(a.tg), tx=cleanMsg(a.tx);
-    G.whs=G.whs||{}; if(G.whs[p.id]) return;                         // 話すのも1ターンに1人まで
+    G.whs=G.whs||{}; const mp=whMap(p.id); if(t && mp[t.id]!==undefined) return;   // ★話すは何人にでも・ただし1人につき1回まで
     if(!t||!t.alive||t.id===p.id||dist(t,p)>1||!tx) return;
-    G.whs[p.id]={ tg:t.id, tx };
-    G.wh=(G.wh||[]).concat([{ id:G.gid+":"+G.sk+":"+p.id, f:p.id, to:t.id, t:tx }]); while(G.wh.length>60) G.wh.shift();   // 話すは送った瞬間に届く(行動の解決を待たない)
-    if(!hasPower(p) && G.acts[p.id]===undefined) G.acts[p.id]={ k:"none", byWh:1 };
-    bump(); if(allIn(G.acts)) resolveAct(); return;
+    mp[t.id]=tx; G.whs[p.id]=mp;
+    G.wh=(G.wh||[]).concat([{ id:G.gid+":"+G.sk+":"+p.id+":"+t.id, f:p.id, to:t.id, t:tx }]); while(G.wh.length>60) G.wh.shift();   // 話すは送った瞬間に届く(行動の解決を待たない)
+    autoDone(p);
+    bump(); if(actAllDone()) resolveAct(); return;
   }
   if(a.t==="ftalk" && G.phase==="act"){                               // ★議論好き: ゲーム中1回だけ、その場で議論に移す
     if(p.role!=="talker" || p.usedFTalk) return;
@@ -1146,14 +1161,15 @@ function submit(o){
   o.sk=G.sk; o.from=VID();
   if(debug){ const sk=G.sk; hostAct(o); if(G.sk===sk && myInputIn()) dbgNext(); return; }
   if(isHost){ hostAct(o); return; }
-  if(o.t==="wh"){ pendWh=o; pendWhSent=Date.now(); } else { pending=o; pendingSent=Date.now(); }
+  if(o.t==="wh"){ pendWh[o.tg]=o; pendWhSent=Date.now(); } else { pending=o; pendingSent=Date.now(); }
   sendAct(o); render();
 }
 function pendingDone(p){                         // ゲストの送った入力がスナップに載ったか(票の変更・取り消しも見分ける)
   const id=myId;
   if(p.sk!==G.sk) return true;
   if(p.t==="vote") return G.votes[id]===p.tg;
-  if(p.t==="act" && p.k==="clear") return !G.acts[id];
+  if(p.t==="act" && p.k==="clear"){ const d=(G.done||{})[id]; return d!=="none" && d!=="end" && !(G.acts[id]&&G.acts[id].k==="mine"); }
+  if(p.t==="act" && (p.k==="end"||p.k==="none")) return !!(G.done||{})[id];
   if(p.t==="act" && p.k==="mine"){ const c=G.acts[id]; return !!c && c.k==="mine" && c.mx===p.mx && c.my===p.my; }   // 置き直しがスナップに載ったか
   if(p.t==="act" && (p.k==="seer"||p.k==="poison"||p.k==="cure")){ const c=G.acts[id]; return !!c && c.k===p.k && c.tg===p.tg; }
   return myInputIn();
@@ -1164,14 +1180,14 @@ function dbgNext(){                            // 試作モード: まだ入力�
   const i=Math.max(0,ps.findIndex(p=>p.id===dbgActor));
   for(let k=1;k<=ps.length;k++){
     const p=ps[(i+k)%ps.length]; const id=p.id;
-    const inp = G.phase==="move"?G.moves[id]!==undefined : G.phase==="act"?G.acts[id]!==undefined : G.phase==="talk"?G.votes[id]!==undefined : true;
+    const inp = G.phase==="move"?G.moves[id]!==undefined : G.phase==="act"?!!(G.done&&G.done[id]) : G.phase==="talk"?G.votes[id]!==undefined : true;
     if(!inp){ if(id!==dbgActor){ dbgActor=id; resetSel(); render(); } return; }
   }
 }
 function myInputIn(){                         // 自分の入力がスナップに反映されているか
   if(!G) return false; const id=VID();
   if(G.phase==="move") return G.moves[id]!==undefined;
-  if(G.phase==="act") return G.acts[id]!==undefined;
+  if(G.phase==="act") return !!(G.done&&G.done[id]);
   if(G.phase==="talk") return G.votes[id]!==undefined;
   return false;
 }
@@ -1210,7 +1226,7 @@ function myVoteNow(){ const m=me(); if(!m) return null;             // 確定し
    死亡は議論のはじめに公表されてから(1度公表された死亡は次のラウンド以降も出したまま)
    占い師には占い結果(丸)。議論 & 投票の間はここを押して投票(何度でも変えられる・同じ人をもう一度で取り消し) */
 const CHECK_SVG='<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="8" fill="#5fb46e"/><path d="M4.4 8.3l2.4 2.4 4.8-5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-function inputDone(id){ const ph=G.phase; return ph==="move"?G.moves[id]!==undefined : ph==="act"?G.acts[id]!==undefined : ph==="talk"?G.votes[id]!==undefined : false; }
+function inputDone(id){ const ph=G.phase; return ph==="move"?G.moves[id]!==undefined : ph==="act"?!!(G.done&&G.done[id]) : ph==="talk"?G.votes[id]!==undefined : false; }
 function renderRoster(){
   const m=me(), all=rosterAll(), ph=G.phase, lv=G.lastVote;
   const canVote = ph==="talk" && m && m.alive, mv=canVote? myVoteNow() : null, pk=canVote? sel.vote : null;
@@ -1349,10 +1365,12 @@ function renderBoard(){
       const L=crowd? null : pieceLabel(p,m);
       const mine=(!crowd && G.phase==="act" && a && a.tg===p.id)? a : null;
       const pois=!!(mine && mine.k==="poison" && pg);                                      // 毒殺予定は役職名と見分けるため「Nターン後 ☠」の地つき札
+      const pEff=(!crowd && !pois && pg && m && p.poison && p.poison.by===m.id && p.poison.left>0)? p.poison.left : 0;   // ★盛った毒が効いている間も(自分が盛った相手だけ)
       const plan=(mine && !pois && PLAN_TX[mine.k])? PLAN_TX[mine.k] : "";
       const pz=(!crowd && seesPoison(m,p))? p.poison.left+"ターン後 死亡" : "";
       const stk=[]; if(L) stk.push([lb,L.t,L.c,1.6]); if(pz) stk.push([ps,pz,null,1.4]); if(plan) stk.push([pl,plan,null,1.4]);
       if(pois) stk.push([pg,(mine.dl? mine.dl+"ターン後" : "即殺"),"pill",2.8]);
+      else if(pEff) stk.push([pg,pEff+"ターン後","pill",2.8]);
       [lb,ps,pl,pg].forEach(el=>{ if(el) el.style.display="none"; });
       const ys=[]; let yy=-r-0.2; stk.forEach((o,i)=>{ if(i) yy-=(stk[i-1][3]+o[3])/2+0.25; ys.push(yy); });
       const topY=ys.length? ys[ys.length-1]-stk[stk.length-1][3]/2+0.8 : 0, lim=0.95-cy, sh=(ys.length && topY<lim)? lim-topY : 0;
@@ -1395,22 +1413,27 @@ function canMoveTo(x,y){
   return Math.abs(m.x-x)+Math.abs(m.y-y)<=1;
 }
 /* 行動: となりのコマを押す → そのコマの横に「話す」と役職の力(占う/毒殺)。話すは行動とは別に同時にできる
-   占う・毒殺は1ターンに1人だけ(決めたら他の人には使えない)・話すも1ターンに1人だけ */
+   占う・毒殺は1ターンに1人だけ(決めたら他の人には使えない)・話すはとなりの何人にでも(1人につき1回まで) */
 const PLAN_TX={ seer:"占い予定", poison:"毒殺予定", cure:"治療予定" };   // 選んだ相手のコマの上に出す
 const POWER_NAME={ seer:"占う", wolf:"毒殺", doctor:"毒を治す", miner:"地雷" };
 function myAct(){ const m=me(); if(!m||!G||G.phase!=="act") return null;
   return G.acts[m.id]!==undefined? G.acts[m.id] : (pending&&pending.t==="act"&&pending.sk===G.sk&&pending.from===m.id&&pending.k!=="clear"? pending : null); }
-function myWh(){ const m=me(); if(!m||!G||G.phase!=="act") return null;
-  const w=(G.whs||{})[m.id]; return w || (pendWh&&pendWh.sk===G.sk&&pendWh.from===m.id? pendWh : null); }
+function myWh(){ const m=me(); if(!m||!G||G.phase!=="act") return {};   // 自分が話した相手→3文字(送ったばかりのものも)
+  const mp=Object.assign({},whMap(m.id)); Object.values(pendWh).forEach(o=>{ if(o.sk===G.sk&&o.from===m.id) mp[o.tg]=o.tx; }); return mp; }
+function myDone(){ const m=me(); if(!m||!G||G.phase!=="act") return "";
+  if(pending&&pending.t==="act"&&pending.sk===G.sk&&pending.from===m.id){ if(pending.k==="end"||pending.k==="none") return pending.k; if(pending.k==="clear") return ""; }
+  return (G.done&&G.done[m.id])||""; }
 function actState(){                          // いまの自分の行動の状態(占う/毒殺は全員そろうまで相手を変えられる)
   const m=me(), a=myAct(), w=myWh();
-  const auto=!!(a&&a.auto), none=!!(a&&a.k==="none"&&!a.byWh&&!a.auto), roleUsed=!!(a&&(a.k==="seer"||a.k==="poison"||a.k==="cure"||a.k==="mine"));
+  const dn=myDone(), auto=!!(a&&a.auto), none=dn==="none"||dn==="end", roleUsed=!!(a&&(a.k==="seer"||a.k==="poison"||a.k==="cure"||a.k==="mine"));
   const roleable = !!m && m.alive && !auto && !none && ((m.role==="seer" && neighbors(m).length>0) || (m.role==="wolf" && canPoison(m) && neighbors(m).some(t=>canPoisonTo(m,t)))
     || (m.role==="doctor" && canCure(m) && neighbors(m).some(t=>canCureTo(m,t))) || (m.role==="miner" && canMine(m)));
-  const talkable = !!m && m.alive && !auto && !none && !w && neighbors(m).length>0;
-  return { a, w, auto, none, roleUsed, done: !!a,
-    selectable: roleable || talkable,                                             // まだ誰かを押す意味がある(点線の輪を出す)
-    exhausted: auto || none || ((roleUsed || !roleable) && !talkable) };          // もう新しくやることはない
+  const talkable = !!m && m.alive && !auto && !none && neighbors(m).some(q=>w[q.id]===undefined);   // まだ話していないとなりの人がいる
+  const talkAll = !!m && neighbors(m).every(q=>w[q.id]===undefined? false : true);
+  const doneNow = !!dn || auto || ((roleUsed || !roleable) && talkAll);            // ★完了=使い切った or 何もしない/行動を終了する
+  return { a, w, auto, none, roleUsed, done: doneNow,
+    selectable: !doneNow && (roleable || talkable),                               // まだ誰かを押す意味がある(点線の輪を出す)
+    exhausted: doneNow };
 }
 function actTargets(){                       // いま盤面で選べる相手(点線の輪を出す)。押す意味がない時は出さない
   const m=me(); if(!m||!m.alive||G.phase!=="act") return [];
@@ -1422,7 +1445,7 @@ function actDesc(a,w){
   if(a && !a.byWh){ if(a.k==="none") s= a.auto? "自動スキップ" : "何もしない";
     else if(a.k==="mine") s="地雷を置く（"+cellNo(a.mx,a.my)+"）";
     else { const t=pById(a.tg), n=t?t.n:"?"; s= a.k==="seer"? n+" を占う" : a.k==="poison"? n+" を毒殺（"+(a.dl? a.dl+"ターン後に死亡":"即殺")+"）" : a.k==="cure"? n+" の毒を治す" : ""; } }
-  if(w && w.tx){ const t=pById(w.tg); s+=(s?"・":"")+(t?t.n:"?")+" と話す「"+w.tx+"」"; }
+  Object.keys(w||{}).forEach(k=>{ const t=pById(k); s+=(s?"・":"")+(t?t.n:"?")+" と話す「"+w[k]+"」"; });
   return s;
 }
 function provPos(p){                           // 仮の移動先 {x,y,moved}(自分だけ。試作モードは入力した全員)
@@ -1506,8 +1529,8 @@ function renderPop(){
   if(key!==popKey){ popKey=key;
     let h='<div class="pop-h">'+esc(t.n)+'と接触</div>';
     if(sel.pop==="menu"){
-      const talkMine = w && w.tg===t.id;
-      h+='<button class="pbtn'+(talkMine?" sel":"")+'" data-p="talk"'+(w?" disabled":"")+'>'+btnIcon("talk")+'話す</button>';
+      const talkMine = w[t.id]!==undefined;                                // この人にはもう話した(1人につき1回まで)
+      h+='<button class="pbtn'+(talkMine?" sel":"")+'" data-p="talk"'+(talkMine?" disabled":"")+'>'+btnIcon("talk")+'話す</button>';
       if(pw){
         const mine = a && ((a.k===pw && a.tg===t.id) || (pw==="mine" && a.k==="mine" && a.mx===t.x && a.my===t.y));
         const cool = (pw==="poison" && !canPoison(m)) || (pw==="cure" && !canCure(m)) || (pw==="mine" && !canMine(m));
@@ -1589,15 +1612,16 @@ function renderHud(){
       const nb=st.none? '<button class="gbtn sel'+(ftk?" wide":"")+'" id="noneBtn">やっぱりなし</button>' : "";
       if(ftb||nb){ tall=true; html+=row(ftb+nb); } }                                     // 何もしないボタンの「左」に並べる
     else{ html=hint(m.role==="miner"&&canMine(m)? "接触したい人か、地雷を置くマスを選択" : "接触したい人を選択");
-      const nb=!st.done? '<button class="gbtn'+(ftk?" wide":"")+'" id="noneBtn">何もしない</button>' : "";
-      if(ftb||nb){ tall=true; html+=row(ftb+nb); } } }
+      const nb='<button class="gbtn'+(ftk?" wide":"")+'" id="noneBtn">何もしない</button><button class="gbtn'+(ftk?" wide":"")+'" id="endBtn">行動を終了する</button>';   // ★行動を終了する=何もしないの右・同じ大きさ
+      tall=true; html+=row(ftb+nb); } }
   else if(ph==="talk"){ const cur=myVoteNow(); key+="|"+cur; html= cur? hint(WAIT_TX,true) : hint("怪しい人を投票"); }
   if(key!==hudKey){ hudKey=key; h.innerHTML=html; h.classList.toggle("tall",tall); wireHud(); }
 }
 function wireHud(){
   const on=(id,f)=>{ const b=$(id); if(b) b.onclick=()=>{ ensureAudio(); f(); }; };
   on("reopenRes",()=>{ playSelect(); openResult(); });
-  on("noneBtn",()=>{ playSelect(); sel.tg=null; sel.pop=""; sel.mine=null; const st=actState(); submit({t:"act",k: st.none? "clear" : "none"}); });   // 押している間は「やっぱりなし」=取り消し
+  on("noneBtn",()=>{ playSelect(); sel.tg=null; sel.pop=""; sel.mine=null; const st=actState(); submit({t:"act",k: st.none? "clear" : "none"}); });
+  on("endBtn",()=>{ playSelect(); sel.tg=null; sel.pop=""; sel.mine=null; submit({t:"act",k:"end"}); });   // 使い切っていなくても行動を完了にする   // 押している間は「やっぱりなし」=取り消し
   on("ftalkBtn",()=>{ const m=me(); if(!m||m.role!=="talker"||m.usedFTalk) return;        // ★議論好き: その場で議論へ(1回だけ)
     playTalk(); sel.tg=null; sel.pop=""; sel.mine=null; submit({t:"ftalk"}); });
 }
@@ -1611,8 +1635,8 @@ function renderDbg(){
   let h='<div class="dbg-h">試作用パネル（行を'+TAPW+'でその人を操作）</div>';
   G.players.forEach(p=>{
     const a=G.acts[p.id];
-    const w=(G.whs||{})[p.id];
-    const inp= ph==="move"? G.moves[p.id] : ph==="act"? (a||w? actDesc(a,w)||"話した" : undefined)
+    const w=whMap(p.id), dn=(G.done||{})[p.id];
+    const inp= ph==="move"? G.moves[p.id] : ph==="act"? ((a||Object.keys(w).length||dn)? (actDesc(a,w)||"")+(dn? "［完了］":"") || "話した" : undefined)
       : ph==="talk"? (G.votes[p.id]? "→"+(pById(G.votes[p.id])||{}).n : undefined) : undefined;
     const kl=pById(p.killer);
     h+='<div class="dbg-row'+(p.id===dbgActor?" act":"")+(p.alive?"":" dead")+'" data-a="'+esc(p.id)+'"><span class="p-dot" style="background:'+p.c+'"></span>'
@@ -1662,7 +1686,7 @@ function renderDv(){ $("dvN").textContent=dvN+"人"; $("dvMinus").disabled=dvN<=
 $("dvMinus").onclick=()=>{ ensureAudio(); playSelect(); dvN=Math.max(MIN_P,dvN-1); renderDv(); };
 $("dvPlus").onclick=()=>{ ensureAudio(); playSelect(); dvN=Math.min(MAX_P,dvN+1); renderDv(); };
 $("devStart").onclick=()=>{ ensureAudio(); playSelect(); if(!devOk()) return; leaveGallery(); leaveChannel(); startDebug(dvN); };
-window.__bjDev={ get G(){ return G; }, resolve:()=>resolveNow() };   // ★試作用フック(公開前に削除するか要確認)
+window.__bjDev={ get G(){ return G; }, resolve:()=>resolveNow(), act:o=>submit(o), st:()=>actState() };   // ★試作用フック(公開前に削除するか要確認)
 
 /* ================= 役職の数(ロビーと試作用で共通) ================= */
 /* 1行=アイコン・内容(名前+占い結果のバッジ+説明)・人数(「N人」の下に−＋)。陣営ごとにセクションを分ける。市民は残りの人数(ボタンなし)
@@ -1801,13 +1825,13 @@ function onState(){
   const m=me();
   if(seen.gid!==G.gid){
     seen={ gid:G.gid, sk:-1, tick:G.tick, phase:"", notes:{}, alive:{}, over:false, wh:{} };
-    resetSel(); pending=null; pendWh=null; bubbles=[];
+    resetSel(); pending=null; pendWh={}; bubbles=[];
     addSys("── あたらしいゲーム ──");
     if(!debug) setTimeout(openRole,350);
   }
   if(seen.sk!==G.sk){
     const prev=seen.phase; seen.sk=G.sk;
-    resetSel(); pending=null; pendWh=null;
+    resetSel(); pending=null; pendWh={};
     if(G.phase==="move"){ if(prev==="act") playMove(); else playStep(); turnFx(G.rules.turns-G.turn+1); }
     if(G.phase==="act"){ playMove(); }
     if(G.phase==="talk"){
@@ -2048,8 +2072,8 @@ function applySnap(p){
   G=p.G; localEnd=Date.now()+(p.left||0);
   if(pending && pendingDone(pending)) pending=null;
   if(pending && pending.sk===G.sk && Date.now()-pendingSent>900){ pendingSent=Date.now(); sendAct(pending); }   // 届いていなければ送り直す
-  if(pendWh){ const w=(G.whs||{})[myId]; if(pendWh.sk!==G.sk || (w&&w.tx===pendWh.tx&&w.tg===pendWh.tg)) pendWh=null; }
-  if(pendWh && Date.now()-pendWhSent>900){ pendWhSent=Date.now(); sendAct(pendWh); }
+  { const mp=whMap(myId); Object.keys(pendWh).forEach(k=>{ const o=pendWh[k]; if(o.sk!==G.sk || mp[k]!==undefined) delete pendWh[k]; }); }
+  if(Object.keys(pendWh).length && Date.now()-pendWhSent>900){ pendWhSent=Date.now(); Object.values(pendWh).forEach(sendAct); }
   if(phaseUI!=="game") enterGame();
   onState(); render();
 }
@@ -2199,7 +2223,7 @@ function buildHelp(){
    +'</ul>'
    +'<div class="h-sec">ながれ</div>'
    +'<ul class="h-list"><li>行動・移動　全員いっせいに1マス動く（留まってもいい）。行動中はチャットとスタンプは使えない</li>'
-   +'<li>行動・接触　となり（同じマスも含む）の人を選んで「占う」「毒殺」（1ターンに1人。全員の行動がそろうまで相手を変えられる）。それとは別に3文字で「話す」こともできる（1ターンに1人）。となりに誰もいない時は自動でスキップ</li>'
+   +'<li>行動・接触　となり（同じマスも含む）の人を選んで「占う」「毒殺」（1ターンに1人。全員の行動がそろうまで相手を変えられる）。それとは別に3文字で「話す」こともできる（となりの何人にでも・1人につき1回まで）。力を使い切って、となり全員に話すと行動完了。「何もしない」「行動を終了する」でもすぐ完了。となりに誰もいない時は自動でスキップ</li>'
    +'<li>議論 & 投票　決められたターンが終わったら、死んだ人が発表される。まだ効いていない毒は消える。チャットで話し合いながら、メンバーリストから怪しい人に投票しよう（1回押して選び、もう一度押して確定。スキップもできる）。全員が確定するか時間切れで、いちばん票を集めた人が吊られる（同数なら誰も吊られない）</li>'
    +'<li>死んだ人は、いつでも墓地チャットで話せる（死んだ人どうしにしか見えない）</li></ul>'
    +'<div class="h-sec">勝ち負け</div>'
@@ -2327,7 +2351,7 @@ const RM=["mad","wolf","villager","seer","hawk","wolf"];       // 狂人(右=毒
 function sgReset(){
   clearTimeout(toastT); $("toast").classList.remove("on"); clearTimeout(fxT); $("bigFx").classList.remove("on");
   goTitle();                                                     // 部屋・状態・チャット・ダイアログを片付けてタイトルへ
-  rules=Object.assign({},DEF_RULES); code=""; nameAsked=true; pending=null; pendWh=null; bubbles=[]; resetSel(); dbgFog=false;
+  rules=Object.assign({},DEF_RULES); code=""; nameAsked=true; pending=null; pendWh={}; bubbles=[]; resetSel(); dbgFog=false;
   setMini(true);
 }
 function sgKill(p,cause,by,pub){ p.alive=false; p.cause=cause; p.killer=by||""; p.pub=pub!==false; }
@@ -2338,7 +2362,7 @@ function sgG(roles,o){
       phase:o.phase||"move", stepEnd:o.phase==="over"? 0 : Date.now()+sgLeft*1000,
       players:roles.map((r,i)=>({ id:i?"g"+i:myId, n:SG_NM[i], c:PCOL[i], role:r, x:pos[i][0], y:pos[i][1],
         alive:true, pub:false, cause:"", killer:"", poison:null, lastPoison:-99, lastMine:-99, lastCureRound:0, usedFTalk:false, notes:[], lb:SG_NM[i][0] })),
-      moves:{}, acts:{}, whs:{}, votes:{}, ready:{}, lastVote:null, winner:o.winner||"", deathsThisRound:[], wh:[], mines:[], corpses:[] };
+      moves:{}, acts:{}, whs:{}, votes:{}, ready:{}, done:{}, lastVote:null, winner:o.winner||"", deathsThisRound:[], wh:[], mines:[], corpses:[] };
   isHost=!o.guest; online=!!o.guest; hostId=o.guest? "g1" : myId;
   if(o.set) o.set(G);
   enterGame(); sgPrime(); localEnd=G.stepEnd; render();
@@ -2410,7 +2434,7 @@ sc("行動","行動のはじまり",()=>{ sgAct(RS); sgPhaseIn("move"); });
 sc("行動","占い師：選ぶ前",()=>sgAct(RS));
 sc("行動","占い師：相手を選んだ（話す・占う）",()=>{ sgAct(RS); sgPop("g1"); });
 sc("行動","占い師：占う相手を変える（決めたあと）",()=>{ sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; } }); sgPop("g2"); });
-sc("行動","占い師：占うを決めた",()=>sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; g.acts.g4={ k:"none" }; } }));
+sc("行動","占い師：占うを決めた",()=>sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; g.acts.g4={ k:"none" }; g.done.g4="none"; } }));
 sc("行動","占い師：占うと話すを両方",()=>{ sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; g.whs[myId]={ tg:"g2", tx:"よろ" }; } }); sgPop("g1"); });
 sc("行動","毒殺人狼：相手を選んだ（話す・毒殺）",()=>{ sgAct(RW,{ pos:WPOS }); sgPop("g1"); });
 sc("行動","毒殺人狼：毒殺（死亡までを選ぶ）",()=>{ sgAct(RW,{ pos:WPOS }); sgPop("g1","poison"); });
@@ -2423,10 +2447,13 @@ sc("行動","いちばん上の段の相手（操作は下に出る）",()=>{ sg
 sc("行動","市民：相手を選んだ（話すだけ）",()=>{ sgAct(RV); sgPop("g1"); });
 sc("行動","話す：入力中",()=>{ sgAct(RV); sel.tx="やあ"; sgPop("g1","talk"); });
 sc("行動","話す：漢字も使える",()=>{ sgAct(RV); sel.tx="逃げて"; sgPop("g1","talk"); });
-sc("行動","話した（市民はこれで行動おわり）",()=>sgAct(RV,{ set:g=>{ g.whs[myId]={ tg:"g1", tx:"にげて" }; g.acts[myId]={ k:"none", byWh:1 }; } }));
-sc("行動","話して占った（やることなし・他の人を待つ）",()=>sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; g.whs[myId]={ tg:"g2", tx:"よろ" }; } }));
-sc("行動","何もしないを選んだ",()=>sgAct(RV,{ set:g=>{ g.acts[myId]={ k:"none" }; g.acts.g3={ k:"none" }; } }));
-sc("行動","自動スキップ（となりに誰もいない）",()=>sgAct(RV,{ pos:[[0,0],[4,3],[3,4],[5,5],[6,2],[6,6]], set:g=>{ g.acts[myId]={ k:"none", auto:true }; } }));
+sc("行動","話した（市民はこれで行動おわり）",()=>sgAct(RV,{ set:g=>{ g.whs[myId]={ g1:"にげて", g2:"よろ" }; g.done[myId]="auto"; } }));
+sc("行動","話して占った（やることなし・他の人を待つ）",()=>sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; g.done[myId]="auto"; g.whs[myId]={ g1:"しろ", g2:"よろ" }; } }));
+sc("行動","占って1人に話した（となりにまだ話していない人がいる）",()=>sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; g.whs[myId]={ g1:"しろ" }; } }));
+sc("行動","行動を終了した（使い切っていない）",()=>sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; g.done[myId]="end"; } }));
+sc("行動","毒を盛った相手（効いている間も表示）",()=>sgG(RW,{ pos:WPOS, set:g=>{ g.players[1].poison={ left:2, by:myId }; } }));
+sc("行動","何もしないを選んだ",()=>sgAct(RV,{ set:g=>{ g.acts[myId]={ k:"none" }; g.done[myId]="none"; g.acts.g3={ k:"none" }; g.done.g3="none"; } }));
+sc("行動","自動スキップ（となりに誰もいない）",()=>sgAct(RV,{ pos:[[0,0],[4,3],[3,4],[5,5],[6,2],[6,6]], set:g=>{ g.acts[myId]={ k:"none", auto:true }; g.done[myId]="auto"; } }));
 sc("行動","送信中（参加者側）",()=>{ sgAct(RS,{ guest:true }); pending={ t:"act", k:"seer", tg:"g1", sk:G.sk, from:myId }; render(); });
 
 sc("行動の結果","占い結果：白",()=>{ sgG(RS); sgFire(()=>me().notes.push({ r:1, t:3, tg:"g2", black:false })); });
