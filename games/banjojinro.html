@@ -362,11 +362,11 @@
     color:rgba(244,239,230,.82); font-size:13px; font-weight:800; cursor:pointer; }   /* とじるより控えめ */
   .rl-ic{ position:relative; }
   .rl-you{ position:absolute; bottom:5px; left:50%; transform:translateX(-50%); height:11px; padding:0 2px; line-height:11px; border-radius:999px; background:var(--gold); color:#3a2a06; font-size:7px; letter-spacing:-.04em; font-weight:900; white-space:nowrap; }   /* あなた=アイコンの中の下の真ん中 */
-  .rl-cnt{ position:absolute; right:1px; bottom:0; font-size:9px; letter-spacing:-.06em; font-weight:900; line-height:1; color:#fff; text-shadow:0 0 2px rgba(0,0,0,.8),0 0 2px rgba(0,0,0,.8); }   /* 今回の人数=アイコンの中の右下 */
+  .rl-cnt{ position:absolute; right:-6px; bottom:-4px; font-size:14.4px; letter-spacing:-.06em; font-weight:900; line-height:1; color:#fff; text-shadow:0 0 2px rgba(0,0,0,.8),0 0 2px rgba(0,0,0,.8); }   /* 今回の人数=アイコンの中の右下 */
   .rl-item.off{ opacity:.32; filter:grayscale(1); }
-  .rl-item.me .rl-ic{ border-radius:12px; box-shadow:0 0 0 2.5px var(--gold),0 0 14px rgba(232,182,71,.75); animation:rlMe 1.6s ease-in-out infinite; }   /* 自分の役職=金の輪で目立たせる */
+  .rl-item.me .rl-ic{ border-radius:12px; box-shadow:0 0 14px rgba(232,182,71,.75); animation:rlMe 1.6s ease-in-out infinite; }   /* 自分の役職=金の輪で目立たせる */
   .rl-item.me .rl-nm{ color:var(--gold); }
-  @keyframes rlMe{ 0%,100%{ box-shadow:0 0 0 2.5px var(--gold),0 0 8px rgba(232,182,71,.45); } 50%{ box-shadow:0 0 0 2.5px var(--gold),0 0 18px rgba(232,182,71,.95); } }   /* 全役職を確認: 今回いない役職 */
+  @keyframes rlMe{ 0%,100%{ box-shadow:0 0 8px rgba(232,182,71,.45); } 50%{ box-shadow:0 0 20px rgba(232,182,71,1); } }   /* 自分の役職=金の光だけ(輪は付けない) */   /* 全役職を確認: 今回いない役職 */
   .rd-icon svg{ width:100%; height:100%; display:block; }
   .rd-badges{ display:flex; gap:6px; flex-wrap:wrap; }
   .team-badge{ width:72px; height:20px; line-height:20px; text-align:center; border-radius:999px; font-size:11px; font-weight:900; color:#fff; }
@@ -775,8 +775,7 @@ function roleIcon(r,plain){ const c=ROLE_COL[r]||ROLE_COL.villager, g=(ICON_G[r]
   const f=TEAM_FRAME[TEAM_OF[r]||"village"];
   return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" rx="5.4" fill="'+c+'"/>'
     +'<g transform="translate(12 12) scale(.86) translate(-12 -12)">'+g+'</g>'
-    +'<rect x="1.95" y="1.95" width="20.1" height="20.1" rx="4.6" fill="none" stroke="rgba(15,12,24,.45)" stroke-width=".5"/>'
-    +'<rect x="1" y="1" width="22" height="22" rx="5.4" fill="none" stroke="'+f+'" stroke-width="1.8"/></svg>'; }
+    +'<rect x="1" y="1" width="22" height="22" rx="5.4" fill="none" stroke="'+f+'" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>'; }   // 枠=画面上で2px・地と同じ形の上に重ねるのですき間なし
 const TEAM_OF={ villager:"village", seer:"village", hawk:"village", medium:"village", doctor:"village", talker:"village", sensitive:"village", wolf:"wolf", miner:"wolf", mad:"wolf" };   // 第三陣営を足す時は"third"(黄色)
 const TEAM_NAME={ village:"市民陣営", wolf:"人狼陣営", third:"第三陣営" };
 const ROLE_SHORT={
