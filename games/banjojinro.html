@@ -424,7 +424,7 @@
   .rl-ic{ position:relative; }
   .rl-cnt{ position:absolute; right:0; bottom:0; font-size:11.5px; letter-spacing:-.06em; font-weight:900; line-height:1; color:#fff; text-shadow:0 0 2px rgba(0,0,0,.8),0 0 2px rgba(0,0,0,.8); }   /* 今回の人数=アイコンの中の右下 */
   .rl-item.off{ opacity:.32; filter:grayscale(1); }
-  .rl-you{ position:absolute; left:-2px; bottom:-.35px; height:11.7px; line-height:11.7px; padding:0 3.6px; border-radius:999px; background:var(--gold); color:#3a2a06;
+  .rl-you{ position:absolute; left:-2px; top:-1px; height:14px; line-height:14px; padding:0 4.3px; border-radius:999px; background:var(--gold); color:#3a2a06;
     font-size:7.65px; font-weight:900; letter-spacing:.02em; }   /* 自分の役職=左下(×Nと同じ高さ) */
   /* 全役職を確認: 今回いない役職 */
   .rd-icon svg{ width:100%; height:100%; display:block; }
@@ -458,10 +458,12 @@
   .role-big.villager{ color:#2f9a47; } .role-big.seer{ color:#2b7fc2; } .role-big.wolf{ color:#c93b27; } .role-big.hawk{ color:#1f8a7c; } .role-big.mad{ color:#8a3fb3; }
   .role-desc{ font-size:14px; font-weight:600; line-height:1.85; text-align:left; }
   /* 結果の行=位置を固定(名前・役職バッジ・状態の列幅を決めておく) */
-  .res-row{ display:grid; grid-template-columns:12px minmax(0,1fr) 74px 104px; align-items:center; gap:9px; padding:7px 10px; border-radius:10px;
+  .res-row{ display:grid; grid-template-columns:12px minmax(0,1fr) auto 104px; align-items:center; gap:9px; padding:7px 10px; border-radius:10px;
     background:rgba(244,239,230,.07); margin-top:6px; font-size:14px; font-weight:800; text-align:left; }
   .res-row .nm{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .res-row .rl{ height:20px; line-height:20px; text-align:center; font-size:11px; font-weight:900; border-radius:999px; color:#fff; white-space:nowrap; }
+  .rtag.rtag{ display:inline-flex; align-items:center; gap:2px; height:18px; line-height:18px; padding:0 7px 0 3px; border-radius:999px; color:#fff;
+    font-size:9.5px; font-weight:900; white-space:nowrap; overflow:visible; text-align:left; flex:none; }   /* 役職名のバッジ(メンバーリスト・結果で同じ見た目) */
+  .rtag svg{ width:14px; height:14px; flex:none; }
   .res-row .cs{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:11.5px; font-weight:700; opacity:.6; text-align:right; }
   .res-row.win{ background:rgba(232,182,71,.18); }
   .win-banner{ font-size:28px; font-weight:900; letter-spacing:.08em; margin-bottom:4px; }
@@ -841,8 +843,8 @@ function roleIcon(r,plain){ const c=ROLE_COL[r]||ROLE_COL.villager, g=(ICON_G[r]
   const f=TEAM_FRAME[TEAM_OF[r]||"village"];
   return '<svg viewBox="0 0 24 24" aria-hidden="true" style="overflow:visible"><rect x="1" y="1" width="22" height="22" rx="5.4" fill="'+c+'"/>'
     +'<g transform="translate(12 12) scale(.86) translate(-12 -12)">'+g+'</g>'
-    +'<rect x="1" y="1" width="22" height="22" rx="5.4" fill="none" stroke="#fff" stroke-width="5" vector-effect="non-scaling-stroke"/>'   // ★白い線=枠の内側と外側に画面上で1pxずつ(白5pxの上に本線3px)
-    +'<rect x="1" y="1" width="22" height="22" rx="5.4" fill="none" stroke="'+f+'" stroke-width="3" vector-effect="non-scaling-stroke"/></svg>'; }   // 枠=画面上で2px・地と同じ形の上に重ねるのですき間なし
+    +'<rect x="1" y="1" width="22" height="22" rx="5.4" fill="none" stroke="#fff" stroke-width="3" vector-effect="non-scaling-stroke"/>'   // ★白い線=枠の内側と外側に画面上で0.5pxずつ(白3pxの上に本線2px)
+    +'<rect x="1" y="1" width="22" height="22" rx="5.4" fill="none" stroke="'+f+'" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>'; }   // 枠=画面上で2px・地と同じ形の上に重ねるのですき間なし
 const TEAM_OF={ villager:"village", seer:"village", hawk:"village", medium:"village", doctor:"village", talker:"village", sensitive:"village", wolf:"wolf", miner:"wolf", mad:"wolf" };   // 第三陣営を足す時は"third"(黄色)
 const TEAM_NAME={ village:"市民陣営", wolf:"人狼陣営", third:"第三陣営" };
 const ROLE_SHORT={
@@ -872,6 +874,8 @@ const ROLE_DETAIL={
 };
 const SPEECH_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5.5h16a1.5 1.5 0 0 1 1.5 1.5v8.5A1.5 1.5 0 0 1 20 17h-9l-4.5 3.5V17H4a1.5 1.5 0 0 1-1.5-1.5V7A1.5 1.5 0 0 1 4 5.5z"/></svg>';
 /* 占いで黒になるのは人狼(毒殺人狼・地雷人狼) */
+function roleTag(r){ const c=ROLE_COL[r]||ROLE_COL.villager;   // ★役職名のバッジ=役職の色の地に「アイコンの絵+役職名」・幅は文字に合わせる(メンバーリスト・結果で共通)
+  return '<span class="tg rl rtag '+r+'" data-role="'+r+'" style="background:'+c+'"><svg viewBox="0 0 24 24" aria-hidden="true">'+(ICON_G[r]||ICON_G.villager)(c)+'</svg>'+ROLE_NAME[r]+'</span>'; }
 function seerBadge(r,one){ const b=(r==="wolf"||r==="miner"); return '<span class="rbadge '+(b?"black":"white")+(one?" one":"")+'">'+(one?"":"占い結果 ")+(b?"黒":"白")+'</span>'; }   // one=ロビー用(「白」「黒」の1文字)
 
 /* ================= 状態 =================
@@ -1310,7 +1314,7 @@ function renderRoster(){
     const self=!!(m && p.id===m.id);
     const deadShown = !p.alive && (p.pub || all || self || (m && m.role==="sensitive"));   // ★敏感肌は死亡がリアルタイムで分かる
     let tags="";
-    if(all || knowsRole(m,p)) tags+='<span class="tg rl '+p.role+'" data-role="'+p.role+'">'+ROLE_NAME[p.role]+'</span>';
+    if(all || knowsRole(m,p)) tags+=roleTag(p.role);
     else if(m && m.role==="seer" && !self){ const nt=m.notes.filter(x=>x.tg===p.id).pop(); if(nt) tags+='<span class="tg '+(nt.black?"black":"white")+'">'+(nt.black?"黒":"白")+'</span>'; }
     const done = p.alive && ph==="talk" && inputDone(p.id);   // ★行動中はチェックを出さない(終わる速さで役職が分かってしまうため)。議論では出す
     const vc = (ph==="vres" && lv && lv.cnt[p.id])? '<span class="tg vcnt">'+lv.cnt[p.id]+'票</span>' : "";
@@ -1902,13 +1906,11 @@ function causeText(p){ if(p.alive) return "生存"; const k=pById(p.killer);
 function openResult(){
   if(!G||G.phase!=="over") return;             // 決着していない時(別の画面へ移ったあとの遅れた呼び出し)は開かない
   $("winBanner").className="win-banner "+G.winner; $("winBanner").textContent=winTx();
-  const RC={villager:"var(--vil)",seer:"var(--seer)",wolf:"var(--wolf)",hawk:"var(--hawk)",mad:"var(--mad)"};
   /* 並び=勝った陣営が上→その中で生存者が上→ロビーの役職の順 */
   const win=p=>(TEAM_OF[p.role]===G.winner)?0:1;
   const list=G.players.slice().sort((a,b)=> win(a)-win(b) || (b.alive-a.alive) || (ROLE_ORDER.indexOf(a.role)-ROLE_ORDER.indexOf(b.role)));
-  ROLE_KEYS.forEach(k=>{ if(!RC[k]) RC[k]=ROLE_COL[k]; });
   $("resList").innerHTML=list.map(p=>'<div class="res-row'+(win(p)?"":" win")+'"><span class="p-dot" style="background:'+p.c+'"></span><span class="nm">'+esc(p.n)+(p.id===myId&&!debug&&p.n!=="あなた"?"（あなた）":"")+'</span>'
-    +'<span class="rl" style="background:'+RC[p.role]+'">'+ROLE_NAME[p.role]+'</span><span class="cs">'+causeText(p)+'</span></div>').join("");
+    +roleTag(p.role)+'<span class="cs">'+causeText(p)+'</span></div>').join("");
   /* 横並びの2択は決定(主ボタン)を右 */
   let b='<button class="ghost" id="resTitle">やめる</button>';
   if(debug||cpuMode) b+='<button class="close" id="resAgain">もう一回</button>';
