@@ -403,7 +403,10 @@
     display:flex; flex-direction:column; gap:6px; padding:8px; border-radius:10px; text-align:left;
     background:rgba(255,255,255,.97); color:#23211f; box-shadow:0 4px 18px rgba(0,0,0,.35); font-size:12px; line-height:1.4; }
   #sgPanel.left{ right:auto; left:8px; }
-  #sgPanel.fold .sg-list, #sgPanel.fold .sg-end{ display:none; }
+  #sgPanel.fold .sg-list, #sgPanel.fold .sg-end, #sgPanel.fold .sg-q{ display:none; }
+  #sgPanel .sg-q{ width:100%; box-sizing:border-box; height:28px; padding:0 9px; border:1px solid rgba(35,33,31,.22); border-radius:7px; font:inherit; font-size:12px; font-weight:600; color:#23211f; background:#fff; outline:none; }   /* ★シーンの検索(2026-09-28) */
+  #sgPanel .sg-q:focus{ border-color:rgba(35,33,31,.5); }
+  #sgPanel .sg-none{ padding:10px 6px; font-size:11.5px; font-weight:700; opacity:.5; }
   #sgPanel button{ font-family:inherit; font-size:11.5px; font-weight:800; color:#23211f; background:#fff; cursor:pointer; white-space:nowrap;
     border:1px solid rgba(35,33,31,.25); border-radius:6px; padding:4px 8px; box-shadow:none; letter-spacing:0; }
   #sgPanel .sg-head{ display:flex; align-items:center; gap:5px; }
@@ -1685,13 +1688,20 @@ function sgPanel(){
     el=document.createElement("div"); el.id="sgPanel"; if(window.innerWidth<700) el.classList.add("fold");
     el.innerHTML='<div class="sg-head"><svg class="sg-grip" viewBox="0 0 10 16" aria-hidden="true"><g fill="currentColor"><circle cx="3" cy="3" r="1.4"/><circle cx="7" cy="3" r="1.4"/><circle cx="3" cy="8" r="1.4"/><circle cx="7" cy="8" r="1.4"/><circle cx="3" cy="13" r="1.4"/><circle cx="7" cy="13" r="1.4"/></g></svg><b>シーン一覧</b><span id="sgNo"></span><button id="sgFold" type="button"></button></div>'
       +'<div class="sg-nav"><button id="sgPrev" type="button">◀ 前</button><button id="sgNext" type="button">次 ▶</button></div>'
-      +'<div class="sg-cur" id="sgCur"></div><div class="sg-list" id="sgList"></div>'
+      +'<div class="sg-cur" id="sgCur"></div><input id="sgQ" class="sg-q" type="search" placeholder="シーンを検索" autocomplete="off"><div class="sg-list" id="sgList"></div>'
       +'<button id="sgEnd" class="sg-end" type="button">シーン一覧をやめる</button>';
     document.body.appendChild(el);
     let h="", last="";
     SCENES.forEach((s,i)=>{ if(s.g!==last){ last=s.g; h+='<div class="sg-g">'+esc(s.g)+'</div>'; } h+='<button type="button" class="sg-i" data-i="'+i+'">'+esc(s.n)+'</button>'; });
     $("sgList").innerHTML=h;
     $("sgList").querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>sgGo(+b.dataset.i));
+    { const q=$("sgQ"); let comp=false;                          // ★検索: 入力した言葉を含むシーンだけ出す(グループ名も対象・ひらがな/カタカナは区別しない)
+      q.addEventListener("compositionstart",()=>{ comp=true; });
+      q.addEventListener("compositionend",()=>{ comp=false; sgFilter(); });
+      q.addEventListener("input",()=>{ if(!comp) sgFilter(); });
+      q.addEventListener("keydown",e=>{ if(e.isComposing||e.keyCode===229) return;
+        if(e.key==="Enter"){ e.preventDefault(); const f=[...$("sgList").querySelectorAll(".sg-i")].find(b=>b.style.display!=="none"); if(f) sgGo(+f.dataset.i); }
+        else if(e.key==="Escape"){ q.value=""; sgFilter(); } }); }
     $("sgPrev").onclick=()=>sgGo(sgIdx-1);
     $("sgNext").onclick=()=>sgGo(sgIdx+1);
     $("sgFold").onclick=()=>{ el.classList.toggle("fold"); sgPanel(); };
@@ -1705,6 +1715,19 @@ function sgPanel(){
   $("sgList").querySelectorAll("[data-i]").forEach(b=>b.classList.toggle("on",+b.dataset.i===sgIdx));
   if(el._place) el._place();                                    // たたむ/ひらくで大きさが変わっても同じ端にくっつけ直す
   const on=$("sgList").querySelector(".sg-i.on"); if(on && !el.classList.contains("fold")){ const L=$("sgList"); if(on.offsetTop<L.scrollTop || on.offsetTop>L.scrollTop+L.clientHeight-30) L.scrollTop=on.offsetTop-L.clientHeight/2; }
+}
+function sgNorm(s){ return String(s||"").toLowerCase().replace(/[\u30a1-\u30f6]/g,c=>String.fromCharCode(c.charCodeAt(0)-0x60)).replace(/[\s　]+/g,""); }
+function sgFilter(){
+  const L=$("sgList"), qi=$("sgQ"); if(!L||!qi) return;
+  const q=sgNorm(qi.value); let head=null, any=false, hit=0;
+  [...L.children].forEach(el=>{
+    if(el.classList.contains("sg-g")){ if(head) head.style.display=any?"":"none"; head=el; any=false; return; }
+    if(!el.classList.contains("sg-i")) return;
+    const sc=SCENES[+el.dataset.i], ok=!q || sgNorm(sc.g+" "+sc.n).includes(q);
+    el.style.display=ok?"":"none"; if(ok){ any=true; hit++; } });
+  if(head) head.style.display=any?"":"none";
+  let no=$("sgNone"); if(!no){ no=document.createElement("div"); no.id="sgNone"; no.className="sg-none"; no.textContent="見つかりません"; L.appendChild(no); }
+  no.style.display=hit? "none" : "";
 }
 function openGallery(){ gallery=true; let i=0; try{ i=parseInt(localStorage.getItem(SG_KEY),10)||0; }catch(e){} sgGo(i); }
 function closeGallery(){ gallery=false; const el=$("sgPanel"); if(el) el.remove(); sgReset(); }
