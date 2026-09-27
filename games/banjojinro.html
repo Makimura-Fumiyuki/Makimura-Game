@@ -246,7 +246,10 @@
     color:var(--card); font-size:12.5px; font-weight:900; letter-spacing:.04em; white-space:nowrap; cursor:pointer; }
   .gbtn{ display:inline-flex; align-items:center; justify-content:center; gap:5px; }
   .gbtn svg{ width:16px; height:16px; flex:none; border-radius:4px; }       /* ★役職の力のボタンは左に役職アイコン */
-  .gbtn.wide{ width:150px; }   /* 議論好きの「議論強制スタート」と、その時の「何もしない」 */
+  .gbtn.wide{ width:150px; }
+  .gbtn.talker{ background:#d89a3a; border-color:#d89a3a; color:#fff; }   /* 議論好き=役職アイコンの地と同じ色・吹き出しの絵だけ左に */
+  .gbtn .ftk-ic{ width:20px; height:20px; border-radius:0; margin:0 -2px 0 -3px; }
+  .gbtn.endb{ width:160px; }                                   /* 「行動終了」と「やっぱりまだ行動する」(同じ幅)*/   /* 議論好きの「議論強制スタート」と、その時の「何もしない」 */
   .gbtn.gold{ background:var(--gold); border-color:var(--gold); color:#3a2a06; }
   .gbtn.sel{ background:var(--gold); border-color:var(--gold); color:#3a2a06; }
   .gbtn:active{ transform:translateY(1px); }
@@ -1170,7 +1173,8 @@ function allIn(obj){ return alivePs().every(p=>obj[p.id]!==undefined); }
    G.done[id]=auto(自動)/none(何もしない)/end(行動を終了する)。行動のフェーズは全員がdoneになったら解決する */
 function whMap(id){ const w=(G.whs||{})[id]; if(!w) return {}; if(w.tg){ const o={}; o[w.tg]=w.tx; return o; } return w; }   // 話した相手→3文字(旧形式{tg,tx}も読める)
 function roleActed(p){ const a=G.acts[p.id]; return !!(a && ["seer","poison","cure","mine"].includes(a.k)); }
-function autoDone(p){ if(!G||G.phase!=="act"||!p||!p.alive||G.done[p.id]) return;
+function autoDone(p){ return;   // ★2026-09-28: となりに1人でもいる時は「行動終了」を押すまで完了にしない(自動スキップはresolveMoveの{auto:true}だけ)
+  if(!G||G.phase!=="act"||!p||!p.alive||G.done[p.id]) return;
   const talked=whMap(p.id); if((roleActed(p)||!hasPower(p)) && neighbors(p).every(q=>talked[q.id]!==undefined)) G.done[p.id]="auto"; }
 function actAllDone(){ return alivePs().every(p=>G.done && G.done[p.id]); }
 function hostAct(a){
@@ -1472,9 +1476,9 @@ function renderBoard(){
 function drawPoisonPill(el,tx,y,ic){                    // ic=役職(占い予定=seer・治療予定=doctor)。省略時は毒殺(赤+ドクロ)
   const fs=1.25, tw=[...tx].reduce((w,ch)=>w+(/[0-9]/.test(ch)? fs*.62 : fs),0), sk=2.1, gap=.5, pad=1.15, w=tw+gap+sk+pad*2, h=2.8, bg=ic? ROLE_COL[ic] : "#d4453a";
   el.innerHTML=""; el.setAttribute("transform","translate(0 "+y.toFixed(2)+")");
-  el.appendChild(svgEl("rect",{x:-w/2,y:-h/2,width:w,height:h,rx:h/2,fill:bg,stroke:"rgba(14,11,24,.9)","stroke-width":2,"vector-effect":"non-scaling-stroke"}));
-  const t=svgEl("text",{x:-w/2+pad,y:0,"dominant-baseline":"central","font-size":fs,"font-weight":"900",fill:"#fff"}); t.textContent=tx; el.appendChild(t);
-  const icg=svgEl("g",{transform:"translate("+(-w/2+pad+tw+gap)+" "+(-sk/2)+") scale("+(sk/24)+")"}); icg.innerHTML=(ICON_G[ic||"wolf"]||ICON_G.wolf)(bg); el.appendChild(icg);
+  el.appendChild(svgEl("rect",{x:-w/2,y:-h/2,width:w,height:h,rx:h/2,fill:bg,stroke:"rgba(14,11,24,.9)","stroke-width":1,"vector-effect":"non-scaling-stroke"}));   // ふちは画面上で1px
+  const t=svgEl("text",{x:-w/2+pad+sk+gap,y:0,"dominant-baseline":"central","font-size":fs,"font-weight":"900",fill:"#fff"}); t.textContent=tx; el.appendChild(t);   // ★バッジはアイコンが左・文字が右
+  const icg=svgEl("g",{transform:"translate("+(-w/2+pad)+" "+(-sk/2)+") scale("+(sk/24)+")"}); icg.innerHTML=(ICON_G[ic||"wolf"]||ICON_G.wolf)(bg); el.appendChild(icg);
 }
 /* 毒殺の演出=そのマスから毒のしずくが飛び散る(盤の上に重ねる・1.1秒で消える) */
 function poisonSplat(x,y,col){
@@ -1515,7 +1519,7 @@ function actState(){                          // いまの自分の行動の状�
     || (m.role==="doctor" && canCure(m) && neighbors(m).some(t=>canCureTo(m,t))) || (m.role==="miner" && canMine(m)));
   const talkable = !!m && m.alive && !auto && !none && neighbors(m).some(q=>w[q.id]===undefined);   // まだ話していないとなりの人がいる
   const talkAll = !!m && neighbors(m).every(q=>w[q.id]===undefined? false : true);
-  const doneNow = !!dn || auto || ((roleUsed || !roleable) && talkAll);            // ★完了=使い切った or 何もしない/行動を終了する
+  const doneNow = !!dn || auto;                                                    // ★完了=「行動終了」を押した時か、となりに誰もいない自動スキップだけ            // ★完了=使い切った or 何もしない/行動を終了する
   return { a, w, auto, none, roleUsed, done: doneNow,
     selectable: !doneNow && (roleable || talkable),                               // まだ誰かを押す意味がある(点線の輪を出す)
     exhausted: doneNow };
@@ -1698,14 +1702,14 @@ function renderHud(){
     html= cur? hint(WAIT_TX,true) : hint("移動したいマスを選択"); }
   else if(ph==="act"){ const st=actState();
     const ftk = !!(m.role==="talker" && !m.usedFTalk);                                   // ★議論好き: ゲーム中1回だけ
-    const ftb = ftk? '<button class="gbtn wide gold" id="ftalkBtn">'+roleIcon("talker",1)+'議論強制スタート</button>' : "";   // 議論好き=黄色のボタン
+    const ftb = ftk? '<button class="gbtn wide talker" id="ftalkBtn"><svg class="ftk-ic" viewBox="0 0 24 24" aria-hidden="true">'+ICON_G.talker(ROLE_COL.talker)+'</svg>議論強制スタート</button>' : "";   // 議論好き=黄色のボタン
     key+="|"+JSON.stringify([st.exhausted,st.none,st.done,ftk]);
     const row=b=>'<div class="hud-btns">'+b+'</div>';
     if(st.exhausted){ html=hint(WAIT_TX,true);
-      const nb=st.none? '<button class="gbtn sel'+(ftk?" wide":"")+'" id="noneBtn">やっぱりなし</button>' : "";
+      const nb=st.none? '<button class="gbtn sel endb" id="noneBtn">やっぱりまだ行動する</button>' : "";
       if(ftb||nb){ tall=true; html+=row(ftb+nb); } }                                     // 何もしないボタンの「左」に並べる
     else{ html=hint(m.role==="miner"&&canMine(m)? "接触したい人か、地雷を置くマスを選択" : "接触したい人を選択");
-      const nb='<button class="gbtn'+(ftk?" wide":"")+'" id="endBtn">行動を終了する</button>';   // ★「何もしない」は廃止＝行動を終了するだけ(2026-09-28)
+      const nb='<button class="gbtn endb" id="endBtn">行動終了</button>';   // ★「何もしない」は廃止＝行動を終了するだけ(2026-09-28)
       tall=true; html+=row(ftb+nb); } }
   else if(ph==="talk"){ const cur=myVoteNow(); key+="|"+cur; html= cur? hint(WAIT_TX,true) : hint("怪しい人を投票"); }
   if(key!==hudKey){ hudKey=key; h.innerHTML=html; h.classList.toggle("tall",tall); wireHud(); }
@@ -2358,7 +2362,7 @@ function buildHelp(){
    +'</ul>'
    +'<div class="h-sec">ながれ</div>'
    +'<ul class="h-list"><li>行動・移動　全員いっせいに1マス動く（留まってもいい）。行動中はチャットとスタンプは使えない</li>'
-   +'<li>行動・接触　となり（同じマスも含む）の人を選んで「占う」「毒殺」（1ターンに1人。全員の行動がそろうまで相手を変えられる）。それとは別に3文字で「話す」こともできる（となりの何人にでも・1人につき1回まで）。力を使い切って、となり全員に話すと行動完了。「行動を終了する」でもすぐ完了。となりに誰もいない時は自動でスキップ</li>'
+   +'<li>行動・接触　となり（同じマスも含む）の人を選んで「占う」「毒殺」（1ターンに1人。全員の行動がそろうまで相手を変えられる）。それとは別に3文字で「話す」こともできる（となりの何人にでも・1人につき1回まで）。行動がすんだら「行動終了」を押す（全員が押したら次へ）。となりに誰もいない時は自動で行動終了</li>'
    +'<li>議論 & 投票　決められたターンが終わったら、死んだ人が発表される。まだ効いていない毒は消える。チャットで話し合いながら、メンバーリストから怪しい人に投票しよう（1回押して選び、もう一度押して確定。スキップもできる）。全員が確定するか時間切れで、いちばん票を集めた人が吊られる（同数なら誰も吊られない）</li>'
    +'<li>死んだ人は、いつでも墓地チャットで話せる（死んだ人どうしにしか見えない）</li></ul>'
    +'<div class="h-sec">勝ち負け</div>'
@@ -2591,7 +2595,7 @@ sc("行動","占い師：相手を選んだ（話す・占う）",()=>{ sgAct(RS
 sc("行動","占い師：占う相手を変える（決めたあと）",()=>{ sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; } }); sgPop("g2"); });
 sc("行動","占い師：占う相手をもう一度選ぶ（キャンセル）",()=>{ sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; } }); sgPop("g1"); });
 sc("行動","毒殺人狼：毒殺相手をもう一度選ぶ（キャンセル）",()=>{ sgAct(RW,{ pos:WPOS, set:g=>{ g.acts[myId]={ k:"poison", tg:"g1", dl:1 }; } }); sgPop("g1"); });
-sc("行動","やることなしでも決めた相手は押せる（取り消し用）",()=>{ sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; g.done[myId]="auto"; g.whs[myId]={ g1:"しろ", g2:"よろ" }; } }); sgPop("g1"); });
+sc("行動","占って全員に話したあと、占った相手を押す（キャンセル）",()=>{ sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; g.whs[myId]={ g1:"しろ", g2:"よろ" }; } }); sgPop("g1"); });
 sc("行動","占い師：占うを決めた",()=>sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; g.acts.g4={ k:"none" }; g.done.g4="none"; } }));
 sc("行動","占い師：占うと話すを両方",()=>{ sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; g.whs[myId]={ tg:"g2", tx:"よろ" }; } }); sgPop("g1"); });
 sc("行動","毒殺人狼：相手を選んだ（話す・毒殺）",()=>{ sgAct(RW,{ pos:WPOS }); sgPop("g1"); });
@@ -2605,8 +2609,8 @@ sc("行動","いちばん上の段の相手（操作は下に出る）",()=>{ sg
 sc("行動","市民：相手を選んだ（話すだけ）",()=>{ sgAct(RV); sgPop("g1"); });
 sc("行動","話す：入力中",()=>{ sgAct(RV); sel.tx="やあ"; sgPop("g1","talk"); });
 sc("行動","話す：漢字も使える",()=>{ sgAct(RV); sel.tx="逃げて"; sgPop("g1","talk"); });
-sc("行動","話した（市民はこれで行動おわり）",()=>sgAct(RV,{ set:g=>{ g.whs[myId]={ g1:"にげて", g2:"よろ" }; g.done[myId]="auto"; } }));
-sc("行動","話して占った（やることなし・他の人を待つ）",()=>sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; g.done[myId]="auto"; g.whs[myId]={ g1:"しろ", g2:"よろ" }; } }));
+sc("行動","話した（行動終了を押すまで完了しない）",()=>sgAct(RV,{ set:g=>{ g.whs[myId]={ g1:"にげて", g2:"よろ" }; } }));
+sc("行動","行動終了を押した（他の人を待つ）",()=>sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; g.done[myId]="end"; g.whs[myId]={ g1:"しろ", g2:"よろ" }; } }));
 sc("行動","占って1人に話した（となりにまだ話していない人がいる）",()=>sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; g.whs[myId]={ g1:"しろ" }; } }));
 sc("行動","毒殺した（視界内=飛び散る）",()=>{ sgG(RW,{ pos:WPOS }); sgFire(()=>sgKill(G.players[1],"poison",myId,false)); });
 sc("行動","毒殺した（視界外=通知だけ）",()=>{ sgG(RW,{ pos:[[3,3],[6,6],[3,4],[3,1],[1,1],[0,6]] }); sgFire(()=>sgKill(G.players[1],"poison",myId,false)); });
@@ -2616,7 +2620,7 @@ sc("ロビー","役職の数が多い（上に固定の警告）",()=>sgLobby(4,
 sc("ロビー","オーナー譲渡のボタン",()=>sgLobby(5));
 sc("ロビー","20人",()=>sgLobby(20));
 sc("移動","同じマスに12人",()=>{ const r=[], ps=[]; for(let i=0;i<12;i++){ r.push(i===1?"wolf":"villager"); ps.push([3,3]); } sgG(r,{ pos:ps }); });
-sc("行動","行動を終了した（使い切っていない）",()=>sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; g.done[myId]="end"; } }));
+sc("行動","行動終了した（使い切っていない）",()=>sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; g.done[myId]="end"; } }));
 sc("行動","毒を盛った相手（効いている間も表示）",()=>sgG(RW,{ pos:WPOS, set:g=>{ g.players[1].poison={ left:2, by:myId }; } }));
 sc("行動","何もしないを選んだ",()=>sgAct(RV,{ set:g=>{ g.acts[myId]={ k:"none" }; g.done[myId]="none"; g.acts.g3={ k:"none" }; g.done.g3="none"; } }));
 sc("行動","自動スキップ（となりに誰もいない）",()=>sgAct(RV,{ pos:[[0,0],[4,3],[3,4],[5,5],[6,2],[6,6]], set:g=>{ g.acts[myId]={ k:"none", auto:true }; g.done[myId]="auto"; } }));
