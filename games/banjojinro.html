@@ -273,10 +273,6 @@
   .pbtn:disabled{ cursor:default; }
   .pbtn.sel:disabled{ color:#3a2a06; } .pbtn.sel:disabled svg{ opacity:1; }
   .pbtn:active{ transform:translateY(1px); }
-  .pop .act-row{ display:flex; gap:5px; width:165px; }                   /* 決めた力のボタン+取り消しの「×」(全体の幅は他のボタンと同じ) */
-  .pop .act-row .pbtn{ width:auto; flex:1; min-width:0; }
-  .pop .act-row .pbtn.x{ flex:none; width:34px; padding:0; background:rgba(244,239,230,.16); color:#fff; box-shadow:inset 0 0 0 1.5px rgba(244,239,230,.3); }
-  .pop .act-row .pbtn.x svg{ width:16px; height:16px; }
   .pop .talk-row{ display:flex; gap:5px; }                                /* 吹き出しの幅はどの状態でも同じ(向きが変わらないように) */
   .wh-in{ flex:1; min-width:0; width:auto; height:34px; padding:0 10px; border-radius:10px; border:none; font:inherit; font-size:15px; font-weight:800; text-align:center;
     background:#fff; color:#23211f; }
@@ -1524,7 +1520,6 @@ function actState(){                          // いまの自分の行動の状�
     selectable: !doneNow && (roleable || talkable),                               // まだ誰かを押す意味がある(点線の輪を出す)
     exhausted: doneNow };
 }
-const X_SVG='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></svg>';
 function popTargets(){                        // 押して操作を出せる相手=選べる相手＋いま役職の力を使うと決めている相手(取り消せるように)
   const ts=actTargets().slice(), m=me(), a=myAct(), d=myDone();
   if(m && m.alive && G.phase==="act" && a && a.tg && ["seer","poison","cure"].includes(a.k) && d!=="end" && d!=="none"){
@@ -1631,8 +1626,8 @@ function renderPop(){
         const mine = a && ((a.k===pw && a.tg===t.id) || (pw==="mine" && a.k==="mine" && a.mx===t.x && a.my===t.y));
         const cool = (pw==="poison" && !canPoison(m)) || (pw==="cure" && !canCure(m)) || (pw==="mine" && !canMine(m));
         const lb = cool? (pw==="poison"? "毒殺（あと"+poisonLeft(m)+"ターン）" : pw==="mine"? "地雷（あと"+mineLeft(m)+"ターン）" : "毒を治す（このラウンドは使用済み）") : POWER_NAME[m.role];
-        const pb='<button class="pbtn'+(mine?" sel":"")+(cool?" off":"")+'" data-p="'+pw+'">'+btnIcon(pw)+lb+'</button>';
-        h+= (mine && pw!=="mine")? '<div class="act-row">'+pb+'<button class="pbtn x" data-x="1" aria-label="取り消す">'+X_SVG+'</button></div>' : pb;   // ★決めた相手をもう一度選ぶと「×」で取り消せる
+        h+= (mine && pw!=="mine")? '<button class="pbtn sel" data-x="1">'+btnIcon(pw)+'キャンセル</button>'   // ★決めた相手をもう一度選ぶと「(アイコン)キャンセル」=押すと取り消し
+          : '<button class="pbtn'+(mine?" sel":"")+(cool?" off":"")+'" data-p="'+pw+'">'+btnIcon(pw)+lb+'</button>';
       }
     } else if(sel.pop==="poison"){
       h+=[0,1,2].map(d=>'<button class="pbtn dang'+(a&&a.k==="poison"&&a.tg===t.id&&(a.dl|0)===d?" sel":"")+'" data-dl="'+d+'"'+(dlOk(d)?"":" disabled")+'>'+btnIcon("poison")+(d? d+"ターン後に死亡" : "即殺")+'</button>').join("");
@@ -2594,8 +2589,8 @@ sc("行動","行動のはじまり",()=>{ sgAct(RS); sgPhaseIn("move"); });
 sc("行動","占い師：選ぶ前",()=>sgAct(RS));
 sc("行動","占い師：相手を選んだ（話す・占う）",()=>{ sgAct(RS); sgPop("g1"); });
 sc("行動","占い師：占う相手を変える（決めたあと）",()=>{ sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; } }); sgPop("g2"); });
-sc("行動","占い師：占う相手をもう一度選ぶ（×で取り消し）",()=>{ sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; } }); sgPop("g1"); });
-sc("行動","毒殺人狼：毒殺相手をもう一度選ぶ（×で取り消し）",()=>{ sgAct(RW,{ pos:WPOS, set:g=>{ g.acts[myId]={ k:"poison", tg:"g1", dl:1 }; } }); sgPop("g1"); });
+sc("行動","占い師：占う相手をもう一度選ぶ（キャンセル）",()=>{ sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; } }); sgPop("g1"); });
+sc("行動","毒殺人狼：毒殺相手をもう一度選ぶ（キャンセル）",()=>{ sgAct(RW,{ pos:WPOS, set:g=>{ g.acts[myId]={ k:"poison", tg:"g1", dl:1 }; } }); sgPop("g1"); });
 sc("行動","やることなしでも決めた相手は押せる（取り消し用）",()=>{ sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; g.done[myId]="auto"; g.whs[myId]={ g1:"しろ", g2:"よろ" }; } }); sgPop("g1"); });
 sc("行動","占い師：占うを決めた",()=>sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; g.acts.g4={ k:"none" }; g.done.g4="none"; } }));
 sc("行動","占い師：占うと話すを両方",()=>{ sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; g.whs[myId]={ tg:"g2", tx:"よろ" }; } }); sgPop("g1"); });
@@ -2641,7 +2636,7 @@ sc("追加の役職","毒殺人狼：毒殺予定",()=>sgAct(RW,{ pos:WPOS, set:
 sc("追加の役職","霊感が強い人：死体が見える",()=>sgG(RMe,{ set:g=>{ sgKill(g.players[2],"poison","g1",false); g.corpses=[{ x:3, y:4, id:"g2", n:g.players[2].n, c:g.players[2].c }]; } }));
 sc("追加の役職","議論好き：議論強制スタート",()=>sgAct(RT));
 sc("追加の役職","議論好きが議論を始めた（特別な演出）",()=>{ sgTalk(RT,{ set:g=>{ g.ftalk=g.round; g.players[0].usedFTalk=true; } }); sgPhaseIn("act"); });
-sc("追加の役職","ドクター：治療を決めた相手をもう一度選ぶ（×で取り消し）",()=>{ sgAct(RD,{ set:g=>{ g.players[2].poison={ left:2, by:"g1" }; g.acts[myId]={ k:"cure", tg:"g2" }; } }); sgPop("g2"); });
+sc("追加の役職","ドクター：治療を決めた相手をもう一度選ぶ（キャンセル）",()=>{ sgAct(RD,{ set:g=>{ g.players[2].poison={ left:2, by:"g1" }; g.acts[myId]={ k:"cure", tg:"g2" }; } }); sgPop("g2"); });
 sc("追加の役職","敏感肌：誰かが死亡した（その瞬間）",()=>{ sgG(RSe); sgFire(()=>sgKill(G.players[4],"poison","g1",false)); });
 sc("追加の役職","敏感肌：2人同時に死亡した",()=>{ sgG(RSe); sgFire(()=>{ sgKill(G.players[4],"poison","g1",false); sgKill(G.players[3],"mine","g1",false); }); });
 sc("追加の役職","敏感肌：メンバーリスト（公表前でも×）",()=>sgG(RSe,{ set:g=>sgKill(g.players[4],"poison","g1",false) }));
