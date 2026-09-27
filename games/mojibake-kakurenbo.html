@@ -83,6 +83,11 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 .member .host{ font-size:11px; color:var(--gray); font-weight:700; }
 .member .mb{ font-size:11px; font-weight:700; padding:5px 9px; border-radius:8px; border:1.5px solid var(--line); }
 .member .mb.kick{ color:var(--mag); border-color:var(--mag); }
+.member .mb{ flex:none; width:84px; padding:5px 0; text-align:center; white-space:nowrap; }   /* 譲渡・追放は同じ固定サイズ(2026-09-28) */
+.member .nm.mine{ flex:0 1 auto; cursor:pointer; text-decoration:underline dotted rgba(28,28,34,.35); text-underline-offset:3px; }   /* 自分の名前=押すと名前を変えられる */
+.member .nm-pen{ flex:1 1 auto; display:flex; align-items:center; cursor:pointer; opacity:.42; }
+.member .nm-pen svg{ width:13px; height:13px; }
+#resultOv .row .txt-btn{ width:132px; padding-left:0; padding-right:0; }
 .member .badge.seek{ font-size:11px; font-weight:700; color:#fff; background:var(--mag); padding:2px 8px; border-radius:6px; }
 .rule-frame{ width:100%; border:1.5px solid var(--line); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:12px; background:var(--panel); }
 .rule-frame.debug{ border-style:dashed; background:transparent; color:var(--gray); }
@@ -538,7 +543,7 @@ button.dd{ text-align:left; min-width:96px; }
   <div class="win-banner" id="winBanner"></div>
   <div class="res-head">隠れ方ランキング</div>
   <div class="res-list" id="resList"></div>
-  <div class="row"><button class="txt-btn" id="resLobby">ロビーへ</button></div>
+  <div class="row"><button class="txt-btn" id="resQuit">やめる</button><button class="txt-btn" id="resLobby">ロビーに戻る</button></div>
 </div></div>
 <div class="dd-menu" id="ddMenu"></div>
 <div id="dropOv"><div class="drop-box">ドロップで写真を確定</div></div>
@@ -740,9 +745,16 @@ let hostAt=0, noHostT=0;   // hostAt=オーナーになった時刻(presenceに�
 /* ★対戦中にpresenceが一瞬落ちただけで「退出した」と扱わないための猶予(2026-09-07)。
    これが無いと、スマホが一瞬バックグラウンドに回る/通信が瞬断するだけで
    ①さがす人が消えた判定→全員ロビーへ戻される ②その人抜きで「全員そろった」と誤判定して勝手に進む が起きる。
-   mate(待てアート)・derby(俺たちダービー)と同じ考え方。ロビー中は猶予なし=抜けたらすぐ一覧から消す */
+   mate(待てアート)・derby(俺たちダービー)と同じ考え方。
+   ★2026-09-28: ロビー中も30秒の猶予(LOBBY_GRACE)。以前は「ロビー中は猶予なし=抜けたらすぐ消す」だったので、
+   スマホが一瞬裏に回っただけでロビーから勝手に抜けてしまっていた */
 const GONE_GRACE=300000;   // 5分(2026-09-07牧村指示。mate/cookkey/derbyと同じ値)。※「タイトルにもどる」等の明示の退出は byeで即時
-let goneAt=Object.create(null), lastPres=Object.create(null), goneT=0, byeIds=new Set();
+let goneAt=Object.create(null), lastPres=Object.create(null), goneT=0, byeIds=new Map();   // byeIds=id→退出した時のjoinT(入り直した人を誤って消さない)
+const LOBBY_GRACE=30000;   // ロビー中の猶予(30秒)
+let kickedIds=new Map(), hostChgAt=0, lastHeal=0, subDone=false, localLobby=false;   // localLobby=結果から先にロビーへ戻った(参加者側)
+function graceMs(){ return phase==="lobby"?LOBBY_GRACE:GONE_GRACE; }
+function isBye(id){ if(!byeIds.has(id)) return false; const bt=byeIds.get(id), lp=lastPres[id]; return !bt||!lp||lp.t===bt; }
+function isKicked(id){ const t=kickedIds.get(id); return !!t&&Date.now()-t<60000; }
 function myPresence(){ return { id:myId, name:nameDecided?myName:"", host:isHost(), ha:isHost()?hostAt:0, t:joinT }; }
 function send(event,payload){ if(!online||!ch) return; try{ ch.send({ type:"broadcast", event, payload }); }catch(e){} }
 function leaveChannel(){
@@ -754,24 +766,26 @@ function joinRoom(code,asHost){
   if(!window.supabase){ toast("通信ライブラリが読み込めませんでした"); return; }
   sb=sb||supabase.createClient(SB_URL,SB_KEY);
   leaveChannel();
-  roomCode=code; online=true; joinT=Date.now(); byeIds=new Set(); hostId=asHost?myId:null; hostAt=asHost?Date.now():0; clearTimeout(noHostT); noHostT=0; members=[]; gotSnap=false; lastVer=-1; lastSnapHost=null; snapVer=0; nameDecided=false; nameAsked=false; colors={}; photoInfo=null; helloSent=false;
+  roomCode=code; online=true; joinT=Date.now(); byeIds=new Map(); kickedIds=new Map(); subDone=false; localLobby=false; lastHeal=0; hostChgAt=0; hostId=asHost?myId:null; hostAt=asHost?Date.now():0; clearTimeout(noHostT); noHostT=0; members=[]; gotSnap=false; lastVer=-1; lastSnapHost=null; snapVer=0; nameDecided=false; nameAsked=false; colors={}; photoInfo=null; helloSent=false;
   ch=sb.channel("mjb-"+code,{ config:{ presence:{ key:myId } } });
   ch.on("presence",{event:"sync"},onPresence);
   ch.on("broadcast",{event:"snap"},({payload})=>{ if(payload&&!isHost()) applySnap(payload); });
   ch.on("broadcast",{event:"act"},({payload})=>{ if(payload&&isHost()) hostAct(payload); });
-  ch.on("broadcast",{event:"hello"},({payload})=>{ if(!isHost()||!payload) return; const known=members.some(m=>m.id===payload.id)||hiders.some(h=>h.id===payload.id); if(phase!=="lobby"&&!known){ specSet.add(payload.id); send("spec",{to:payload.id}); sendSnap(); setTimeout(updateSpecBadge,200); } else { sendSnap(); } });   // ゲーム中の入室は観戦者として受け入れる(2026-09-27)
+  ch.on("broadcast",{event:"hello"},({payload})=>{ if(!isHost()||!payload) return; if(isKicked(payload.id)){ send("kick",{to:payload.id}); return; } const known=members.some(m=>m.id===payload.id)||hiders.some(h=>h.id===payload.id); if(phase!=="lobby"&&!known){ specSet.add(payload.id); send("spec",{to:payload.id}); sendSnap(); setTimeout(updateSpecBadge,200); } else { sendSnap(); } });   // ゲーム中の入室は観戦者として受け入れる(2026-09-27)
   ch.on("broadcast",{event:"busy"},({payload})=>{ if(payload&&payload.to===myId){ toast("次のゲーム開始まで待ってね"); goTitle(); } });
   ch.on("broadcast",{event:"spec"},({payload})=>{ if(!payload||payload.to!==myId||spectating) return; spectating=true; toast("とちゅうから観戦しています"); });   // ゲーム中に入った=観戦者
   ch.on("broadcast",{event:"kick"},({payload})=>{ if(payload&&payload.to===myId){ toast("オーナーから追放されました"); goTitle(); } });
-  ch.on("broadcast",{event:"host"},({payload})=>{ if(!payload) return; hostId=payload.to; clearTimeout(noHostT); noHostT=0; if(payload.to===myId){ hostAt=Date.now(); try{ ch.track(myPresence()); }catch(e){} startHeartbeat(); toast("オーナーになった"); } renderMembers(); });
+  ch.on("broadcast",{event:"host"},({payload})=>onHostMsg(payload));
   ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload&&payload.from!==myId){ speakStamp(payload.i|0); spawnStamp(payload.i|0, payload.n||"？", false, payload.c); } });   // 届いたスタンプも読み上げる
   ch.on("broadcast",{event:"chat"},({payload})=>{ if(payload&&payload.t&&payload.from!==myId) recvChat(payload.n||"？", String(payload.t).slice(0,40), payload.sp?"":(payload.c||""), !!payload.sp); });
   ch.on("broadcast",{event:"cur"},({payload})=>{ if(payload&&payload.from!==myId&&phase==="seek") showSeekCur(payload.x,payload.y); });
   ch.on("broadcast",{event:"img"},({payload})=>{ if(payload) onImgChunk(payload); });
-  ch.on("broadcast",{event:"bye"},({payload})=>{ if(!payload||!payload.id) return; byeIds.add(payload.id); onPresence(); });   // 明示の退出=猶予(5分)を待たずにすぐ退出扱い
+  ch.on("broadcast",{event:"bye"},({payload})=>{ if(!payload||!payload.id) return; byeIds.set(payload.id, payload.t||0); onPresence(); });   // 明示の退出=猶予(5分)を待たずにすぐ退出扱い
   ch.subscribe(async status=>{
     if(status!=="SUBSCRIBED") return;
     try{ await ch.track(myPresence()); }catch(e){}
+    if(subDone){ if(isHost()) sendSnap(); else send("hello",{id:myId}); return; }   // ★再接続=名乗り直すだけ(以前はホストが毎回enterLobby()していた=ゲーム中に全員ロビーへ戻される)
+    subDone=true;
     if(!asHost){ if(helloSent) return; helloSent=true; send("hello",{id:myId}); joinChk=setTimeout(()=>{ if(!gotSnap&&members.length<2){ const er=$("codeErr"); if(er) er.textContent="部屋が見つかりません（合言葉をたしかめてね）"; leaveChannel(); } },4000); }
     else{ enterLobby(); }
   });
@@ -780,27 +794,28 @@ function onPresence(){
   if(!ch) return;
   const st=ch.presenceState(); const arr=[];
   Object.keys(st).forEach(k=>{ const p=st[k][0]; if(p&&p.id) arr.push({ id:p.id, name:p.name||"", host:!!p.host, ha:p.ha||0, t:p.t||0 }); });
+  for(let i=arr.length-1;i>=0;i--){ if(isKicked(arr[i].id)){ if(isHost()) send("kick",{to:arr[i].id}); arr.splice(i,1); } }   // 追放した人は(kickが届かなかった時も)一覧に戻さない
   const prevMembers=members.slice(), prevIds=prevMembers.map(m=>m.id);
   const nowIds=new Set(arr.map(m=>m.id));
   arr.forEach(m=>{ lastPres[m.id]=m; delete goneAt[m.id]; });
-  if(phase!=="lobby"&&phase!=="title"){   // 対戦中は、消えた人を猶予つきでメンバーに残す
+  if(phase!=="title"){   // 消えた人を猶予つきでメンバーに残す(対戦中=5分・ロビー中=30秒)
     const t=Date.now();
     prevMembers.forEach(m=>{ if(!nowIds.has(m.id)&&!goneAt[m.id]) goneAt[m.id]=t; });
     Object.keys(goneAt).forEach(id=>{
       if(nowIds.has(id)){ delete goneAt[id]; return; }
-      if(byeIds.has(id)){ delete goneAt[id]; return; }                   // 自分から抜けた人は猶予なしで退出
-      if(t-goneAt[id]<GONE_GRACE&&lastPres[id]) arr.push(lastPres[id]);   // まだ猶予中=戻ってくるかもしれないので残す
+      if(isBye(id)){ delete goneAt[id]; return; }                        // 自分から抜けた人は猶予なしで退出
+      if(t-goneAt[id]<graceMs()&&lastPres[id]) arr.push(lastPres[id]);   // まだ猶予中=戻ってくるかもしれないので残す
       else delete goneAt[id];                                            // 猶予切れ=本当に退出したものとして扱う
     });
   }else{ goneAt=Object.create(null); }
   arr.sort((a,b)=>a.t-b.t);
   members=arr;
   clearTimeout(goneT);
-  if(Object.keys(goneAt).length) goneT=setTimeout(onPresence,GONE_GRACE+300);   // presenceが動かなくても猶予が切れた頃に再判定する
+  { const ks=Object.keys(goneAt); if(ks.length){ const now=Date.now(), g=graceMs(); goneT=setTimeout(onPresence,Math.max(300,Math.min(...ks.map(id=>goneAt[id]+g-now))+300)); } }   // presenceが動かなくても猶予が切れた頃に再判定する
   const hs=arr.filter(m=>m.host);
-  if(hs.length){ const h=hs.reduce((a,b)=>(b.ha||0)>(a.ha||0)?b:a); hostId=h.id; clearTimeout(noHostT); noHostT=0; }   // 2人以上がオーナーを名乗っていたら新しい方
+  if(hs.length){ const h=hs.reduce((a,b)=>(b.ha||0)>(a.ha||0)?b:a); if(!(Date.now()-hostChgAt<3000&&h.id!==hostId)) hostId=h.id; clearTimeout(noHostT); noHostT=0; }   // 譲渡の直後3秒は、古いpresenceで元のオーナーに戻さない   // 2人以上がオーナーを名乗っていたら新しい方
   else if(arr.length&&!noHostT){   // 誰もオーナーでない=譲渡の途中か、オーナーの通信が一瞬切れただけの可能性→3秒待ってから繰り上げ(即・繰り上げると「勝手に譲渡」になる)
-    noHostT=setTimeout(()=>{ noHostT=0; if(!ch) return; const st2=ch.presenceState(); const arr2=[]; Object.keys(st2).forEach(k=>{ const p=st2[k][0]; if(p&&p.id) arr2.push(p); }); if(arr2.some(p=>p.host)||!arr2.length) return; arr2.sort((a,b)=>(a.t||0)-(b.t||0)); hostId=arr2[0].id; if(hostId===myId){ hostAt=Date.now(); try{ ch.track(myPresence()); }catch(e){} startHeartbeat(); toast("オーナーになった"); } renderMembers(); sendSnap(); },3000);
+    noHostT=setTimeout(()=>{ noHostT=0; if(!ch) return; const st2=ch.presenceState(); const arr2=[]; Object.keys(st2).forEach(k=>{ const p=st2[k][0]; if(p&&p.id) arr2.push(p); }); if(arr2.some(p=>p.host)||!arr2.length) return; arr2.sort((a,b)=>(a.t||0)-(b.t||0)); hostId=arr2[0].id; hostChgAt=Date.now(); if(hostId===myId){ hostAt=Date.now(); try{ ch.track(myPresence()); }catch(e){} startHeartbeat(); } toast(nameOf(hostId)+"がオーナーになりました"); renderMembers(); sendSnap(); },3000);
   }
   const me=arr.find(m=>m.id===myId); if(me&&me.host!==isHost()){ try{ ch.track(myPresence()); }catch(e){} }   // 自分のpresenceの旗が実態とズレていたら直す
   if(isHost()){ arr.forEach(m=>{ if(!colors[m.id]) colors[m.id]=nextColor(); }); }
@@ -825,12 +840,13 @@ function hiderPack(h){ const o={}; HKEYS.forEach(k=>o[k]=h[k]); o.id=h.id; o.nam
 function sendSnap(){
   if(!online||!isHost()||!ch) return;
   const s={ ver:++snapVer, hid:hostId, cols:colors, photo:photoImg?{ n:photoName, w:photoImg.naturalWidth, h:photoImg.naturalHeight }:null, phase, seekerId, rules, stageKind, hz:hiders.map(hiderPack), ready:[...readyIds], misses, foundN, left:tmr?Math.max(0,tEnd-Date.now()):0,
-            votes, vdone:[...voteDoneIds], seekerWin, endReason, lastTap, sp:[...specSet], img:imgMeta?{id:imgMeta.id,n:imgMeta.n}:null };
+            votes, vdone:[...voteDoneIds], seekerWin, endReason, lastTap, sp:[...specSet], img:imgMeta?{id:imgMeta.id,n:imgMeta.n}:null, mem:members.map(m=>m.id) };   // mem=オーナーから見えているメンバー(参加者が自分の抜け落ちに気づくため)
   send("snap",s);
 }
 function startHeartbeat(){ clearInterval(hbT); hbT=setInterval(()=>{ if(isHost()) sendSnap(); },2500); }
 /* ---- ゲスト: スナップショット反映 ---- */
 function applySnap(s){
+  if(s.hid&&hostId&&s.hid!==hostId&&Date.now()-hostChgAt<3000) return;   // 譲渡の直後に届いた元のオーナーのsnapは捨てる
   if(s.hid&&s.hid!==lastSnapHost){ lastSnapHost=s.hid; lastVer=-1; }   // オーナーが替わったら番号は振り直し(古い番号のまま無視し続けるバグの防止)
   if(s.hid&&s.hid!==myId){ hostId=s.hid; }   // snapを送っているのがオーナー
   if(s.ver<=lastVer) return; lastVer=s.ver; gotSnap=true; clearTimeout(joinChk);
@@ -841,6 +857,7 @@ function applySnapBody(s){
   if(!isHost()){ specSet=new Set(s.sp||[]); const sp=specSet.has(myId); if(sp&&!spectating) toast("とちゅうから観戦しています"); spectating=sp; }
   rules=s.rules||rules; seekerId=s.seekerId; misses=s.misses|0; foundN=s.foundN|0; seekerWin=!!s.seekerWin; endReason=s.endReason||"";
   if(s.cols) colors=s.cols; photoInfo=s.photo||null;
+  if(localLobby){ if(s.phase==="result"||s.phase==="vote"||s.phase==="ending"){ renderMembers(); renderStageSel(); return; } localLobby=false; }   // ★先にロビーへ戻った人を、終わったゲームの結果に引き戻さない
   readyIds=new Set(s.ready||[]); voteDoneIds=new Set(s.vdone||[]);
   { const mv=votes[myId]; votes=s.votes||{}; if(s.phase==="vote"&&mv) votes[myId]=mv; }   // 自分の投票は手元が正(古いsnapで巻き戻さない)
   if(s.stageKind) stageKind=s.stageKind;
@@ -850,6 +867,7 @@ function applySnapBody(s){
   if(s.phase==="lobby"){
     if(spectating&&!specSet.has(myId)){ spectating=false; toast("ロビーに参加しました"); }   // ★観戦していた人はゲーム終了後そのままロビーへ参加
     if(prevPhase!=="lobby"){ stopTimer(); clearStage(); $("resultOv").classList.remove("on"); enterLobby(); }
+    if(online&&!isHost()&&Array.isArray(s.mem)&&s.mem.indexOf(myId)<0&&Date.now()-lastHeal>2000){ lastHeal=Date.now(); try{ if(ch) ch.track(myPresence()); }catch(e){} send("hello",{id:myId}); }   // ★オーナーの一覧に自分がいない=名乗り直す
     renderRules(); renderStageSel(); renderMembers(); updateSpecBadge(); return; }
   syncHiders(s.hz||[]);
   /* ★自分の箱がホストに届いていなければ送り直す(broadcastは配送保証がないので、
@@ -944,6 +962,7 @@ let nameAsked=false;
 function enterLobby(){
   phase="lobby"; $("codeText").textContent=roomCode; renderMembers(); renderRules(); renderStageSel(); showScene("lobbyScene");
   if(isHost()) startHeartbeat();
+  if(ch) setTimeout(onPresence,60);   // ロビーの猶予(30秒)で一覧を数え直す
   if(!nameAsked){ nameAsked=true; openNameDlg(); }
 }
 $("nameOv").addEventListener("click",e=>{ if(e.target===$("nameOv")&&nameDecided) $("nameOv").classList.remove("on"); });
@@ -954,13 +973,15 @@ $("nameGo").addEventListener("click",()=>{
   if(ch){ try{ ch.track(myPresence()); }catch(e){} } if(!online||!members.length){ members=[{id:myId,name:myName,host:true,t:joinT}]; } renderMembers();
 });
 $("nameIn").addEventListener("keydown",e=>{ if(e.key==="Enter") $("nameGo").click(); });
+const PEN_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>';
 function renderMembers(){
   renderRules(); renderMemberOv();
   const list=$("memberList"); list.innerHTML="";
   const gm0=gameMembers(); const arr=gm0.length?gm0:[{id:myId,name:myName,host:true}];
   arr.forEach(m=>{
     const row=document.createElement("div"); row.className="member";
-    row.innerHTML='<span class="dot"></span><span class="nm'+(m.name?"":" undef")+'"></span>'+(m.id===hostId?'<span class="host">オーナー</span>':"")+(m.id===myId?'<span class="you">じぶん</span>':"")
+    const me=m.id===myId&&online;   // 自分の名前=押すと名前を変えられる
+    row.innerHTML='<span class="dot"></span><span class="nm'+(m.name?"":" undef")+(me?" mine":"")+'"></span>'+(me?'<span class="nm-pen" aria-label="名前を変える">'+PEN_SVG+'</span>':"")+(m.id===hostId?'<span class="host">オーナー</span>':"")+(m.id===myId?'<span class="you">じぶん</span>':"")
       +(isHost()&&m.id!==myId?'<button class="mb give" data-id="'+m.id+'">オーナー譲渡</button><button class="mb kick" data-id="'+m.id+'">追放</button>':"");
     row.querySelector(".dot").style.background=colorOf(m.id);
     row.querySelector(".nm").textContent=dispName(m);
@@ -968,6 +989,7 @@ function renderMembers(){
   });
   list.querySelectorAll(".give").forEach(b=>b.addEventListener("click",()=>{ playSelect(); transferHost(b.dataset.id); }));
   list.querySelectorAll(".kick").forEach(b=>b.addEventListener("click",()=>{ playSelect(); kickMember(b.dataset.id); }));
+  list.querySelectorAll(".nm.mine,.nm-pen").forEach(el=>el.addEventListener("click",()=>{ playSelect(); openNameDlg(); }));
   $("ruleFrame").classList.toggle("locked",!isHost()); $("ruleFrame2").classList.toggle("locked",!isHost()); $("ruleReset").style.display=isHost()?"":"none"; $("ruleNote").style.display=isHost()?"none":"";
   const n=arr.length; const so=soloOK();
   $("startBtn").disabled=!(isHost()&&((n>=2&&(stageKind!=="photo"||photoImg))||so)); $("startBtn").textContent=so?"1人でおためし":"はじめる";
@@ -980,18 +1002,44 @@ function renderMemberOv(){
   arr.forEach(m=>{
     const row=document.createElement("div"); row.className="member";
     row.innerHTML='<span class="dot"></span><span class="nm'+(m.name?"":" undef")+'"></span>'+(m.id===seekerId&&phase!=="lobby"?'<span class="badge seek">さがす人</span>':"")+(m.id===hostId?'<span class="host">オーナー</span>':"")+(m.id===myId?'<span class="you">じぶん</span>':"")
-      +(isHost()&&m.id!==myId?'<button class="mb kick" data-id="'+m.id+'">追放</button>':"");
+      +(isHost()&&m.id!==myId?(phase==="lobby"?'<button class="mb give" data-id="'+m.id+'">オーナー譲渡</button>':"")+'<button class="mb kick" data-id="'+m.id+'">追放</button>':"");
     row.querySelector(".dot").style.background=colorOf(m.id);
     row.querySelector(".nm").textContent=dispName(m);
     list.appendChild(row);
   });
+  list.querySelectorAll(".give").forEach(b=>b.addEventListener("click",()=>{ playSelect(); transferHost(b.dataset.id); $("memOv").classList.remove("on"); }));
   list.querySelectorAll(".kick").forEach(b=>b.addEventListener("click",()=>{ playSelect(); kickMember(b.dataset.id); }));
 }
 $("memBtn").addEventListener("click",()=>{ playSelect(); renderMemberOv(); $("memOv").classList.add("on"); });
 $("memClose").addEventListener("click",()=>{ playSelect(); $("memOv").classList.remove("on"); });
 $("memOv").addEventListener("click",e=>{ if(e.target===$("memOv")) $("memOv").classList.remove("on"); });
-function transferHost(id){ if(!isHost()||!members.some(m=>m.id===id)) return; hostId=id; hostAt=0; clearInterval(hbT); hbT=0; try{ ch.track(myPresence()); }catch(e){} send("host",{to:id}); setTimeout(()=>send("host",{to:id}),400); renderMembers(); toast("オーナーをゆずった"); }   // 譲渡は2回送る(ロスト対策)
-function kickMember(id){ if(!isHost()||id===myId) return; send("kick",{to:id}); specSet.delete(id); members=members.filter(m=>m.id!==id); renderMembers(); renderMemberOv(); }
+/* ★オーナー譲渡(ロビーだけ・2026-09-28): 新しいオーナーにルール・ステージ・色・snapの番号を渡し、2回送る(ロスト対策)。
+   新オーナーのsnapが届かなければ2秒ごとに最大4回送り直す */
+function transferHost(id){
+  if(!isHost()||!online||!ch||phase!=="lobby"||id===myId||!members.some(m=>m.id===id)) return;
+  const pl={ to:id, from:myId, ver:snapVer, rules, stageKind, cols:colors };
+  hostId=id; hostAt=0; hostChgAt=Date.now(); clearInterval(hbT); hbT=0; lastVer=-1; lastSnapHost=id;
+  try{ ch.track(myPresence()); }catch(e){}
+  send("host",pl); setTimeout(()=>send("host",pl),400);
+  let n=0; const re=setInterval(()=>{ if(!ch||isHost()||hostId!==id||lastVer>=0||++n>4){ clearInterval(re); return; } send("host",pl); },2000);
+  renderMembers(); renderStageSel(); toast(nameOf(id)+"がオーナーになりました");
+}
+function onHostMsg(p){
+  if(!p||!p.to) return;
+  const changed=hostId!==p.to; clearTimeout(noHostT); noHostT=0; hostChgAt=Date.now();
+  if(p.to===myId){
+    if(changed||!hbT){ hostId=myId; hostAt=Date.now();
+      if(p.rules) rules=Object.assign({},rules,p.rules); if(p.stageKind) stageKind=p.stageKind; if(p.cols) colors=Object.assign({},colors,p.cols);
+      snapVer=Math.max(snapVer,(p.ver|0)+1);
+      members.forEach(m=>{ if(!colors[m.id]) colors[m.id]=nextColor(); });
+      try{ if(ch) ch.track(myPresence()); }catch(e){}
+      if(phase!=="lobby"&&phase!=="title"){ localLobby=false; hostToLobby(); }   // 結果画面のままだった=ロビーへ(全員)
+      startHeartbeat(); sendSnap(); }
+  }else if(changed){ hostId=p.to; lastVer=-1; lastSnapHost=p.to; if(hostAt||hbT){ hostAt=0; clearInterval(hbT); hbT=0; try{ if(ch) ch.track(myPresence()); }catch(e){} } }
+  if(changed) toast(nameOf(p.to)+"がオーナーになりました");
+  if(phase==="lobby"){ renderMembers(); renderStageSel(); }
+}
+function kickMember(id){ if(!isHost()||id===myId) return; kickedIds.set(id,Date.now()); byeIds.set(id, lastPres[id]?lastPres[id].t:0); send("kick",{to:id}); specSet.delete(id); members=members.filter(m=>m.id!==id); renderMembers(); renderMemberOv(); }
 $("copyCode").addEventListener("click",async()=>{ playSelect(); try{ await navigator.clipboard.writeText(inviteText(roomCode)); toast("招待メッセージをコピーした"); }catch(e){ toast("コピーできませんでした"); } });
 $("lobbyBack").addEventListener("click",()=>{ playSelect(); goTitle(); });
 const SPEC_EYE='<svg class="sr-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -1032,7 +1080,7 @@ function updateSpecBadge(){
 $("specBadge").addEventListener("click",()=>{ playSelect(); renderSpecList(); $("specOv").classList.add("on"); });
 $("specClose").addEventListener("click",()=>{ playSelect(); $("specOv").classList.remove("on"); });
 $("specOv").addEventListener("click",e=>{ if(e.target===$("specOv")) $("specOv").classList.remove("on"); });
-function goTitle(){ spectating=false; specSet=new Set(); playSet=new Set(); $("specBadge").style.display="none"; $("specOv").classList.remove("on"); clearChat(); stopTimer(); send("bye",{id:myId}); leaveChannel(); phase="title"; soloMode=false; clearStage(); $("resultOv").classList.remove("on"); $("nameOv").classList.remove("on"); members=[]; hostId=null; showScene("titleScene"); }
+function goTitle(){ spectating=false; localLobby=false; specSet=new Set(); playSet=new Set(); $("specBadge").style.display="none"; $("specOv").classList.remove("on"); clearChat(); stopTimer(); send("bye",{id:myId,t:joinT}); leaveChannel(); phase="title"; soloMode=false; clearStage(); $("resultOv").classList.remove("on"); $("nameOv").classList.remove("on"); members=[]; hostId=null; showScene("titleScene"); }
 $("startBtn").addEventListener("click",()=>{ if(!isHost()) return; const n=gameMembers().length; if(n<2){ if(soloOK()){ playConfirm(); startSolo(); } else toast("2人以上で始められます"); return; } playConfirm(); hostStartGame(); });
 
 /* ルール(オーナーだけ) */
@@ -1645,7 +1693,7 @@ function showResult(){
     const row=document.createElement("div"); row.className="res-row";
     row.innerHTML='<span class="rk'+(rank<=3?" r"+rank:"")+'">'+rank+'</span><span class="nm"></span><span class="tx"></span><span class="vt"><span class="vp like">'+LIKE_SVG+'<b>'+h.likes+'</b></span><span class="vp angry">'+ANGRY_SVG+'<b>'+h.angry+'</b></span></span><span class="st'+(h.found?"":" ok")+'">'+(h.found?"文字化け失敗":"文字化け完了")+'</span>';
     row.querySelector(".nm").textContent=h.name+(h.id===myId?"（あなた）":""); row.querySelector(".tx").textContent="「"+h.text+"」"; list.appendChild(row); });
-  $("resLobby").style.display=(isHost()||!online)?"":"none"; $("resLobby").textContent=online?"ロビーへもどる（全員）":"ロビーへ";
+  $("resLobby").style.display=""; $("resLobby").textContent="ロビーに戻る";   // オーナー=全員をロビーへ／参加者=自分だけ先にロビーで待つ
   $("resultOv").dataset.ver=String(lastVer); $("resultOv").classList.remove("peek"); $("resultOv").classList.add("on");
   const sts=[...list.querySelectorAll(".st")]; sts.forEach(x=>x.style.width=""); const mw=Math.max(0,...sts.map(x=>x.getBoundingClientRect().width)); if(mw) sts.forEach(x=>x.style.width=Math.ceil(mw)+"px");   // バッジは2種とも同じ幅(広い方に合わせる。表示後に測る)
 }
@@ -1653,8 +1701,14 @@ $("resultOv").addEventListener("click",e=>{ if(e.target===$("resultOv")) $("resu
 let peekDown=null;   // のぞき見中: 画面のどこかを「タップ」(動かさず離す)したら結果にもどる。スクロールやドラッグはそのまま
 document.addEventListener("pointerdown",e=>{ if($("resultOv").classList.contains("peek")) peekDown={x:e.clientX,y:e.clientY}; else peekDown=null; },true);
 document.addEventListener("pointerup",e=>{ if(!peekDown) return; const d=Math.hypot(e.clientX-peekDown.x,e.clientY-peekDown.y); peekDown=null; if(d<8&&$("resultOv").classList.contains("peek")){ playSelect(); $("resultOv").classList.remove("peek"); } },true);
-$("resLobby").addEventListener("click",()=>{ playSelect(); $("resultOv").classList.remove("on"); if(online){ hostToLobby(); return; } stopTimer(); clearStage(); phase="lobby"; showScene("lobbyScene"); renderMembers(); });
-function hostToLobby(){ if(!isHost()) return; stopTimer(); clearStage(); phase="lobby"; seekerId=null; soloMode=false; specSet=new Set(); playSet=new Set();   /* ★観戦していた人もロビーに参加する */ showScene("lobbyScene"); $("resultOv").classList.remove("on"); renderMembers(); sendSnap(); }
+$("resLobby").addEventListener("click",()=>{ playSelect(); $("resultOv").classList.remove("on","peek"); if(online&&isHost()){ hostToLobby(); return; } if(online){ guestLocalLobby(); return; } stopTimer(); clearStage(); phase="lobby"; showScene("lobbyScene"); renderMembers(); });
+$("resQuit").addEventListener("click",()=>{ playSelect(); goTitle(); });
+/* 参加者が先にロビーへ戻る(部屋には残る)。オーナーがまだ結果画面でも、終わったゲームのsnapで結果に引き戻さない(applySnapBodyのlocalLobby) */
+function guestLocalLobby(){ localLobby=true; stopTimer(); clearStage(); $("gameScene").classList.remove("seek","voting","resulted","vdone"); enterLobby(); updateSpecBadge(); }
+function hostToLobby(){ if(!isHost()) return; localLobby=false; stopTimer(); clearStage(); phase="lobby"; seekerId=null; soloMode=false; specSet=new Set(); playSet=new Set();   /* ★観戦していた人もロビーに参加する */ showScene("lobbyScene"); $("resultOv").classList.remove("on","peek"); renderMembers(); sendSnap(); if(ch) setTimeout(onPresence,60); }
+/* ★ページを閉じた時だけ退出を知らせる(一時的に隠れただけ=bfcacheの時は送らない)。戻ってきたら名乗り直す */
+window.addEventListener("pagehide",e=>{ if(e&&e.persisted) return; if(online&&ch) send("bye",{id:myId,t:joinT}); });
+window.addEventListener("pageshow",e=>{ if(!e||!e.persisted||!online||!ch) return; try{ ch.track(myPresence()); }catch(_){} if(isHost()) sendSnap(); else send("hello",{id:myId}); setTimeout(onPresence,400); });
 
 /* ================= スタンプ ================= */
 const STAMP_SVGS=['😭','😍','🤣'];

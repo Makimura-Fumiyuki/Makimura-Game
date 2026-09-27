@@ -275,7 +275,9 @@
   .res-item canvas{ display:block; image-rendering:pixelated; }
   .res-rate{ font-size:14px; font-weight:900; letter-spacing:.02em; color:var(--gold); }
   .res-rate.ng{ color:#ff9b8b; }
-  .res-btns{ display:flex; flex-direction:column; align-items:center; gap:10px; margin-top:20px; }
+  .res-btns{ display:flex; flex-direction:row; justify-content:center; align-items:center; gap:12px; margin-top:20px; }
+  .res-btns .btn-main, .res-btns .txt-btn{ width:150px; height:46px; margin-top:0; padding:0; font-size:15px; letter-spacing:.08em; white-space:nowrap; }   /* やめる/ロビーに戻る=同じ大きさ */
+  .res-btns .btn-main{ box-shadow:0 4px 0 #8d6712; }
   /* 判定の得点表 */
   #ptList{ width:min(94vw,420px); margin:6px auto 0; }
   .pt-note{ font-size:12px; font-weight:700; opacity:.7; text-align:center; margin-bottom:6px; }
@@ -415,6 +417,15 @@
     background:rgba(253,246,231,.28); border-radius:999px; padding:2px 10px 3px; }
   .lobby-row .kick-btn{ flex:none; font-size:11px; font-weight:900; color:#ff8f7d; background:none;
     border:1.5px solid rgba(255,143,125,.55); border-radius:999px; padding:3px 10px; cursor:pointer; }
+  /* オーナー譲渡(2026-09-28)=追放と同じ形・同じ大きさで固定 */
+  .lobby-row .xfer-btn{ flex:none; font-size:11px; font-weight:900; color:var(--card); background:none;
+    border:1.5px solid rgba(253,246,231,.45); border-radius:999px; cursor:pointer; }
+  .lobby-row .xfer-btn.arm{ color:#3a2a06; background:var(--gold); border-color:var(--gold); }
+  .lobby-row .xfer-btn, .lobby-row .kick-btn{ width:82px; height:26px; padding:0; white-space:nowrap; }
+  .lobby-row .xfer-btn:active, .lobby-row .kick-btn:active{ transform:translateY(1px); }
+  /* 自分の名前=押すと名前を変えられる(うすい点線の下線+小さなペン) */
+  .lobby-row .nm.mine{ flex:0 1 auto; cursor:pointer; text-decoration:underline dotted rgba(253,246,231,.4); text-underline-offset:4px; }
+  .lobby-row .nm-pen{ flex:none; width:13px; height:13px; margin-left:-6px; margin-right:auto; opacity:.5; cursor:pointer; }
   .code-row{ display:flex; align-items:center; gap:8px; }
   .code-input{ width:170px; padding:11px 14px; border:2px solid rgba(253,246,231,.4); border-radius:12px;
     background:#fff; color:var(--ink); font-size:19px; font-weight:900; letter-spacing:.24em; text-align:center; }
@@ -528,8 +539,8 @@
   <div class="res-lead" style="margin:15px 0 8px;">作ったクッキー</div>
   <div class="res-grid" id="resGrid"></div>
   <div class="res-btns">
-    <button class="btn-main" id="resLobby" style="display:none;">ロビーにもどる</button>
     <button class="txt-btn" id="resClose">やめる</button>
+    <button class="btn-main" id="resLobby" style="display:none;">ロビーに戻る</button>
   </div>
 </div>
 
@@ -2002,8 +2013,10 @@ function miniKey(grid, tgt){       // 削り上がったクッキーを小さく
 }
 $("resLobby").addEventListener("click",()=>{      // 部屋主=全員でロビーへ / ゲスト=自分だけ先にロビー画面へ(部屋主が戻れば同期する)
   ensureAudio(); playSelect();
-  if(isHost) hostToLobby();
-  else { showScene("lobbyScene"); renderLobby(); }
+  if(isHost){ hostToLobby(); return; }
+  if(!online) return;
+  lobbyEarly=true; phase="lobby";   // 部屋主が結果画面にいる間は結果画面へ引き戻さない(applySnap)
+  showScene("lobbyScene"); renderLobby(); updateSpecBadge();
 });
 $("resClose").addEventListener("click",()=>{      // 自分だけ抜ける
   ensureAudio(); playSelect();
@@ -2066,7 +2079,7 @@ function renderScoreOv(){
     +((online&&isHost&&r.p.id!==myId)?'<button class="sc-kick" data-skick="'+esc(r.p.id)+'">追放</button>':'')+'</div>').join("");
   $("scoreList").querySelectorAll("[data-skick]").forEach(b=>b.addEventListener("click",()=>{
     ensureAudio(); playSelect(); const id=b.dataset.skick;
-    players=players.filter(p=>p.id!==id); turnOrder=turnOrder.filter(x=>x!==id); doneSet.delete(id);
+    players=players.filter(p=>p.id!==id); turnOrder=turnOrder.filter(x=>x!==id); doneSet.delete(id); markKicked(id);
     try{ ch.send({type:"broadcast",event:"kick",payload:{to:id}}); }catch(e){}
     sendSnap(); renderScoreOv(); toast("追放しました");
     if(phase==="carve") checkAllDone();
@@ -2097,6 +2110,10 @@ function inviteText(c){   // 招待メッセージ(2026-08-05共通テンプレ�
 let sb=null;
 function sbClient(){ if(!sb) sb=window.supabase.createClient(SB_URL, SB_KEY); return sb; }
 let code="", isHost=false, hostId=null, joinWatch=0, hbIv=0, lastPh="", nameAsked=false;
+/* ===== オーナー譲渡・ロビーの在室管理(2026-09-28) =====
+   hostVer=譲渡のたびに1つ増える番号。snapに載せ、古い番号(=譲渡前の部屋主)のsnapは捨てる */
+let hostVer=0, xferIv=0, annHost=null, lobbyEarly=false, lastHelloAt=0, kickedAt={}, xferArm=null;
+const LOBBY_GRACE=30000;   // ロビー中の退出の猶予(30秒)。明示の退出(bye)は即時
 try{ myName=(localStorage.getItem("ck.name")||mkName()||"").slice(0,16); }catch(e){}
 /* ===== 名前(2026-09-06) =====
    ロビーで使う名前は「このゲームだけのもの」。毎回すきに変えてよく、他のゲームやランキングには反映しない。
@@ -2134,6 +2151,7 @@ async function mkSetName(nm){   // 戻り値: ""=成功 / 表示するエラー�
   }catch(e){ return "通信に失敗しました"; }
 }
 const UNDEF_NM="（名前を考え中）";
+const PEN_SVG='<svg class="nm-pen" data-rename="1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>';
 function nmOf(p){ return (p&&p.n)?p.n:UNDEF_NM; }
 function byId(id){ return players.find(p=>p.id===id); }
 const roomArea=()=>$("roomArea");
@@ -2169,7 +2187,7 @@ function markGone(id){
   if(id===myId) return;
   cancelGone(id);
   goneTmr[id]=setTimeout(()=>{ delete goneTmr[id]; if(!ch||!online) return;
-    if(presentIds().indexOf(id)>=0) return; onLeave(id); }, GONE_GRACE);
+    if(presentIds().indexOf(id)>=0) return; onLeave(id); }, (phase==="lobby"&&id!==hostId)?LOBBY_GRACE:GONE_GRACE);   // ロビー中は30秒(リロードした人の古い名前もこれで消える)。部屋主の不在だけは従来どおり5分待つ(部屋主が一瞬裏に回っただけで全員がタイトルへ戻されないように)
 }
 function clearGone(){ Object.keys(goneTmr).forEach(cancelGone); }
 function leaveChannel(){
@@ -2180,6 +2198,49 @@ function leaveChannel(){
     setTimeout(()=>{ try{ sbClient().removeChannel(c0); }catch(e){} }, 300);
   }
   online=false; isHost=false; hostId=null; roomStatus("");
+  hostVer=0; clearInterval(xferIv); xferIv=0; annHost=null; lobbyEarly=false; kickedAt={}; xferArm=null;
+}
+function sendHello(){ lastHelloAt=Date.now(); if(!ch) return; try{ ch.send({type:"broadcast",event:"hello",payload:{id:myId,n:myName}}); }catch(e){} }
+function markKicked(id){ kickedAt[id]=Date.now(); }   // 追放直後に届いた「入り直し」を受けない
+function annHostChange(id){   // 部屋主が替わったら全員にお知らせ(最初の1回=入室時は出さない)
+  if(!id || id===annHost) return;
+  const prev=annHost; annHost=id; if(!prev) return;
+  const p=byId(id), nm=(id===myId)?"あなた":(p?nmOf(p):"だれか");
+  toast(nm+"が部屋主になりました"); try{ addSys(nm+" が部屋主になりました"); }catch(e){}
+}
+function transferHost(id){
+  if(!online||!isHost||!ch||phase!=="lobby"||id===myId) return;
+  if(!byId(id)) return;
+  hostVer++;
+  const pl={ to:id, from:myId, hv:hostVer, players:players.map(x=>({id:x.id,n:x.n})), rds:rounds, tl:timeLimit };
+  isHost=false; hostId=id; clearInterval(hbIv); hbIv=0; lastPh="lobby"; xferArm=null;
+  const send=()=>{ if(!ch) return; try{ ch.send({type:"broadcast",event:"host",payload:pl}); }catch(e){} };
+  send(); setTimeout(send,400);   // 念のため2回
+  clearInterval(xferIv); let tries=0;   // 新しい部屋主のsnapが届くまで2秒ごとに送り直す(最大8回)
+  xferIv=setInterval(()=>{ if(!ch||isHost||hostId!==id||++tries>8){ clearInterval(xferIv); xferIv=0; return; } send(); },2000);
+  annHostChange(id);
+  renderLobby();
+}
+function onHostXfer(p){
+  if(typeof p.hv!=="number" || p.hv<hostVer) return;
+  if(p.hv===hostVer && hostId===p.to){ if(p.to===myId && isHost) sendSnap(); return; }   // 2通目以降
+  hostVer=p.hv; hostId=p.to;
+  if(p.to===myId){
+    isHost=true; spectating=false; lobbyEarly=false; clearTimeout(joinWatch); devMode=false;
+    const now=Date.now();
+    players=(p.players||[]).map(x=>({id:x.id, n:x.n||"", s:0, t:now}));
+    if(!byId(myId)) players.push({id:myId, n:myName||"", s:0, t:now});
+    if(p.rds) rounds=p.rds;
+    if(p.tl){ timeLimit=p.tl; tIdx=Math.max(0,TIMES.indexOf(timeLimit)); }
+    phase="lobby"; lastPh="lobby";
+    showScene("lobbyScene");
+    startHb(); renderLobby(); sendSnap();
+  }else{
+    if(isHost){ isHost=false; clearInterval(hbIv); hbIv=0; }
+    if(p.players) players=p.players;
+    if(phase==="lobby") renderLobby();
+  }
+  annHostChange(p.to);
 }
 function onLeave(id){
   if(id===myId) return;
@@ -2266,7 +2327,7 @@ $("lobbyBack").addEventListener("click",()=>{ ensureAudio(); playSelect(); goTit
 
 $("makeRoomBtn").addEventListener("click",()=>{
   ensureAudio(); playSelect(); leaveChannel();
-  code=genCode(); isHost=true; hostId=myId; online=true; devMode=false;
+  code=genCode(); isHost=true; hostId=myId; online=true; devMode=false; annHost=myId;
   players=[{id:myId, n:myName||"", s:0}];
   roundNo=1; carverIdx=0; madeKeys=[]; madeAt=-1;
   openChannel(code, ()=>{ phase="lobby"; showScene("lobbyScene"); renderLobby(); sendSnap(); startHb(); });   // showSceneがロビーでもスタンプバーを出す
@@ -2297,7 +2358,7 @@ $("joinRoomBtn").addEventListener("click",()=>{
     note.textContent="部屋を探しています…"; note.className="room-note";
     code=c; isHost=false; online=true; devMode=false; players=[];
     openChannel(code, ()=>{
-      try{ ch.send({type:"broadcast",event:"hello",payload:{id:myId,n:myName}}); }catch(e){}
+      sendHello();
       joinWatch=setTimeout(()=>{
         if(!hostId){ note.textContent="部屋がみつからない。合言葉を確認しよう"; note.className="room-note err"; leaveChannel(); }
       },4000);
@@ -2309,6 +2370,7 @@ function openChannel(c, onReady){
   ch=sbClient().channel("ck-"+c, { config:{ presence:{ key:myId } } });
   ch.on("broadcast",{event:"hello"},({payload})=>{
     if(!isHost||!payload) return;
+    if(kickedAt[payload.id] && Date.now()-kickedAt[payload.id]<15000){ try{ ch.send({type:"broadcast",event:"kick",payload:{to:payload.id}}); }catch(e){} return; }
     cancelGone(payload.id);
     if(byId(payload.id)){ sendSnap(); return; }          // すでにメンバー(再接続)
     if(phase!=="lobby"){   // ゲーム中の入室=観戦者として受け入れる(2026-09-27)
@@ -2331,7 +2393,15 @@ function openChannel(c, onReady){
     if(payload && payload.to===myId){ toast("次のゲーム開始まで待ってね"); leaveChannel();
       roomStatus('<div class="room-note err">今はゲーム中みたい。次のゲーム開始まで待ってね</div>'); }
   });
-  ch.on("broadcast",{event:"snap"},({payload})=>{ if(!isHost && payload) applySnap(payload); });
+  ch.on("broadcast",{event:"snap"},({payload})=>{
+    if(isHost||!payload) return;
+    const hv=(typeof payload.hv==="number")?payload.hv:0;
+    if(hv<hostVer) return;   // 譲渡前の部屋主が送った古いsnap
+    hostVer=hv;
+    if(xferIv && payload.hostId===hostId){ clearInterval(xferIv); xferIv=0; }   // 新しい部屋主が動き出した
+    applySnap(payload);
+  });
+  ch.on("broadcast",{event:"host"},({payload})=>{ if(payload) onHostXfer(payload); });   // オーナー譲渡
   ch.on("broadcast",{event:"act"},({payload})=>{ if(isHost && payload) hostAct(payload); });
   ch.on("broadcast",{event:"carve"},({payload})=>{ if(payload && payload.from!==myId) applyCarve(payload); });
   ch.on("broadcast",{event:"pen"},({payload})=>{ if(!payload||payload.from===myId) return;
@@ -2341,20 +2411,20 @@ function openChannel(c, onReady){
   ch.on("broadcast",{event:"chat"},({payload})=>{ if(payload&&payload.t&&payload.from!==myId) recvChat(payload.n||"あいて", String(payload.t).slice(0,40), payload.sp?"":(payload.c||""), !!payload.sp); });
   ch.on("broadcast",{event:"bye"},({payload})=>{ if(payload) onLeave(payload.id); });
   ch.on("broadcast",{event:"kick"},({payload})=>{ if(payload && payload.to===myId && !isHost){ toast("オーナーから追放されました"); goTitle(); } });
-  ch.on("presence",{event:"leave"},({leftPresences})=>{ (leftPresences||[]).forEach(p=>{ if(!p||!p.id) return;
-    if(isHost && phase==="lobby") onLeave(p.id); else markGone(p.id); }); });   // ロビー中は猶予なしで即消す(リロードで同じ名前が増殖して見えた対策)
-  ch.on("presence",{event:"sync"},()=>{                                        // ロビー中は在室者と照合して、いない人を消す
+  /* ★2026-09-28: ロビー中も即消しをやめて30秒の猶予(スマホが一瞬裏に回っただけでロビーから消えていた)。
+     リロードした人の古いIDは、退出の知らせ(bye)が届けば即時・届かなくても30秒で消える */
+  ch.on("presence",{event:"leave"},({leftPresences})=>{ (leftPresences||[]).forEach(p=>{ if(!p||!p.id) return; markGone(p.id); }); });
+  ch.on("presence",{event:"sync"},()=>{                                        // ロビー中は在室者と照合して、いない人に猶予タイマーをかける(すぐには消さない)
     if(!isHost || phase!=="lobby") return;
-    const ids=presentIds(), now=Date.now(), n0=players.length;
-    players=players.filter(p=>p.id===myId || ids.indexOf(p.id)>=0 || (now-(p.t||0))<3000);   // 入室直後3秒はpresenceが遅れても消さない
-    if(players.length!==n0){ turnOrder=turnOrder.filter(x=>players.some(p=>p.id===x)); renderLobby(); sendSnap(); }
+    const ids=presentIds();
+    players.forEach(p=>{ if(p.id!==myId && ids.indexOf(p.id)<0 && !goneTmr[p.id]) markGone(p.id); });
   });
   ch.on("presence",{event:"join"},({newPresences})=>{ (newPresences||[]).forEach(p=>{ if(p&&p.id) cancelGone(p.id); }); });
   let readyDone=false;
   ch.subscribe(async status=>{
     if(status==="SUBSCRIBED"){
       try{ await ch.track({id:myId}); }catch(e){}
-      if(readyDone){ if(isHost) sendSnap(); else { try{ ch.send({type:"broadcast",event:"hello",payload:{id:myId,n:myName}}); }catch(e){} } return; }
+      if(readyDone){ if(isHost) sendSnap(); else { sendHello(); } return; }
       readyDone=true; if(onReady) onReady();
     } else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){
       roomStatus('<div class="room-note err">通信失敗。通信環境を見直そう</div>');
@@ -2362,16 +2432,32 @@ function openChannel(c, onReady){
   });
 }
 function startHb(){ clearInterval(hbIv); hbIv=setInterval(sendSnap, 2200); }
+/* 退出の知らせは「本当にページを離れる時」だけ(戻る/進むでページが一時保存される時=persistedは送らない) */
+window.addEventListener("pagehide",e=>{ if(e.persisted) return; if(ch){ try{ ch.send({type:"broadcast",event:"bye",payload:{id:myId}}); }catch(_){} } });
+window.addEventListener("pageshow",e=>{ if(!e.persisted||!ch||!online) return; if(isHost) sendSnap(); else sendHello(); });   // 一時保存から戻った=名乗り直す
+document.addEventListener("visibilitychange",()=>{ if(document.hidden||!ch||!online) return;   // スマホで画面に戻った=名乗り直す
+  if(isHost) sendSnap(); else if(Date.now()-lastHelloAt>2000) sendHello(); });
+/* オーナー譲渡の「確定」は、ほかの所を押したら元に戻す */
+document.addEventListener("pointerdown",e=>{
+  if(!xferArm) return;
+  if(e.target && e.target.closest && e.target.closest("[data-xfer]")) return;
+  xferArm=null;
+  document.querySelectorAll("#lobbyBox .xfer-btn.arm").forEach(b=>{ b.classList.remove("arm"); b.textContent="オーナー譲渡"; });
+},true);
 
 /* --- ロビー --- */
 function renderLobby(){
   if(!online) return;
   let html='<div class="lobby-list">';
   players.forEach((p,i)=>{
-    html+='<div class="lobby-row"><span class="p-dot" style="background:'+PCOL[i%PCOL.length]+'"></span><span class="nm'+(p.n?"":" undef")+'">'+esc(nmOf(p))+'</span>'
+    const mine=p.id===myId;
+    html+='<div class="lobby-row"><span class="p-dot" style="background:'+PCOL[i%PCOL.length]+'"></span>'
+      +(mine? '<span class="nm mine'+(p.n?"":" undef")+'" data-rename="1">'+esc(nmOf(p))+'</span>'+PEN_SVG
+            : '<span class="nm'+(p.n?"":" undef")+'">'+esc(nmOf(p))+'</span>')
       +(p.id===hostId?'<span class="hostmark">部屋主</span>':"")
-      +(p.id===myId?'<span class="you">じぶん</span>':"")
-      +((isHost&&p.id!==myId)?'<button class="kick-btn" data-kick="'+esc(p.id)+'">追放</button>':"")+'</div>';
+      +(mine?'<span class="you">じぶん</span>':"")
+      +((isHost&&!mine)?'<button class="xfer-btn'+(xferArm===p.id?" arm":"")+'" data-xfer="'+esc(p.id)+'">'+(xferArm===p.id?"確定":"オーナー譲渡")+'</button>'
+          +'<button class="kick-btn" data-kick="'+esc(p.id)+'">追放</button>':"")+'</div>';
   });
   html+='</div>';
   html+='<div class="room-note">合言葉（'+TAPW+'でコピー）</div>'
@@ -2381,10 +2467,11 @@ function renderLobby(){
   }else{
     html+='<div class="room-note">'+ruleSummary()+'</div>';
   }
-  html+='<div class="room-note">'+(players.length<2?"2人以上集まれば始められます":"いつでも始められるよ")+'</div>';
+  html+='<div class="room-note">'+(lobbyEarly?"部屋主がロビーに戻るのを待っています":(players.length<2?"2人以上集まれば始められます":"いつでも始められるよ"))+'</div>';
   if(isHost) html+='<button class="btn-main" id="lobbyStart"'+(players.length<2?" disabled":"")+' style="margin-top:4px;">はじめる</button>';
   $("lobbyBox").innerHTML=html;
   if(!nameAsked){ nameAsked=true; openNameOv(); }   // 部屋に入ったら名前を決める
+  $("lobbyBox").querySelectorAll("[data-rename]").forEach(el=>el.addEventListener("click",()=>{ ensureAudio(); playSelect(); openNameOv(); }));   // 自分の名前を押すと名前変更
   wireRule();
   $("codeShow").addEventListener("click", async ()=>{
     ensureAudio(); playSelect();
@@ -2396,9 +2483,15 @@ function renderLobby(){
     $("lobbyBox").querySelectorAll("[data-kick]").forEach(b=>b.addEventListener("click",()=>{
       ensureAudio(); playSelect();
       const id=b.dataset.kick;
-      players=players.filter(p=>p.id!==id);
+      players=players.filter(p=>p.id!==id); markKicked(id); xferArm=null;
       try{ ch.send({type:"broadcast",event:"kick",payload:{to:id}}); }catch(e){}
       renderLobby(); sendSnap();
+    }));
+    $("lobbyBox").querySelectorAll("[data-xfer]").forEach(b=>b.addEventListener("click",()=>{   // 1回目=「確定」に変わる / 2回目=譲渡
+      ensureAudio(); playSelect();
+      const id=b.dataset.xfer; if(!byId(id)) return;
+      if(xferArm!==id){ xferArm=id; renderLobby(); return; }
+      transferHost(id);
     }));
     const ls=$("lobbyStart");
     if(ls) ls.addEventListener("click",()=>{
@@ -2440,7 +2533,7 @@ function packHaz(){ return hazards.map(h=>[h.x, h.y, h.s, h.owner, h.revealed?1:
 function unpackHaz(a){ return a.map(v=>({ type:"bomb", x:v[0], y:v[1], s:v[2], owner:v[3], revealed:!!v[4] })); }
 function sendSnap(){
   if(!isHost||!ch) return;
-  const p={ hostId:hostId, ph:phase, round:roundNo, carver:carverIdx, regions:regions, tl:timeLimit,
+  const p={ hostId:hostId, hv:hostVer, ph:phase, round:roundNo, carver:carverIdx, regions:regions, tl:timeLimit,
             clk:(clockRunning? Math.max(0,tEnd-Date.now()) : clockMs), run:clockRunning?1:0,
             players:players.map(x=>({id:x.id,n:x.n})) };
   if(phase!=="lobby"){
@@ -2454,6 +2547,9 @@ function sendSnap(){
 function applySnap(p){
   clearTimeout(joinWatch);
   hostId=p.hostId; players=p.players||[]; roundNo=p.round||1;
+  annHostChange(hostId);
+  /* ロビーにいるのに一覧に自分がいない(部屋主の側で一時的に抜けた扱いになった)=入り直しを頼む */
+  if(p.ph==="lobby" && !spectating && ch && !players.some(x=>x.id===myId) && Date.now()-lastHelloAt>2000) sendHello();
   clockMs=p.clk||0; clockRunning=(p.run===1); if(clockRunning) tEnd=Date.now()+clockMs; renderClock();
   carverIdx=p.carver||0; regions=p.regions||1;
   if(p.tl!==timeLimit){ timeLimit=p.tl||0; tIdx=Math.max(0,TIMES.indexOf(timeLimit)); }
@@ -2462,6 +2558,10 @@ function applySnap(p){
   if(p.tot) totals=p.tot;
   if(p.dn){ doneSet=new Set(p.dn); renderDoneList(); renderDoneBtn(); }
   const ph=p.ph;
+  if(lobbyEarly){   // 結果画面から先にロビーへ戻った人=部屋主が戻るまで結果画面へ引き戻さない
+    if(ph===lastPh && ph!=="lobby"){ renderLobby(); return; }
+    lobbyEarly=false;
+  }
   if(ph!=="lobby" && p.km){
     const fresh = !keyMeta || JSON.stringify(keyMeta)!==JSON.stringify(p.km);
     if(fresh){
@@ -2484,7 +2584,7 @@ function applySnap(p){
   }
   lastPh=ph; phase=ph; setTimeout(updateSpecBadge,60);
   if(ph==="lobby"){
-    if(spectating){ spectating=false; try{ ch.send({type:"broadcast",event:"hello",payload:{id:myId,n:myName}}); }catch(e){} toast("ロビーに参加しました"); }   // ★観戦していた人はゲーム終了後そのままロビーへ参加
+    if(spectating){ spectating=false; sendHello(); toast("ロビーに参加しました"); }   // ★観戦していた人はゲーム終了後そのままロビーへ参加
     showScene("lobbyScene"); renderLobby();
   }
   else if(ph==="carve"){ enterCarveUI(); }
