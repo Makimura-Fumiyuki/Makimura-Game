@@ -404,12 +404,26 @@
     .help-btn:hover,.snd-btn:hover{ background:#fff; }
     .rc-btn:hover{ border-color:var(--sub); }
   }
+
+  /* 効果音のON/OFF=左上「あそびかた」の右隣・アイコンだけ(2026-09-27)。
+     2つを1つの固定の入れ物に入れて横に並べる=あそびかたの幅が変わっても右隣に付いていく */
+  .tl-btns{ position:fixed; left:10px; top:10px; z-index:80; display:flex; align-items:center; gap:6px; }
+  .tl-btns > .help-btn{ position:relative; left:auto; top:auto; right:auto; }
+  .se-ico{ width:34px; height:34px; margin:-5px 0; padding:0; flex:none; display:inline-flex; align-items:center; justify-content:center;
+    background:transparent; border:0; box-shadow:none; border-radius:50%; cursor:pointer; color:rgba(35,33,31,.78); font:inherit;
+    -webkit-tap-highlight-color:transparent; }
+  .se-ico svg{ width:22px; height:22px; display:block; }
+  .se-ico .slash{ display:none; }
+  .se-ico.off{ opacity:.55; }
+  .se-ico.off .wave{ display:none; }
+  .se-ico.off .slash{ display:inline; }
+  .se-ico:active{ transform:translateY(1px); }
 </style>
 </head>
 <body>
-<button class="help-btn" id="helpBtn" type="button"><span class="q">?</span>あそびかた</button>
+<div class="tl-btns"><button class="help-btn" id="helpBtn" type="button"><span class="q">?</span>あそびかた</button><button class="se-ico" id="seBtn" type="button" aria-label="効果音"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wave" d="M16 9c1.2.9 1.2 5.1 0 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="wave" d="M18.5 7c2.2 1.7 2.2 8.3 0 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><g class="slash" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="16" y1="9" x2="21" y2="15"/><line x1="21" y1="9" x2="16" y2="15"/></g></svg></button></div>
 <button type="button" class="spec-badge" id="specBadge" aria-label="観戦者"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span id="specNum">0</span></button>
-<div class="snd-btns"><button class="snd-btn" id="seBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h3l5 4V5L7 9H4z" fill="currentColor" stroke="none"/><path class="w1" d="M16.5 9.5a3.5 3.5 0 0 1 0 5"/><path class="w2" d="M19 7a7 7 0 0 1 0 10"/></svg><span id="seTx">効果音</span></button></div>
+
 
 <!-- ===== タイトル ===== -->
 <div class="scene on" id="titleScene">
@@ -776,7 +790,7 @@ function render(){
 
   $("undoBtn").disabled=(mode==="online")||!!over||!hist.length||undoTries>=UNDO_MAX;   // ロボットの手番でも押せる/1ターン1回
   $("giveBtn").disabled=!!over||spectating;   /* ★観戦者は降参できない */
-  $("seBtn").classList.toggle("off",!seOn); $("seTx").textContent=seOn?"効果音":"効果音OFF";
+  $("seBtn").classList.toggle("off",!seOn);
 }
 
 /* ===== 1手の進行 ===== */

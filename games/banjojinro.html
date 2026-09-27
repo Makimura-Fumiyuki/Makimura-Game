@@ -110,6 +110,7 @@
   .rcnt{ flex:none; width:78px; display:flex; flex-direction:column; align-items:center; gap:4px; }
   .rcnt .rc-val{ min-width:0; width:66px; font-size:12px; line-height:1.4; }   /* 押せそうに見えないよう地は付けない(−＋と同じ横幅) */
   .rcnt .rc-row{ gap:6px; }
+  .rcnt .rc-val.zero{ color:rgba(244,239,230,.3); }   /* 0人以下=いない役職 */
   .rcnt .stp{ width:30px; height:26px; font-size:16px; }
   .rcnt .stp.hide, .role-box.ro .stp{ visibility:hidden; }
   .role-err{ margin-top:7px; font-size:12.5px; font-weight:800; color:#ff8f7d; text-align:center; }
@@ -178,7 +179,6 @@
   .ros .r2 .tgs{ margin-left:auto; display:flex; gap:4px; align-items:center; }
   .ros .nm{ flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left; }
   .ros .av{ width:15px; height:15px; border-radius:50%; flex:none; position:relative; }
-  .ros .av svg{ position:absolute; left:-2px; top:-3px; width:19px; height:19px; }
   .ros.dead{ opacity:.42; }
   .ros.dead .nm{ text-decoration:line-through; text-decoration-thickness:2px; }
   .ros.dead .av::before, .ros.dead .av::after{ content:""; position:absolute; left:50%; top:-2px; bottom:-2px; width:2px; margin-left:-1px;
@@ -202,8 +202,10 @@
   .tg.white{ background:#fff; color:#222; }
   .tg.black{ background:#111; color:#fff; }
   .tg.vcnt{ width:26px; background:var(--gold); color:#3a2a06; }
-  .ros .ck{ flex:none; width:16px; height:16px; display:flex; align-items:center; justify-content:center; }
-  .ros .ck svg{ width:16px; height:16px; }
+  .ros{ position:relative; }
+  .ros .ck{ position:absolute; top:3px; right:3px; width:11px; height:11px; display:flex; }   /* 行動済みのチェック=右上(0.7倍) */
+  .ros .ck svg{ width:11px; height:11px; }
+  .ros .r1{ padding-right:9px; }
 
   .board-wrap{ width:100%; position:relative; }
   #board{ display:block; width:100%; height:auto; touch-action:manipulation; border-radius:10px; overflow:hidden;
@@ -299,7 +301,7 @@
     background:rgba(20,16,32,.55); padding:10px 26px; border-radius:18px; }
   @keyframes bigFx{ 0%{opacity:0; transform:scale(1.25);} 12%{opacity:1; transform:scale(1);} 80%{opacity:1;} 100%{opacity:0;} }
 
-  .help-btn{ position:fixed; left:12px; top:12px; z-index:40; display:flex; align-items:center; gap:6px;
+  .help-btn{ position:fixed; left:12px; top:12px; z-index:40; display:flex; align-items:center; gap:6px; width:118px; height:34px; box-sizing:border-box;
     padding:7px 14px 7px 8px; border:none; border-radius:999px; cursor:pointer;
     background:rgba(244,239,230,.12); color:var(--card); font-size:13px; font-weight:900; letter-spacing:.06em; }
   .help-btn span{ width:20px; height:20px; border-radius:50%; background:var(--gold); color:#3a2a06;
@@ -308,10 +310,12 @@
     padding:7px 14px; border:none; border-radius:999px; cursor:pointer;
     background:rgba(244,239,230,.12); color:var(--card); font-size:13px; font-weight:900; letter-spacing:.06em; }
   .snd-btn svg{ width:17px; height:17px; }
+  #seBtn{ left:136px; right:auto; width:34px; height:34px; padding:0; justify-content:center; background:none; }   /* 効果音=あそびかたの右隣・アイコンだけ */
+  #seBtn svg{ width:21px; height:21px; }
   .snd-btn .slash{ display:none; }
   .snd-btn.off .wave{ display:none; }
   .snd-btn.off .slash{ display:block; }
-  #roleBtn{ top:54px; display:none; }
+  #roleBtn{ top:12px; display:none; }
   #gameScene.on ~ #roleBtn{ display:flex; }
 
   .overlay{ position:fixed; inset:0; z-index:80; display:flex; align-items:center; justify-content:center; padding:18px;
@@ -344,6 +348,14 @@
   .rd-hd-lbl{ font-size:12px; font-weight:800; opacity:.55; margin-bottom:8px; letter-spacing:.06em; }
   .rd-head{ display:flex; align-items:center; gap:12px; }
   .rd-icon{ width:62px; height:62px; flex:none; }
+  .rl-card{ width:min(94vw,420px); text-align:left; }
+  .rl-sec{ font-size:11.5px; font-weight:900; letter-spacing:.12em; opacity:.6; margin:12px 2px 7px; padding-top:10px; border-top:1px solid rgba(244,239,230,.14); }
+  .rl-sec:first-child{ margin-top:0; padding-top:0; border-top:none; }
+  .rl-grid{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px 6px; }
+  .rl-item{ display:flex; flex-direction:column; align-items:center; gap:4px; padding:0; border:none; background:none; color:var(--card); cursor:pointer; min-width:0; }
+  .rl-ic{ width:50px; height:50px; } .rl-ic svg{ width:100%; height:100%; display:block; }
+  .rl-nm{ width:100%; font-size:11px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center; }
+  #roleListOv .close{ display:block; margin:16px auto 0; }
   .rd-icon svg{ width:100%; height:100%; display:block; }
   .rd-badges{ display:flex; gap:6px; flex-wrap:wrap; }
   .team-badge{ width:72px; height:20px; line-height:20px; text-align:center; border-radius:999px; font-size:11px; font-weight:900; color:#fff; }
@@ -375,7 +387,7 @@
   .role-big.villager{ color:#2f9a47; } .role-big.seer{ color:#2b7fc2; } .role-big.wolf{ color:#c93b27; } .role-big.hawk{ color:#1f8a7c; } .role-big.mad{ color:#8a3fb3; }
   .role-desc{ font-size:14px; font-weight:600; line-height:1.85; text-align:left; }
   /* 結果の行=位置を固定(名前・役職バッジ・状態の列幅を決めておく) */
-  .res-row{ display:grid; grid-template-columns:12px minmax(0,1fr) 64px 104px; align-items:center; gap:9px; padding:7px 10px; border-radius:10px;
+  .res-row{ display:grid; grid-template-columns:12px minmax(0,1fr) 74px 104px; align-items:center; gap:9px; padding:7px 10px; border-radius:10px;
     background:rgba(244,239,230,.07); margin-top:6px; font-size:14px; font-weight:800; text-align:left; }
   .res-row .nm{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .res-row .rl{ height:20px; line-height:20px; text-align:center; font-size:11px; font-weight:900; border-radius:999px; color:#fff; white-space:nowrap; }
@@ -495,7 +507,7 @@
 </head>
 <body>
 <button class="help-btn" id="helpBtn"><span>?</span>あそびかた</button>
-<button class="snd-btn" id="seBtn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wave" d="M16 9c1.2.9 1.2 5.1 0 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="wave" d="M18.5 7c2.2 1.7 2.2 8.3 0 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><g class="slash" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="16" y1="9" x2="21" y2="15"/><line x1="21" y1="9" x2="16" y2="15"/></g></svg>効果音</button>
+<button class="snd-btn" id="seBtn" aria-label="効果音"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wave" d="M16 9c1.2.9 1.2 5.1 0 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="wave" d="M18.5 7c2.2 1.7 2.2 8.3 0 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><g class="slash" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="16" y1="9" x2="21" y2="15"/><line x1="21" y1="9" x2="16" y2="15"/></g></svg></button>
 
 <!-- ===== タイトル ===== -->
 <div class="scene on" id="titleScene">
@@ -512,7 +524,7 @@
     <div id="devRoles" style="width:100%;"></div>
     <div class="rc-row"><span class="rc-name">自分の役職</span></div>
     <div class="opt-row" id="cpuRoleRow">
-      <button class="txt-btn sel" data-r="">おまかせ</button><button class="txt-btn" data-r="villager">市民</button><button class="txt-btn" data-r="seer">占い師</button><button class="txt-btn" data-r="hawk">鷹の目</button><button class="txt-btn" data-r="medium">霊感が強い人</button><button class="txt-btn" data-r="doctor">ドクター</button><button class="txt-btn" data-r="talker">議論好き</button><button class="txt-btn" data-r="sensitive">敏感肌</button><button class="txt-btn" data-r="wolf">毒殺人狼</button><button class="txt-btn" data-r="miner">地雷人狼</button><button class="txt-btn" data-r="mad">狂人</button>
+      <button class="txt-btn sel" data-r="">おまかせ</button><button class="txt-btn" data-r="villager">市民</button><button class="txt-btn" data-r="seer">占い師</button><button class="txt-btn" data-r="hawk">鷹の目</button><button class="txt-btn" data-r="medium">霊感が強い人</button><button class="txt-btn" data-r="doctor">ドクター</button><button class="txt-btn" data-r="talker">議論好き</button><button class="txt-btn" data-r="sensitive">敏感肌</button><button class="txt-btn" data-r="wolf">毒殺人狼</button><button class="txt-btn" data-r="mad">狂人</button>
     </div>
     <button class="txt-btn" id="cpuStart">ロボットと遊ぶ（試作）</button>
     <button class="txt-btn" id="devStart">全員を操作する（試作）</button>
@@ -539,7 +551,7 @@
   <div class="dbg" id="dbg" style="display:none;"></div>
 </div>
 
-<button class="snd-btn" id="roleBtn">役職を確認</button>
+<button class="snd-btn" id="roleBtn">役職確認</button>
 <a class="home-foot" href="../index.html">牧村が作ったゲーム集へ</a>
 
 <div id="chatBox">
@@ -562,6 +574,9 @@
 <div id="bigFx"><span id="bigFxTx"></span></div>
 
 
+<div class="overlay" id="roleListOv">
+  <div class="r-card rl-card"><div id="roleList"></div><button class="close" id="roleListClose">とじる</button></div>
+</div>
 <div class="overlay" id="roleOv">
   <div class="r-card role-card">
     <div class="rd-hd-lbl" id="roleHead"></div>
@@ -688,8 +703,8 @@ const VIEW={ villager:{r:1}, seer:{r:1}, mad:{r:1}, medium:{r:1}, doctor:{r:1}, 
 function inView(role,dx,dy){ const v=VIEW[role]||VIEW.villager, ax=Math.abs(dx), ay=Math.abs(dy);
   return Math.max(ax,ay)<=v.r && (!v.cut || ax+ay<=v.cut); }
 const ROLE_NAME={ villager:"市民", seer:"占い師", wolf:"毒殺人狼", hawk:"鷹の目", mad:"狂人", medium:"霊感が強い人", doctor:"ドクター", talker:"議論好き", sensitive:"敏感肌", miner:"地雷人狼" };
-const ROLE_KEYS=["wolf","miner","seer","hawk","medium","doctor","talker","sensitive","mad"];          // ロビーで数を決める役職(残りは市民)
-const ROLE_ORDER=["villager","seer","hawk","medium","doctor","talker","sensitive","wolf","miner","mad"];   // ロビーの並び(結果の並びにも使う)
+const ROLE_KEYS=["wolf","seer","hawk","medium","doctor","talker","sensitive","mad"];          // ロビーで数を決める役職(残りは市民)
+const ROLE_ORDER=["villager","seer","hawk","medium","doctor","talker","sensitive","wolf","mad"];   // ロビーの並び(結果の並びにも使う)
 function roleMax(n){ return Math.max(1,(n|0)-1); }         // 役職の数の上限=メンバー数-1(2026-09-25)
 /* 人数ごとの役職の数(ロビーで役職をさわるまでの自動の値) */
 const ROLE_PLAN={ 4:{wolf:1,seer:1}, 5:{wolf:1,seer:1}, 6:{wolf:2,seer:1}, 7:{wolf:2,seer:1}, 8:{wolf:2,seer:1} };
@@ -718,9 +733,9 @@ function wolfNum(r){ return (r.wolf|0)+(r.miner|0); }   // 人狼の頭数(毒�
 function roleSum(r){ return ROLE_KEYS.reduce((a,k)=>a+(r[k]|0),0); }
 function roleErr(n){
   const r=roleCounts(n);
-  if(wolfNum(r)<1) return "人狼は1人以上";
+  if(wolfNum(r)<1) return "毒殺人狼は1人以上";
   if(roleSum(r)>n) return "役職の数が人数より多い";
-  if(wolfNum(r)*2>=n) return "人狼が多い";
+  if(wolfNum(r)*2>=n) return "毒殺人狼が多い";
   return "";
 }
 /* 役職のアイコン(1つにつき2色=役職の色の丸+白の絵。細部は丸と同じ色で抜く)・短い説明・占い結果 */
@@ -733,11 +748,21 @@ const ICON_G={
   medium:c=>'<path d="M6 19.6V11a6 6 0 0 1 12 0v8.6l-1.5-1.6-1.5 1.6-1.5-1.6-1.5 1.6-1.5-1.6-1.5 1.6-1.5-1.6z" fill="#fff"/><circle cx="9.9" cy="10.9" r="1.1" fill="'+c+'"/><circle cx="14.1" cy="10.9" r="1.1" fill="'+c+'"/>',
   doctor:c=>'<path d="M9.2 3.6h5.6v1.7h-.9v4.2l4.8 7.8a1.8 1.8 0 0 1-1.5 2.7H6.8a1.8 1.8 0 0 1-1.5-2.7l4.8-7.8V5.3h-.9z" fill="#fff"/><path d="M8 14.3h8l2.2 3.6a1 1 0 0 1-.8 1.5H6.6a1 1 0 0 1-.8-1.5z" fill="'+c+'"/><circle cx="10.6" cy="16.8" r=".9" fill="#fff"/><circle cx="13.6" cy="15.9" r=".6" fill="#fff"/>',   // 科学者風=フラスコ
   talker:c=>'<g transform="translate(12 12) scale(.8) translate(-12 -12)"><path d="M4 6.2h16a1.4 1.4 0 0 1 1.4 1.4v7.6a1.4 1.4 0 0 1-1.4 1.4h-8.6L7 20.2V16.6H4a1.4 1.4 0 0 1-1.4-1.4V7.6A1.4 1.4 0 0 1 4 6.2z" fill="#fff"/><circle cx="8.4" cy="11.4" r="1.05" fill="'+c+'"/><circle cx="12" cy="11.4" r="1.05" fill="'+c+'"/><circle cx="15.6" cy="11.4" r="1.05" fill="'+c+'"/></g>',
-  sensitive:c=>'<g transform="translate(12 12) scale(.6) translate(-12 -12)"><circle cx="12" cy="12" r="3.6" fill="#fff"/><path d="M7.4 7.8a6 6 0 0 0 0 8.4M16.6 7.8a6 6 0 0 1 0 8.4M4.7 5.3a9.6 9.6 0 0 0 0 13.4M19.3 5.3a9.6 9.6 0 0 1 0 13.4" stroke="#fff" stroke-width="1.9" fill="none" stroke-linecap="round"/></g>',
+  sensitive:c=>'<g transform="translate(12 12) scale(.66) translate(-12 -12)"><circle cx="12" cy="12" r="3.6" fill="#fff"/><path d="M7.4 7.8a6 6 0 0 0 0 8.4M16.6 7.8a6 6 0 0 1 0 8.4M4.7 5.3a9.6 9.6 0 0 0 0 13.4M19.3 5.3a9.6 9.6 0 0 1 0 13.4" stroke="#fff" stroke-width="1.9" fill="none" stroke-linecap="round"/></g>',
   miner:c=>'<g transform="translate(12 12) scale(1.12) translate(-15.6 -15)"><path d="M19.3 10.7c.5-1.6 1.5-2.4 2.8-2.4" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/><rect x="17.3" y="10.4" width="3" height="2.4" rx=".5" transform="rotate(45 18.8 11.6)" fill="#fff" stroke="'+c+'" stroke-width="1.1"/><circle cx="14.9" cy="16.3" r="5.4" fill="#fff" stroke="'+c+'" stroke-width="1.3"/><path d="M11.9 15a3.4 3.4 0 0 1 1.8-1.9" fill="none" stroke="'+c+'" stroke-width="1.2" stroke-linecap="round"/></g>',   // 地雷人狼=爆弾(着火の火花なし)
   mad:c=>'<circle cx="12" cy="12" r="6.7" fill="#fff"/><circle cx="9.5" cy="10.3" r="1.25" fill="'+c+'"/><circle cx="14.7" cy="9.7" r=".8" fill="'+c+'"/><path d="M8.2 14.1l1.25 1.35 1.25-1.35 1.3 1.35 1.3-1.35 1.25 1.35 1.25-1.35" fill="none" stroke="'+c+'" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/>'
 };
-function roleIcon(r){ const c=ROLE_COL[r]||ROLE_COL.villager; return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="'+c+'"/>'+(ICON_G[r]||ICON_G.villager)(c)+'</svg>'; }   // 角丸四角
+const TEAM_FRAME={ village:"#34c35e", wolf:"#ff4a36", third:"#f2c230" }, TEAM_SHORT={ village:"市民", wolf:"人狼", third:"第三" };
+/* 役職アイコン=角丸四角＋陣営の枠(下に陣営名のタブ)。plain=枠なし(ボタンの中の小さいアイコン用) */
+function roleIcon(r,plain){ const c=ROLE_COL[r]||ROLE_COL.villager, g=(ICON_G[r]||ICON_G.villager)(c);
+  if(plain) return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="'+c+'"/>'+g+'</svg>';
+  const tm=TEAM_OF[r]||"village", f=TEAM_FRAME[tm];
+  return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" rx="5.4" fill="'+c+'"/>'
+    +'<g transform="translate(12 10.5) scale(.74) translate(-12 -12)">'+g+'</g>'
+    +'<rect x="1.95" y="1.95" width="20.1" height="20.1" rx="4.6" fill="none" stroke="rgba(15,12,24,.45)" stroke-width=".5"/>'
+    +'<rect x="1" y="1" width="22" height="22" rx="5.4" fill="none" stroke="'+f+'" stroke-width="1.8"/>'
+    +'<path d="M7.4 23.9v-3.3a1.9 1.9 0 0 1 1.9-1.9h5.4a1.9 1.9 0 0 1 1.9 1.9v3.3z" fill="'+f+'"/>'
+    +'<text x="12" y="21.95" text-anchor="middle" font-size="3.1" font-weight="900" fill="#1c1822">'+TEAM_SHORT[tm]+'</text></svg>'; }
 const TEAM_OF={ villager:"village", seer:"village", hawk:"village", medium:"village", doctor:"village", talker:"village", sensitive:"village", wolf:"wolf", miner:"wolf", mad:"wolf" };   // 第三陣営を足す時は"third"(黄色)
 const TEAM_NAME={ village:"市民陣営", wolf:"人狼陣営", third:"第三陣営" };
 const ROLE_SHORT={
@@ -1174,7 +1199,6 @@ function myVoteNow(){ const m=me(); if(!m) return null;             // 確定し
    バッジは右端に詰め、行動を終えた人はその右にチェック(チェックが無い時は右に詰めたまま)
    死亡は議論のはじめに公表されてから(1度公表された死亡は次のラウンド以降も出したまま)
    占い師には占い結果(丸)。議論 & 投票の間はここを押して投票(何度でも変えられる・同じ人をもう一度で取り消し) */
-const AV_CHECK='<svg viewBox="0 0 16 16"><path d="M3.6 8.4l2.9 2.9 5.9-6.4" fill="none" stroke="rgba(14,11,24,.55)" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.6 8.4l2.9 2.9 5.9-6.4" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';   // メンバーリスト: 行動済みはアイコンの丸の上にチェック
 const CHECK_SVG='<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="8" fill="#5fb46e"/><path d="M4.4 8.3l2.4 2.4 4.8-5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 function inputDone(id){ const ph=G.phase; return ph==="move"?G.moves[id]!==undefined : ph==="act"?G.acts[id]!==undefined : ph==="talk"?G.votes[id]!==undefined : false; }
 function renderRoster(){
@@ -1190,7 +1214,7 @@ function renderRoster(){
     const vc = (ph==="vres" && lv && lv.cnt[p.id])? '<span class="tg vcnt">'+lv.cnt[p.id]+'票</span>' : "";
     const can = canVote && p.alive && !self;
     return '<div class="ros'+(self?" self":"")+(deadShown?" dead":"")+(can?" can":"")+(can&&mv===p.id?" voted":(can&&pk===p.id?" pick":""))+'" data-pid="'+esc(p.id)+'">'
-      +'<div class="r1"><span class="av'+(done?" done":"")+'" style="background:'+p.c+'">'+(done?AV_CHECK:"")+'</span><span class="nm">'+esc(p.n)+'</span>'+vc+'</div>'
+      +(done?'<span class="ck">'+CHECK_SVG+'</span>':'')+'<div class="r1"><span class="av" style="background:'+p.c+'"></span><span class="nm">'+esc(p.n)+'</span>'+vc+'</div>'
       +'<div class="r2"><span class="tgs">'+tags+'</span></div></div>';
   }).join("")+(canVote? '<button type="button" class="skip-btn'+(mv==="skip"?" voted":pk==="skip"?" pick":"")+'" data-pid="skip">スキップ</button>' : "");
 }
@@ -1445,7 +1469,7 @@ document.addEventListener("keydown",e=>{          // 矢印キーでも移動(�
    上に「◯◯と接触」、その下にボタンを縦に並べる(全部同じサイズ・アイコン付き・囲みの背景はなし)。基本はコマの右、入らない時は左
    menu=「話す」「占う/毒殺」／poison=「即殺」「1ターン後に死亡」「2ターン後に死亡」／talk=3文字の入力と送信
    占うは2回押しで確定(1回目で「確定」に変わる)。中身が変わった時だけ作り直す(入力欄が消えないように) */
-function btnIcon(k){ return k==="talk"? SPEECH_SVG : k==="seer"? roleIcon("seer") : k==="poison"? roleIcon("wolf") : k==="cure"? roleIcon("doctor") : k==="mine"? roleIcon("miner") : ""; }
+function btnIcon(k){ return k==="talk"? SPEECH_SVG : k==="seer"? roleIcon("seer",1) : k==="poison"? roleIcon("wolf",1) : k==="cure"? roleIcon("doctor",1) : k==="mine"? roleIcon("miner",1) : ""; }
 function renderPop(){
   const el=$("pop"), m=me();
   const ok = G.phase==="act" && m && m.alive && sel.tg && sel.pop && actTargets().some(t=>t.id===sel.tg) && pieceEls[sel.tg];
@@ -1619,13 +1643,13 @@ window.__bjDev={ get G(){ return G; }, resolve:()=>resolveNow() };   // ★試�
 /* 1行=アイコン・内容(名前+占い結果のバッジ+説明)・人数(「N人」の下に−＋)。陣営ごとにセクションを分ける。市民は残りの人数(ボタンなし)
    ro=見るだけ(参加者側) */
 function roleFrameHTML(n,ro){
-  const r=roleCounts(n), err=(n>=MIN_P)? roleErr(n) : "", vil=Math.max(0,n-roleSum(r)), mx=roleMax(n);
+  const r=roleCounts(n), err=(n>=MIN_P)? roleErr(n) : "", vil=n-roleSum(r), mx=roleMax(n);   // 市民=残り。役職が多すぎる時はマイナスで出す
   const row=k=>{ const fixed=k==="villager", cnt=fixed? vil : (r[k]|0);
     return '<div class="rrow"><button type="button" class="ricon" data-ri="'+k+'" aria-label="'+ROLE_NAME[k]+'の詳細">'+roleIcon(k)+'</button>'
       +'<div class="rtx"><div class="rname">'+ROLE_NAME[k]+seerBadge(k,true)+'</div><div class="rdesc">'+ROLE_SHORT[k]+'</div></div>'
-      +'<div class="rcnt"><span class="rc-val">'+cnt+'人</span><div class="rc-row">'
-      +'<button class="stp'+(fixed?" hide":"")+'" data-rk="'+k+'" data-s="-1"'+(fixed||cnt<=0?" disabled":"")+'>−</button>'
-      +'<button class="stp'+(fixed?" hide":"")+'" data-rk="'+k+'" data-s="1"'+(fixed||cnt>=mx?" disabled":"")+'>＋</button></div></div></div>'; };
+      +'<div class="rcnt"><span class="rc-val'+(cnt<=0?" zero":"")+'">'+cnt+'人</span>'+(fixed? "" : '<div class="rc-row">'   // 市民はボタンがないので人数だけ(上下中央)
+      +'<button class="stp" data-rk="'+k+'" data-s="-1"'+(cnt<=0?" disabled":"")+'>−</button>'
+      +'<button class="stp" data-rk="'+k+'" data-s="1"'+(cnt>=mx?" disabled":"")+'>＋</button></div>')+'</div></div>'; };
   return '<div class="role-box'+(ro?" ro":"")+'"><div class="role-sec">市民陣営</div>'+ROLE_ORDER.filter(k=>TEAM_OF[k]==="village").map(row).join("")
     +'<div class="role-sec wolfs">人狼陣営</div>'+ROLE_ORDER.filter(k=>TEAM_OF[k]==="wolf").map(row).join("")+'</div>'
     +'<div class="role-err">'+esc(err)+'</div>';
@@ -1666,6 +1690,21 @@ function showRoleOv(role,head){
   $("roleOv").classList.add("on");
 }
 function openRole(){ const m=me(); if(!m) return; showRoleOv(m.role,"あなたの役職"); }
+/* 役職確認: 全役職をグリッドで。自分の役職→自分の陣営→ほかの陣営→今回いない役職の順に区切って並べる。押すとその役職の詳細 */
+function openRoleList(){
+  const m=me(), mine=m? m.role : null, myTeam=mine? TEAM_OF[mine] : "village";
+  const used=new Set(G? G.players.map(p=>p.role) : []);
+  const all=ROLE_ORDER.slice(), cell=r=>'<button type="button" class="rl-item" data-rr="'+r+'"><span class="rl-ic">'+roleIcon(r)+'</span><span class="rl-nm">'+ROLE_NAME[r]+'</span></button>';
+  const secs=[];
+  if(mine) secs.push(["あなたの役職",[mine]]);
+  secs.push(["同じ陣営",all.filter(r=>r!==mine && used.has(r) && TEAM_OF[r]===myTeam)]);
+  secs.push(["ほかの陣営",all.filter(r=>r!==mine && used.has(r) && TEAM_OF[r]!==myTeam)]);
+  secs.push(["今回はいない役職",all.filter(r=>r!==mine && !used.has(r))]);
+  $("roleList").innerHTML=secs.filter(x=>x[1].length).map(x=>'<div class="rl-sec">'+x[0]+'</div><div class="rl-grid">'+x[1].map(cell).join("")+'</div>').join("");
+  $("roleList").querySelectorAll("[data-rr]").forEach(b=>b.onclick=()=>{ ensureAudio(); playSelect(); $("roleListOv").classList.remove("on"); const r=b.dataset.rr; showRoleOv(r, r===mine? "あなたの役職" : "役職"); });
+  $("roleListOv").classList.add("on");
+}
+$("roleListClose").onclick=()=>{ ensureAudio(); playSelect(); $("roleListOv").classList.remove("on"); };
 /* 占い結果=画面の真ん中に、名前と「占い結果 白/黒」だけ */
 function openSeerRes(p,black){
   $("seerNm").innerHTML=p? '<span class="p-dot" style="background:'+p.c+'"></span>'+esc(p.n) : "?";
@@ -1685,7 +1724,7 @@ $("seerClose").onclick=()=>{ ensureAudio(); playSelect(); $("seerOv").classList.
 document.querySelectorAll(".overlay").forEach(o=>{ if(o.id==="resultOv") return; o.addEventListener("click",e=>{ if(e.target===o) o.classList.remove("on"); }); });
 function openRoleInfo(role,pid){ const m=me(); if(m && pid===m.id){ openRole(); return; } showRoleOv(role,"役職"); }
 $("roleClose").onclick=()=>{ ensureAudio(); playSelect(); $("roleOv").classList.remove("on"); };
-$("roleBtn").onclick=()=>{ ensureAudio(); playSelect(); openRole(); };
+$("roleBtn").onclick=()=>{ ensureAudio(); playSelect(); openRoleList(); };
 function causeText(p){ if(p.alive) return "生存"; const k=pById(p.killer);
   return p.cause==="poison"? (k? esc(k.n)+"が毒殺" : "毒殺") : p.cause==="hang"? "吊られた" : p.cause==="mine"? "地雷を踏んだ" : p.cause==="gone"? "退出" : "死亡"; }
 function openResult(){
@@ -1701,7 +1740,7 @@ function openResult(){
   /* 横並びの2択は決定(主ボタン)を右 */
   let b='<button class="ghost" id="resTitle">やめる</button>';
   if(debug||cpuMode) b+='<button class="close" id="resAgain">もう一回</button>';
-  else if(isHost) b+='<button class="close" id="resLobby">ロビーへもどる（全員）</button>';
+  else if(isHost) b+='<button class="close" id="resLobby">ロビーに戻る</button>';
   $("resBtns").innerHTML=b+(!debug&&!cpuMode&&!isHost?'<div class="rule-sum" style="width:100%;">オーナーがロビーに戻すのを待っています</div>':"");
   $("resTitle").onclick=()=>{ ensureAudio(); playSelect(); goTitle(); };
   const ra=$("resAgain"); if(ra) ra.onclick=()=>{ ensureAudio(); playSelect(); $("resultOv").classList.remove("on","peek"); const n=G.players.length; clearChat(); if(cpuMode) startCpu(n); else startDebug(n); };
@@ -1815,7 +1854,7 @@ function sbClient(){ if(!sb) sb=window.supabase.createClient(SB_URL, SB_KEY); re
 const MK_GUEST="ゲスト";
 function mkName(){ try{ return (localStorage.getItem("mk.name")||"").trim(); }catch(e){ return ""; } }
 const UNDEF_NM="（名前を考え中）";
-let nameAsked=false, joinWatch=0, hbIv=0, tickIv=0, lastVer=-1, ver=0;
+let lastRejoin=0, nameAsked=false, joinWatch=0, hbIv=0, tickIv=0, lastVer=-1, ver=0;
 function lobbyById(id){ return lobby.find(p=>p.id===id); }
 function nextColor(){ const used=new Set(lobby.map(p=>p.c)); return PCOL.find(c=>!used.has(c)) || PCOL[lobby.length%PCOL.length]; }
 function setMyName(n){
@@ -1842,8 +1881,9 @@ const GONE_GRACE=300000;   // 対戦中にpresenceが一瞬落ちても退出扱
 let goneTmr={};
 function presentIds(){ try{ return Object.keys(ch.presenceState()||{}); }catch(e){ return []; } }
 function cancelGone(id){ if(goneTmr[id]){ clearTimeout(goneTmr[id]); delete goneTmr[id]; } }
-function markGone(id){ if(id===myId) return; cancelGone(id);
-  goneTmr[id]=setTimeout(()=>{ delete goneTmr[id]; if(!ch||!online) return; if(presentIds().indexOf(id)>=0) return; onLeave(id); }, GONE_GRACE); }
+const LOBBY_GRACE=30000;   // ★ロビーでもpresenceが一瞬落ちただけでは消さない(スマホの切り替え・通信の瞬断で「勝手に抜けた」になっていた)
+function markGone(id,ms){ if(id===myId) return; cancelGone(id);
+  goneTmr[id]=setTimeout(()=>{ delete goneTmr[id]; if(!ch||!online) return; if(presentIds().indexOf(id)>=0) return; onLeave(id); }, ms||GONE_GRACE); }
 function leaveChannel(){
   clearTimeout(joinWatch); clearInterval(hbIv); hbIv=0; Object.keys(goneTmr).forEach(cancelGone);
   if(ch){ const c0=ch; ch=null;
@@ -1932,7 +1972,7 @@ function openChannel(c,onReady){
   ch.on("broadcast",{event:"bye"},({payload})=>{ if(payload) onLeave(payload.id); });
   ch.on("broadcast",{event:"kick"},({payload})=>{ if(payload&&payload.to===myId&&!isHost){ toast("オーナーに退出させられました"); goTitle(); } });
   ch.on("presence",{event:"leave"},({leftPresences})=>{ (leftPresences||[]).forEach(p=>{ if(!p||!p.id) return;
-    if(isHost && phaseUI==="lobby") onLeave(p.id); else markGone(p.id); }); });
+    markGone(p.id, phaseUI==="lobby"? LOBBY_GRACE : GONE_GRACE); }); });
   ch.on("presence",{event:"join"},({newPresences})=>{ (newPresences||[]).forEach(p=>{ if(p&&p.id) cancelGone(p.id); }); });
   let readyDone=false;
   ch.subscribe(async status=>{
@@ -1955,6 +1995,8 @@ function applySnap(p){
   if(p.hid!==hostId){ lastVer=-1; }                                     // オーナーが替わったら番号を振り直す
   if(p.v<=lastVer) return; lastVer=p.v;
   clearTimeout(joinWatch); hostId=p.hid; rules=p.rules||rules; lobby=p.lob||[];
+  /* ★自分がロビーの一覧から消えていたら(オーナー側で退出扱いになった等)、もう一度名乗り出て戻る */
+  if(!p.G && !lobby.some(x=>x.id===myId) && ch && Date.now()-lastRejoin>2000){ lastRejoin=Date.now(); try{ ch.send({type:"broadcast",event:"hello",payload:{id:myId,n:myName}}); }catch(e){} }
   if(!p.G){
     if(phaseUI==="game"){ G=null; document.querySelectorAll(".overlay").forEach(o=>o.classList.remove("on","peek")); }
     if(phaseUI!=="lobby"){ phaseUI="lobby"; showScene("lobbyScene"); }
@@ -2111,7 +2153,7 @@ function buildHelp(){
    +'<li>ドクター　市民陣営。視界にいる人が毒に侵されていると、コマの上に「Nターン後 死亡」と見え、となりの人の毒を治せる（1ラウンドに1回）。自分の毒だけは分からない</li>'
    +'<li>議論好き　市民陣営。ゲーム中に1度だけ、行動フェーズの「議論強制スタート」でその場から議論に入れる</li>'
    +'<li>敏感肌　市民陣営。メンバーリストの死亡がリアルタイムで分かり、誰かが死ぬとその場で知らせが出る</li>'
-   +'<li>地雷人狼　人狼陣営。自分のマスととなり4マスに地雷を置ける（2ターンに1回）。踏んだ人は死亡。すでに人が立っているマスに置くと即発動。人狼どうしは地雷が見え、踏んでも死なない。議論をはさむと地雷は消える。視界は毒殺人狼と同じ</li></ul>'
+   +'</ul>'
    +'<div class="h-sec">ながれ</div>'
    +'<ul class="h-list"><li>行動・移動　全員いっせいに1マス動く（留まってもいい）。行動中はチャットとスタンプは使えない</li>'
    +'<li>行動・接触　となり（同じマスも含む）の人を選んで「占う」「毒殺」（1ターンに1人。全員の行動がそろうまで相手を変えられる）。それとは別に3文字で「話す」こともできる（1ターンに1人）。となりに誰もいない時は自動でスキップ</li>'
@@ -2355,8 +2397,6 @@ sc("追加の役職","ドクター：いちばん上の段の人の毒",()=>sgG(
 sc("追加の役職","ドクター：毒の人を選んだ（話す・毒を治す）",()=>{ sgAct(RD,{ set:g=>{ g.players[2].poison={ left:2, by:"g1" }; } }); sgPop("g2"); });
 sc("追加の役職","ドクター：治療予定（毒の表示の上）",()=>sgAct(RD,{ set:g=>{ g.players[2].poison={ left:2, by:"g1" }; g.acts[myId]={ k:"cure", tg:"g2" }; } }));
 sc("追加の役職","毒殺人狼：毒殺予定",()=>sgAct(RW,{ pos:WPOS, set:g=>{ g.acts[myId]={ k:"poison", tg:"g1", dl:1 }; } }));
-sc("追加の役職","地雷人狼：置けるマス",()=>sgAct(RMi,{ pos:[[3,3],[5,3],[1,4],[5,5],[1,1],[6,6]] }));
-sc("追加の役職","地雷人狼：地雷を置いた",()=>sgAct(RMi,{ pos:[[3,3],[5,3],[1,4],[5,5],[1,1],[6,6]], set:g=>{ g.mines=[{ x:3, y:2, by:myId }]; g.acts[myId]={ k:"mine", mx:4, my:3 }; } }));
 sc("追加の役職","霊感が強い人：死体が見える",()=>sgG(RMe,{ set:g=>{ sgKill(g.players[2],"poison","g1",false); g.corpses=[{ x:3, y:4, id:"g2", n:g.players[2].n, c:g.players[2].c }]; } }));
 sc("追加の役職","議論好き：議論強制スタート",()=>sgAct(RT));
 sc("追加の役職","敏感肌：誰かが死亡した（その瞬間）",()=>{ sgG(RSe); sgFire(()=>sgKill(G.players[4],"poison","g1",false)); });
@@ -2364,7 +2404,6 @@ sc("追加の役職","敏感肌：2人同時に死亡した",()=>{ sgG(RSe); sgF
 sc("追加の役職","敏感肌：メンバーリスト（公表前でも×）",()=>sgG(RSe,{ set:g=>sgKill(g.players[4],"poison","g1",false) }));
 sc("追加の役職","役職：敏感肌",()=>{ sgG(RSe); openRole(); });
 sc("追加の役職","役職：ドクター",()=>{ sgG(RD); openRole(); });
-sc("追加の役職","役職：地雷人狼",()=>{ sgG(RMi); openRole(); });
 sc("議論 & 投票","はじまり（死亡した人がいる）",()=>{ sgTalk(RV,{ set:g=>{ sgKill(g.players[3],"poison","g1"); g.deathsThisRound=["g3"]; } }); sgPhaseIn("act"); });
 sc("議論 & 投票","はじまり（死亡した人はいない）",()=>{ sgTalk(RV); sgPhaseIn("act"); });
 sc("議論 & 投票","選ぶ前",()=>sgTalk(RV));
@@ -2406,6 +2445,9 @@ sc("ダイアログ","役職：占い師",()=>{ sgG(RS); openRole(); });
 sc("ダイアログ","役職：鷹の目",()=>{ sgG(RH,{ pos:WPOS }); openRole(); });
 sc("ダイアログ","役職：毒殺人狼（仲間あり）",()=>{ sgG(RW,{ pos:WPOS }); openRole(); });
 sc("ダイアログ","役職：狂人",()=>{ sgG(RM); openRole(); });
+sc("ダイアログ","役職確認（占い師）",()=>{ sgG(RS); openRoleList(); });
+sc("ダイアログ","役職確認（毒殺人狼）",()=>{ sgG(RW,{ pos:WPOS }); openRoleList(); });
+sc("ロビー","役職が人数より多い（市民がマイナス）",()=>sgLobby(4,{ roles:{ wolf:1, seer:2, hawk:2, mad:0 } }));
 sc("ダイアログ","占い結果（白）",()=>{ sgG(RS); openSeerRes(G.players[2],false); });
 sc("ダイアログ","占い結果（黒）",()=>{ sgG(RS); openSeerRes(G.players[1],true); });
 sc("ダイアログ","ロビーで役職アイコンを押した（毒殺人狼）",()=>{ sgLobby(6); showRoleOv("wolf",""); });
@@ -2434,7 +2476,8 @@ const _render=render;
 render=function(){ if((isHost||debug)&&G) onState(); _render(); };
 window.addEventListener("pointerdown",ensureAudio,{passive:true});
 /* タブを閉じた/別ページへ移った=すぐに退出を知らせる(5分の猶予を待たせない)。一瞬の通信切れはpresenceの猶予で吸収する */
-window.addEventListener("pagehide",()=>{ if(ch){ try{ ch.send({type:"broadcast",event:"bye",payload:{id:myId}}); }catch(e){} } });
+window.addEventListener("pagehide",e=>{ if(ch && !e.persisted){ try{ ch.send({type:"broadcast",event:"bye",payload:{id:myId}}); }catch(e2){} } });   // ★一時的に隠れただけ(戻ってくる可能性がある)なら退出を送らない
+window.addEventListener("pageshow",e=>{ if(e.persisted && ch && online){ try{ if(isHost) sendSnap(); else ch.send({type:"broadcast",event:"hello",payload:{id:myId,n:myName}}); }catch(e2){} } });
 renderSnd();
 renderDv();
 if(/[?&]scenes=1/.test(location.search)) setTimeout(openGallery,60);   // ★?scenes=1 でシーン一覧から始める

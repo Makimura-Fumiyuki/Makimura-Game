@@ -415,13 +415,26 @@
   #sgPanel.dragging, #sgPanel.dragging *{ cursor:grabbing !important; }
   #sgPanel.snapping{ transition:left .22s cubic-bezier(.2,.9,.3,1), top .22s cubic-bezier(.2,.9,.3,1); }
   #sgPanel .sg-grip{ width:8px; height:13px; flex:none; opacity:.35; }
+
+  /* 効果音のON/OFF=左上「あそびかた」の右隣・アイコンだけ(2026-09-27)。
+     2つを1つの固定の入れ物に入れて横に並べる=あそびかたの幅が変わっても右隣に付いていく */
+  .tl-btns{ position:fixed; left:12px; top:12px; z-index:40; display:flex; align-items:center; gap:6px; }
+  .tl-btns > .help-btn{ position:relative; left:auto; top:auto; right:auto; }
+  .se-ico{ width:34px; height:34px; margin:-5px 0; padding:0; flex:none; display:inline-flex; align-items:center; justify-content:center;
+    background:transparent; border:0; box-shadow:none; border-radius:50%; cursor:pointer; color:var(--ink); font:inherit;
+    -webkit-tap-highlight-color:transparent; }
+  .se-ico svg{ width:22px; height:22px; display:block; }
+  .se-ico .slash{ display:none; }
+  .se-ico.off{ opacity:.55; }
+  .se-ico.off .wave{ display:none; }
+  .se-ico.off .slash{ display:inline; }
+  .se-ico:active{ transform:translateY(1px); }
 </style>
 </head>
 <body>
 <div id="doodles"></div>
 
-<button class="help-btn" id="helpBtn"><span>?</span>あそびかた</button>
-<button class="snd-btn" id="seBtn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wave" d="M16 9c1.2.9 1.2 5.1 0 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="wave" d="M18.5 7c2.2 1.7 2.2 8.3 0 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><g class="slash" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="16" y1="9" x2="21" y2="15"/><line x1="21" y1="9" x2="16" y2="15"/></g></svg>効果音</button>
+<div class="tl-btns"><button class="help-btn" id="helpBtn"><span>?</span>あそびかた</button><button class="se-ico" id="seBtn" type="button" aria-label="効果音"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wave" d="M16 9c1.2.9 1.2 5.1 0 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="wave" d="M18.5 7c2.2 1.7 2.2 8.3 0 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><g class="slash" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="16" y1="9" x2="21" y2="15"/><line x1="21" y1="9" x2="16" y2="15"/></g></svg></button></div>
 
 <!-- ===== タイトル ===== -->
 <div class="scene on" id="titleScene">
