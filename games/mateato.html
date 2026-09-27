@@ -2155,10 +2155,10 @@ function renderLobby(){
       addSys(gone.n+" を追放しました");
       renderLobby(); sendSnap();
     }));
-    $("lobbyBox").querySelectorAll("[data-xfer]").forEach(b=>b.addEventListener("click",()=>{   // 1回目=「確定」に変わる / 2回目=譲渡
+    $("lobbyBox").querySelectorAll("[data-xfer]").forEach(b=>b.addEventListener("click",()=>{   // 1回押しで譲渡(他作と同じ)
       ensureAudio(); playSelect();
       const id=b.dataset.xfer; if(!byId(id)) return;
-      if(xferArm!==id){ xferArm=id; renderLobby(); return; }
+      
       transferHost(id);
     }));
     $("lbTlM").addEventListener("click",()=>{ ensureAudio(); playTick(); timeLimit=Math.max(15,timeLimit-15); renderLobby(); sendSnap(); });
