@@ -91,6 +91,7 @@
   .stage-box{ width:var(--uiw); background:rgba(0,0,0,.18); border:1.5px solid rgba(244,239,230,.18); border-radius:16px; padding:12px 12px 14px; }
   .stg-ctrl{ display:flex; justify-content:center; gap:8px; margin-top:12px; }
   .stg-dots{ display:flex; justify-content:center; gap:6px; margin-top:9px; }
+  .stg-dots.stg-cst{ height:11px; align-items:center; font-size:11.5px; font-weight:900; color:var(--gold); letter-spacing:.08em; }
   .stg-dot{ width:9px; height:9px; padding:0; border:none; border-radius:50%; background:rgba(244,239,230,.25); cursor:pointer; }
   .stg-dot.on{ background:var(--gold); transform:scale(1.25); }
   .stage-box.ro .stg-dot{ cursor:default; pointer-events:none; }
@@ -112,12 +113,12 @@
   .stg-card .sc-view svg{ width:88%; height:88%; display:block; }
   .stg-card .sc-nm{ width:100%; font-size:11.5px; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center; }
   .stg-card .sc-sz{ font-size:10px; font-weight:800; opacity:.55; }
-  .stg-card.add{ justify-content:center; border-style:dashed; font-size:13px; font-weight:900; color:var(--gold); }
-  .stg-card.add .sc-plus{ font-size:30px; line-height:1; }
+  .stg-card.add{ border-style:dashed; color:var(--gold); }      /* 見た目の大きさはステージのカードと同じ(0個の時も潰れない) */
+  .stg-card.add .sc-view{ font-size:40px; font-weight:700; line-height:1; }
   .stg-empty{ padding:22px 6px; font-size:13.5px; font-weight:800; line-height:1.8; opacity:.8; }
   .stg-empty small{ font-size:11.5px; opacity:.75; }
   /* ステージを作る(タイトルの左下の入口と作る画面) */
-  .stg-make{ position:fixed; right:10px; top:10px; z-index:40; display:none; align-items:center; justify-content:center; gap:5px; width:150px; height:38px;
+  .stg-make{ position:fixed; right:10px; top:10px; z-index:90; display:none; align-items:center; justify-content:center; gap:5px; width:150px; height:38px;
     border:1.5px solid rgba(244,239,230,.35); border-radius:999px; background:rgba(20,16,32,.55); color:var(--card); font-size:13px; font-weight:900; letter-spacing:.06em; cursor:pointer; }
   .stg-make.on{ display:flex; }
   .stg-make .ic{ display:flex; } .stg-make .ic svg{ width:16px; height:16px; }
@@ -129,7 +130,11 @@
   .ed-name{ width:100%; height:42px; padding:0 12px; border:1.5px solid rgba(244,239,230,.25); border-radius:12px; background:rgba(0,0,0,.25); color:var(--card); font-size:15px; font-weight:800; }
   .ed-size{ display:flex; align-items:center; gap:8px; }
   .ed-lb{ font-size:12px; font-weight:800; opacity:.7; margin-right:4px; }
-  .ed-tools{ display:grid; grid-template-columns:44px 44px 44px 1fr 1fr; gap:6px; width:100%; }
+  .ed-tools{ display:grid; grid-template-columns:44px 44px 44px 1fr 1fr 44px; gap:6px; width:100%; }
+  .ed-top{ display:flex; gap:8px; width:100%; }
+  .ed-top .ed-name{ flex:1; min-width:0; }
+  .ed-top .ed-done{ flex:none; width:118px; height:42px; margin:0; }
+  .ed-hint{ margin-top:-4px; font-size:11px; font-weight:800; opacity:.55; }
   .ed-tool.ic{ display:flex; align-items:center; justify-content:center; }
   .ed-tool.ic svg{ width:20px; height:20px; }
   .ed-cvw{ position:relative; }
@@ -152,10 +157,11 @@
   .ed-delsel:disabled{ opacity:.35; cursor:default; }
   .ed-delsel.arm{ background:#b02a20; }
   .stg-card.pick{ border-color:#ff8f7d; background:rgba(216,69,58,.18); position:relative; }
-  .stg-card .sc-ck{ position:absolute; right:6px; top:6px; width:18px; height:18px; border-radius:50%; border:1.5px solid rgba(244,239,230,.55); display:none; }
-  .ed-selmode .stg-card .sc-ck{ display:block; } .ed-selmode .stg-card{ position:relative; }
-  .stg-card.pick .sc-ck{ background:#d8453a; border-color:#d8453a; }
-  .stg-card.pick .sc-ck::after{ content:""; position:absolute; left:5px; top:2px; width:5px; height:9px; border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg); }
+  .stg-card .sc-ck{ position:absolute; left:6px; top:6px; width:24px; height:24px; border-radius:7px; border:1.5px solid rgba(244,239,230,.4); display:none;
+    align-items:center; justify-content:center; color:rgba(244,239,230,.45); }
+  .stg-card .sc-ck svg{ width:15px; height:15px; }
+  .ed-selmode .stg-card .sc-ck{ display:flex; } .ed-selmode .stg-card{ position:relative; }
+  .stg-card.pick .sc-ck{ background:#d8453a; border-color:#d8453a; color:#fff; }   /* 削除するステージ=左上に赤いゴミ箱 */
   .ed-selmode .stg-card.add{ opacity:.3; pointer-events:none; }
   .ed-tool{ height:36px; padding:0; border:1.5px solid rgba(244,239,230,.3); border-radius:10px; background:transparent; color:var(--card); font-size:12.5px; font-weight:900; cursor:pointer; white-space:nowrap; }
   .ed-tool.on{ background:var(--gold); border-color:var(--gold); color:#3a2a06; }
@@ -460,7 +466,7 @@
   .snd-btn.off .slash{ display:block; }
   #roleBtn, #memBtn{ top:12px; display:none; width:96px; justify-content:center; padding:7px 0; }
   #memBtn{ top:54px; }                                            /* 参加者=役職確認の下 */
-  #gameScene.on ~ #roleBtn, #gameScene.on ~ #memBtn{ display:flex; }
+  #gameScene.on ~ #roleBtn, #gameScene.on ~ #memBtn, #lobbyScene.on ~ #memBtn{ display:flex; }
   .mem-list{ display:flex; flex-direction:column; gap:6px; margin:2px 0 4px; }
   .mem-row{ display:flex; align-items:center; gap:8px; height:40px; padding:0 8px 0 12px; border-radius:10px; background:rgba(244,239,230,.07); font-size:13.5px; font-weight:800; }
   .mem-row .p-dot{ width:12px; height:12px; border-radius:50%; flex:none; }
@@ -698,15 +704,16 @@
   <div class="sec-label">ステージを作る</div>
   <div id="edList"></div>
   <div id="edWork" style="display:none;">
-    <input class="ed-name" id="edName" maxlength="16" placeholder="ステージ名" autocomplete="off">
+    <div class="ed-top"><input class="ed-name" id="edName" maxlength="16" placeholder="ステージ名" autocomplete="off"><button class="ed-done" id="edDone">保存して戻る</button></div>
     <div class="ed-size"><button class="stp" id="edMinus">−</button><span class="rc-val" id="edN"></span><button class="stp" id="edPlus">＋</button></div>
+    <div class="ed-hint">7×7〜9×9がおすすめ</div>
     <div class="ed-tools"><button class="ed-tool ic" data-tool="pen" aria-label="ペン"></button><button class="ed-tool ic" data-tool="fill" aria-label="塗りつぶし"></button>
-      <button class="ed-tool ic" data-tool="move" aria-label="移動"></button><button class="ed-tool" id="edAllOn">全部ON</button><button class="ed-tool" id="edAllOff">全部OFF</button></div>
+      <button class="ed-tool ic" data-tool="move" aria-label="移動"></button><button class="ed-tool" id="edAllOn">全部ON</button><button class="ed-tool" id="edAllOff">全部OFF</button>
+      <button class="ed-tool ic" id="edSym" aria-label="線対称"></button></div>
     <div class="ed-cvw"><canvas id="edCv"></canvas>
       <div class="ed-move" id="edMove"><button class="em u" data-mv="0,-1" aria-label="上へ"></button><button class="em l" data-mv="-1,0" aria-label="左へ"></button>
         <button class="em r" data-mv="1,0" aria-label="右へ"></button><button class="em d" data-mv="0,1" aria-label="下へ"></button></div></div>
     <div class="ed-info" id="edInfo"></div>
-    <button class="ed-done" id="edDone">保存して戻る</button>
   </div>
 </div>
 
@@ -921,13 +928,15 @@ const STAGES=[
   { id:"sq7", nm:"正方形 中", rows:["#######","#######","#######","#######","#######","#######","#######"] },
   { id:"sq9", nm:"正方形 大", rows:["#########","#########","#########","#########","#########","#########","#########","#########","#########"] },
   { id:"heart", nm:"ハート", rows:[".##...##.","####.####","#########","#########","#########",".#######.","..#####..","...###...","....#...."] },
-  { id:"h", nm:"H", rows:["##...##","##...##","##...##","#######","##...##","##...##","##...##"] },
+  { id:"h", nm:"H", rows:["##...##","##...##","#######","#######","#######","##...##","##...##"] },
   { id:"cross", nm:"十字", rows:["..###..","..###..","#######","#######","#######","..###..","..###.."] },
   { id:"ring", nm:"ドーナツ", rows:["#######","#######","##...##","##...##","##...##","#######","#######"] },
   { id:"diamond", nm:"ダイヤ", rows:["....#....","...###...","..#####..",".#######.","#########",".#######.","..#####..","...###...","....#...."] },
 ];
 const WRENCH_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
 const TRASH_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4.5A1.5 1.5 0 0 1 9.5 3h5A1.5 1.5 0 0 1 16 4.5V6m2.5 0-.9 13.1A2 2 0 0 1 15.6 21H8.4a2 2 0 0 1-2-1.9L5.5 6M10 11v6M14 11v6"/></svg>';
+const SYM2_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20" stroke-dasharray="2.4 2.4"/><path d="M9 6 3 18h6z"/><path d="m15 6 6 12h-6z"/></svg>';
+const SYM4_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M2 12h20" stroke-dasharray="2.4 2.4"/><path d="M4 4h5v5H4zM15 4h5v5h-5zM4 15h5v5H4zM15 15h5v5h-5z"/></svg>';
 const PEN_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
 const BUCKET_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11Z"/><path d="m5 2 5 5"/><path d="M2 13h15"/><path d="M22 20a2 2 0 1 1-4 0c0-1.6 1.7-2.4 2-4 .3 1.6 2 2.4 2 4Z"/></svg>';
 const MOVE_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>';
@@ -1058,10 +1067,7 @@ const ROLE_DETAIL={
   hawk:[{t:"状況把握のプロ"}],
   wolf:[{t:"死亡までのターンを0~2ターンで選ぶことができます"},{t:"ただし、再発動には1ターンのインターバルが必要"}],
   mad:[{t:"ただし、人狼が誰なのか分からず、人狼側も誰が狂人なのかは知りません"}],
-  framer:[{t:"行動中に隣の人を選び、一定期間占い結果を逆にできる"},{t:"黒なら白に、白なら黒に変わる"},{t:"ただし、1度議論を挟むと元の占い結果に戻る"},
-    {t:"※1ラウンドにつき1回まで。人狼を選べば、占い結果を白にしてかばうこともできる",n:1},{t:"※占い師も、選ばれた本人も、占い結果が逆になっていることは分からない",n:1},
-    {t:"※逆になっている間に占われた結果は、議論を挟んでも占い師のメンバーリストにそのまま残る（もう一度占うと正しい結果に更新される）",n:1},
-    {t:"※人狼陣営だが、人狼が誰なのかは分からず、人狼側も誰が濡れ衣狂人なのかは知りません",n:1}],
+  framer:[{t:"行動中に隣の人を選び、一定期間占い結果を逆にできる"},{t:"黒なら白に、白なら黒に変わる"},{t:"ただし、1度議論を挟むと元の占い結果に戻る"}],
   medium:[{t:"殺害された死体が盤上に残り、それを見ることができる"},{t:"※議論を挟むと、死体が消える",n:1}],
   doctor:[{t:"視界内にいる人が毒に侵されていて、何ターン後に死亡するかまで分かる"},{t:"また、1ラウンドにつき1回まで隣接するプレイヤーの毒を治せる"},{t:"※自分の毒には気付けず、治すこともできない",n:1}],
   talker:[{t:"ゲーム中に1度だけ、行動フェーズ中に議論&投票フェーズを開始できる"}],
@@ -1105,7 +1111,7 @@ function alivePs(){ return G.players.filter(p=>p.alive); }
 function isWolf(p){ return !!p && WOLF_KINDS.includes(p.role); }      // 占いで「黒」・勝ち負けの数に入るのは人狼(毒殺人狼・地雷人狼)
 function isWolfTeam(p){ return !!p && (isWolf(p)||p.role==="mad"); }          // 人狼陣営(狂人も)=勝ち負けの側。★人狼と狂人はおたがいに誰か分からない(2026-09-25)
 function knowsRole(m,p){ return !!m && !!p && (m.id===p.id || (isWolf(m) && isWolf(p))); }   // mがpの役職を知っているか(人狼どうしだけ分かる。地雷人狼と毒殺人狼もおたがい分かる)
-function canFrame(p){ return !!p && p.role==="framer" && p.lastFrameRound!==G.round; }   // ★濡れ衣狂人: 1ラウンドに1回
+function canFrame(p){ return !!p && p.role==="framer"; }   // ★濡れ衣狂人: 1ラウンド中に何回でも(1ターンに1人)
 function canFrameTo(p,t){ return !!t && t.alive && t.id!==p.id; }                              // 人狼にも使える(白にしてかばう)
 function seerBlack(t){ return isWolf(t) !== !!t.framed; }                                        // 占い結果(濡れ衣の間は逆になる)
 function canKill(p){ return !!p && p.role==="guesser" && p.lastKillRound!==G.round; }   // ★役職当てたい人狼: 行動中の殺害は1ラウンドに1回
@@ -1313,7 +1319,7 @@ function resolveAct(){
         占う・毒殺は1人1ターンに1つ。「話す」はそれとは別にできる */
   const newPoison=[], whs=[], cured=[], kills=[], seers=[];
   /* ★濡れ衣狂人: 同じターンの占いにも効くよう、先に解決する */
-  alivePs().forEach(p=>{ const a=G.acts[p.id]; if(!a||a.k!=="frame"||p.role!=="framer"||p.lastFrameRound===G.round) return;
+  alivePs().forEach(p=>{ const a=G.acts[p.id]; if(!a||a.k!=="frame"||p.role!=="framer") return;
     const t=pById(a.tg); if(!t||!t.alive||t.id===p.id||dist(p,t)>1) return; p.lastFrameRound=G.round; t.framed=true; });
   alivePs().forEach(p=>{
     const w=(G.whs||{})[p.id];
@@ -1869,7 +1875,7 @@ function renderPop(){
       if(pw){
         const mine = a && ((a.k===pw && a.tg===t.id) || (pw==="mine" && a.k==="mine" && a.mx===t.x && a.my===t.y));
         const cool = (pw==="poison" && !canPoison(m)) || (pw==="cure" && !canCure(m)) || (pw==="mine" && !canMine(m)) || (pw==="kill" && !canKill(m)) || (pw==="frame" && !canFrame(m));
-        const lb = pw==="kill"? "殺害 "+(canKill(m)?1:0)+"/1" : pw==="frame"? "濡れ衣 "+(canFrame(m)?1:0)+"/1"   // ★役職ｱﾃﾀｲ人狼=残り回数/1ラウンドの回数
+        const lb = pw==="kill"? "殺害 "+(canKill(m)?1:0)+"/1" : pw==="frame"? "濡れ衣"   // ★役職ｱﾃﾀｲ人狼=残り回数/1ラウンドの回数
           : cool? (pw==="poison"? "毒殺（あと"+poisonLeft(m)+"ターン）" : pw==="mine"? "地雷（あと"+mineLeft(m)+"ターン）" : "毒を治す（このラウンドは使用済み）") : POWER_NAME[m.role];
         h+= (mine && pw!=="mine")? '<button class="pbtn sel" data-x="1">'+btnIcon(pw)+'キャンセル</button>'   // ★決めた相手をもう一度選ぶと「(アイコン)キャンセル」=押すと取り消し
           : '<button class="pbtn'+(mine?" sel":"")+(cool?" off":"")+'" data-p="'+pw+'">'+btnIcon(pw)+lb+'</button>';
@@ -2019,7 +2025,7 @@ function startCpu(n){                       // ★試作用: 自分1人+ロボ�
 }
 /* ★本当に遊ぶ時はシーン一覧を閉じる(開いたままだと進行が止まったままになる=「1人で遊ぶが動かない」の原因だった) */
 function leaveGallery(){ if(!gallery) return; gallery=false; const el=$("sgPanel"); if(el) el.remove(); }
-window.__bjDev={ get G(){ return G; }, resolve:()=>resolveNow(), act:o=>submit(o), st:()=>actState() };   // ★試作用フック(公開前に削除するか要確認)
+window.__bjDev={ get G(){ return G; }, resolve:()=>resolveNow(), act:o=>submit(o), st:()=>actState(), get lobby(){ return lobby; }, setLobby:a=>{ lobby=a; renderLobby(); }, get ed(){ return ed; } };   // ★試作用フック(公開前に削除するか要確認)
 
 /* ================= 役職の数(ロビーと試作用で共通) ================= */
 /* 1行=アイコン・内容(名前+占い結果のバッジ+説明)・人数(「N人」の下に−＋)。陣営ごとにセクションを分ける。市民は残りの人数(ボタンなし)
@@ -2046,10 +2052,11 @@ document.addEventListener("click",e=>{ const b=e.target.closest(".ricon[data-ri]
 
 /* ================= 画面遷移・演出 ================= */
 function showScene(s){ ["titleScene","lobbyScene","gameScene","editScene"].forEach(id=>$(id).classList.toggle("on", id===s));
-  $("stageMakeBtn").classList.toggle("on", s==="titleScene");
+  $("stageMakeBtn").classList.toggle("on", s==="titleScene" || s==="lobbyScene");
   if(s!=="lobbyScene") $("roleErrFix").classList.remove("on");
   $("chatBox").classList.toggle("on", s==="gameScene" || (s==="lobbyScene"&&online)); renderChatMode(); }
-function enterGame(){ phaseUI="game"; seen={ gid:"", sk:-1, tick:-1, phase:"", notes:{}, alive:{}, over:false }; boardN=0; hudKey=""; showScene("gameScene"); }
+function enterGame(){ if(ed){ edSave(true); ed=null; } edSel=null; lobSeen=null;   // ★ロビーでステージを作っている最中に始まった=その時点で保存してゲームへ
+  phaseUI="game"; seen={ gid:"", sk:-1, tick:-1, phase:"", notes:{}, alive:{}, over:false }; boardN=0; hudKey=""; showScene("gameScene"); }
 let toastT=0;
 function toast(m,ms){ const el=$("toast"); el.textContent=m; el.classList.add("on"); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove("on"),ms||1800); }
 let fxT=0, tfxT=0;
@@ -2137,22 +2144,23 @@ function renderGuess(){ $("guessList").innerHTML=rlSections(false,"guesser");
       playVote(); $("guessOv").classList.remove("on"); submit({ t:"guess", tg:guessTg, role:r }); }; });
 }
 /* ================= ★ステージを作る ================= */
-let ed=null, edTool="pen", edSel=null;          // ed={ id,nm,n,mask(配列),t }／edSel=一覧で削除するために選んだid(null=選ぶモードではない)
+let ed=null, edTool="pen", edSel=null, edSym=0;   // edSym=線対称 0=なし/1=左右/2=上下左右          // ed={ id,nm,n,mask(配列),t }／edSel=一覧で削除するために選んだid(null=選ぶモードではない)
 /* 塗る音=高い音をさけた、やわらかい低めの音(塗る=少し上がる・消す=少し下がる) */
 let edSndAt=0;
 function playPaint(on){ if(!actx) return; const now=performance.now(); if(now-edSndAt<34) return; edSndAt=now; const t=T0();
   if(on){ note(262,t,0.11,0.05,"sine",330); note(131,t,0.08,0.03,"triangle"); } else { note(247,t,0.11,0.05,"sine",196); note(123,t,0.08,0.03,"triangle"); } }
 function playBucket(){ if(!actx) return; const t=T0(); note(196,t,0.16,0.05,"sine",262); note(262,t+0.05,0.18,0.04,"sine",330); note(98,t,0.14,0.03,"triangle"); }
 function playShift(){ if(!actx) return; const t=T0(); note(220,t,0.07,0.04,"sine",247); }
-function openEditor(){ showScene("editScene"); edShowList(); loadStagesAcct().then(ok=>{ if(ok && !ed) edShowList(); }); }
+let edFrom="title";                              // ★ロビーからも作れる(戻る先がロビーになる)
+function openEditor(){ edFrom=(online && phaseUI==="lobby")? "lobby" : "title"; showScene("editScene"); edShowList(); loadStagesAcct().then(ok=>{ if(ok && !ed) edShowList(); }); }
 function edShowList(){ ed=null; $("edWork").style.display="none"; $("edList").style.display="";
   const sel=edSel;
   $("edList").innerHTML='<div class="stg-grid'+(sel?" ed-selmode":"")+'" style="max-height:none;">'
-    +'<button class="stg-card add" id="edNew"><span class="sc-plus">＋</span>新しく作る</button>'
-    +myStages.map(t=>stageCard(t,false).replace('class="stg-card','class="stg-card'+(sel&&sel.has(t.id)?" pick":"")).replace('</button>','<span class="sc-ck"></span></button>')).join("")+'</div>'
+    +'<button class="stg-card add" id="edNew"><span class="sc-view">＋</span><span class="sc-nm">新しく作る</span><span class="sc-sz">&nbsp;</span></button>'
+    +myStages.map(t=>stageCard(t,false).replace('class="stg-card','class="stg-card'+(sel&&sel.has(t.id)?" pick":"")).replace('</button>','<span class="sc-ck">'+TRASH_SVG+'</span></button>')).join("")+'</div>'
     +'<div class="ed-foot">'+(sel
       ? '<button class="txt-btn" id="edSelCancel">キャンセル</button><button class="ed-delsel" id="edDelSel"'+(sel.size?"":" disabled")+'>'+(sel.size? sel.size+"個を削除" : "削除する物を選択")+'</button>'
-      : '<button class="ed-trash" id="edTrash" aria-label="ステージを削除">'+TRASH_SVG+'</button><button class="txt-btn" id="edBack">タイトルに戻る</button>')+'</div>';
+      : '<button class="ed-trash" id="edTrash" aria-label="ステージを削除">'+TRASH_SVG+'</button><button class="txt-btn" id="edBack">'+(edFrom==="lobby"?"ロビーに戻る":"タイトルに戻る")+'</button>')+'</div>';
   $("edNew").onclick=()=>{ ensureAudio(); playSelect();
     if(myStages.length>=60){ toast("自作ステージは60個までです"); return; }
     let k=myStages.length+1; while(myStages.some(t=>t.nm==="マイステージ"+k)) k++;
@@ -2171,8 +2179,9 @@ function edShowList(){ ed=null; $("edWork").style.display="none"; $("edList").st
       saveStages(); edSel=null; delArm=false; toast(n+"個のステージを削除しました"); edShowList(); };
   } else {
     $("edTrash").onclick=()=>{ ensureAudio(); playSelect(); if(!myStages.length){ toast("削除できるステージがありません"); return; } edSel=new Set(); delArm=false; edShowList(); };
-    $("edBack").onclick=()=>{ ensureAudio(); playSelect(); showScene("titleScene"); };
+    $("edBack").onclick=()=>{ ensureAudio(); playSelect(); edLeave(); };
   } }
+function edLeave(){ if(edFrom==="lobby" && online && phaseUI==="lobby"){ showScene("lobbyScene"); renderLobby(); } else showScene("titleScene"); }
 let delArm=false;
 document.addEventListener("pointerdown",e=>{ if(delArm && !e.target.closest("#edDelSel")){ delArm=false; const d=$("edDelSel"); if(d&&edSel){ d.classList.remove("arm"); d.textContent=edSel.size+"個を削除"; } } },true);
 function edOpen(id){ const st=myStages.find(t=>t.id===id); if(!st) return;
@@ -2184,7 +2193,7 @@ function edSave(now){ if(!ed) return; clearTimeout(edSaveT); const run=()=>{ if(
   if(edCount()<ST_MIN_CELLS) return;
   const i=myStages.findIndex(t=>t.id===ed.id), o={ id:ed.id, nm:(ed.nm||"").trim()||"マイステージ", n:ed.n, m:packMask(ed.mask.join("")), t:Date.now() };
   if(i>=0) myStages[i]=o; else myStages.unshift(o); saveStages();
-  if(rules.stage===ed.id){ rules.cst={ id:o.id, nm:o.nm, n:o.n, m:o.m }; } };
+  if(rules.stage===ed.id){ rules.cst={ id:o.id, nm:o.nm, n:o.n, m:o.m }; if(online&&isHost) sendSnap(); } };
   if(now) run(); else edSaveT=setTimeout(run,300); }
 function edCount(){ let c=0; ed.mask.forEach(v=>{ if(v==="1") c++; }); return c; }
 function edDraw(){ if(!ed) return; const cv=$("edCv"), px=cv.getBoundingClientRect().width||360, dpr=Math.min(2,window.devicePixelRatio||1);
@@ -2195,11 +2204,14 @@ function edDraw(){ if(!ed) return; const cv=$("edCv"), px=cv.getBoundingClientRe
     c.fillStyle= on? ((x+y)%2?"#e9e2d4":"#f1ebdf") : "#2a2540"; c.fillRect(x*cs+gap/2,y*cs+gap/2,cs-gap,cs-gap); }
   $("edN").textContent=n+"×"+n; $("edMinus").disabled=n<=ST_MIN; $("edPlus").disabled=n>=ST_MAX;
   const k=edCount(), bad=k<ST_MIN_CELLS;
-  $("edInfo").textContent="マス "+k+"個"+(bad? "（25マス以上ないと保存できません）":""); $("edInfo").classList.toggle("bad",bad);
+  $("edInfo").textContent=k+"マス"+(bad? "（25マス以上ないと保存できません）":"");
+  if(edSym){ c.strokeStyle="rgba(232,182,71,.9)"; c.lineWidth=Math.max(2,S/180); c.setLineDash([S/60,S/90]);   // 線対称の線(左右の真ん中・上下の真ん中)
+    c.beginPath(); c.moveTo(S/2,0); c.lineTo(S/2,S); if(edSym===2){ c.moveTo(0,S/2); c.lineTo(S,S/2); } c.stroke(); c.setLineDash([]); }
+  { const b=$("edSym"); b.innerHTML= edSym===2? SYM4_SVG : SYM2_SVG; b.classList.toggle("on", edSym>0); b.setAttribute("aria-label", ["線対称：なし","線対称：左右","線対称：上下左右"][edSym]); } $("edInfo").classList.toggle("bad",bad);
   $("edMove").classList.toggle("on", edTool==="move");
   document.querySelectorAll("#edWork [data-tool]").forEach(b=>b.classList.toggle("on", b.dataset.tool===edTool)); }
 function edResize(n2){ if(!ed) return; n2=Math.max(ST_MIN,Math.min(ST_MAX,n2)); if(n2===ed.n) return;
-  const n=ed.n, full=ed.mask.every(v=>v==="1"), off=Math.floor((n2-n)/2), m=new Array(n2*n2).fill(full?"1":"0");   // 真ん中を基準に広げる/縮める(全部ONなら広げた所もON)
+  const n=ed.n, full=ed.mask.every(v=>v==="1"), off=0, m=new Array(n2*n2).fill(full?"1":"0");   // ★左上を基準に広げる/縮める(増えるのも減るのも右と下。全部ONなら広げた所もON)
   for(let y=0;y<n2;y++) for(let x=0;x<n2;x++){ const ox=x-off, oy=y-off; if(ox>=0&&oy>=0&&ox<n&&oy<n) m[y*n2+x]=ed.mask[oy*n+ox]; }
   ed.n=n2; ed.mask=m; edDraw(); edSave(); }
 function edShift(dx,dy){ if(!ed) return; const n=ed.n, m=new Array(n*n);   // ★移動=全体をずらす。はみ出したぶんは反対側から出てくる(ループ)
@@ -2207,13 +2219,18 @@ function edShift(dx,dy){ if(!ed) return; const n=ed.n, m=new Array(n*n);   // �
   ed.mask=m; playShift(); edDraw(); edSave(); }
 function edCell(e){ const r=$("edCv").getBoundingClientRect(), n=ed.n, x=Math.floor((e.clientX-r.left)/r.width*n), y=Math.floor((e.clientY-r.top)/r.height*n);
   return (x>=0&&y>=0&&x<n&&y<n)? { x, y } : null; }
+function edSymPts(p){ const n=ed.n, a=[p]; if(edSym>=1) a.push({ x:n-1-p.x, y:p.y });   // 線対称で一緒に変わるマス
+  if(edSym>=2){ a.push({ x:p.x, y:n-1-p.y }); a.push({ x:n-1-p.x, y:n-1-p.y }); }
+  const seen={}; return a.filter(q=>{ const k=q.x+","+q.y; if(seen[k]) return false; seen[k]=1; return true; }); }
 function edFill(x,y){ const n=ed.n, v=ed.mask[y*n+x], to=v==="1"?"0":"1", st=[[x,y]];   // 塗りつぶし=つながった同じ色の所をまとめて反転
   while(st.length){ const [cx,cy]=st.pop(); if(cx<0||cy<0||cx>=n||cy>=n||ed.mask[cy*n+cx]!==v) continue; ed.mask[cy*n+cx]=to;
     st.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]); } }
 let edPaint=null, edLast=null;                    // ペン: 押した所の反対の値で、なぞった所を塗る(マスが変わるたびに音)
-function edPaintTo(p){ const i=p.y*ed.n+p.x; if(ed.mask[i]===edPaint) return false; ed.mask[i]=edPaint; playPaint(edPaint==="1"); return true; }
+function edPaintTo(p){ let ch=false; edSymPts(p).forEach(q=>{ const i=q.y*ed.n+q.x; if(ed.mask[i]!==edPaint){ ed.mask[i]=edPaint; ch=true; } });
+  if(ch) playPaint(edPaint==="1"); return ch; }
 $("edCv").addEventListener("pointerdown",e=>{ if(!ed||edTool==="move") return; const p=edCell(e); if(!p) return; ensureAudio(); e.preventDefault();
-  if(edTool==="fill"){ edFill(p.x,p.y); playBucket(); edDraw(); edSave(); return; }
+  if(edTool==="fill"){ const v=ed.mask[p.y*ed.n+p.x];                      // 線対称なら反対側も(まだ塗られていなければ)塗りつぶす
+    edSymPts(p).forEach(q=>{ if(ed.mask[q.y*ed.n+q.x]===v) edFill(q.x,q.y); }); playBucket(); edDraw(); edSave(); return; }
   edPaint=ed.mask[p.y*ed.n+p.x]==="1"?"0":"1"; edPaintTo(p); edLast=p; try{ $("edCv").setPointerCapture(e.pointerId); }catch(_){} edDraw(); });
 $("edCv").addEventListener("pointermove",e=>{ if(!ed||edPaint==null) return; const p=edCell(e); if(!p||(edLast&&p.x===edLast.x&&p.y===edLast.y)) return;
   let ch=false; const a=edLast||p, steps=Math.max(Math.abs(p.x-a.x),Math.abs(p.y-a.y),1);   // 速く動かしても間のマスを飛ばさない
@@ -2223,6 +2240,7 @@ $("edCv").addEventListener("pointermove",e=>{ if(!ed||edPaint==null) return; con
 { const IC={ pen:PEN_ICON, fill:BUCKET_SVG, move:MOVE_SVG }; document.querySelectorAll("#edWork [data-tool]").forEach(b=>{ b.innerHTML=IC[b.dataset.tool];
   b.onclick=()=>{ ensureAudio(); playSelect(); edTool=b.dataset.tool; edDraw(); }; }); }
 $("stageMakeIc").innerHTML=WRENCH_SVG;
+$("edSym").onclick=()=>{ ensureAudio(); playSelect(); edSym=(edSym+1)%3; edDraw(); };   // なし→左右→上下左右→なし
 $("edAllOn").onclick=()=>{ ensureAudio(); playSelect(); ed.mask.fill("1"); edDraw(); edSave(); };
 $("edAllOff").onclick=()=>{ ensureAudio(); playSelect(); ed.mask.fill("0"); edDraw(); edSave(); };
 $("edName").addEventListener("input",()=>{ if(ed){ ed.nm=$("edName").value.slice(0,16); edSave(); } });
@@ -2234,7 +2252,7 @@ document.querySelectorAll("#edMove [data-mv]").forEach(b=>{ const [dx,dy]=b.data
 $("edDone").onclick=()=>{ ensureAudio(); if(!ed) return;
   if(edCount()<ST_MIN_CELLS){ playTick(); toast("マスが25個以上ないと保存できません"); return; }   // ★25マス未満は保存できない
   playSelect(); edSave(true); edShowList(); };
-$("stageMakeBtn").onclick=()=>{ ensureAudio(); playSelect(); edSel=null; openEditor(); };
+$("stageMakeBtn").onclick=()=>{ ensureAudio(); playSelect(); edSel=null; $("stgPickOv").classList.remove("on"); openEditor(); };
 window.addEventListener("resize",()=>{ if(ed) edDraw(); });
 $("stgPickClose").onclick=()=>{ ensureAudio(); playSelect(); $("stgPickOv").classList.remove("on"); };
 $("guessClose").onclick=()=>{ ensureAudio(); playSelect(); $("guessOv").classList.remove("on"); };
@@ -2248,8 +2266,18 @@ $("roleClose").onclick=()=>{ ensureAudio(); playSelect(); closeRoleOv(); };
 $("roleBtn").onclick=()=>{ ensureAudio(); playSelect(); openRoleList(); };
 /* ★参加者一覧(2026-09-28)=誰がいるか・オーナーは追放できる(2回押し=1回目で「確定」)。死亡は出さない(公表前の死亡が分かってしまうため) */
 let memArm="";
-function renderMem(){ if(!G) return;
+function renderMem(){
   const canKick = online && isHost && !debug && !cpuMode;
+  if(!G){                                        // ★ロビー=ロビーのメンバー(オーナーは追放できる)
+    $("memList").innerHTML=lobby.map(p=>{ const me0=p.id===myId;
+      const tag=(p.id===hostId? '<span class="mt own">オーナー</span>' : "")+(me0? '<span class="mt">あなた</span>' : "");
+      const kb=(canKick && !me0)? '<button class="mem-kick'+(memArm===p.id?" arm":"")+'" data-kk="'+esc(p.id)+'">'+(memArm===p.id?"確定":"追放")+'</button>' : "";
+      return '<div class="mem-row"><span class="p-dot" style="background:'+p.c+'"></span><span class="nm'+(p.n?"":" undef")+'">'+esc(p.n||UNDEF_NM)+'</span>'+tag+kb+'</div>'; }).join("");
+    $("memList").querySelectorAll("[data-kk]").forEach(b=>b.onclick=e=>{ e.stopPropagation(); ensureAudio(); const id=b.dataset.kk;
+      if(memArm!==id){ playTick(); memArm=id; renderMem(); return; }
+      memArm=""; playSelect(); kickedAt[id]=Date.now(); lobby=lobby.filter(q=>q.id!==id);
+      try{ ch.send({type:"broadcast",event:"kick",payload:{to:id}}); }catch(_){} renderLobby(); sendSnap(); renderMem(); });
+    return; }
   $("memList").innerHTML=G.players.map(p=>{ const me0=p.id===myId, gone=p.cause==="gone";
     const tag = gone? '<span class="mt gone">退出</span>' : (p.id===hostId? '<span class="mt own">オーナー</span>' : "") + (me0? '<span class="mt">あなた</span>' : "");
     const kb = (canKick && !me0 && !gone)? '<button class="mem-kick'+(memArm===p.id?" arm":"")+'" data-kk="'+esc(p.id)+'">'+(memArm===p.id?"確定":"追放")+'</button>' : "";
@@ -2470,7 +2498,7 @@ function hostToLobby(){
   earlyLobby=false;                  // ★退出した人はonLeaveで一覧から外れているので、一瞬の通信切れで消さない(ここでpresenceで絞り込まない)
   showScene("lobbyScene"); renderLobby(); sendSnap();
 }
-function goTitle(){ earlyLobby=false;
+function goTitle(){ earlyLobby=false; lobSeen=null;
   leaveChannel(); G=null; debug=false; cpuMode=false; phaseUI="title"; nameAsked=false; lobby=[]; clearChat();
   document.querySelectorAll(".overlay").forEach(o=>o.classList.remove("on","peek"));
   clearTimeout(hfT); clearTimeout(ffT); $("hangFx").classList.remove("on"); $("ftalkFx").classList.remove("on");   // 吊り・議論好きの演出も消す
@@ -2606,7 +2634,7 @@ function stageFrameHTML(ro){                        // ステージ=名前とN×
     +'<div class="stg-ctrl"><button class="stg-arw" data-stg="-1" aria-label="前のステージ">'+CHEV_L+'</button>'
     +'<button class="stg-arw stg-mine'+(isCustom(st)?" on":"")+'" id="stgMine" aria-label="自作ステージ">'+WRENCH_SVG+'</button>'
     +'<button class="stg-arw" data-stg="1" aria-label="次のステージ">'+CHEV_R+'</button></div>'
-    +'<div class="stg-dots">'+dots+'</div></div>'; }
+    +(isCustom(st)? '<div class="stg-dots stg-cst">自作ステージ</div>' : '<div class="stg-dots">'+dots+'</div>')+'</div>'; }
 function setStage(st){ rules.stage=st.id; if(isCustom(st)) rules.cst={ id:st.id, nm:st.nm, n:st.n, m:st.m }; else delete rules.cst; renderLobby(); sendSnap(); }
 /* 自作ステージを選ぶ(3列のグリッド・増えたら縦にスクロール) */
 function stageCard(st,sel){ return '<button class="stg-card'+(sel?" on":"")+'" data-cst="'+esc(st.id)+'"><span class="sc-view">'+stageSvg(st)+'</span><span class="sc-nm">'+esc(st.nm)+'</span><span class="sc-sz">'+st.n+'×'+st.n+'</span></button>'; }
@@ -2614,11 +2642,19 @@ function openStagePick(){ renderStagePick(); $("stgPickOv").classList.add("on");
 function renderStagePick(){
   const box=$("stgPick");
   box.innerHTML= myStages.length? '<div class="stg-grid">'+myStages.map(t=>stageCard(t,t.id===rules.stage)).join("")+'</div>'
-    : '<div class="stg-empty">まだ自作ステージがありません<br><small>タイトル画面の「ステージを作る」から作れます</small></div>';
+    : '<div class="stg-empty">まだ自作ステージがありません<br><small>画面右上の「ステージを作る」から作れます</small></div>';
   box.querySelectorAll("[data-cst]").forEach(b=>b.onclick=()=>{ ensureAudio(); playSelect(); const t=myStages.find(x=>x.id===b.dataset.cst); if(!t) return;
     $("stgPickOv").classList.remove("on"); setStage(t); }); }
+/* ★ロビーの参加/退出のお知らせ(名前を決めた瞬間に「◯◯が参加」・抜けたら「◯◯が退出」) */
+let lobSeen=null;
+function lobbyAnnounce(){ const cur={}; lobby.forEach(p=>{ cur[p.id]=p.n||""; });
+  if(lobSeen){ const say=t=>{ addSys(t); toast(t); };
+    Object.keys(cur).forEach(id=>{ if(id!==myId && cur[id] && !lobSeen[id]) say(cur[id]+"が参加"); });
+    Object.keys(lobSeen).forEach(id=>{ if(id!==myId && !(id in cur) && lobSeen[id]) say(lobSeen[id]+"が退出"); }); }
+  lobSeen=cur; }
 function renderLobby(){
   if(!online||phaseUI!=="lobby") return;
+  lobbyAnnounce();
   let h='<div class="lobby-list">';
   lobby.forEach(p=>{
     h+='<div class="lobby-row"><span class="p-dot'+(p.id===myId?' mine" id="myDot" title="色を変える':'')+'" style="background:'+p.c+'"></span><span class="nm'+(p.n?"":" undef")+(p.id===myId?' me-nm" id="myNm" title="名前を変える':'')+'">'+esc(p.n||UNDEF_NM)+(p.id===myId?PEN_SVG:"")+'</span>'
@@ -2632,7 +2668,7 @@ function renderLobby(){
   if(!okN) h+='<div class="room-note">'+MIN_P+"〜"+MAX_P+"人で遊べます（いま"+n+"人）"+'</div>';
   if(isHost) h+='<button class="btn-main" id="lobbyStart"'+(okN&&!err?"":" disabled")+'>はじめる</button>';
   $("lobbyBox").innerHTML=h;
-  { const f=$("roleErrFix"); f.textContent=err; f.classList.toggle("on", !!err); }   // ★役職のエラーは画面に固定して出す(スクロールしても見える)
+  { const f=$("roleErrFix"); f.textContent=err; f.classList.toggle("on", !!err && $("lobbyScene").classList.contains("on")); }   // ★役職のエラーは画面に固定して出す(スクロールしても見える)
   if(!nameAsked){ nameAsked=true; openNameOv(); }
   const md=$("myDot"); if(md) md.onclick=()=>{ ensureAudio(); playSelect(); const cp=$("colorPick"); const me0=lobbyById(myId); cp.value=/^#[0-9a-f]{6}$/i.test(me0&&me0.c||"")? me0.c : "#ff6b6b";
     const r=md.getBoundingClientRect(); cp.style.left=Math.round(r.left)+"px"; cp.style.top=Math.round(r.bottom+2)+"px";   // ★色の窓は押した丸の近くに開く
@@ -2754,7 +2790,7 @@ function buildHelp(){
    +'<li>鷹の目　市民陣営。力はないが、毒殺人狼と同じだけ遠くまで見える</li>'
    +'<li>毒殺人狼　となりの人を毒殺できる（即殺・1ターン後に死亡・2ターン後に死亡）。毒殺した次のターンは使えない。ほかの毒殺人狼が誰かは分かる。視界はまわり8マスと、その外側の上下左右3マスずつ</li>'
    +'<li>狂人　人狼陣営。力はない。毒殺人狼とはおたがいに誰か分からない（毒殺されることもある）。占われると白</li>'
-   +'<li>濡れ衣狂人　人狼陣営。行動中に1ラウンド1回、となりの人の占い結果を逆にできる（黒なら白・白なら黒）。議論を挟むと元に戻る。占われると白</li>'
+   +'<li>濡れ衣狂人　人狼陣営。行動中に、となりの人の占い結果を逆にできる（1ラウンド中に何回でも）（黒なら白・白なら黒）。議論を挟むと元に戻る。占われると白</li>'
    +'<li>霊感強子　市民陣営。殺害された死体がその場に見える（ほかの人には見えない）。議論を1度はさむと消える</li>'
    +'<li>ドクター　市民陣営。視界にいる人が毒に侵されていると、コマの上に「Nターン後 死亡」と見え、となりの人の毒を治せる（1ラウンドに1回）。自分の毒だけは分からない</li>'
    +'<li>議論好き　市民陣営。ゲーム中に1度だけ、行動フェーズの「議論強制スタート」でその場から議論に入れる</li>'
@@ -2914,7 +2950,7 @@ function sgReset(){
   goTitle();                                                     // 部屋・状態・チャット・ダイアログを片付けてタイトルへ
   rules=Object.assign({},DEF_RULES); code=""; nameAsked=true; pending=null; pendWh={}; bubbles=[]; resetSel(); dbgFog=false;
   setMini(true);
-  ed=null; edSel=null; delArm=false; edTool="pen"; $("edWork").style.display="none";
+  ed=null; edSel=null; delArm=false; edTool="pen"; edSym=0; $("edWork").style.display="none";
 }
 function sgKill(p,cause,by,pub){ p.alive=false; p.cause=cause; p.killer=by||""; p.pub=pub!==false; }
 /* 盤面の状態を作って表示する。o.guest=参加者側で見る／o.set(G)=表示の前に状態をいじる */
@@ -3077,7 +3113,6 @@ sc("追加の役職","役職：投票集め",()=>{ sgG(RVo); openRole(); });
 const RF=["framer","wolf","villager","seer","hawk","mad"];
 sc("追加の役職","濡れ衣狂人：となりの人を選んだ（濡れ衣）",()=>{ sgAct(RF,{ pos:WPOS }); sgPop("g2"); });
 sc("追加の役職","濡れ衣狂人：濡れ衣を決めた",()=>sgAct(RF,{ pos:WPOS, set:g=>{ g.acts[myId]={ k:"frame", tg:"g2" }; } }));
-sc("追加の役職","濡れ衣狂人：このラウンド使用済み",()=>{ sgAct(RF,{ pos:WPOS, set:g=>{ g.players[0].lastFrameRound=g.round; } }); sgPop("g2"); });
 sc("追加の役職","役職：濡れ衣狂人",()=>{ sgG(RF); openRole(); });
 const SG_CST={ id:"sgcst", nm:"見本の自作", n:11, m:packMask(Array.from({length:121},(_,i)=>{ const x=i%11, y=(i/11)|0; return (Math.abs(x-5)+Math.abs(y-5)<=5 && !(x===5&&y===5))? "1":"0"; }).join("")) };
 sc("ステージ","ロビー：自作ステージを選んでいる",()=>{ sgLobby(6); rules.stage=SG_CST.id; rules.cst=SG_CST; renderLobby(); });
@@ -3088,6 +3123,12 @@ sc("ステージを作る","編集中（ペン）",()=>{ openEditor(); ed={ id:"
   $("edList").style.display="none"; $("edWork").style.display="flex"; $("edName").value=ed.nm; edTool="pen"; edDraw(); });
 sc("ステージを作る","大きいステージ（60×60）",()=>{ openEditor(); ed={ id:"sgbig", nm:"大きいステージ", n:60, mask:new Array(3600).fill("1"), t:0 };
   $("edList").style.display="none"; $("edWork").style.display="flex"; $("edName").value=ed.nm; edDraw(); });
+sc("ステージを作る","線対称（左右）",()=>{ openEditor(); ed={ id:"sgdemo", nm:"見本のステージ", n:9, mask:stageMask(stageOf("heart")).split(""), t:0 };
+  $("edList").style.display="none"; $("edWork").style.display="flex"; $("edName").value=ed.nm; edTool="pen"; edSym=1; edDraw(); });
+sc("ステージを作る","線対称（上下左右）",()=>{ openEditor(); ed={ id:"sgdemo", nm:"見本のステージ", n:9, mask:stageMask(stageOf("diamond")).split(""), t:0 };
+  $("edList").style.display="none"; $("edWork").style.display="flex"; $("edName").value=ed.nm; edTool="pen"; edSym=2; edDraw(); });
+sc("ステージを作る","一覧：まだ1つもない",()=>{ const keep=myStages; myStages=[]; openEditor(); myStages=keep; });
+sc("ロビー","ロビーで参加者の一覧",()=>{ sgLobby(6,{ undef:true }); memArm=""; renderMem(); $("memOv").classList.add("on"); });
 sc("ステージを作る","移動ツール",()=>{ openEditor(); ed={ id:"sgdemo", nm:"見本のステージ", n:9, mask:stageMask(stageOf("heart")).split(""), t:0 };
   $("edList").style.display="none"; $("edWork").style.display="flex"; $("edName").value=ed.nm; edTool="move"; edDraw(); });
 sc("ステージを作る","25マス未満（保存できない）",()=>{ openEditor(); ed={ id:"sgdemo", nm:"見本のステージ", n:7, mask:Array.from({length:49},(_,i)=>i<20?"1":"0"), t:0 };
