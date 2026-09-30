@@ -89,17 +89,14 @@
   .rule-frame .rule-col:last-child:nth-child(odd){ grid-column:1/-1; }       /* 3つ目の項目は横いっぱいの真ん中 */
   /* ステージ(ロビー): 名前・左右の切り替え・見た目 */
   .stage-box{ width:var(--uiw); background:rgba(0,0,0,.18); border:1.5px solid rgba(244,239,230,.18); border-radius:16px; padding:12px 12px 14px; }
-  .stg-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
-  .stg-nav{ display:flex; flex-direction:column; align-items:flex-start; gap:7px; }
-  .stg-arws{ display:flex; gap:6px; }
-  .stg-dots{ display:flex; gap:5px; padding-left:2px; }
+  .stg-ctrl{ display:flex; justify-content:center; gap:8px; margin-top:12px; }
+  .stg-dots{ display:flex; justify-content:center; gap:6px; margin-top:9px; }
   .stg-dot{ width:9px; height:9px; padding:0; border:none; border-radius:50%; background:rgba(244,239,230,.25); cursor:pointer; }
   .stg-dot.on{ background:var(--gold); transform:scale(1.25); }
   .stage-box.ro .stg-dot{ cursor:default; pointer-events:none; }
-  .stg-mine{ flex:none; width:64px; height:38px; border:1.5px solid rgba(244,239,230,.35); border-radius:10px; background:transparent; color:var(--card); font-size:13px; font-weight:900; cursor:pointer; }
-  .stg-mine.on{ background:var(--gold); border-color:var(--gold); color:#3a2a06; }
-  .stage-box.ro .stg-mine{ visibility:hidden; }
-  .stg-nm{ margin-top:8px; display:flex; flex-direction:column; align-items:center; gap:1px; font-size:17px; font-weight:900; color:var(--gold); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .stg-arw.stg-mine.on{ background:var(--gold); color:#3a2a06; }
+  .stage-box.ro .stg-ctrl{ display:none; }
+  .stg-nm{ display:flex; flex-direction:column; align-items:center; gap:1px; font-size:17px; font-weight:900; color:var(--gold); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .stg-nm small{ font-size:10.5px; font-weight:800; color:var(--card); opacity:.55; letter-spacing:.06em; }
   .stg-arw{ flex:none; width:38px; height:38px; border:none; border-radius:10px; background:rgba(244,239,230,.14); color:var(--card); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
   .stg-arw svg{ width:18px; height:18px; }
@@ -120,10 +117,11 @@
   .stg-empty{ padding:22px 6px; font-size:13.5px; font-weight:800; line-height:1.8; opacity:.8; }
   .stg-empty small{ font-size:11.5px; opacity:.75; }
   /* ステージを作る(タイトルの左下の入口と作る画面) */
-  .stg-make{ position:fixed; left:10px; bottom:10px; z-index:40; display:none; width:140px; height:38px; border:1.5px solid rgba(244,239,230,.35); border-radius:999px;
-    background:rgba(20,16,32,.55); color:var(--card); font-size:13px; font-weight:900; letter-spacing:.06em; cursor:pointer; }
-  .stg-make.on{ display:block; }
-  #editScene{ padding-bottom:120px; }
+  .stg-make{ position:fixed; right:10px; top:10px; z-index:40; display:none; align-items:center; justify-content:center; gap:5px; width:150px; height:38px;
+    border:1.5px solid rgba(244,239,230,.35); border-radius:999px; background:rgba(20,16,32,.55); color:var(--card); font-size:13px; font-weight:900; letter-spacing:.06em; cursor:pointer; }
+  .stg-make.on{ display:flex; }
+  .stg-make .ic{ display:flex; } .stg-make .ic svg{ width:16px; height:16px; }
+  #editScene{ padding-top:clamp(70px,11vh,120px); padding-bottom:160px; }        /* 上にくっつかないよう余白 */
   #edList{ width:var(--uiw); }
   .ed-note{ font-size:11.5px; font-weight:700; opacity:.6; line-height:1.7; text-align:center; margin:10px 0 0; }
   .ed-note a{ color:inherit; }
@@ -131,16 +129,39 @@
   .ed-name{ width:100%; height:42px; padding:0 12px; border:1.5px solid rgba(244,239,230,.25); border-radius:12px; background:rgba(0,0,0,.25); color:var(--card); font-size:15px; font-weight:800; }
   .ed-size{ display:flex; align-items:center; gap:8px; }
   .ed-lb{ font-size:12px; font-weight:800; opacity:.7; margin-right:4px; }
-  .ed-tools{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px; width:100%; }
+  .ed-tools{ display:grid; grid-template-columns:44px 44px 44px 1fr 1fr; gap:6px; width:100%; }
+  .ed-tool.ic{ display:flex; align-items:center; justify-content:center; }
+  .ed-tool.ic svg{ width:20px; height:20px; }
+  .ed-cvw{ position:relative; }
+  .ed-move{ position:absolute; left:50%; top:50%; width:132px; height:132px; transform:translate(-50%,-50%); display:none; }
+  .ed-move.on{ display:block; }
+  .ed-move .em{ position:absolute; width:44px; height:44px; padding:0; border:none; border-radius:12px; background:rgba(20,16,32,.72); cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.4); }
+  .ed-move .em::after{ content:""; position:absolute; left:50%; top:50%; width:0; height:0; border:9px solid transparent; }
+  .ed-move .u{ left:44px; top:0; } .ed-move .u::after{ border-bottom:13px solid var(--gold); border-top:0; transform:translate(-50%,-60%); }
+  .ed-move .d{ left:44px; bottom:0; } .ed-move .d::after{ border-top:13px solid var(--gold); border-bottom:0; transform:translate(-50%,-40%); }
+  .ed-move .l{ left:0; top:44px; } .ed-move .l::after{ border-right:13px solid var(--gold); border-left:0; transform:translate(-60%,-50%); }
+  .ed-move .r{ right:0; top:44px; } .ed-move .r::after{ border-left:13px solid var(--gold); border-right:0; transform:translate(-40%,-50%); }
+  .ed-info.bad{ color:#ff8f7d; opacity:1; }
+  /* 一覧: 下の行=ゴミ箱(選んで削除)・タイトルに戻る */
+  .ed-foot{ display:flex; justify-content:center; align-items:center; gap:10px; margin-top:16px; }
+  .ed-trash{ width:44px; height:40px; padding:0; border:1.5px solid rgba(244,239,230,.35); border-radius:12px; background:transparent; color:var(--card); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .ed-trash svg{ width:20px; height:20px; }
+  .ed-trash.on{ background:#d8453a; border-color:#d8453a; color:#fff; }
+  .ed-foot .txt-btn{ width:160px; padding:0; height:40px; }
+  .ed-delsel{ width:160px; height:40px; border:none; border-radius:12px; background:#d8453a; color:#fff; font-size:14px; font-weight:900; cursor:pointer; }
+  .ed-delsel:disabled{ opacity:.35; cursor:default; }
+  .ed-delsel.arm{ background:#b02a20; }
+  .stg-card.pick{ border-color:#ff8f7d; background:rgba(216,69,58,.18); position:relative; }
+  .stg-card .sc-ck{ position:absolute; right:6px; top:6px; width:18px; height:18px; border-radius:50%; border:1.5px solid rgba(244,239,230,.55); display:none; }
+  .ed-selmode .stg-card .sc-ck{ display:block; } .ed-selmode .stg-card{ position:relative; }
+  .stg-card.pick .sc-ck{ background:#d8453a; border-color:#d8453a; }
+  .stg-card.pick .sc-ck::after{ content:""; position:absolute; left:5px; top:2px; width:5px; height:9px; border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg); }
+  .ed-selmode .stg-card.add{ opacity:.3; pointer-events:none; }
   .ed-tool{ height:36px; padding:0; border:1.5px solid rgba(244,239,230,.3); border-radius:10px; background:transparent; color:var(--card); font-size:12.5px; font-weight:900; cursor:pointer; white-space:nowrap; }
   .ed-tool.on{ background:var(--gold); border-color:var(--gold); color:#3a2a06; }
   #edCv{ width:min(92vw,460px); height:min(92vw,460px); touch-action:none; border-radius:10px; background:#15121f; cursor:pointer; }
   .ed-info{ font-size:12px; font-weight:800; opacity:.65; min-height:18px; }
-  .ed-bottom{ display:flex; gap:10px; }
-  .ed-del, .ed-done{ width:140px; height:40px; border-radius:12px; font-size:14px; font-weight:900; cursor:pointer; }
-  .ed-del{ border:1.5px solid rgba(244,239,230,.35); background:transparent; color:var(--card); }
-  .ed-del.arm{ background:#d8453a; border-color:#d8453a; color:#fff; }
-  .ed-done{ border:none; background:linear-gradient(165deg,#f4c85f,var(--gold) 55%,var(--gold-d)); color:#3a2a06; }
+  .ed-done{ width:180px; height:42px; border-radius:12px; font-size:14px; font-weight:900; cursor:pointer; margin-top:4px; border:none; background:linear-gradient(165deg,#f4c85f,var(--gold) 55%,var(--gold-d)); color:#3a2a06; }
   .stg-view svg{ width:100%; height:100%; display:block; }
   /* 役職(ロビー): 1行=アイコン・内容・人数。陣営ごとにセクションを分ける */
   .role-box{ width:var(--uiw); background:rgba(0,0,0,.18); border:1.5px solid rgba(244,239,230,.18); border-radius:16px; padding:10px 12px 12px; }
@@ -670,7 +691,7 @@
   <div id="roomArea"></div>
 </div>
 
-<button class="stg-make on" id="stageMakeBtn">ステージを作る</button>
+<button class="stg-make on" id="stageMakeBtn"><span class="ic" id="stageMakeIc"></span>ステージを作る</button>
 
 <!-- ===== ステージを作る ===== -->
 <div class="scene" id="editScene">
@@ -678,14 +699,15 @@
   <div id="edList"></div>
   <div id="edWork" style="display:none;">
     <input class="ed-name" id="edName" maxlength="16" placeholder="ステージ名" autocomplete="off">
-    <div class="ed-size"><span class="ed-lb">大きさ</span><button class="stp" id="edMinus">−</button><span class="rc-val" id="edN"></span><button class="stp" id="edPlus">＋</button></div>
-    <div class="ed-tools"><button class="ed-tool on" data-tool="pen">ペン</button><button class="ed-tool" data-tool="fill">塗りつぶし</button>
-      <button class="ed-tool" id="edAllOn">全部ON</button><button class="ed-tool" id="edAllOff">全部OFF</button></div>
-    <canvas id="edCv"></canvas>
+    <div class="ed-size"><button class="stp" id="edMinus">−</button><span class="rc-val" id="edN"></span><button class="stp" id="edPlus">＋</button></div>
+    <div class="ed-tools"><button class="ed-tool ic" data-tool="pen" aria-label="ペン"></button><button class="ed-tool ic" data-tool="fill" aria-label="塗りつぶし"></button>
+      <button class="ed-tool ic" data-tool="move" aria-label="移動"></button><button class="ed-tool" id="edAllOn">全部ON</button><button class="ed-tool" id="edAllOff">全部OFF</button></div>
+    <div class="ed-cvw"><canvas id="edCv"></canvas>
+      <div class="ed-move" id="edMove"><button class="em u" data-mv="0,-1" aria-label="上へ"></button><button class="em l" data-mv="-1,0" aria-label="左へ"></button>
+        <button class="em r" data-mv="1,0" aria-label="右へ"></button><button class="em d" data-mv="0,1" aria-label="下へ"></button></div></div>
     <div class="ed-info" id="edInfo"></div>
-    <div class="ed-bottom"><button class="ed-del" id="edDel">削除</button><button class="ed-done" id="edDone">一覧にもどる</button></div>
+    <button class="ed-done" id="edDone">保存して戻る</button>
   </div>
-  <button class="txt-btn" id="edBack" style="margin-top:16px;">やめる</button>
 </div>
 
 <!-- ===== ロビー ===== -->
@@ -904,8 +926,13 @@ const STAGES=[
   { id:"ring", nm:"ドーナツ", rows:["#######","#######","##...##","##...##","##...##","#######","#######"] },
   { id:"diamond", nm:"ダイヤ", rows:["....#....","...###...","..#####..",".#######.","#########",".#######.","..#####..","...###...","....#...."] },
 ];
+const WRENCH_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
+const TRASH_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4.5A1.5 1.5 0 0 1 9.5 3h5A1.5 1.5 0 0 1 16 4.5V6m2.5 0-.9 13.1A2 2 0 0 1 15.6 21H8.4a2 2 0 0 1-2-1.9L5.5 6M10 11v6M14 11v6"/></svg>';
+const PEN_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
+const BUCKET_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11Z"/><path d="m5 2 5 5"/><path d="M2 13h15"/><path d="M22 20a2 2 0 1 1-4 0c0-1.6 1.7-2.4 2-4 .3 1.6 2 2.4 2 4Z"/></svg>';
+const MOVE_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>';
 /* ★自作ステージ={id:"c…",nm,n,m(マスの並びを1マス1ビットでbase64),t(更新時刻)}。組み込みはrowsで持つ */
-const ST_MIN=5, ST_MAX=99;
+const ST_MIN=5, ST_MAX=99, ST_MIN_CELLS=25;      // ステージは25マス以上(ないと保存できない)
 function packMask(mask){ const n=mask.length, b=new Uint8Array(Math.ceil(n/8)); for(let i=0;i<n;i++) if(mask[i]==="1") b[i>>3]|=1<<(i&7);
   let s=""; for(let i=0;i<b.length;i++) s+=String.fromCharCode(b[i]); return btoa(s); }
 function unpackMask(b64,n){ let s=""; try{ s=atob(b64||""); }catch(e){} const out=new Array(n*n);
@@ -922,7 +949,7 @@ function maskSvg(n,mask){                            // ステージの見た目
   return '<svg viewBox="0 0 '+(n*10)+' '+(n*10)+'" xmlns="http://www.w3.org/2000/svg"><path d="'+a+'" fill="#e9e2d4"/><path d="'+b+'" fill="#f1ebdf"/></svg>'; }
 function stageSvg(st){ return maskSvg(stN(st),stageMask(st)); }
 function stageCells(st){ const m=stageMask(st); let c=0; for(let i=0;i<m.length;i++) if(m[i]==="1") c++; return c; }
-function stageErr(){ const st=stageOf(rules.stage); return stageCells(st)<1? "ステージにマスがありません" : ""; }
+function stageErr(){ const st=stageOf(rules.stage); return stageCells(st)<ST_MIN_CELLS? "ステージのマスは25個以上必要" : ""; }
 /* 自作ステージの保存=この端末(bj.stages)＋アカウント(acct.bj_stages)。ログイン中はアカウントの記録が正 */
 var myStages=[]; try{ myStages=JSON.parse(localStorage.getItem("bj.stages")||"[]")||[]; }catch(e){ myStages=[]; }
 let stAcctOK=true, stSynced=false;
@@ -2110,27 +2137,51 @@ function renderGuess(){ $("guessList").innerHTML=rlSections(false,"guesser");
       playVote(); $("guessOv").classList.remove("on"); submit({ t:"guess", tg:guessTg, role:r }); }; });
 }
 /* ================= ★ステージを作る ================= */
-let ed=null, edTool="pen";                       // ed={ id,nm,n,mask(配列),t }
+let ed=null, edTool="pen", edSel=null;          // ed={ id,nm,n,mask(配列),t }／edSel=一覧で削除するために選んだid(null=選ぶモードではない)
+/* 塗る音=高い音をさけた、やわらかい低めの音(塗る=少し上がる・消す=少し下がる) */
+let edSndAt=0;
+function playPaint(on){ if(!actx) return; const now=performance.now(); if(now-edSndAt<34) return; edSndAt=now; const t=T0();
+  if(on){ note(262,t,0.11,0.05,"sine",330); note(131,t,0.08,0.03,"triangle"); } else { note(247,t,0.11,0.05,"sine",196); note(123,t,0.08,0.03,"triangle"); } }
+function playBucket(){ if(!actx) return; const t=T0(); note(196,t,0.16,0.05,"sine",262); note(262,t+0.05,0.18,0.04,"sine",330); note(98,t,0.14,0.03,"triangle"); }
+function playShift(){ if(!actx) return; const t=T0(); note(220,t,0.07,0.04,"sine",247); }
 function openEditor(){ showScene("editScene"); edShowList(); loadStagesAcct().then(ok=>{ if(ok && !ed) edShowList(); }); }
 function edShowList(){ ed=null; $("edWork").style.display="none"; $("edList").style.display="";
-  const logged=!!mkSes();
-  $("edList").innerHTML='<div class="stg-grid" style="max-height:none;">'
+  const sel=edSel;
+  $("edList").innerHTML='<div class="stg-grid'+(sel?" ed-selmode":"")+'" style="max-height:none;">'
     +'<button class="stg-card add" id="edNew"><span class="sc-plus">＋</span>新しく作る</button>'
-    +myStages.map(t=>stageCard(t,false)).join("")+'</div>'
-    +'<div class="ed-note">'+(logged&&stAcctOK? "作ったステージはアカウントに保存されます（ほかの端末でも使えます）"
-      : 'この端末に保存されます<br><a href="../index.html?account=1">アカウント</a>でログインすると、ほかの端末でも使えます')+'</div>';
+    +myStages.map(t=>stageCard(t,false).replace('class="stg-card','class="stg-card'+(sel&&sel.has(t.id)?" pick":"")).replace('</button>','<span class="sc-ck"></span></button>')).join("")+'</div>'
+    +'<div class="ed-foot">'+(sel
+      ? '<button class="txt-btn" id="edSelCancel">キャンセル</button><button class="ed-delsel" id="edDelSel"'+(sel.size?"":" disabled")+'>'+(sel.size? sel.size+"個を削除" : "削除する物を選択")+'</button>'
+      : '<button class="ed-trash" id="edTrash" aria-label="ステージを削除">'+TRASH_SVG+'</button><button class="txt-btn" id="edBack">タイトルに戻る</button>')+'</div>';
   $("edNew").onclick=()=>{ ensureAudio(); playSelect();
     if(myStages.length>=60){ toast("自作ステージは60個までです"); return; }
     let k=myStages.length+1; while(myStages.some(t=>t.nm==="マイステージ"+k)) k++;
     const n=7, st={ id:"c"+Date.now().toString(36)+Math.random().toString(36).slice(2,6), nm:"マイステージ"+k, n, m:packMask("1".repeat(n*n)), t:Date.now() };
     myStages.unshift(st); saveStages(); edOpen(st.id); };
-  $("edList").querySelectorAll("[data-cst]").forEach(b=>b.onclick=()=>{ ensureAudio(); playSelect(); edOpen(b.dataset.cst); }); }
+  $("edList").querySelectorAll("[data-cst]").forEach(b=>b.onclick=()=>{ ensureAudio(); playSelect(); const id=b.dataset.cst;
+    if(edSel){ if(edSel.has(id)) edSel.delete(id); else edSel.add(id); delArm=false; edShowList(); return; }   // 選ぶモード=タップで選ぶ/はずす
+    edOpen(id); });
+  if(sel){
+    $("edSelCancel").onclick=()=>{ ensureAudio(); playSelect(); edSel=null; delArm=false; edShowList(); };
+    const d=$("edDelSel"); if(delArm){ d.classList.add("arm"); d.textContent="確定"; }
+    d.onclick=()=>{ ensureAudio(); playSelect(); if(!edSel.size) return;
+      if(!delArm){ delArm=true; d.classList.add("arm"); d.textContent="確定"; return; }             // 1回目=「確定」・2回目で削除
+      const n=edSel.size; myStages=myStages.filter(t=>!edSel.has(t.id));
+      if(edSel.has(rules.stage)){ rules.stage=DEF_RULES.stage; delete rules.cst; }
+      saveStages(); edSel=null; delArm=false; toast(n+"個のステージを削除しました"); edShowList(); };
+  } else {
+    $("edTrash").onclick=()=>{ ensureAudio(); playSelect(); if(!myStages.length){ toast("削除できるステージがありません"); return; } edSel=new Set(); delArm=false; edShowList(); };
+    $("edBack").onclick=()=>{ ensureAudio(); playSelect(); showScene("titleScene"); };
+  } }
+let delArm=false;
+document.addEventListener("pointerdown",e=>{ if(delArm && !e.target.closest("#edDelSel")){ delArm=false; const d=$("edDelSel"); if(d&&edSel){ d.classList.remove("arm"); d.textContent=edSel.size+"個を削除"; } } },true);
 function edOpen(id){ const st=myStages.find(t=>t.id===id); if(!st) return;
   ed={ id:st.id, nm:st.nm, n:st.n, mask:unpackMask(st.m,st.n).split(""), t:st.t };
-  $("edList").style.display="none"; $("edWork").style.display="flex"; $("edName").value=ed.nm; edArmDel(false); edDraw(); }
+  $("edList").style.display="none"; $("edWork").style.display="flex"; $("edName").value=ed.nm; edDraw(); }
 let edSaveT=0;
-function edSave(now){ if(!ed) return; clearTimeout(edSaveT); const run=()=>{ if(!ed) return;        // ★変えるたびに自動で保存
+function edSave(now){ if(!ed) return; clearTimeout(edSaveT); const run=()=>{ if(!ed) return;        // ★変えるたびに自動で保存(25マス未満の時は保存しない=前の形が残る)
   if(String(ed.id).startsWith("sg")) return;                               // シーン一覧の見本は保存しない
+  if(edCount()<ST_MIN_CELLS) return;
   const i=myStages.findIndex(t=>t.id===ed.id), o={ id:ed.id, nm:(ed.nm||"").trim()||"マイステージ", n:ed.n, m:packMask(ed.mask.join("")), t:Date.now() };
   if(i>=0) myStages[i]=o; else myStages.unshift(o); saveStages();
   if(rules.stage===ed.id){ rules.cst={ id:o.id, nm:o.nm, n:o.n, m:o.m }; } };
@@ -2143,41 +2194,47 @@ function edDraw(){ if(!ed) return; const cv=$("edCv"), px=cv.getBoundingClientRe
   for(let y=0;y<n;y++) for(let x=0;x<n;x++){ const on=ed.mask[y*n+x]==="1";
     c.fillStyle= on? ((x+y)%2?"#e9e2d4":"#f1ebdf") : "#2a2540"; c.fillRect(x*cs+gap/2,y*cs+gap/2,cs-gap,cs-gap); }
   $("edN").textContent=n+"×"+n; $("edMinus").disabled=n<=ST_MIN; $("edPlus").disabled=n>=ST_MAX;
-  $("edInfo").textContent="マス "+edCount()+"個"+(edCount()<1? "（マスが1つもないと遊べません）":"");
+  const k=edCount(), bad=k<ST_MIN_CELLS;
+  $("edInfo").textContent="マス "+k+"個"+(bad? "（25マス以上ないと保存できません）":""); $("edInfo").classList.toggle("bad",bad);
+  $("edMove").classList.toggle("on", edTool==="move");
   document.querySelectorAll("#edWork [data-tool]").forEach(b=>b.classList.toggle("on", b.dataset.tool===edTool)); }
 function edResize(n2){ if(!ed) return; n2=Math.max(ST_MIN,Math.min(ST_MAX,n2)); if(n2===ed.n) return;
   const n=ed.n, full=ed.mask.every(v=>v==="1"), off=Math.floor((n2-n)/2), m=new Array(n2*n2).fill(full?"1":"0");   // 真ん中を基準に広げる/縮める(全部ONなら広げた所もON)
   for(let y=0;y<n2;y++) for(let x=0;x<n2;x++){ const ox=x-off, oy=y-off; if(ox>=0&&oy>=0&&ox<n&&oy<n) m[y*n2+x]=ed.mask[oy*n+ox]; }
   ed.n=n2; ed.mask=m; edDraw(); edSave(); }
+function edShift(dx,dy){ if(!ed) return; const n=ed.n, m=new Array(n*n);   // ★移動=全体をずらす。はみ出したぶんは反対側から出てくる(ループ)
+  for(let y=0;y<n;y++) for(let x=0;x<n;x++) m[((y+dy+n)%n)*n+((x+dx+n)%n)]=ed.mask[y*n+x];
+  ed.mask=m; playShift(); edDraw(); edSave(); }
 function edCell(e){ const r=$("edCv").getBoundingClientRect(), n=ed.n, x=Math.floor((e.clientX-r.left)/r.width*n), y=Math.floor((e.clientY-r.top)/r.height*n);
   return (x>=0&&y>=0&&x<n&&y<n)? { x, y } : null; }
 function edFill(x,y){ const n=ed.n, v=ed.mask[y*n+x], to=v==="1"?"0":"1", st=[[x,y]];   // 塗りつぶし=つながった同じ色の所をまとめて反転
   while(st.length){ const [cx,cy]=st.pop(); if(cx<0||cy<0||cx>=n||cy>=n||ed.mask[cy*n+cx]!==v) continue; ed.mask[cy*n+cx]=to;
     st.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]); } }
-let edPaint=null;                                 // ペン: 押した所の反対の値で、なぞった所を塗る
-$("edCv").addEventListener("pointerdown",e=>{ if(!ed) return; const p=edCell(e); if(!p) return; ensureAudio(); e.preventDefault();
-  if(edTool==="fill"){ edFill(p.x,p.y); playTick(); edDraw(); edSave(); return; }
-  const i=p.y*ed.n+p.x; edPaint=ed.mask[i]==="1"?"0":"1"; ed.mask[i]=edPaint; playTick(); try{ $("edCv").setPointerCapture(e.pointerId); }catch(_){} edDraw(); });
-$("edCv").addEventListener("pointermove",e=>{ if(!ed||edPaint==null) return; const p=edCell(e); if(!p) return; const i=p.y*ed.n+p.x; if(ed.mask[i]!==edPaint){ ed.mask[i]=edPaint; edDraw(); } });
-["pointerup","pointercancel"].forEach(ev=>$("edCv").addEventListener(ev,()=>{ if(edPaint!=null){ edPaint=null; edSave(); } }));
-document.querySelectorAll("#edWork [data-tool]").forEach(b=>b.onclick=()=>{ ensureAudio(); playSelect(); edTool=b.dataset.tool; edDraw(); });
+let edPaint=null, edLast=null;                    // ペン: 押した所の反対の値で、なぞった所を塗る(マスが変わるたびに音)
+function edPaintTo(p){ const i=p.y*ed.n+p.x; if(ed.mask[i]===edPaint) return false; ed.mask[i]=edPaint; playPaint(edPaint==="1"); return true; }
+$("edCv").addEventListener("pointerdown",e=>{ if(!ed||edTool==="move") return; const p=edCell(e); if(!p) return; ensureAudio(); e.preventDefault();
+  if(edTool==="fill"){ edFill(p.x,p.y); playBucket(); edDraw(); edSave(); return; }
+  edPaint=ed.mask[p.y*ed.n+p.x]==="1"?"0":"1"; edPaintTo(p); edLast=p; try{ $("edCv").setPointerCapture(e.pointerId); }catch(_){} edDraw(); });
+$("edCv").addEventListener("pointermove",e=>{ if(!ed||edPaint==null) return; const p=edCell(e); if(!p||(edLast&&p.x===edLast.x&&p.y===edLast.y)) return;
+  let ch=false; const a=edLast||p, steps=Math.max(Math.abs(p.x-a.x),Math.abs(p.y-a.y),1);   // 速く動かしても間のマスを飛ばさない
+  for(let k=1;k<=steps;k++){ const q={ x:Math.round(a.x+(p.x-a.x)*k/steps), y:Math.round(a.y+(p.y-a.y)*k/steps) }; if(edPaintTo(q)) ch=true; }
+  edLast=p; if(ch) edDraw(); });
+["pointerup","pointercancel"].forEach(ev=>$("edCv").addEventListener(ev,()=>{ if(edPaint!=null){ edPaint=null; edLast=null; edSave(); } }));
+{ const IC={ pen:PEN_ICON, fill:BUCKET_SVG, move:MOVE_SVG }; document.querySelectorAll("#edWork [data-tool]").forEach(b=>{ b.innerHTML=IC[b.dataset.tool];
+  b.onclick=()=>{ ensureAudio(); playSelect(); edTool=b.dataset.tool; edDraw(); }; }); }
+$("stageMakeIc").innerHTML=WRENCH_SVG;
 $("edAllOn").onclick=()=>{ ensureAudio(); playSelect(); ed.mask.fill("1"); edDraw(); edSave(); };
 $("edAllOff").onclick=()=>{ ensureAudio(); playSelect(); ed.mask.fill("0"); edDraw(); edSave(); };
 $("edName").addEventListener("input",()=>{ if(ed){ ed.nm=$("edName").value.slice(0,16); edSave(); } });
 function holdRepeat(btn,fn){ let t1=0,t2=0; const stop=()=>{ clearTimeout(t1); clearInterval(t2); };   // 押しっぱなしで続けて増減
-  btn.addEventListener("pointerdown",e=>{ if(btn.disabled) return; ensureAudio(); playTick(); fn(); stop(); t1=setTimeout(()=>{ t2=setInterval(()=>{ if(btn.disabled) stop(); else fn(); },70); },380); });
+  btn.addEventListener("pointerdown",e=>{ if(btn.disabled) return; ensureAudio(); playShift(); fn(); stop(); t1=setTimeout(()=>{ t2=setInterval(()=>{ if(btn.disabled) stop(); else fn(); },70); },380); });
   ["pointerup","pointerleave","pointercancel"].forEach(ev=>btn.addEventListener(ev,stop)); }
 holdRepeat($("edMinus"),()=>edResize(ed.n-1)); holdRepeat($("edPlus"),()=>edResize(ed.n+1));
-let edDelArm=false;
-function edArmDel(on){ edDelArm=on; $("edDel").classList.toggle("arm",on); $("edDel").textContent=on?"確定":"削除"; }
-$("edDel").onclick=()=>{ ensureAudio(); if(!ed) return;
-  if(!edDelArm){ playSelect(); edArmDel(true); return; }                         // 1回目=「確定」に変わる・2回目で削除
-  playSelect(); clearTimeout(edSaveT); myStages=myStages.filter(t=>t.id!==ed.id); if(rules.stage===ed.id){ rules.stage=DEF_RULES.stage; delete rules.cst; }
-  saveStages(); toast("ステージを削除しました"); edShowList(); };
-document.addEventListener("pointerdown",e=>{ if(edDelArm && !e.target.closest("#edDel")) edArmDel(false); },true);
-$("edDone").onclick=()=>{ ensureAudio(); playSelect(); edSave(true); edShowList(); };
-$("edBack").onclick=()=>{ ensureAudio(); playSelect(); edSave(true); ed=null; showScene("titleScene"); };
-$("stageMakeBtn").onclick=()=>{ ensureAudio(); playSelect(); openEditor(); };
+document.querySelectorAll("#edMove [data-mv]").forEach(b=>{ const [dx,dy]=b.dataset.mv.split(",").map(Number); holdRepeat(b,()=>edShift(dx,dy)); });
+$("edDone").onclick=()=>{ ensureAudio(); if(!ed) return;
+  if(edCount()<ST_MIN_CELLS){ playTick(); toast("マスが25個以上ないと保存できません"); return; }   // ★25マス未満は保存できない
+  playSelect(); edSave(true); edShowList(); };
+$("stageMakeBtn").onclick=()=>{ ensureAudio(); playSelect(); edSel=null; openEditor(); };
 window.addEventListener("resize",()=>{ if(ed) edDraw(); });
 $("stgPickClose").onclick=()=>{ ensureAudio(); playSelect(); $("stgPickOv").classList.remove("on"); };
 $("guessClose").onclick=()=>{ ensureAudio(); playSelect(); $("guessOv").classList.remove("on"); };
@@ -2540,15 +2597,16 @@ function ruleFrameHTML(n,ro){
 const OPTS={ turns:TURN_OPTS, talk:TALK_OPTS, step:STEP_OPTS };
 const CHEV_L='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const CHEV_R='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-function stageFrameHTML(ro){                        // ステージ=左上に切り替え(左右+丸)・右上に「自作」・名前とN×N・見た目
+function stageFrameHTML(ro){                        // ステージ=名前とN×N・見た目・その下の真ん中に切り替え(左右+スパナ=自作)と丸
   const st=stageOf(rules.stage), i=STAGES.indexOf(st), n=stN(st);
   const dots=STAGES.map((t,k)=>'<button class="stg-dot'+(k===i?" on":"")+'" data-dot="'+k+'" aria-label="'+esc(t.nm)+'"></button>').join("");
   return '<div class="sec-label">ステージ</div><div class="stage-box'+(ro?" ro":"")+'">'
-    +'<div class="stg-top"><div class="stg-nav"><div class="stg-arws"><button class="stg-arw" data-stg="-1" aria-label="前のステージ">'+CHEV_L+'</button>'
-    +'<button class="stg-arw" data-stg="1" aria-label="次のステージ">'+CHEV_R+'</button></div><div class="stg-dots">'+dots+'</div></div>'
-    +'<button class="stg-mine'+(isCustom(st)?" on":"")+'" id="stgMine">自作</button></div>'
     +'<div class="stg-nm">'+esc(st.nm)+'<small>'+n+'×'+n+(isCustom(st)?'・自作':'')+'</small></div>'
-    +'<div class="stg-view">'+stageSvg(st)+'</div></div>'; }
+    +'<div class="stg-view">'+stageSvg(st)+'</div>'
+    +'<div class="stg-ctrl"><button class="stg-arw" data-stg="-1" aria-label="前のステージ">'+CHEV_L+'</button>'
+    +'<button class="stg-arw stg-mine'+(isCustom(st)?" on":"")+'" id="stgMine" aria-label="自作ステージ">'+WRENCH_SVG+'</button>'
+    +'<button class="stg-arw" data-stg="1" aria-label="次のステージ">'+CHEV_R+'</button></div>'
+    +'<div class="stg-dots">'+dots+'</div></div>'; }
 function setStage(st){ rules.stage=st.id; if(isCustom(st)) rules.cst={ id:st.id, nm:st.nm, n:st.n, m:st.m }; else delete rules.cst; renderLobby(); sendSnap(); }
 /* 自作ステージを選ぶ(3列のグリッド・増えたら縦にスクロール) */
 function stageCard(st,sel){ return '<button class="stg-card'+(sel?" on":"")+'" data-cst="'+esc(st.id)+'"><span class="sc-view">'+stageSvg(st)+'</span><span class="sc-nm">'+esc(st.nm)+'</span><span class="sc-sz">'+st.n+'×'+st.n+'</span></button>'; }
@@ -2856,7 +2914,7 @@ function sgReset(){
   goTitle();                                                     // 部屋・状態・チャット・ダイアログを片付けてタイトルへ
   rules=Object.assign({},DEF_RULES); code=""; nameAsked=true; pending=null; pendWh={}; bubbles=[]; resetSel(); dbgFog=false;
   setMini(true);
-  ed=null; edArmDel(false); $("edWork").style.display="none";
+  ed=null; edSel=null; delArm=false; edTool="pen"; $("edWork").style.display="none";
 }
 function sgKill(p,cause,by,pub){ p.alive=false; p.cause=cause; p.killer=by||""; p.pub=pub!==false; }
 /* 盤面の状態を作って表示する。o.guest=参加者側で見る／o.set(G)=表示の前に状態をいじる */
@@ -3030,8 +3088,11 @@ sc("ステージを作る","編集中（ペン）",()=>{ openEditor(); ed={ id:"
   $("edList").style.display="none"; $("edWork").style.display="flex"; $("edName").value=ed.nm; edTool="pen"; edDraw(); });
 sc("ステージを作る","大きいステージ（60×60）",()=>{ openEditor(); ed={ id:"sgbig", nm:"大きいステージ", n:60, mask:new Array(3600).fill("1"), t:0 };
   $("edList").style.display="none"; $("edWork").style.display="flex"; $("edName").value=ed.nm; edDraw(); });
-sc("ステージを作る","削除の確認",()=>{ openEditor(); ed={ id:"sgdemo", nm:"見本のステージ", n:7, mask:new Array(49).fill("1"), t:0 };
-  $("edList").style.display="none"; $("edWork").style.display="flex"; $("edName").value=ed.nm; edDraw(); edArmDel(true); });
+sc("ステージを作る","移動ツール",()=>{ openEditor(); ed={ id:"sgdemo", nm:"見本のステージ", n:9, mask:stageMask(stageOf("heart")).split(""), t:0 };
+  $("edList").style.display="none"; $("edWork").style.display="flex"; $("edName").value=ed.nm; edTool="move"; edDraw(); });
+sc("ステージを作る","25マス未満（保存できない）",()=>{ openEditor(); ed={ id:"sgdemo", nm:"見本のステージ", n:7, mask:Array.from({length:49},(_,i)=>i<20?"1":"0"), t:0 };
+  $("edList").style.display="none"; $("edWork").style.display="flex"; $("edName").value=ed.nm; edTool="pen"; edDraw(); });
+sc("ステージを作る","一覧：削除するステージを選ぶ",()=>{ openEditor(); edSel=new Set(myStages.slice(0,1).map(t=>t.id)); edShowList(); });
 sc("追加の役職","役職：ドクター",()=>{ sgG(RD); openRole(); });
 sc("議論 & 投票","はじまり（死亡した人がいる）",()=>{ sgTalk(RV,{ set:g=>{ sgKill(g.players[3],"poison","g1"); g.deathsThisRound=["g3"]; } }); sgPhaseIn("act"); });
 sc("議論 & 投票","はじまり（死亡した人はいない）",()=>{ sgTalk(RV); sgPhaseIn("act"); });
