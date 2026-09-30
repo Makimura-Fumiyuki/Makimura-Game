@@ -86,6 +86,9 @@
   .rule-sum.err{ color:#ff8f7d; opacity:1; }
   .rule-sum{ font-size:12.5px; font-weight:700; opacity:.72; text-align:center; line-height:1.7; }
   .rule-frame.ro .stp{ visibility:hidden; }                                   /* 参加者側は見るだけ */
+  .rtgl{ width:96px; height:34px; border:1.5px solid rgba(244,239,230,.3); border-radius:999px; background:rgba(244,239,230,.1); color:var(--card); font-size:14px; font-weight:900; letter-spacing:.08em; cursor:pointer; }
+  .rtgl.on{ background:var(--gold); border-color:var(--gold); color:#3a2a06; }
+  .rule-frame.ro .rtgl{ pointer-events:none; }
   .rule-frame .rule-col:last-child:nth-child(odd){ grid-column:1/-1; }       /* 3つ目の項目は横いっぱいの真ん中 */
   /* ステージ(ロビー): 名前・左右の切り替え・見た目 */
   .stage-box{ width:var(--uiw); background:rgba(0,0,0,.18); border:1.5px solid rgba(244,239,230,.18); border-radius:16px; padding:12px 12px 14px; }
@@ -118,9 +121,10 @@
   .stg-empty{ padding:22px 6px; font-size:13.5px; font-weight:800; line-height:1.8; opacity:.8; }
   .stg-empty small{ font-size:11.5px; opacity:.75; }
   /* ステージを作る(タイトルの左下の入口と作る画面) */
-  .stg-make{ position:fixed; right:10px; top:10px; z-index:90; display:none; align-items:center; justify-content:center; gap:5px; width:150px; height:38px;
+  .stg-make{ position:fixed; right:10px; top:10px; z-index:40; display:none; align-items:center; justify-content:center; gap:5px; width:150px; height:38px;
     border:1.5px solid rgba(244,239,230,.35); border-radius:999px; background:rgba(20,16,32,.55); color:var(--card); font-size:13px; font-weight:900; letter-spacing:.06em; cursor:pointer; }
   .stg-make.on{ display:flex; }
+  body:has(#stgPickOv.on) .stg-make{ z-index:90; }                         /* 自作ステージのダイアログの時だけ黒いオーバーレイの上 */
   .stg-make .ic{ display:flex; } .stg-make .ic svg{ width:16px; height:16px; }
   #editScene{ padding-top:clamp(70px,11vh,120px); padding-bottom:160px; }        /* 上にくっつかないよう余白 */
   #edList{ width:var(--uiw); }
@@ -289,6 +293,7 @@
   .ros .ck svg{ width:13px; height:13px; }
   .ros .r2 .lf{ display:flex; align-items:center; gap:2px; height:18px; font-size:10px; font-weight:900; letter-spacing:.02em; color:var(--card); white-space:nowrap; }   /* 左下=役職まわりの情報 */
   .ros .r2 .lf svg{ width:12px; height:12px; color:#ff8a74; }
+  .ros .r2 .lf.vt{ min-width:0; overflow:hidden; text-overflow:ellipsis; color:var(--gold); }
   .gs-btn{ flex:none; width:60px; height:18px; padding:0; border-radius:999px; border:1.2px solid rgba(232,182,71,.85); background:rgba(20,16,32,.55);
     color:var(--gold); font-size:9px; font-weight:900; white-space:nowrap; cursor:pointer; }
   .guess-h{ font-size:15px; font-weight:900; text-align:center; margin:0 0 4px; }
@@ -466,7 +471,7 @@
   .snd-btn.off .slash{ display:block; }
   #roleBtn, #memBtn{ top:12px; display:none; width:96px; justify-content:center; padding:7px 0; }
   #memBtn{ top:54px; }                                            /* 参加者=役職確認の下 */
-  #gameScene.on ~ #roleBtn, #gameScene.on ~ #memBtn, #lobbyScene.on ~ #memBtn{ display:flex; }
+  #gameScene.on ~ #roleBtn, #gameScene.on ~ #memBtn, #memBtn.lob{ display:flex; }   /* 参加者=ゲーム中と、ロビーからステージを作っている間 */
   .mem-list{ display:flex; flex-direction:column; gap:6px; margin:2px 0 4px; }
   .mem-row{ display:flex; align-items:center; gap:8px; height:40px; padding:0 8px 0 12px; border-radius:10px; background:rgba(244,239,230,.07); font-size:13.5px; font-weight:800; }
   .mem-row .p-dot{ width:12px; height:12px; border-radius:50%; flex:none; }
@@ -921,7 +926,7 @@ const TALK_OPTS=[30,60,90,120,150,180,240,300];        // 議論の時間(秒)
 const STEP_OPTS=[10,15,20,30,45,60];                  // 1ステップ(移動/行動)の制限時間(秒)
 const VOTE_SEC=30;                                    // 投票の制限時間(秒)
 const VRES_MS=5000;                                   // 投票結果を見せる時間
-const DEF_RULES={ stage:"sq7", turns:5, talk:120, step:20, roles:null };
+const DEF_RULES={ stage:"sq7", turns:5, talk:120, step:20, anon:true, roles:null };   // anon=匿名投票(ONだと誰が誰に入れたかは出さない)
 /* ★ステージ=形の決まった盤(N×Nの中の「#」がマス・「.」は何もない所)。のちに自作ステージも同じ形(n+マスの並び)で持てる */
 const STAGES=[
   { id:"sq5", nm:"正方形 小", rows:["#####","#####","#####","#####","#####"] },
@@ -1556,6 +1561,8 @@ function renderRoster(){
     if(self && m.role==="sensitive" && (m.sense|0)>0) lf='<span class="lf">'+SKULL_SVG+(m.sense|0)+'人</span>';
     if(self && m.role==="chatter") lf='<span class="lf">'+(m.talkN|0)+'/'+G.players.length+'</span>';
     if(m && m.role==="guesser" && m.alive && ph==="talk" && m.guessRound!==G.round && p.alive) lf='<button type="button" class="gs-btn" data-gs="'+esc(p.id)+'">役職を回答</button>';
+    if(ph==="vres" && G.rules && G.rules.anon===false && lv && lv.votes && lv.votes[p.id]){ const v=lv.votes[p.id], t=pById(v);   // ★匿名投票OFF=誰に入れたか
+      lf='<span class="lf vt">→'+(v==="skip"? "スキップ" : esc(t?t.n:"?"))+'</span>'; }
     return '<div class="ros'+(self?" self":"")+(deadShown?" dead":"")+(can?" can":"")+(can&&mv===p.id?" voted":(can&&pk===p.id?" pick":""))+'" data-pid="'+esc(p.id)+'">'
       +(done?'<span class="ck">'+CHECK_SVG+'</span>':'')+'<div class="r1"><span class="av" style="background:'+p.c+'"></span><span class="nm">'+esc(p.n)+'</span>'+vc+'</div>'
       +'<div class="r2">'+lf+'<span class="tgs">'+tags+'</span></div></div>';
@@ -2053,6 +2060,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest(".ricon[data-ri]
 /* ================= 画面遷移・演出 ================= */
 function showScene(s){ ["titleScene","lobbyScene","gameScene","editScene"].forEach(id=>$(id).classList.toggle("on", id===s));
   $("stageMakeBtn").classList.toggle("on", s==="titleScene" || s==="lobbyScene");
+  $("memBtn").classList.toggle("lob", s==="editScene" && edFrom==="lobby" && online);
   if(s!=="lobbyScene") $("roleErrFix").classList.remove("on");
   $("chatBox").classList.toggle("on", s==="gameScene" || (s==="lobbyScene"&&online)); renderChatMode(); }
 function enterGame(){ if(ed){ edSave(true); ed=null; } edSel=null; lobSeen=null;   // ★ロビーでステージを作っている最中に始まった=その時点で保存してゲームへ
@@ -2347,6 +2355,8 @@ function onState(){
       addSys(newDead.length? newDead.map(p=>p.n).join("、")+"が死亡していました" : "死亡した人はいない");
     }
     if(G.phase==="vres"){ const lv=G.lastVote||{}, h=pById(lv.hanged);           // 吊られた結果は画面の真ん中に大きく
+      if(G.rules && G.rules.anon===false && lv.votes){ const ls=G.players.filter(p=>lv.votes[p.id]).map(p=>{ const v=lv.votes[p.id], t=pById(v); return p.n+"→"+(v==="skip"?"スキップ":(t?t.n:"?")); });   // ★匿名投票OFF=誰が誰に入れたかもチャットに残す
+        if(ls.length) addSys("投票："+ls.join("、")); }
       addSys(h? h.n+"が吊られた" : "誰も吊られなかった");                       // チャットはスキップでも同数でも同じ文言
       if(h){ hangFx(h); playPieceIn(); playSlash(); setTimeout(()=>{ if(G) playDeath(); },1000); }   // ★選ばれた人のコマを右上から斜めに斬る(コマが出た時にも音)
       else hangFx(null,"誰も吊られなかった\n"+(lv.tie? "同数投票" : "スキップ多数")); }
@@ -2619,7 +2629,8 @@ function ruleFrameHTML(n,ro){
     +stageFrameHTML(ro)
     +'<div class="sec-label">ルール</div><div class="rule-frame'+(ro?" ro":"")+'">'
     +row("行動ターン数","turns",rules.turns+"ターン")
-    +row("議論の時間","talk",fmtT(rules.talk))+row("1手の制限時間","step",rules.step+"秒")+'</div>'
+    +row("議論の時間","talk",fmtT(rules.talk))+row("1手の制限時間","step",rules.step+"秒")
+    +'<div class="rule-col"><span class="rc-name">匿名投票</span><div class="rc-row"><button class="rtgl'+(rules.anon!==false?" on":"")+'" id="anonTgl">'+(rules.anon!==false?"ON":"OFF")+'</button></div></div>'+'</div>'
     +(ro? "" : '<button class="rule-reset" id="ruleReset">初期設定に戻す</button>');
 }
 const OPTS={ turns:TURN_OPTS, talk:TALK_OPTS, step:STEP_OPTS };
@@ -2678,6 +2689,7 @@ function renderLobby(){
     try{ await navigator.clipboard.writeText(inviteText(code)); toast("招待メッセージをコピーした"); }
     catch(e){ try{ const ta=document.createElement("textarea"); ta.value=inviteText(code); document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); toast("招待メッセージをコピーした"); }catch(_){ toast("コピーできなかった…"); } } };
   if(!isHost) return;
+  { const t=$("anonTgl"); if(t) t.onclick=()=>{ ensureAudio(); playSelect(); rules.anon=(rules.anon===false); renderLobby(); sendSnap(); }; }
   $("lobbyBox").querySelectorAll(".rule-frame .stp[data-k]").forEach(b=>b.onclick=()=>{ ensureAudio(); playSelect();
     const k=b.dataset.k, a=OPTS[k], i=Math.max(0,a.indexOf(rules[k])), j=Math.max(0,Math.min(a.length-1,i+(+b.dataset.s)));
     rules[k]=a[j]; renderLobby(); sendSnap(); });
@@ -3063,6 +3075,7 @@ sc("行動","行動終了を押した（他の人を待つ）",()=>sgAct(RS,{ se
 sc("行動","占って1人に話した（となりにまだ話していない人がいる）",()=>sgAct(RS,{ set:g=>{ g.acts[myId]={ k:"seer", tg:"g1" }; g.whs[myId]={ g1:"しろ" }; } }));
 sc("行動","毒殺した（視界内=飛び散る）",()=>{ sgG(RW,{ pos:WPOS }); sgFire(()=>sgKill(G.players[1],"poison",myId,false)); });
 sc("行動","毒殺した（視界外=通知だけ）",()=>{ sgG(RW,{ pos:[[3,3],[6,6],[3,4],[3,1],[1,1],[0,6]] }); sgFire(()=>sgKill(G.players[1],"poison",myId,false)); });
+sc("議論 & 投票","投票結果（匿名投票OFF）",()=>{ sgVres({ cnt:{ g1:3, g2:1 }, skip:1, hanged:"g1", tie:false, skipWin:false, votes:{ [myId]:"g1", g2:"g1", g3:"g1", g4:"g2", g5:"skip" } },{ set:g=>{ g.rules.anon=false; g.lastVote={ cnt:{ g1:3, g2:1 }, skip:1, hanged:"g1", tie:false, skipWin:false, votes:{ [myId]:"g1", g2:"g1", g3:"g1", g4:"g2", g5:"skip" } }; sgKill(g.players[1],"hang"); } }); sgPhaseIn("talk"); });
 sc("議論 & 投票","残り10秒（カウントダウン）",()=>{ sgTalk(RV); sgLeft=10; lastCdS=-1; });
 sc("投票結果","スキップ多数で誰も吊られない",()=>{ sgVres({ cnt:{ g1:2 }, skip:3, hanged:null, tie:false, skipWin:true, votes:{} }); sgPhaseIn("talk"); });
 sc("ロビー","役職の数が多い（上に固定の警告）",()=>sgLobby(4,{ roles:{ wolf:1, seer:2, hawk:2, mad:0 } }));
@@ -3128,7 +3141,9 @@ sc("ステージを作る","線対称（左右）",()=>{ openEditor(); ed={ id:"
 sc("ステージを作る","線対称（上下左右）",()=>{ openEditor(); ed={ id:"sgdemo", nm:"見本のステージ", n:9, mask:stageMask(stageOf("diamond")).split(""), t:0 };
   $("edList").style.display="none"; $("edWork").style.display="flex"; $("edName").value=ed.nm; edTool="pen"; edSym=2; edDraw(); });
 sc("ステージを作る","一覧：まだ1つもない",()=>{ const keep=myStages; myStages=[]; openEditor(); myStages=keep; });
-sc("ロビー","ロビーで参加者の一覧",()=>{ sgLobby(6,{ undef:true }); memArm=""; renderMem(); $("memOv").classList.add("on"); });
+sc("ロビー","ロビーからステージを作る（右上に参加者）",()=>{ sgLobby(6,{ undef:true }); openEditor(); });
+sc("ロビー","ロビーで参加者の一覧（ステージを作っている間）",()=>{ sgLobby(6,{ undef:true }); openEditor(); memArm=""; renderMem(); $("memOv").classList.add("on"); });
+sc("ロビー","匿名投票OFF",()=>{ sgLobby(6); rules.anon=false; renderLobby(); $("anonTgl").scrollIntoView({block:"center"}); });
 sc("ステージを作る","移動ツール",()=>{ openEditor(); ed={ id:"sgdemo", nm:"見本のステージ", n:9, mask:stageMask(stageOf("heart")).split(""), t:0 };
   $("edList").style.display="none"; $("edWork").style.display="flex"; $("edName").value=ed.nm; edTool="move"; edDraw(); });
 sc("ステージを作る","25マス未満（保存できない）",()=>{ openEditor(); ed={ id:"sgdemo", nm:"見本のステージ", n:7, mask:Array.from({length:49},(_,i)=>i<20?"1":"0"), t:0 };
