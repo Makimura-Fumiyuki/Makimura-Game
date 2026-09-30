@@ -89,14 +89,58 @@
   .rule-frame .rule-col:last-child:nth-child(odd){ grid-column:1/-1; }       /* 3つ目の項目は横いっぱいの真ん中 */
   /* ステージ(ロビー): 名前・左右の切り替え・見た目 */
   .stage-box{ width:var(--uiw); background:rgba(0,0,0,.18); border:1.5px solid rgba(244,239,230,.18); border-radius:16px; padding:12px 12px 14px; }
-  .stg-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
-  .stg-nm{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; gap:1px; font-size:17px; font-weight:900; color:var(--gold); white-space:nowrap; }
+  .stg-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+  .stg-nav{ display:flex; flex-direction:column; align-items:flex-start; gap:7px; }
+  .stg-arws{ display:flex; gap:6px; }
+  .stg-dots{ display:flex; gap:5px; padding-left:2px; }
+  .stg-dot{ width:9px; height:9px; padding:0; border:none; border-radius:50%; background:rgba(244,239,230,.25); cursor:pointer; }
+  .stg-dot.on{ background:var(--gold); transform:scale(1.25); }
+  .stage-box.ro .stg-dot{ cursor:default; pointer-events:none; }
+  .stg-mine{ flex:none; width:64px; height:38px; border:1.5px solid rgba(244,239,230,.35); border-radius:10px; background:transparent; color:var(--card); font-size:13px; font-weight:900; cursor:pointer; }
+  .stg-mine.on{ background:var(--gold); border-color:var(--gold); color:#3a2a06; }
+  .stage-box.ro .stg-mine{ visibility:hidden; }
+  .stg-nm{ margin-top:8px; display:flex; flex-direction:column; align-items:center; gap:1px; font-size:17px; font-weight:900; color:var(--gold); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .stg-nm small{ font-size:10.5px; font-weight:800; color:var(--card); opacity:.55; letter-spacing:.06em; }
   .stg-arw{ flex:none; width:38px; height:38px; border:none; border-radius:10px; background:rgba(244,239,230,.14); color:var(--card); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
   .stg-arw svg{ width:18px; height:18px; }
   .stg-arw:active{ transform:translateY(2px); }
   .stage-box.ro .stg-arw{ visibility:hidden; }
   .stg-view{ width:148px; height:148px; margin:10px auto 0; }
+  /* 自作ステージの一覧(ダイアログとステージを作る画面で共通): 3列・増えたら縦スクロール */
+  .stg-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-height:56svh; overflow-y:auto; padding:2px; }
+  .stg-card{ display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 4px 7px; border:1.5px solid rgba(244,239,230,.16); border-radius:12px;
+    background:rgba(0,0,0,.18); color:var(--card); cursor:pointer; min-width:0; }
+  .stg-card.on{ border-color:var(--gold); background:rgba(232,182,71,.14); }
+  .stg-card .sc-view{ width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; }
+  .stg-card .sc-view svg{ width:88%; height:88%; display:block; }
+  .stg-card .sc-nm{ width:100%; font-size:11.5px; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center; }
+  .stg-card .sc-sz{ font-size:10px; font-weight:800; opacity:.55; }
+  .stg-card.add{ justify-content:center; border-style:dashed; font-size:13px; font-weight:900; color:var(--gold); }
+  .stg-card.add .sc-plus{ font-size:30px; line-height:1; }
+  .stg-empty{ padding:22px 6px; font-size:13.5px; font-weight:800; line-height:1.8; opacity:.8; }
+  .stg-empty small{ font-size:11.5px; opacity:.75; }
+  /* ステージを作る(タイトルの左下の入口と作る画面) */
+  .stg-make{ position:fixed; left:10px; bottom:10px; z-index:40; display:none; width:140px; height:38px; border:1.5px solid rgba(244,239,230,.35); border-radius:999px;
+    background:rgba(20,16,32,.55); color:var(--card); font-size:13px; font-weight:900; letter-spacing:.06em; cursor:pointer; }
+  .stg-make.on{ display:block; }
+  #editScene{ padding-bottom:120px; }
+  #edList{ width:var(--uiw); }
+  .ed-note{ font-size:11.5px; font-weight:700; opacity:.6; line-height:1.7; text-align:center; margin:10px 0 0; }
+  .ed-note a{ color:inherit; }
+  #edWork{ width:var(--uiw); display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .ed-name{ width:100%; height:42px; padding:0 12px; border:1.5px solid rgba(244,239,230,.25); border-radius:12px; background:rgba(0,0,0,.25); color:var(--card); font-size:15px; font-weight:800; }
+  .ed-size{ display:flex; align-items:center; gap:8px; }
+  .ed-lb{ font-size:12px; font-weight:800; opacity:.7; margin-right:4px; }
+  .ed-tools{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px; width:100%; }
+  .ed-tool{ height:36px; padding:0; border:1.5px solid rgba(244,239,230,.3); border-radius:10px; background:transparent; color:var(--card); font-size:12.5px; font-weight:900; cursor:pointer; white-space:nowrap; }
+  .ed-tool.on{ background:var(--gold); border-color:var(--gold); color:#3a2a06; }
+  #edCv{ width:min(92vw,460px); height:min(92vw,460px); touch-action:none; border-radius:10px; background:#15121f; cursor:pointer; }
+  .ed-info{ font-size:12px; font-weight:800; opacity:.65; min-height:18px; }
+  .ed-bottom{ display:flex; gap:10px; }
+  .ed-del, .ed-done{ width:140px; height:40px; border-radius:12px; font-size:14px; font-weight:900; cursor:pointer; }
+  .ed-del{ border:1.5px solid rgba(244,239,230,.35); background:transparent; color:var(--card); }
+  .ed-del.arm{ background:#d8453a; border-color:#d8453a; color:#fff; }
+  .ed-done{ border:none; background:linear-gradient(165deg,#f4c85f,var(--gold) 55%,var(--gold-d)); color:#3a2a06; }
   .stg-view svg{ width:100%; height:100%; display:block; }
   /* 役職(ロビー): 1行=アイコン・内容・人数。陣営ごとにセクションを分ける */
   .role-box{ width:var(--uiw); background:rgba(0,0,0,.18); border:1.5px solid rgba(244,239,230,.18); border-radius:16px; padding:10px 12px 12px; }
@@ -626,6 +670,24 @@
   <div id="roomArea"></div>
 </div>
 
+<button class="stg-make on" id="stageMakeBtn">ステージを作る</button>
+
+<!-- ===== ステージを作る ===== -->
+<div class="scene" id="editScene">
+  <div class="sec-label">ステージを作る</div>
+  <div id="edList"></div>
+  <div id="edWork" style="display:none;">
+    <input class="ed-name" id="edName" maxlength="16" placeholder="ステージ名" autocomplete="off">
+    <div class="ed-size"><span class="ed-lb">大きさ</span><button class="stp" id="edMinus">−</button><span class="rc-val" id="edN"></span><button class="stp" id="edPlus">＋</button></div>
+    <div class="ed-tools"><button class="ed-tool on" data-tool="pen">ペン</button><button class="ed-tool" data-tool="fill">塗りつぶし</button>
+      <button class="ed-tool" id="edAllOn">全部ON</button><button class="ed-tool" id="edAllOff">全部OFF</button></div>
+    <canvas id="edCv"></canvas>
+    <div class="ed-info" id="edInfo"></div>
+    <div class="ed-bottom"><button class="ed-del" id="edDel">削除</button><button class="ed-done" id="edDone">一覧にもどる</button></div>
+  </div>
+  <button class="txt-btn" id="edBack" style="margin-top:16px;">やめる</button>
+</div>
+
 <!-- ===== ロビー ===== -->
 <div class="scene" id="lobbyScene">
   <div class="sec-label">ロビー</div>
@@ -675,6 +737,9 @@
 <div class="overlay" id="memOv">
   <div class="r-card rl-card"><div class="rl-sec">参加者</div><div class="mem-list" id="memList"></div>
     <div class="rl-btns"><button class="close" id="memClose">とじる</button></div></div>
+</div>
+<div class="overlay" id="stgPickOv">
+  <div class="r-card rl-card"><div class="guess-h">自作ステージ</div><div id="stgPick"></div><div class="rl-btns"><button class="close" id="stgPickClose">とじる</button></div></div>
 </div>
 <div class="overlay" id="roleUnusedOv">
   <div class="r-card rl-card"><div id="roleUnused"></div><div class="rl-btns"><button class="close" id="roleUnusedClose">とじる</button></div></div>
@@ -809,12 +874,12 @@ $("seBtn").addEventListener("click",()=>{
 /* 視界。r=まわり何マスまでの正方形(1=周囲8マス)／cut=縦横の合計がこれを超える所は見えない(四隅を落とす)
    市民・占い師・狂人=周囲8マス(3×3)／毒殺人狼・鷹の目=3×3の各辺に3マスずつ足した21マス(5×5から四隅を抜いた形)
    役職を足す時はここに足すだけ */
-const VIEW={ villager:{r:1}, seer:{r:1}, mad:{r:1}, medium:{r:1}, doctor:{r:1}, talker:{r:1}, sensitive:{r:1}, voter:{r:1}, chatter:{r:1}, wolf:{r:2,cut:3}, guesser:{r:2,cut:3}, hawk:{r:2,cut:3}, miner:{r:2,cut:3} };
+const VIEW={ villager:{r:1}, seer:{r:1}, mad:{r:1}, framer:{r:1}, medium:{r:1}, doctor:{r:1}, talker:{r:1}, sensitive:{r:1}, voter:{r:1}, chatter:{r:1}, wolf:{r:2,cut:3}, guesser:{r:2,cut:3}, hawk:{r:2,cut:3}, miner:{r:2,cut:3} };
 function inView(role,dx,dy){ const v=VIEW[role]||VIEW.villager, ax=Math.abs(dx), ay=Math.abs(dy);
   return Math.max(ax,ay)<=v.r && (!v.cut || ax+ay<=v.cut); }
-const ROLE_NAME={ villager:"市民", seer:"占い師", wolf:"毒殺人狼", hawk:"鷹の目", mad:"狂人", medium:"霊感強子", doctor:"ドクター", talker:"議論好き", sensitive:"敏感肌", guesser:"役職ｱﾃﾀｲ人狼", voter:"投票集め", chatter:"おしゃべり", miner:"地雷人狼" };
-const ROLE_KEYS=["wolf","guesser","seer","hawk","medium","doctor","talker","sensitive","mad","voter","chatter"];          // ロビーで数を決める役職(残りは市民)
-const ROLE_ORDER=["villager","seer","hawk","medium","doctor","talker","sensitive","wolf","guesser","mad","voter","chatter"];   // ロビーの並び(結果の並びにも使う)
+const ROLE_NAME={ villager:"市民", seer:"占い師", wolf:"毒殺人狼", hawk:"鷹の目", mad:"狂人", framer:"濡れ衣狂人", medium:"霊感強子", doctor:"ドクター", talker:"議論好き", sensitive:"敏感肌", guesser:"役職ｱﾃﾀｲ人狼", voter:"投票集め", chatter:"おしゃべり", miner:"地雷人狼" };
+const ROLE_KEYS=["wolf","guesser","seer","hawk","medium","doctor","talker","sensitive","mad","framer","voter","chatter"];          // ロビーで数を決める役職(残りは市民)
+const ROLE_ORDER=["villager","seer","hawk","medium","doctor","talker","sensitive","wolf","guesser","mad","framer","voter","chatter"];   // ロビーの並び(結果の並びにも使う)
 function roleMax(n){ return Math.max(1,(n|0)-1); }         // 役職の数の上限=メンバー数-1(2026-09-25)
 /* 人数ごとの役職の数(ロビーで役職をさわるまでの自動の値) */
 const ROLE_PLAN={ 4:{wolf:1,seer:1}, 5:{wolf:1,seer:1}, 6:{wolf:2,seer:1}, 7:{wolf:2,seer:1}, 8:{wolf:2,seer:1} };
@@ -831,7 +896,7 @@ const DEF_RULES={ stage:"sq7", turns:5, talk:120, step:20, roles:null };
 /* ★ステージ=形の決まった盤(N×Nの中の「#」がマス・「.」は何もない所)。のちに自作ステージも同じ形(n+マスの並び)で持てる */
 const STAGES=[
   { id:"sq5", nm:"正方形 小", rows:["#####","#####","#####","#####","#####"] },
-  { id:"sq7", nm:"正方形 普通", rows:["#######","#######","#######","#######","#######","#######","#######"] },
+  { id:"sq7", nm:"正方形 中", rows:["#######","#######","#######","#######","#######","#######","#######"] },
   { id:"sq9", nm:"正方形 大", rows:["#########","#########","#########","#########","#########","#########","#########","#########","#########"] },
   { id:"heart", nm:"ハート", rows:[".##...##.","####.####","#########","#########","#########",".#######.","..#####..","...###...","....#...."] },
   { id:"h", nm:"H", rows:["##...##","##...##","##...##","#######","##...##","##...##","##...##"] },
@@ -839,13 +904,60 @@ const STAGES=[
   { id:"ring", nm:"ドーナツ", rows:["#######","#######","##...##","##...##","##...##","#######","#######"] },
   { id:"diamond", nm:"ダイヤ", rows:["....#....","...###...","..#####..",".#######.","#########",".#######.","..#####..","...###...","....#...."] },
 ];
-function stageOf(id){ return STAGES.find(t=>t.id===id) || STAGES[1]; }
-function stageMask(st){ return st.rows.join("").replace(/#/g,"1").replace(/[^1]/g,"0"); }   // マスの並びを"1"/"0"の文字列に
+/* ★自作ステージ={id:"c…",nm,n,m(マスの並びを1マス1ビットでbase64),t(更新時刻)}。組み込みはrowsで持つ */
+const ST_MIN=5, ST_MAX=99;
+function packMask(mask){ const n=mask.length, b=new Uint8Array(Math.ceil(n/8)); for(let i=0;i<n;i++) if(mask[i]==="1") b[i>>3]|=1<<(i&7);
+  let s=""; for(let i=0;i<b.length;i++) s+=String.fromCharCode(b[i]); return btoa(s); }
+function unpackMask(b64,n){ let s=""; try{ s=atob(b64||""); }catch(e){} const out=new Array(n*n);
+  for(let i=0;i<n*n;i++) out[i]=((s.charCodeAt(i>>3)||0)>>(i&7))&1? "1":"0"; return out.join(""); }
+function isCustom(st){ return !!st && !st.rows; }
+function stageOf(id){ const b=STAGES.find(t=>t.id===id); if(b) return b;
+  if(rules && rules.cst && rules.cst.id===id) return rules.cst;                 // 参加者側はオーナーから届いた自作ステージを使う
+  const c=myStages.find(t=>t.id===id); return c || STAGES[1]; }
+function stN(st){ return isCustom(st)? st.n : st.rows.length; }
+function stageMask(st){ return isCustom(st)? unpackMask(st.m,st.n) : st.rows.join("").replace(/#/g,"1").replace(/[^1]/g,"0"); }   // マスの並びを"1"/"0"の文字列に
 function onBoard(x,y){ return x>=0&&y>=0&&x<G.N&&y<G.N && (!G.mask || G.mask[y*G.N+x]==="1"); }   // そのマスが盤の上にあるか
-function stageSvg(st){                               // ロビーのステージの見た目
-  const n=st.rows.length; let h='<svg viewBox="0 0 '+(n*10)+' '+(n*10)+'" xmlns="http://www.w3.org/2000/svg">';
-  st.rows.forEach((r,y)=>[...r].forEach((c,x)=>{ if(c==="#") h+='<rect x="'+(x*10+.6)+'" y="'+(y*10+.6)+'" width="8.8" height="8.8" rx="1.4" fill="'+((x+y)%2?"#e9e2d4":"#f1ebdf")+'"/>'; }));
-  return h+'</svg>'; }   // roles=null は「人数に合わせて自動」
+function maskSvg(n,mask){                            // ステージの見た目(マスを2色の市松で。大きいステージでも軽いようにpath1本ずつ)
+  let a="", b=""; for(let y=0;y<n;y++) for(let x=0;x<n;x++) if(mask[y*n+x]==="1"){ const d="M"+(x*10+.6)+" "+(y*10+.6)+"h8.8v8.8h-8.8z"; if((x+y)%2) a+=d; else b+=d; }
+  return '<svg viewBox="0 0 '+(n*10)+' '+(n*10)+'" xmlns="http://www.w3.org/2000/svg"><path d="'+a+'" fill="#e9e2d4"/><path d="'+b+'" fill="#f1ebdf"/></svg>'; }
+function stageSvg(st){ return maskSvg(stN(st),stageMask(st)); }
+function stageCells(st){ const m=stageMask(st); let c=0; for(let i=0;i<m.length;i++) if(m[i]==="1") c++; return c; }
+function stageErr(){ const st=stageOf(rules.stage); return stageCells(st)<1? "ステージにマスがありません" : ""; }
+/* 自作ステージの保存=この端末(bj.stages)＋アカウント(acct.bj_stages)。ログイン中はアカウントの記録が正 */
+var myStages=[]; try{ myStages=JSON.parse(localStorage.getItem("bj.stages")||"[]")||[]; }catch(e){ myStages=[]; }
+let stAcctOK=true, stSynced=false;
+function mkSes(){ try{ return JSON.parse(localStorage.getItem("mk.acct")||"null"); }catch(e){ return null; } }
+async function mkToken(){
+  const s=mkSes(); if(!s) return null;
+  if(s.at && s.exp*1000 > Date.now()+60000) return s.at;
+  if(!s.rt) return null;
+  try{
+    const r=await fetch(SB_URL+"/auth/v1/token?grant_type=refresh_token",{ method:"POST", headers:{ apikey:SB_KEY, "Content-Type":"application/json" }, body:JSON.stringify({ refresh_token:s.rt }) });
+    const d=await r.json(); if(!r.ok||!d.access_token){ try{ localStorage.removeItem("mk.acct"); }catch(e){} return null; }
+    const ns={ at:d.access_token, rt:d.refresh_token||s.rt, exp:Math.floor(Date.now()/1000)+((d.expires_in|0)||3600)-60, email:s.email };
+    try{ localStorage.setItem("mk.acct",JSON.stringify(ns)); }catch(e){}
+    return ns.at;
+  }catch(e){ return null; }
+}
+function saveStagesLocal(){ try{ localStorage.setItem("bj.stages",JSON.stringify(myStages)); }catch(e){} }
+async function loadStagesAcct(){                   // ログイン中ならアカウントの自作ステージを読む(列がまだ無い時は端末だけで動く)
+  const at=await mkToken(); if(!at||!stAcctOK) return false;
+  try{
+    const r=await fetch(SB_URL+"/rest/v1/acct?select=bj_stages",{ headers:{ apikey:SB_KEY, Authorization:"Bearer "+at } });
+    if(!r.ok){ if(r.status===400||r.status===404) stAcctOK=false; return false; }
+    const rows=await r.json(), row=rows&&rows[0]; if(!row || row.bj_stages===undefined){ stAcctOK=false; return false; }
+    if(row.bj_stages==null){ if(myStages.length) pushStagesAcct(); stSynced=true; return true; }   // アカウントにまだ無い=この端末のぶんを上げる
+    let a=[]; try{ a=JSON.parse(row.bj_stages)||[]; }catch(e){ a=[]; }
+    myStages=a.filter(o=>o&&o.id&&o.n&&o.m); saveStagesLocal(); stSynced=true; return true;
+  }catch(e){ return false; }
+}
+let stPushT=0;
+function pushStagesAcct(){ clearTimeout(stPushT); stPushT=setTimeout(async ()=>{
+  const at=await mkToken(); if(!at||!stAcctOK) return;
+  try{ const r=await fetch(SB_URL+"/rest/v1/acct",{ method:"PATCH", headers:{ apikey:SB_KEY, Authorization:"Bearer "+at, "Content-Type":"application/json", "Prefer":"return=minimal" },
+    body:JSON.stringify({ bj_stages: JSON.stringify(myStages) }) });
+    if(!r.ok && (r.status===400||r.status===404)) stAcctOK=false; }catch(e){} }, 500); }
+function saveStages(){ saveStagesLocal(); pushStagesAcct(); }   // roles=null は「人数に合わせて自動」
 let rules=Object.assign({},DEF_RULES);
 const DIRS={ u:[0,-1], d:[0,1], l:[-1,0], r:[1,0], s:[0,0] };
 const dist=(a,b)=>Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
@@ -853,21 +965,21 @@ const fmtT=s=>String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart
 /* 話す(となりの人に3文字)。漢字も使える(2026-09-25に戻した)。行動とは別に送れる */
 function cleanMsg(s){ return [...String(s||"").trim()].slice(0,3).join(""); }
 
-const ROLE_ZERO={ wolf:0, guesser:0, miner:0, seer:0, hawk:0, medium:0, doctor:0, talker:0, sensitive:0, mad:0, voter:0, chatter:0 };
+const ROLE_ZERO={ wolf:0, guesser:0, miner:0, seer:0, hawk:0, medium:0, doctor:0, talker:0, sensitive:0, mad:0, framer:0, voter:0, chatter:0 };
 function autoRoles(n){ return Object.assign({},ROLE_ZERO,{ wolf:1, seer:1, hawk:1 }); }   // ★初期設定=毒殺人狼1・占い師1・鷹の目1・のこりは市民(2026-09-28)
 function roleCounts(n){ return rules.roles? Object.assign({},ROLE_ZERO,{wolf:1},rules.roles) : autoRoles(n); }
 const WOLF_KINDS=["wolf","miner","guesser"];   // 「人狼」の役職(今後xxx人狼を足したらここにも足す)
 function wolfNum(r){ return WOLF_KINDS.reduce((a,k)=>a+(r[k]|0),0); }   // 人狼の頭数(毒殺人狼＋地雷人狼)
 function roleSum(r){ return ROLE_KEYS.reduce((a,k)=>a+(r[k]|0),0); }
 function roleErr(n){
-  const r=roleCounts(n);
+  const r=roleCounts(n); { const se=stageErr(); if(se) return se; }
   if(wolfNum(r)<1) return "人狼は1人以上必要";
   if(roleSum(r)>n) return "役職の数が人数より多い";
   if(wolfNum(r)*2>=n) return "人狼が多い";
   return "";
 }
 /* 役職のアイコン(1つにつき2色=役職の色の丸+白の絵。細部は丸と同じ色で抜く)・短い説明・占い結果 */
-const ROLE_COL={ villager:"#5fb46e", seer:"#4a97d8", hawk:"#2a9a8c", wolf:"#d84c36", mad:"#8f55c4", medium:"#6f7fd0", doctor:"#8ab13a", talker:"#d89a3a", sensitive:"#d8729a", miner:"#a3342a", guesser:"#b83a6b", voter:"#c49a1e", chatter:"#2fa6c0" };
+const ROLE_COL={ villager:"#5fb46e", seer:"#4a97d8", hawk:"#2a9a8c", wolf:"#d84c36", mad:"#8f55c4", medium:"#6f7fd0", doctor:"#8ab13a", talker:"#d89a3a", sensitive:"#d8729a", miner:"#a3342a", guesser:"#b83a6b", voter:"#c49a1e", chatter:"#2fa6c0", framer:"#5566c8" };
 const ICON_G={
   villager:c=>'<circle cx="12" cy="8.8" r="3.5" fill="#fff"/><path d="M5.6 19.3c.6-3.5 3.1-5.5 6.4-5.5s5.8 2 6.4 5.5z" fill="#fff"/>',
   seer:c=>'<circle cx="12" cy="10.4" r="5.2" fill="#fff"/><path d="M7.6 19.4h8.8l-1.5-3h-5.8z" fill="#fff"/><path d="M10.1 7.6l.6 1.5 1.5.6-1.5.6-.6 1.5-.6-1.5-1.5-.6 1.5-.6z" fill="'+c+'"/>',
@@ -881,6 +993,7 @@ const ICON_G={
   guesser:c=>'<circle cx="11.6" cy="11.1" r="5.6" fill="none" stroke="#fff" stroke-width="2.9"/><path d="M13.9 13.7l3.9 4.2" stroke="#fff" stroke-width="3" stroke-linecap="round"/>',   // 役職ｱﾃﾀｲ人狼=クイズの「Q」
   voter:c=>'<rect x="8.9" y="3.9" width="6.2" height="8.2" rx=".8" fill="#fff" stroke="'+c+'" stroke-width="1.1"/><path d="M10.4 8.1l1.2 1.2 2.1-2.4" fill="none" stroke="'+c+'" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/><rect x="4.6" y="11" width="14.8" height="9" rx="1.4" fill="#fff"/><rect x="8.2" y="11.2" width="7.6" height="1.3" rx=".6" fill="'+c+'"/>',   // 投票集め=投票箱
   chatter:c=>'<path d="M3.8 4.8h9.8a1.4 1.4 0 0 1 1.4 1.4v5.2a1.4 1.4 0 0 1-1.4 1.4H8.3l-3.1 2.6v-2.6H3.8a1.4 1.4 0 0 1-1.4-1.4V6.2a1.4 1.4 0 0 1 1.4-1.4z" fill="#fff"/><path d="M10.9 10.2h9.4a1.4 1.4 0 0 1 1.4 1.4v4.9a1.4 1.4 0 0 1-1.4 1.4h-1.2v2.5l-3-2.5h-5.2a1.4 1.4 0 0 1-1.4-1.4v-4.9a1.4 1.4 0 0 1 1.4-1.4z" fill="#fff" stroke="'+c+'" stroke-width="1.3"/>',   // おしゃべり=吹き出し2つ
+  framer:c=>'<path d="M9 4.6c.6 1.2 1.7 1.8 3 1.8s2.4-.6 3-1.8l3.9 1.6 1.5 3.6-2.6 1.2V19H6.2v-8l-2.6-1.2 1.5-3.6z" fill="#fff"/><path d="M10.4 10.6c-1 1.4-1.6 2.2-1.6 3a1.6 1.6 0 0 0 3.2 0c0-.8-.6-1.6-1.6-3z" fill="'+c+'"/><path d="M14.3 13.4c-.8 1.1-1.3 1.8-1.3 2.4a1.3 1.3 0 0 0 2.6 0c0-.6-.5-1.3-1.3-2.4z" fill="'+c+'"/>',   // 濡れ衣狂人=しずくの付いた服
   mad:c=>'<circle cx="12" cy="12" r="6.7" fill="#fff"/><circle cx="9.5" cy="10.3" r="1.25" fill="'+c+'"/><circle cx="14.7" cy="9.7" r=".8" fill="'+c+'"/><path d="M8.2 14.1l1.25 1.35 1.25-1.35 1.3 1.35 1.3-1.35 1.25 1.35 1.25-1.35" fill="none" stroke="'+c+'" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/>'
 };
 /* 役職アイコン=役職ごとの色の角丸四角＋白い絵＋陣営の色の枠(市民=緑・人狼=赤・第三=黄。陣営名の文字は入れない)。plain=枠なし(ボタンの中の小さいアイコン用) */
@@ -893,7 +1006,7 @@ function roleIcon(r,plain){ const c=ROLE_COL[r]||ROLE_COL.villager, g=(ICON_G[r]
     +'<g transform="translate(12 12) scale(.86) translate(-12 -12)">'+g+'</g>'
     +'<rect x="1" y="1" width="22" height="22" rx="5.4" fill="none" stroke="#fff" stroke-width="3.6" vector-effect="non-scaling-stroke" clip-path="url(#'+cid+')"/>'   // ★白い線=枠の内側だけ画面上で0.8px(白3.6pxを内側だけ切り抜き、上に本線2px)
     +'<rect x="1" y="1" width="22" height="22" rx="5.4" fill="none" stroke="'+f+'" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>'; }   // 枠=画面上で2px・地と同じ形の上に重ねるのですき間なし
-const TEAM_OF={ villager:"village", seer:"village", hawk:"village", medium:"village", doctor:"village", talker:"village", sensitive:"village", wolf:"wolf", miner:"wolf", guesser:"wolf", mad:"wolf", voter:"third", chatter:"third" };   // 第三陣営を足す時は"third"(黄色)
+const TEAM_OF={ villager:"village", seer:"village", hawk:"village", medium:"village", doctor:"village", talker:"village", sensitive:"village", wolf:"wolf", miner:"wolf", guesser:"wolf", mad:"wolf", framer:"wolf", voter:"third", chatter:"third" };   // 第三陣営を足す時は"third"(黄色)
 const TEAM_NAME={ village:"市民陣営", wolf:"人狼陣営", third:"第三陣営" };
 const ROLE_SHORT={
   villager:"特別な力はない。みんなと協力して勝とう",
@@ -901,6 +1014,7 @@ const ROLE_SHORT={
   hawk:"普通の人より見える範囲が広い",
   wolf:"隣の人を、毒殺できる",
   mad:"人狼陣営の勝利が自分の勝利",
+  framer:"隣の人の占い結果を黒にできる",
   medium:"消えたはずの死体が見える",
   doctor:"毒に気づくし、治せたり",
   talker:"好きなタイミングで議論を始められる",
@@ -917,12 +1031,16 @@ const ROLE_DETAIL={
   hawk:[{t:"状況把握のプロ"}],
   wolf:[{t:"死亡までのターンを0~2ターンで選ぶことができます"},{t:"ただし、再発動には1ターンのインターバルが必要"}],
   mad:[{t:"ただし、人狼が誰なのか分からず、人狼側も誰が狂人なのかは知りません"}],
+  framer:[{t:"行動中に隣の人を選び、一定期間占い結果を逆にできる"},{t:"黒なら白に、白なら黒に変わる"},{t:"ただし、1度議論を挟むと元の占い結果に戻る"},
+    {t:"※1ラウンドにつき1回まで。人狼を選べば、占い結果を白にしてかばうこともできる",n:1},{t:"※占い師も、選ばれた本人も、占い結果が逆になっていることは分からない",n:1},
+    {t:"※逆になっている間に占われた結果は、議論を挟んでも占い師のメンバーリストにそのまま残る（もう一度占うと正しい結果に更新される）",n:1},
+    {t:"※人狼陣営だが、人狼が誰なのかは分からず、人狼側も誰が濡れ衣狂人なのかは知りません",n:1}],
   medium:[{t:"殺害された死体が盤上に残り、それを見ることができる"},{t:"※議論を挟むと、死体が消える",n:1}],
   doctor:[{t:"視界内にいる人が毒に侵されていて、何ターン後に死亡するかまで分かる"},{t:"また、1ラウンドにつき1回まで隣接するプレイヤーの毒を治せる"},{t:"※自分の毒には気付けず、治すこともできない",n:1}],
   talker:[{t:"ゲーム中に1度だけ、行動フェーズ中に議論&投票フェーズを開始できる"}],
   sensitive:[{t:"行動中に誰かが死亡すると、通知が届く"},{t:"※誰が死亡したか / 誰に、どのように襲われたかは分かりません",n:1}],
   guesser:[{t:"議論&投票時に、役職が分かった人を指定して、もし正解したら倒せる。間違えていれば自分が死亡"},{t:"また、行動中も1ラウンドにつき1回まで即殺可能"},{t:"※議論&投票1回につき、1回まで",n:1}],
-  voter:[{t:"議論&投票時に、誰よりも票を集めよう"}],
+  voter:[{t:"議論&投票時に、誰よりも票を集めたらその場で勝利"}],
   chatter:[{t:"ゲーム全体を通して、となりの人へ話しかける（3文字のメッセージを送る）を参加している人数と同じ回数だけ行えたら、その場で勝利"},{t:"※例：6人で遊ぶ場合→6回メッセージを送ったら勝ち",n:1}],
   miner:[{t:"自分のマスと、隣接する4マスに地雷を設置でき、このマス踏んだプレイヤーを爆殺する"},{t:"ただし、再発動には2ターンのインターバルが必要"},{t:"※人狼同士は地雷が見え、踏んでも死亡しない",n:1},{t:"※議論を1度はさむと、置いていた地雷は消滅する",n:1}]
 };
@@ -960,12 +1078,15 @@ function alivePs(){ return G.players.filter(p=>p.alive); }
 function isWolf(p){ return !!p && WOLF_KINDS.includes(p.role); }      // 占いで「黒」・勝ち負けの数に入るのは人狼(毒殺人狼・地雷人狼)
 function isWolfTeam(p){ return !!p && (isWolf(p)||p.role==="mad"); }          // 人狼陣営(狂人も)=勝ち負けの側。★人狼と狂人はおたがいに誰か分からない(2026-09-25)
 function knowsRole(m,p){ return !!m && !!p && (m.id===p.id || (isWolf(m) && isWolf(p))); }   // mがpの役職を知っているか(人狼どうしだけ分かる。地雷人狼と毒殺人狼もおたがい分かる)
+function canFrame(p){ return !!p && p.role==="framer" && p.lastFrameRound!==G.round; }   // ★濡れ衣狂人: 1ラウンドに1回
+function canFrameTo(p,t){ return !!t && t.alive && t.id!==p.id; }                              // 人狼にも使える(白にしてかばう)
+function seerBlack(t){ return isWolf(t) !== !!t.framed; }                                        // 占い結果(濡れ衣の間は逆になる)
 function canKill(p){ return !!p && p.role==="guesser" && p.lastKillRound!==G.round; }   // ★役職当てたい人狼: 行動中の殺害は1ラウンドに1回
 function canKillTo(p,t){ return !!t && t.alive && t.id!==p.id && !isWolf(t); }
 function thirdWin(p){ G.winner="third"; G.winRole=p.role; G.winIds=[p.id]; G.players.forEach(q=>{ if(!q.alive) q.pub=true; }); G.phase="over"; G.sk++; G.stepEnd=0; bump(); }   // 第三陣営の勝ち(その人だけが勝ち)
 function canPoisonTo(p,t){ return !!t && t.alive && t.id!==p.id && !isWolf(t); }   // 毒殺できる相手(毒殺人狼の仲間以外。狂人にも盛れる)
 function hasPower(p){ return !!p && ((p.role==="seer" && neighbors(p).length>0) || (p.role==="wolf" && canPoison(p) && neighbors(p).some(t=>canPoisonTo(p,t)))
-  || (p.role==="doctor" && canCure(p) && neighbors(p).some(t=>canCureTo(p,t))) || (p.role==="miner" && canMine(p)) || (p.role==="guesser" && canKill(p) && neighbors(p).some(t=>canKillTo(p,t)))); }   // この行動で力を使える相手がいるか
+  || (p.role==="doctor" && canCure(p) && neighbors(p).some(t=>canCureTo(p,t))) || (p.role==="miner" && canMine(p)) || (p.role==="guesser" && canKill(p) && neighbors(p).some(t=>canKillTo(p,t))) || (p.role==="framer" && canFrame(p) && neighbors(p).some(t=>canFrameTo(p,t)))); }   // この行動で力を使える相手がいるか
 function poisonLeft(p){ return Math.max(0, POISON_GAP-((G.tick+1)-(p.lastPoison==null?-99:p.lastPoison))); }   // 毒殺の再発動まであと何ターン
 function dlOk(dl){ return G.turn+(dl|0)<=G.rules.turns; }   // 議論までに毒が効き切るか(効かない遅れは選べない)
 function neighbors(p){ return alivePs().filter(q=>q.id!==p.id && dist(q,p)<=1); }   // となり(同じマスも含む)
@@ -997,12 +1118,12 @@ function newGame(members,fixRole){           // fixRole={id,role}=その人の�
       if(j<0){ j=roles.indexOf("villager"); if(j>=0) roles[j]=fixRole.role; else { roles[i]=fixRole.role; j=i; } }   // 選んだ役職がこの配役に無い時は市民と入れ替える
       [roles[i],roles[j]]=[roles[j],roles[i]];
     } }
-  const st=stageOf(rules.stage), N=st.rows.length, mask=stageMask(st), cells=[];
+  const st=stageOf(rules.stage), N=stN(st), mask=stageMask(st), cells=[];
   for(let y=0;y<N;y++) for(let x=0;x<N;x++) if(mask[y*N+x]==="1") cells.push([x,y]); shuffle(cells);
   G={ gid:Math.random().toString(36).slice(2,9), rules:Object.assign({},rules), N, mask, stage:st.id,
       round:1, turn:1, tick:0, sk:0, phase:"move", stepEnd:0,
       players:members.map((m,i)=>({ id:m.id, n:m.n||("P"+(i+1)), c:m.c||PCOL[i%PCOL.length], role:roles[i],
-        x:cells[i%cells.length][0], y:cells[i%cells.length][1], alive:true, pub:false, cause:"", killer:"", poison:null, lastPoison:-99, lastMine:-99, lastCureRound:0, usedFTalk:false, notes:[], sense:0, talkN:0, lastKillRound:0, guessRound:0 })),
+        x:cells[i%cells.length][0], y:cells[i%cells.length][1], alive:true, pub:false, cause:"", killer:"", poison:null, lastPoison:-99, lastMine:-99, lastCureRound:0, usedFTalk:false, notes:[], sense:0, talkN:0, lastKillRound:0, guessRound:0, lastFrameRound:0, framed:false })),
       moves:{}, acts:{}, whs:{}, votes:{}, ready:{}, done:{}, lastVote:null, winner:"", deathsThisRound:[], wh:[], mines:[], corpses:[] };
   /* コマに書く1文字=名前の頭文字。頭文字がかぶる人がいたら、その人たちは番号にする */
   const heads=G.players.map(p=>[...p.n][0]||"?");
@@ -1065,6 +1186,7 @@ function cpuAct(p){                            // 行動と、ときどき「話
   const wh = Math.random()<.14? { tg:pick(adj).id, tx:pick(CPU_MSG) } : null;
   if(p.role==="doctor" && canCure(p)){ const c=adj.filter(q=>canCureTo(p,q)); if(c.length) return { k:"cure", tg:pick(c).id, wh }; }   // ドクターのロボット: となりに毒の人がいれば治す
   if(p.role==="seer"){ const done=new Set(p.notes.map(n=>n.tg)), c=adj.filter(q=>!done.has(q.id)); if(c.length) return { k:"seer", tg:pick(c).id, wh }; }
+  if(p.role==="framer" && canFrame(p) && Math.random()<.5){ const c=adj.filter(q=>canFrameTo(p,q)); if(c.length) return { k:"frame", tg:pick(c).id, wh }; }   // 濡れ衣狂人のロボット
   if(p.role==="wolf" && canPoison(p)){ const c=adj.filter(q=>canPoisonTo(p,q)&&!q.poison);
     /* ロボットの毒殺人狼は1ラウンドに1回まで・確率も控えめ(強すぎるとラウンド1で終わってしまうため) */
     if(c.length && !cpuMem.poisoned[p.id+":"+G.round] && Math.random()<.4){ cpuMem.poisoned[p.id+":"+G.round]=1;
@@ -1162,12 +1284,15 @@ function resolveAct(){
   G.tick++;
   /* ① 行動は「このステップが始まった時の盤面」で同時に解決する(毒で死ぬ人の行動も有効)
         占う・毒殺は1人1ターンに1つ。「話す」はそれとは別にできる */
-  const newPoison=[], whs=[], cured=[], kills=[];
+  const newPoison=[], whs=[], cured=[], kills=[], seers=[];
+  /* ★濡れ衣狂人: 同じターンの占いにも効くよう、先に解決する */
+  alivePs().forEach(p=>{ const a=G.acts[p.id]; if(!a||a.k!=="frame"||p.role!=="framer"||p.lastFrameRound===G.round) return;
+    const t=pById(a.tg); if(!t||!t.alive||t.id===p.id||dist(p,t)>1) return; p.lastFrameRound=G.round; t.framed=true; });
   alivePs().forEach(p=>{
     const w=(G.whs||{})[p.id];
     const a=G.acts[p.id]; if(!a||!a.tg||a.k==="none") return;
     const t=pById(a.tg); if(!t||!t.alive||t.id===p.id||dist(p,t)>1) return;
-    if(a.k==="seer" && p.role==="seer") p.notes.push({ r:G.round, t:G.turn, tg:t.id, black:isWolf(t) });
+    if(a.k==="seer" && p.role==="seer") seers.push({ p, t });           // 占いは濡れ衣を反映してから(下でまとめて)
     if(a.k==="poison" && p.role==="wolf" && canPoisonTo(p,t) && G.tick-(p.lastPoison==null?-99:p.lastPoison)>=POISON_GAP){
       p.lastPoison=G.tick; newPoison.push({ tg:t, dl:Math.max(0,Math.min(2,a.dl|0)), by:p.id }); }
     if(a.k==="kill" && p.role==="guesser" && p.lastKillRound!==G.round && canKillTo(p,t)){ p.lastKillRound=G.round; kills.push({ tg:t, by:p.id }); }   // ★役職当てたい人狼の殺害(即死)
@@ -1189,6 +1314,7 @@ function resolveAct(){
   /* ② 前のターンまでに盛られた毒を1つ進める(0になったら死亡) */
   alivePs().forEach(p=>{ if(p.poison){ const by=p.poison.by; p.poison.left--; if(p.poison.left<=0) die(p,"poison",by); } });
   /* ③ 今回の毒: 0=その場で即死／1〜2=本人は気づかず、そのターン数だけ普通に行動してから死亡 */
+  seers.forEach(o=>o.p.notes.push({ r:G.round, t:G.turn, tg:o.t.id, black:seerBlack(o.t) }));
   kills.forEach(o=>{ if(o.tg.alive) die(o.tg,"kill",o.by); });
   newPoison.forEach(o=>{ const t=o.tg; if(!t.alive) return;
     if(o.dl===0) die(t,"poison",o.by);
@@ -1203,6 +1329,7 @@ function startTalk(){
     if(!p.alive) p.pub=true;            // ★死亡の公表はここだけ(メンバー一覧が更新される)
     p.poison=null; p.lastPoison=-99;    // ★議論をまたいだ毒は無かったことにする(毒のインターバルもリセット)
     p.lastMine=-99;                     // 地雷のインターバルもリセット
+    p.framed=false;                     // ★濡れ衣は議論を挟むと元に戻る
   });
   G.mines=[];                           // ★置いた地雷も議論をまたいだら消える(2026-09-25)
   G.corpses=[];                         // ★霊感強子が見ていた死体は、議論を1度はさむと消える
@@ -1240,7 +1367,7 @@ function allIn(obj){ return alivePs().every(p=>obj[p.id]!==undefined); }
 /* ★行動の完了(2026-09-27)=「力(占う・毒殺など)を使い切った＋となり全員に話した」か「何もしない」「行動を終了する」を押した時だけ。
    G.done[id]=auto(自動)/none(何もしない)/end(行動を終了する)。行動のフェーズは全員がdoneになったら解決する */
 function whMap(id){ const w=(G.whs||{})[id]; if(!w) return {}; if(w.tg){ const o={}; o[w.tg]=w.tx; return o; } return w; }   // 話した相手→3文字(旧形式{tg,tx}も読める)
-function roleActed(p){ const a=G.acts[p.id]; return !!(a && ["seer","poison","cure","mine","kill"].includes(a.k)); }
+function roleActed(p){ const a=G.acts[p.id]; return !!(a && ["seer","poison","cure","mine","kill","frame"].includes(a.k)); }
 function autoDone(p){ return;   // ★2026-09-28: となりに1人でもいる時は「行動終了」を押すまで完了にしない(自動スキップはresolveMoveの{auto:true}だけ)
   if(!G||G.phase!=="act"||!p||!p.alive||G.done[p.id]) return;
   const talked=whMap(p.id); if((roleActed(p)||!hasPower(p)) && neighbors(p).every(q=>talked[q.id]!==undefined)) G.done[p.id]="auto"; }
@@ -1258,10 +1385,10 @@ function hostAct(a){
       if(d==="none"||d==="end"){ if(cur && cur.k==="none") delete G.acts[p.id]; delete G.done[p.id]; bump(); }
       return; }
     if(a.k==="cancel"){                                                // ★決めた占う/毒殺/治療の取り消し(全員そろって解決されるまで)
-      if(cur && ["seer","poison","cure","kill"].includes(cur.k)){ delete G.acts[p.id]; if(G.done[p.id]==="auto") delete G.done[p.id]; bump(); }
+      if(cur && ["seer","poison","cure","kill","frame"].includes(cur.k)){ delete G.acts[p.id]; if(G.done[p.id]==="auto") delete G.done[p.id]; bump(); }
       return; }
     if(a.k==="end"){ G.done[p.id]="end"; bump(); if(actAllDone()) resolveAct(); return; }   // ★行動を終了する(使い切っていなくても完了)   // 「やっぱりなし」・置いた地雷の取り消し   // 「やっぱりなし」
-    const k=["none","seer","poison","cure","mine","kill"].includes(a.k)? a.k : "none";
+    const k=["none","seer","poison","cure","mine","kill","frame"].includes(a.k)? a.k : "none";
     let o={ k:"none" };
     if(k==="mine"){                                                    // ★地雷は相手ではなくマスを選ぶ
       if(!(p.role==="miner" && canMine(p) && mineOk(p,a.mx|0,a.my|0))) return;
@@ -1270,7 +1397,7 @@ function hostAct(a){
       const t=pById(a.tg);
       const ok = t && t.alive && t.id!==p.id && dist(t,p)<=1 &&
         ((k==="seer"&&p.role==="seer") || (k==="poison"&&p.role==="wolf"&&canPoisonTo(p,t)&&canPoison(p)&&dlOk(a.dl))
-         || (k==="cure"&&p.role==="doctor"&&canCure(p)&&canCureTo(p,t)) || (k==="kill"&&p.role==="guesser"&&canKill(p)&&canKillTo(p,t)));
+         || (k==="cure"&&p.role==="doctor"&&canCure(p)&&canCureTo(p,t)) || (k==="kill"&&p.role==="guesser"&&canKill(p)&&canKillTo(p,t)) || (k==="frame"&&p.role==="framer"&&canFrame(p)&&canFrameTo(p,t)));
       if(!ok) return;
       o={ k, tg:t.id };
       if(k==="poison") o.dl=Math.max(0,Math.min(2,a.dl|0));
@@ -1324,7 +1451,7 @@ function pendingDone(p){                         // ゲストの送った入力�
   if(p.t==="act" && (p.k==="end"||p.k==="none")) return !!(G.done||{})[id];
   if(p.t==="act" && p.k==="mine"){ const c=G.acts[id]; return !!c && c.k==="mine" && c.mx===p.mx && c.my===p.my; }   // 置き直しがスナップに載ったか
   if(p.t==="guess") return !!(me() && (!me().alive || me().guessRound===G.round));
-  if(p.t==="act" && (p.k==="seer"||p.k==="poison"||p.k==="cure"||p.k==="kill")){ const c=G.acts[id]; return !!c && c.k===p.k && c.tg===p.tg; }
+  if(p.t==="act" && (p.k==="seer"||p.k==="poison"||p.k==="cure"||p.k==="kill"||p.k==="frame")){ const c=G.acts[id]; return !!c && c.k===p.k && c.tg===p.tg; }
   return myInputIn();
 }
 function sendAct(o){ if(ch){ try{ ch.send({type:"broadcast",event:"act",payload:o}); }catch(e){} } }
@@ -1424,7 +1551,7 @@ function buildBoard(){
   }
   /* ★マスの通し番号(左上に小さく)。左上=1、右へ、はじまで行ったら次の行 */
   const nl=svgEl("g",{id:"noL","pointer-events":"none"}); b.appendChild(nl);
-  for(let y=0;y<N;y++) for(let x=0;x<N;x++){ if(!onBoard(x,y)) continue;
+  if(N<=40) for(let y=0;y<N;y++) for(let x=0;x<N;x++){ if(!onBoard(x,y)) continue;   // 大きすぎる盤は番号を出さない(読めない・重い)
     const t=svgEl("text",{x:x*10+1.25,y:y*10+2.23,"font-size":"1.27","font-weight":"700",class:"cno","data-x":x,"data-y":y});
     t.textContent=String(cellNo(x,y)); nl.appendChild(t);
   }
@@ -1433,7 +1560,7 @@ function buildBoard(){
   b.appendChild(svgEl("g",{id:"bubL"}));
 }
 /* コマの上の札(いつもコマの上): 役職を知っている人だけ役職名(自分=自分の役職・毒殺人狼どうし)／決着後・観戦中=全員の役職 */
-const LBL_COL={ villager:"#a6e3b0", seer:"#a3d2f7", hawk:"#93e2d6", wolf:"#ff9a86", mad:"#e3a6ff", medium:"#b9c2f5", doctor:"#d7e89a", talker:"#f5d49a", sensitive:"#f5b3cc", miner:"#ff8a74", guesser:"#f5a3c3", voter:"#f3dc8a", chatter:"#9fe3f1" };
+const LBL_COL={ villager:"#a6e3b0", seer:"#a3d2f7", hawk:"#93e2d6", wolf:"#ff9a86", mad:"#e3a6ff", framer:"#b7c0f5", medium:"#b9c2f5", doctor:"#d7e89a", talker:"#f5d49a", sensitive:"#f5b3cc", miner:"#ff8a74", guesser:"#f5a3c3", voter:"#f3dc8a", chatter:"#9fe3f1" };
 function pieceLabel(p,m){
   const all = G.phase==="over" || (debug&&!dbgFog) || !!(m && !m.alive);
   return (all || knowsRole(m,p))? { t:ROLE_NAME[p.role], c:LBL_COL[p.role] } : null;
@@ -1445,8 +1572,8 @@ function renderBoard(){
   $("cellL").querySelectorAll(".cell").forEach(r=>{
     const x=+r.dataset.x, y=+r.dataset.y, vis=visibleCell(x,y);
     const can=canMoveTo(x,y);
-    r.setAttribute("fill", !vis? "#3a3450" : can? ((x+y)%2?"#f3d98e":"#f7e3a6") : ((x+y)%2?"#e9e2d4":"#f1ebdf"));   // 動けるマスはうすい金色
-    r.classList.toggle("can", can);
+    const fl=!vis? "#3a3450" : can? ((x+y)%2?"#f3d98e":"#f7e3a6") : ((x+y)%2?"#e9e2d4":"#f1ebdf");   // 動けるマスはうすい金色
+    if(r._f!==fl){ r._f=fl; r.setAttribute("fill",fl); } if(r._c!==can){ r._c=can; r.classList.toggle("can", can); }   // 変わった時だけ(大きい盤でも軽く)
   });
   if($("noL")) $("noL").querySelectorAll(".cno").forEach(t=>{
     const vis=visibleCell(+t.dataset.x,+t.dataset.y);
@@ -1527,7 +1654,7 @@ function renderBoard(){
       const pEff=(!crowd && !pois && pg && m && p.poison && p.poison.by===m.id && p.poison.left>0)? p.poison.left : 0;   // ★盛った毒が効いている間も(自分が盛った相手だけ)
       const plan=(mine && !pois && PLAN_TX[mine.k])? PLAN_TX[mine.k] : "";
       const pz=(!crowd && seesPoison(m,p))? p.poison.left+"ターン後 死亡" : "";
-      const PLAN_IC={ seer:"seer", cure:"doctor", mine:"miner", kill:"guesser" };
+      const PLAN_IC={ seer:"seer", cure:"doctor", mine:"miner", kill:"guesser", frame:"framer" };
       const stk=[]; if(L) stk.push([lb,L.t,L.c,1.6]); if(plan) stk.push([pl,plan,{ ic:PLAN_IC[mine.k]||"seer" },2.8]);
       if(pois) stk.push([pg,(mine.dl? mine.dl+"ターン後" : "即殺"),"pill",2.8]);
       else if(pEff) stk.push([pg,pEff+"ターン後","pill",2.8]);
@@ -1578,16 +1705,18 @@ function drawBomb(mk,x,y){                                  // 地雷の見た�
   mk.appendChild(svgEl("circle",{cx,cy,r:2.7,fill:"#1d1622",stroke:"#e8563f","stroke-width":2,"vector-effect":"non-scaling-stroke"}));
   mk.appendChild(svgEl("circle",{cx:cx-1,cy:cy-1,r:.6,fill:"rgba(255,255,255,.55)"}));
 }
+let cnoG=null, cnoArr=null;
 function cellNo(x,y){ const i=(y|0)*G.N+(x|0); if(!G.mask) return i+1;   // マスの通し番号(左上=1、右へ、はじで次の行。ステージの穴は数えない)
-  let c=0; for(let k=0;k<=i;k++) if(G.mask[k]==="1") c++; return c; }
+  if(cnoG!==G){ cnoG=G; cnoArr=new Int32Array(G.N*G.N); let c=0; for(let k=0;k<G.N*G.N;k++){ if(G.mask[k]==="1") c++; cnoArr[k]=c; } }
+  return cnoArr[i]; }
 function canMoveTo(x,y){
   const m=me(); if(!m||!m.alive||G.phase!=="move") return false;
   return onBoard(x,y) && Math.abs(m.x-x)+Math.abs(m.y-y)<=1;
 }
 /* 行動: となりのコマを押す → そのコマの横に「話す」と役職の力(占う/毒殺)。話すは行動とは別に同時にできる
    占う・毒殺は1ターンに1人だけ(決めたら他の人には使えない)・話すはとなりの何人にでも(1人につき1回まで) */
-const PLAN_TX={ seer:"占い予定", poison:"毒殺予定", cure:"治療予定", kill:"殺害予定" };   // 選んだ相手のコマの上に出す
-const POWER_NAME={ seer:"占う", wolf:"毒殺", doctor:"毒を治す", miner:"地雷", guesser:"殺害" };
+const PLAN_TX={ seer:"占い予定", poison:"毒殺予定", cure:"治療予定", kill:"殺害予定", frame:"濡れ衣予定" };   // 選んだ相手のコマの上に出す
+const POWER_NAME={ seer:"占う", wolf:"毒殺", doctor:"毒を治す", miner:"地雷", guesser:"殺害", framer:"濡れ衣" };
 function myAct(){ const m=me(); if(!m||!G||G.phase!=="act") return null;
   if(pending&&pending.t==="act"&&pending.sk===G.sk&&pending.from===m.id&&pending.k==="cancel") return null;   // 取り消しを送ったところ
   return G.acts[m.id]!==undefined? G.acts[m.id] : (pending&&pending.t==="act"&&pending.sk===G.sk&&pending.from===m.id&&pending.k!=="clear"? pending : null); }
@@ -1598,9 +1727,9 @@ function myDone(){ const m=me(); if(!m||!G||G.phase!=="act") return "";
   return (G.done&&G.done[m.id])||""; }
 function actState(){                          // いまの自分の行動の状態(占う/毒殺は全員そろうまで相手を変えられる)
   const m=me(), a=myAct(), w=myWh();
-  const dn=myDone(), auto=!!(a&&a.auto), none=dn==="none"||dn==="end", roleUsed=!!(a&&(a.k==="seer"||a.k==="poison"||a.k==="cure"||a.k==="mine"||a.k==="kill"));
+  const dn=myDone(), auto=!!(a&&a.auto), none=dn==="none"||dn==="end", roleUsed=!!(a&&(a.k==="seer"||a.k==="poison"||a.k==="cure"||a.k==="mine"||a.k==="kill"||a.k==="frame"));
   const roleable = !!m && m.alive && !auto && !none && ((m.role==="seer" && neighbors(m).length>0) || (m.role==="wolf" && canPoison(m) && neighbors(m).some(t=>canPoisonTo(m,t)))
-    || (m.role==="doctor" && canCure(m) && neighbors(m).some(t=>canCureTo(m,t))) || (m.role==="miner" && canMine(m)) || (m.role==="guesser" && canKill(m) && neighbors(m).some(t=>canKillTo(m,t))));
+    || (m.role==="doctor" && canCure(m) && neighbors(m).some(t=>canCureTo(m,t))) || (m.role==="miner" && canMine(m)) || (m.role==="guesser" && canKill(m) && neighbors(m).some(t=>canKillTo(m,t))) || (m.role==="framer" && canFrame(m) && neighbors(m).some(t=>canFrameTo(m,t))));
   const talkable = !!m && m.alive && !auto && !none && neighbors(m).some(q=>w[q.id]===undefined);   // まだ話していないとなりの人がいる
   const talkAll = !!m && neighbors(m).every(q=>w[q.id]===undefined? false : true);
   const doneNow = !!dn || auto;                                                    // ★完了=「行動終了」を押した時か、となりに誰もいない自動スキップだけ            // ★完了=使い切った or 何もしない/行動を終了する
@@ -1610,7 +1739,7 @@ function actState(){                          // いまの自分の行動の状�
 }
 function popTargets(){                        // 押して操作を出せる相手=選べる相手＋いま役職の力を使うと決めている相手(取り消せるように)
   const ts=actTargets().slice(), m=me(), a=myAct(), d=myDone();
-  if(m && m.alive && G.phase==="act" && a && a.tg && ["seer","poison","cure","kill"].includes(a.k) && d!=="end" && d!=="none"){
+  if(m && m.alive && G.phase==="act" && a && a.tg && ["seer","poison","cure","kill","frame"].includes(a.k) && d!=="end" && d!=="none"){
     const t=pById(a.tg); if(t && t.alive && dist(t,m)<=1 && !ts.some(q=>q.id===t.id)) ts.push(t); }
   return ts;
 }
@@ -1696,15 +1825,15 @@ document.addEventListener("keydown",e=>{          // 矢印キーでも移動(�
    上に「◯◯と接触」、その下にボタンを縦に並べる(全部同じサイズ・アイコン付き・囲みの背景はなし)。基本はコマの右、入らない時は左
    menu=「話す」「占う/毒殺」／poison=「即殺」「1ターン後に死亡」「2ターン後に死亡」／talk=3文字の入力と送信
    占うは2回押しで確定(1回目で「確定」に変わる)。中身が変わった時だけ作り直す(入力欄が消えないように) */
-function btnIcon(k){ return k==="talk"? SPEECH_SVG : k==="seer"? roleIcon("seer",1) : k==="poison"? roleIcon("wolf",1) : k==="cure"? roleIcon("doctor",1) : k==="mine"? roleIcon("miner",1) : k==="kill"? roleIcon("guesser",1) : ""; }
+function btnIcon(k){ return k==="talk"? SPEECH_SVG : k==="seer"? roleIcon("seer",1) : k==="poison"? roleIcon("wolf",1) : k==="cure"? roleIcon("doctor",1) : k==="mine"? roleIcon("miner",1) : k==="kill"? roleIcon("guesser",1) : k==="frame"? roleIcon("framer",1) : ""; }
 function renderPop(){
   const el=$("pop"), m=me();
   const ok = G.phase==="act" && m && m.alive && sel.tg && sel.pop && popTargets().some(t=>t.id===sel.tg) && pieceEls[sel.tg];
   if(!ok){ if(G.phase!=="act"){ sel.tg=null; sel.pop=""; sel.side=""; } if(el.style.display!=="none"){ el.style.display="none"; el.innerHTML=""; } popKey=""; return; }
   const t=pById(sel.tg), st=actState(), a=st.a, w=st.w;
   const pw = m.role==="seer"? "seer" : (m.role==="wolf" && canPoisonTo(m,t))? "poison"
-    : (m.role==="doctor" && canCureTo(m,t))? "cure" : (m.role==="guesser" && canKillTo(m,t))? "kill" : (m.role==="miner" && mineOk(m,t.x,t.y) && !mineAt(t.x,t.y))? "mine" : "";
-  const key=[sel.tg,sel.pop,sel.side,m.id,JSON.stringify(a||0),JSON.stringify(w||0),poisonLeft(m),mineLeft(m),canCure(m),canKill(m),G.turn].join("|");
+    : (m.role==="doctor" && canCureTo(m,t))? "cure" : (m.role==="guesser" && canKillTo(m,t))? "kill" : (m.role==="framer" && canFrameTo(m,t))? "frame" : (m.role==="miner" && mineOk(m,t.x,t.y) && !mineAt(t.x,t.y))? "mine" : "";
+  const key=[sel.tg,sel.pop,sel.side,m.id,JSON.stringify(a||0),JSON.stringify(w||0),poisonLeft(m),mineLeft(m),canCure(m),canKill(m),canFrame(m),G.turn].join("|");
   if(key!==popKey){ popKey=key;
     let h='<div class="pop-h">'+esc(t.n)+'と接触</div>';
     if(sel.pop==="menu"){
@@ -1712,8 +1841,8 @@ function renderPop(){
       h+='<button class="pbtn'+(talkMine?" sel":"")+'" data-p="talk"'+(talkMine?" disabled":"")+'>'+btnIcon("talk")+'話す</button>';
       if(pw){
         const mine = a && ((a.k===pw && a.tg===t.id) || (pw==="mine" && a.k==="mine" && a.mx===t.x && a.my===t.y));
-        const cool = (pw==="poison" && !canPoison(m)) || (pw==="cure" && !canCure(m)) || (pw==="mine" && !canMine(m)) || (pw==="kill" && !canKill(m));
-        const lb = pw==="kill"? "殺害 "+(canKill(m)?1:0)+"/1"   // ★役職ｱﾃﾀｲ人狼=残り回数/1ラウンドの回数
+        const cool = (pw==="poison" && !canPoison(m)) || (pw==="cure" && !canCure(m)) || (pw==="mine" && !canMine(m)) || (pw==="kill" && !canKill(m)) || (pw==="frame" && !canFrame(m));
+        const lb = pw==="kill"? "殺害 "+(canKill(m)?1:0)+"/1" : pw==="frame"? "濡れ衣 "+(canFrame(m)?1:0)+"/1"   // ★役職ｱﾃﾀｲ人狼=残り回数/1ラウンドの回数
           : cool? (pw==="poison"? "毒殺（あと"+poisonLeft(m)+"ターン）" : pw==="mine"? "地雷（あと"+mineLeft(m)+"ターン）" : "毒を治す（このラウンドは使用済み）") : POWER_NAME[m.role];
         h+= (mine && pw!=="mine")? '<button class="pbtn sel" data-x="1">'+btnIcon(pw)+'キャンセル</button>'   // ★決めた相手をもう一度選ぶと「(アイコン)キャンセル」=押すと取り消し
           : '<button class="pbtn'+(mine?" sel":"")+(cool?" off":"")+'" data-p="'+pw+'">'+btnIcon(pw)+lb+'</button>';
@@ -1749,6 +1878,8 @@ function wirePop(){
     if(k==="talk"){ playSelect(); sel.pop="talk"; render(); setTimeout(()=>{ const i=$("whIn"); if(i) i.focus(); },30); return; }
     if(k==="poison"){ if(!canPoison(m)){ playTick(); toast("再発動まで"+poisonLeft(m)+"ターン必要です"); return; } playSelect(); sel.pop="poison"; render(); return; }
     if(k==="seer"){ playSeer(); sel.tg=null; sel.pop=""; sel.side=""; submit({t:"act",k:"seer",tg}); render(); return; }
+    if(k==="frame"){ if(!canFrame(m)){ playTick(); toast("次ラウンドにて復活"); return; }
+      playSelect(); sel.tg=null; sel.pop=""; sel.side=""; submit({t:"act",k:"frame",tg}); render(); return; }
     if(k==="kill"){ if(!canKill(m)){ playTick(); toast("次ラウンドにて復活"); return; }
       playPoison(); sel.tg=null; sel.pop=""; sel.side=""; submit({t:"act",k:"kill",tg}); render(); return; }
     if(k==="cure"){ if(!canCure(m)){ playTick(); toast("毒を治せるのは1ラウンドに1回までです"); return; }
@@ -1887,7 +2018,8 @@ function wireRoles(root,n,after){ root.querySelectorAll(".role-box:not(.ro) [dat
 document.addEventListener("click",e=>{ const b=e.target.closest(".ricon[data-ri]"); if(!b) return; ensureAudio(); playSelect(); showRoleOv(b.dataset.ri,""); });
 
 /* ================= 画面遷移・演出 ================= */
-function showScene(s){ ["titleScene","lobbyScene","gameScene"].forEach(id=>$(id).classList.toggle("on", id===s));
+function showScene(s){ ["titleScene","lobbyScene","gameScene","editScene"].forEach(id=>$(id).classList.toggle("on", id===s));
+  $("stageMakeBtn").classList.toggle("on", s==="titleScene");
   if(s!=="lobbyScene") $("roleErrFix").classList.remove("on");
   $("chatBox").classList.toggle("on", s==="gameScene" || (s==="lobbyScene"&&online)); renderChatMode(); }
 function enterGame(){ phaseUI="game"; seen={ gid:"", sk:-1, tick:-1, phase:"", notes:{}, alive:{}, over:false }; boardN=0; hudKey=""; showScene("gameScene"); }
@@ -1977,6 +2109,77 @@ function renderGuess(){ $("guessList").innerHTML=rlSections(false,"guesser");
       const m=me(); if(!m||m.role!=="guesser"||G.phase!=="talk"||m.guessRound===G.round){ $("guessOv").classList.remove("on"); return; }
       playVote(); $("guessOv").classList.remove("on"); submit({ t:"guess", tg:guessTg, role:r }); }; });
 }
+/* ================= ★ステージを作る ================= */
+let ed=null, edTool="pen";                       // ed={ id,nm,n,mask(配列),t }
+function openEditor(){ showScene("editScene"); edShowList(); loadStagesAcct().then(ok=>{ if(ok && !ed) edShowList(); }); }
+function edShowList(){ ed=null; $("edWork").style.display="none"; $("edList").style.display="";
+  const logged=!!mkSes();
+  $("edList").innerHTML='<div class="stg-grid" style="max-height:none;">'
+    +'<button class="stg-card add" id="edNew"><span class="sc-plus">＋</span>新しく作る</button>'
+    +myStages.map(t=>stageCard(t,false)).join("")+'</div>'
+    +'<div class="ed-note">'+(logged&&stAcctOK? "作ったステージはアカウントに保存されます（ほかの端末でも使えます）"
+      : 'この端末に保存されます<br><a href="../index.html?account=1">アカウント</a>でログインすると、ほかの端末でも使えます')+'</div>';
+  $("edNew").onclick=()=>{ ensureAudio(); playSelect();
+    if(myStages.length>=60){ toast("自作ステージは60個までです"); return; }
+    let k=myStages.length+1; while(myStages.some(t=>t.nm==="マイステージ"+k)) k++;
+    const n=7, st={ id:"c"+Date.now().toString(36)+Math.random().toString(36).slice(2,6), nm:"マイステージ"+k, n, m:packMask("1".repeat(n*n)), t:Date.now() };
+    myStages.unshift(st); saveStages(); edOpen(st.id); };
+  $("edList").querySelectorAll("[data-cst]").forEach(b=>b.onclick=()=>{ ensureAudio(); playSelect(); edOpen(b.dataset.cst); }); }
+function edOpen(id){ const st=myStages.find(t=>t.id===id); if(!st) return;
+  ed={ id:st.id, nm:st.nm, n:st.n, mask:unpackMask(st.m,st.n).split(""), t:st.t };
+  $("edList").style.display="none"; $("edWork").style.display="flex"; $("edName").value=ed.nm; edArmDel(false); edDraw(); }
+let edSaveT=0;
+function edSave(now){ if(!ed) return; clearTimeout(edSaveT); const run=()=>{ if(!ed) return;        // ★変えるたびに自動で保存
+  if(String(ed.id).startsWith("sg")) return;                               // シーン一覧の見本は保存しない
+  const i=myStages.findIndex(t=>t.id===ed.id), o={ id:ed.id, nm:(ed.nm||"").trim()||"マイステージ", n:ed.n, m:packMask(ed.mask.join("")), t:Date.now() };
+  if(i>=0) myStages[i]=o; else myStages.unshift(o); saveStages();
+  if(rules.stage===ed.id){ rules.cst={ id:o.id, nm:o.nm, n:o.n, m:o.m }; } };
+  if(now) run(); else edSaveT=setTimeout(run,300); }
+function edCount(){ let c=0; ed.mask.forEach(v=>{ if(v==="1") c++; }); return c; }
+function edDraw(){ if(!ed) return; const cv=$("edCv"), px=cv.getBoundingClientRect().width||360, dpr=Math.min(2,window.devicePixelRatio||1);
+  const S=Math.round(px*dpr); if(cv.width!==S){ cv.width=S; cv.height=S; }
+  const c=cv.getContext("2d"), n=ed.n, cs=S/n, gap=cs>=6? Math.max(1,cs*.06) : 0;
+  c.clearRect(0,0,S,S); c.fillStyle="#15121f"; c.fillRect(0,0,S,S);
+  for(let y=0;y<n;y++) for(let x=0;x<n;x++){ const on=ed.mask[y*n+x]==="1";
+    c.fillStyle= on? ((x+y)%2?"#e9e2d4":"#f1ebdf") : "#2a2540"; c.fillRect(x*cs+gap/2,y*cs+gap/2,cs-gap,cs-gap); }
+  $("edN").textContent=n+"×"+n; $("edMinus").disabled=n<=ST_MIN; $("edPlus").disabled=n>=ST_MAX;
+  $("edInfo").textContent="マス "+edCount()+"個"+(edCount()<1? "（マスが1つもないと遊べません）":"");
+  document.querySelectorAll("#edWork [data-tool]").forEach(b=>b.classList.toggle("on", b.dataset.tool===edTool)); }
+function edResize(n2){ if(!ed) return; n2=Math.max(ST_MIN,Math.min(ST_MAX,n2)); if(n2===ed.n) return;
+  const n=ed.n, full=ed.mask.every(v=>v==="1"), off=Math.floor((n2-n)/2), m=new Array(n2*n2).fill(full?"1":"0");   // 真ん中を基準に広げる/縮める(全部ONなら広げた所もON)
+  for(let y=0;y<n2;y++) for(let x=0;x<n2;x++){ const ox=x-off, oy=y-off; if(ox>=0&&oy>=0&&ox<n&&oy<n) m[y*n2+x]=ed.mask[oy*n+ox]; }
+  ed.n=n2; ed.mask=m; edDraw(); edSave(); }
+function edCell(e){ const r=$("edCv").getBoundingClientRect(), n=ed.n, x=Math.floor((e.clientX-r.left)/r.width*n), y=Math.floor((e.clientY-r.top)/r.height*n);
+  return (x>=0&&y>=0&&x<n&&y<n)? { x, y } : null; }
+function edFill(x,y){ const n=ed.n, v=ed.mask[y*n+x], to=v==="1"?"0":"1", st=[[x,y]];   // 塗りつぶし=つながった同じ色の所をまとめて反転
+  while(st.length){ const [cx,cy]=st.pop(); if(cx<0||cy<0||cx>=n||cy>=n||ed.mask[cy*n+cx]!==v) continue; ed.mask[cy*n+cx]=to;
+    st.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]); } }
+let edPaint=null;                                 // ペン: 押した所の反対の値で、なぞった所を塗る
+$("edCv").addEventListener("pointerdown",e=>{ if(!ed) return; const p=edCell(e); if(!p) return; ensureAudio(); e.preventDefault();
+  if(edTool==="fill"){ edFill(p.x,p.y); playTick(); edDraw(); edSave(); return; }
+  const i=p.y*ed.n+p.x; edPaint=ed.mask[i]==="1"?"0":"1"; ed.mask[i]=edPaint; playTick(); try{ $("edCv").setPointerCapture(e.pointerId); }catch(_){} edDraw(); });
+$("edCv").addEventListener("pointermove",e=>{ if(!ed||edPaint==null) return; const p=edCell(e); if(!p) return; const i=p.y*ed.n+p.x; if(ed.mask[i]!==edPaint){ ed.mask[i]=edPaint; edDraw(); } });
+["pointerup","pointercancel"].forEach(ev=>$("edCv").addEventListener(ev,()=>{ if(edPaint!=null){ edPaint=null; edSave(); } }));
+document.querySelectorAll("#edWork [data-tool]").forEach(b=>b.onclick=()=>{ ensureAudio(); playSelect(); edTool=b.dataset.tool; edDraw(); });
+$("edAllOn").onclick=()=>{ ensureAudio(); playSelect(); ed.mask.fill("1"); edDraw(); edSave(); };
+$("edAllOff").onclick=()=>{ ensureAudio(); playSelect(); ed.mask.fill("0"); edDraw(); edSave(); };
+$("edName").addEventListener("input",()=>{ if(ed){ ed.nm=$("edName").value.slice(0,16); edSave(); } });
+function holdRepeat(btn,fn){ let t1=0,t2=0; const stop=()=>{ clearTimeout(t1); clearInterval(t2); };   // 押しっぱなしで続けて増減
+  btn.addEventListener("pointerdown",e=>{ if(btn.disabled) return; ensureAudio(); playTick(); fn(); stop(); t1=setTimeout(()=>{ t2=setInterval(()=>{ if(btn.disabled) stop(); else fn(); },70); },380); });
+  ["pointerup","pointerleave","pointercancel"].forEach(ev=>btn.addEventListener(ev,stop)); }
+holdRepeat($("edMinus"),()=>edResize(ed.n-1)); holdRepeat($("edPlus"),()=>edResize(ed.n+1));
+let edDelArm=false;
+function edArmDel(on){ edDelArm=on; $("edDel").classList.toggle("arm",on); $("edDel").textContent=on?"確定":"削除"; }
+$("edDel").onclick=()=>{ ensureAudio(); if(!ed) return;
+  if(!edDelArm){ playSelect(); edArmDel(true); return; }                         // 1回目=「確定」に変わる・2回目で削除
+  playSelect(); clearTimeout(edSaveT); myStages=myStages.filter(t=>t.id!==ed.id); if(rules.stage===ed.id){ rules.stage=DEF_RULES.stage; delete rules.cst; }
+  saveStages(); toast("ステージを削除しました"); edShowList(); };
+document.addEventListener("pointerdown",e=>{ if(edDelArm && !e.target.closest("#edDel")) edArmDel(false); },true);
+$("edDone").onclick=()=>{ ensureAudio(); playSelect(); edSave(true); edShowList(); };
+$("edBack").onclick=()=>{ ensureAudio(); playSelect(); edSave(true); ed=null; showScene("titleScene"); };
+$("stageMakeBtn").onclick=()=>{ ensureAudio(); playSelect(); openEditor(); };
+window.addEventListener("resize",()=>{ if(ed) edDraw(); });
+$("stgPickClose").onclick=()=>{ ensureAudio(); playSelect(); $("stgPickOv").classList.remove("on"); };
 $("guessClose").onclick=()=>{ ensureAudio(); playSelect(); $("guessOv").classList.remove("on"); };
 $("deathClose").onclick=()=>{ ensureAudio(); playSelect(); $("deathOv").classList.remove("on"); };
 $("seerClose").onclick=()=>{ ensureAudio(); playSelect(); $("seerOv").classList.remove("on"); };
@@ -2337,13 +2540,25 @@ function ruleFrameHTML(n,ro){
 const OPTS={ turns:TURN_OPTS, talk:TALK_OPTS, step:STEP_OPTS };
 const CHEV_L='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const CHEV_R='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-function stageFrameHTML(ro){                        // ステージ=名前・左右の切り替え・ステージの見た目
-  const st=stageOf(rules.stage), i=STAGES.indexOf(st);
+function stageFrameHTML(ro){                        // ステージ=左上に切り替え(左右+丸)・右上に「自作」・名前とN×N・見た目
+  const st=stageOf(rules.stage), i=STAGES.indexOf(st), n=stN(st);
+  const dots=STAGES.map((t,k)=>'<button class="stg-dot'+(k===i?" on":"")+'" data-dot="'+k+'" aria-label="'+esc(t.nm)+'"></button>').join("");
   return '<div class="sec-label">ステージ</div><div class="stage-box'+(ro?" ro":"")+'">'
-    +'<div class="stg-head"><button class="stg-arw" data-stg="-1" aria-label="前のステージ">'+CHEV_L+'</button>'
-    +'<div class="stg-nm">'+esc(st.nm)+'<small>'+(i+1)+' / '+STAGES.length+'</small></div>'
-    +'<button class="stg-arw" data-stg="1" aria-label="次のステージ">'+CHEV_R+'</button></div>'
+    +'<div class="stg-top"><div class="stg-nav"><div class="stg-arws"><button class="stg-arw" data-stg="-1" aria-label="前のステージ">'+CHEV_L+'</button>'
+    +'<button class="stg-arw" data-stg="1" aria-label="次のステージ">'+CHEV_R+'</button></div><div class="stg-dots">'+dots+'</div></div>'
+    +'<button class="stg-mine'+(isCustom(st)?" on":"")+'" id="stgMine">自作</button></div>'
+    +'<div class="stg-nm">'+esc(st.nm)+'<small>'+n+'×'+n+(isCustom(st)?'・自作':'')+'</small></div>'
     +'<div class="stg-view">'+stageSvg(st)+'</div></div>'; }
+function setStage(st){ rules.stage=st.id; if(isCustom(st)) rules.cst={ id:st.id, nm:st.nm, n:st.n, m:st.m }; else delete rules.cst; renderLobby(); sendSnap(); }
+/* 自作ステージを選ぶ(3列のグリッド・増えたら縦にスクロール) */
+function stageCard(st,sel){ return '<button class="stg-card'+(sel?" on":"")+'" data-cst="'+esc(st.id)+'"><span class="sc-view">'+stageSvg(st)+'</span><span class="sc-nm">'+esc(st.nm)+'</span><span class="sc-sz">'+st.n+'×'+st.n+'</span></button>'; }
+function openStagePick(){ renderStagePick(); $("stgPickOv").classList.add("on"); loadStagesAcct().then(ok=>{ if(ok && $("stgPickOv").classList.contains("on")) renderStagePick(); }); }
+function renderStagePick(){
+  const box=$("stgPick");
+  box.innerHTML= myStages.length? '<div class="stg-grid">'+myStages.map(t=>stageCard(t,t.id===rules.stage)).join("")+'</div>'
+    : '<div class="stg-empty">まだ自作ステージがありません<br><small>タイトル画面の「ステージを作る」から作れます</small></div>';
+  box.querySelectorAll("[data-cst]").forEach(b=>b.onclick=()=>{ ensureAudio(); playSelect(); const t=myStages.find(x=>x.id===b.dataset.cst); if(!t) return;
+    $("stgPickOv").classList.remove("on"); setStage(t); }); }
 function renderLobby(){
   if(!online||phaseUI!=="lobby") return;
   let h='<div class="lobby-list">';
@@ -2373,10 +2588,12 @@ function renderLobby(){
     const k=b.dataset.k, a=OPTS[k], i=Math.max(0,a.indexOf(rules[k])), j=Math.max(0,Math.min(a.length-1,i+(+b.dataset.s)));
     rules[k]=a[j]; renderLobby(); sendSnap(); });
   wireRoles($("lobbyBox"), n, ()=>{ renderLobby(); sendSnap(); });
-  $("lobbyBox").querySelectorAll("[data-stg]").forEach(b=>b.onclick=()=>{ ensureAudio(); playSelect();   // ステージの切り替え(左右・端でひと回り)
-    const i=STAGES.indexOf(stageOf(rules.stage)), j=(i+(+b.dataset.stg)+STAGES.length)%STAGES.length;
-    rules.stage=STAGES[j].id; renderLobby(); sendSnap(); });
-  $("ruleReset").onclick=()=>{ ensureAudio(); playSelect(); rules=Object.assign({},DEF_RULES); renderLobby(); sendSnap(); };
+  $("lobbyBox").querySelectorAll("[data-stg]").forEach(b=>b.onclick=()=>{ ensureAudio(); playSelect();   // ステージの切り替え(左右・端でひと回り。自作を選んでいる時は最初/最後の組み込みへ)
+    const i=STAGES.indexOf(stageOf(rules.stage)), d=+b.dataset.stg, j= i<0? (d>0?0:STAGES.length-1) : (i+d+STAGES.length)%STAGES.length;
+    setStage(STAGES[j]); });
+  $("lobbyBox").querySelectorAll("[data-dot]").forEach(b=>b.onclick=()=>{ ensureAudio(); playSelect(); setStage(STAGES[+b.dataset.dot]); });   // 丸を押しても切り替え
+  { const mb=$("stgMine"); if(mb) mb.onclick=()=>{ ensureAudio(); playSelect(); openStagePick(); }; }
+  $("ruleReset").onclick=()=>{ ensureAudio(); playSelect(); rules=Object.assign({},DEF_RULES,{ stage:rules.stage, cst:rules.cst }); renderLobby(); sendSnap(); };   // ステージは別の欄なのでそのまま
   $("lobbyBox").querySelectorAll("[data-xfer]").forEach(b=>b.onclick=()=>{ ensureAudio(); playSelect(); transferHost(b.dataset.xfer); });
   $("lobbyBox").querySelectorAll("[data-kick]").forEach(b=>b.onclick=()=>{ ensureAudio(); playSelect(); const id=b.dataset.kick;
     kickedAt[id]=Date.now(); lobby=lobby.filter(p=>p.id!==id); try{ ch.send({type:"broadcast",event:"kick",payload:{to:id}}); }catch(e){} renderLobby(); sendSnap(); });
@@ -2479,6 +2696,7 @@ function buildHelp(){
    +'<li>鷹の目　市民陣営。力はないが、毒殺人狼と同じだけ遠くまで見える</li>'
    +'<li>毒殺人狼　となりの人を毒殺できる（即殺・1ターン後に死亡・2ターン後に死亡）。毒殺した次のターンは使えない。ほかの毒殺人狼が誰かは分かる。視界はまわり8マスと、その外側の上下左右3マスずつ</li>'
    +'<li>狂人　人狼陣営。力はない。毒殺人狼とはおたがいに誰か分からない（毒殺されることもある）。占われると白</li>'
+   +'<li>濡れ衣狂人　人狼陣営。行動中に1ラウンド1回、となりの人の占い結果を逆にできる（黒なら白・白なら黒）。議論を挟むと元に戻る。占われると白</li>'
    +'<li>霊感強子　市民陣営。殺害された死体がその場に見える（ほかの人には見えない）。議論を1度はさむと消える</li>'
    +'<li>ドクター　市民陣営。視界にいる人が毒に侵されていると、コマの上に「Nターン後 死亡」と見え、となりの人の毒を治せる（1ラウンドに1回）。自分の毒だけは分からない</li>'
    +'<li>議論好き　市民陣営。ゲーム中に1度だけ、行動フェーズの「議論強制スタート」でその場から議論に入れる</li>'
@@ -2638,6 +2856,7 @@ function sgReset(){
   goTitle();                                                     // 部屋・状態・チャット・ダイアログを片付けてタイトルへ
   rules=Object.assign({},DEF_RULES); code=""; nameAsked=true; pending=null; pendWh={}; bubbles=[]; resetSel(); dbgFog=false;
   setMini(true);
+  ed=null; edArmDel(false); $("edWork").style.display="none";
 }
 function sgKill(p,cause,by,pub){ p.alive=false; p.cause=cause; p.killer=by||""; p.pub=pub!==false; }
 /* 盤面の状態を作って表示する。o.guest=参加者側で見る／o.set(G)=表示の前に状態をいじる */
@@ -2649,7 +2868,7 @@ function sgG(roles,o){
         alive:true, pub:false, cause:"", killer:"", poison:null, lastPoison:-99, lastMine:-99, lastCureRound:0, usedFTalk:false, notes:[], lb:SG_NM[i][0] })),
       moves:{}, acts:{}, whs:{}, votes:{}, ready:{}, done:{}, lastVote:null, winner:o.winner||"", deathsThisRound:[], wh:[], mines:[], corpses:[] };
   isHost=!o.guest; online=!!o.guest; hostId=o.guest? "g1" : myId;
-  if(o.stage){ const st=stageOf(o.stage); G.N=st.rows.length; G.mask=stageMask(st); G.stage=st.id; }   // 形のあるステージで見る
+  if(o.stage){ const st=stageOf(o.stage); G.N=stN(st); G.mask=stageMask(st); G.stage=st.id; }   // 形のあるステージで見る
   if(o.set) o.set(G);
   enterGame(); sgPrime(); localEnd=G.stepEnd; render();
   return G;
@@ -2797,6 +3016,22 @@ sc("追加の役職","役職：おしゃべり",()=>{ sgG(RCh); openRole(); });
 sc("追加の役職","投票集め：吊られた（投票結果）",()=>{ sgLeft=4; sgG(RVo,{ phase:"vres", turn:8, winner:"third", set:g=>{ g.winRole="voter"; g.winIds=[myId]; g.lastVote={ cnt:{ [myId]:4 }, hanged:myId, tie:false, votes:{} }; sgKill(g.players[0],"hang"); } }); sgPhaseIn("talk"); });
 sc("追加の役職","投票集め：勝ち（結果）",()=>{ sgG(RVo,{ phase:"over", turn:8, winner:"third", set:g=>{ g.winRole="voter"; g.winIds=[myId]; sgKill(g.players[0],"hang"); } }); openResult(); });
 sc("追加の役職","役職：投票集め",()=>{ sgG(RVo); openRole(); });
+const RF=["framer","wolf","villager","seer","hawk","mad"];
+sc("追加の役職","濡れ衣狂人：となりの人を選んだ（濡れ衣）",()=>{ sgAct(RF,{ pos:WPOS }); sgPop("g2"); });
+sc("追加の役職","濡れ衣狂人：濡れ衣を決めた",()=>sgAct(RF,{ pos:WPOS, set:g=>{ g.acts[myId]={ k:"frame", tg:"g2" }; } }));
+sc("追加の役職","濡れ衣狂人：このラウンド使用済み",()=>{ sgAct(RF,{ pos:WPOS, set:g=>{ g.players[0].lastFrameRound=g.round; } }); sgPop("g2"); });
+sc("追加の役職","役職：濡れ衣狂人",()=>{ sgG(RF); openRole(); });
+const SG_CST={ id:"sgcst", nm:"見本の自作", n:11, m:packMask(Array.from({length:121},(_,i)=>{ const x=i%11, y=(i/11)|0; return (Math.abs(x-5)+Math.abs(y-5)<=5 && !(x===5&&y===5))? "1":"0"; }).join("")) };
+sc("ステージ","ロビー：自作ステージを選んでいる",()=>{ sgLobby(6); rules.stage=SG_CST.id; rules.cst=SG_CST; renderLobby(); });
+sc("ステージ","ロビー：自作ステージを選ぶダイアログ",()=>{ sgLobby(6); openStagePick(); });
+sc("ステージ","自作ステージで遊ぶ（11×11）",()=>{ rules.cst=SG_CST; sgG(RS,{ stage:SG_CST.id, pos:[[5,4],[4,4],[6,4],[5,6],[3,5],[7,5]] }); });
+sc("ステージ","ステージを作る：一覧",()=>{ openEditor(); });
+sc("ステージを作る","編集中（ペン）",()=>{ openEditor(); ed={ id:"sgdemo", nm:"見本のステージ", n:9, mask:stageMask(stageOf("heart")).split(""), t:0 };
+  $("edList").style.display="none"; $("edWork").style.display="flex"; $("edName").value=ed.nm; edTool="pen"; edDraw(); });
+sc("ステージを作る","大きいステージ（60×60）",()=>{ openEditor(); ed={ id:"sgbig", nm:"大きいステージ", n:60, mask:new Array(3600).fill("1"), t:0 };
+  $("edList").style.display="none"; $("edWork").style.display="flex"; $("edName").value=ed.nm; edDraw(); });
+sc("ステージを作る","削除の確認",()=>{ openEditor(); ed={ id:"sgdemo", nm:"見本のステージ", n:7, mask:new Array(49).fill("1"), t:0 };
+  $("edList").style.display="none"; $("edWork").style.display="flex"; $("edName").value=ed.nm; edDraw(); edArmDel(true); });
 sc("追加の役職","役職：ドクター",()=>{ sgG(RD); openRole(); });
 sc("議論 & 投票","はじまり（死亡した人がいる）",()=>{ sgTalk(RV,{ set:g=>{ sgKill(g.players[3],"poison","g1"); g.deathsThisRound=["g3"]; } }); sgPhaseIn("act"); });
 sc("議論 & 投票","はじまり（死亡した人はいない）",()=>{ sgTalk(RV); sgPhaseIn("act"); });
