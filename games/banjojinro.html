@@ -86,8 +86,10 @@
   .rule-sum.err{ color:#ff8f7d; opacity:1; }
   .rule-sum{ font-size:12.5px; font-weight:700; opacity:.72; text-align:center; line-height:1.7; }
   .rule-frame.ro .stp{ visibility:hidden; }                                   /* 参加者側は見るだけ */
-  .rtgl{ width:96px; height:34px; border:1.5px solid rgba(244,239,230,.3); border-radius:999px; background:rgba(244,239,230,.1); color:var(--card); font-size:14px; font-weight:900; letter-spacing:.08em; cursor:pointer; }
-  .rtgl.on{ background:var(--gold); border-color:var(--gold); color:#3a2a06; }
+  .rtgl{ position:relative; width:56px; height:32px; padding:0; border:none; border-radius:999px; background:rgba(244,239,230,.2); cursor:pointer; transition:background .18s; }   /* ON/OFFのスイッチ(丸が左右に動く) */
+  .rtgl .knob{ position:absolute; left:3px; top:3px; width:26px; height:26px; border-radius:50%; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.35); transition:transform .18s cubic-bezier(.3,.8,.3,1); }
+  .rtgl.on{ background:var(--gold); }
+  .rtgl.on .knob{ transform:translateX(24px); }
   .rule-frame.ro .rtgl{ pointer-events:none; }
   .rule-frame .rule-col:last-child:nth-child(odd){ grid-column:1/-1; }       /* 3つ目の項目は横いっぱいの真ん中 */
   /* ステージ(ロビー): 名前・左右の切り替え・見た目 */
@@ -471,6 +473,7 @@
   .snd-btn.off .slash{ display:block; }
   #roleBtn, #memBtn{ top:12px; display:none; width:96px; justify-content:center; padding:7px 0; }
   #memBtn{ top:54px; }                                            /* 参加者=役職確認の下 */
+  #memBtn.lob{ top:12px; }                                        /* ロビーからステージを作っている間=上に何もないので右上の角 */
   #gameScene.on ~ #roleBtn, #gameScene.on ~ #memBtn, #memBtn.lob{ display:flex; }   /* 参加者=ゲーム中と、ロビーからステージを作っている間 */
   .mem-list{ display:flex; flex-direction:column; gap:6px; margin:2px 0 4px; }
   .mem-row{ display:flex; align-items:center; gap:8px; height:40px; padding:0 8px 0 12px; border-radius:10px; background:rgba(244,239,230,.07); font-size:13.5px; font-weight:800; }
@@ -2630,7 +2633,7 @@ function ruleFrameHTML(n,ro){
     +'<div class="sec-label">ルール</div><div class="rule-frame'+(ro?" ro":"")+'">'
     +row("行動ターン数","turns",rules.turns+"ターン")
     +row("議論の時間","talk",fmtT(rules.talk))+row("1手の制限時間","step",rules.step+"秒")
-    +'<div class="rule-col"><span class="rc-name">匿名投票</span><div class="rc-row"><button class="rtgl'+(rules.anon!==false?" on":"")+'" id="anonTgl">'+(rules.anon!==false?"ON":"OFF")+'</button></div></div>'+'</div>'
+    +'<div class="rule-col"><span class="rc-name">匿名投票</span><div class="rc-row"><button class="rtgl'+(rules.anon!==false?" on":"")+'" id="anonTgl" role="switch" aria-checked="'+(rules.anon!==false)+'" aria-label="匿名投票"><span class="knob"></span></button></div></div>'+'</div>'
     +(ro? "" : '<button class="rule-reset" id="ruleReset">初期設定に戻す</button>');
 }
 const OPTS={ turns:TURN_OPTS, talk:TALK_OPTS, step:STEP_OPTS };
