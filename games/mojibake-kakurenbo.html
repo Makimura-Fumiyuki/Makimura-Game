@@ -77,6 +77,7 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 .member-list{ width:100%; display:flex; flex-direction:column; gap:6px; }
 .member{ display:flex; align-items:center; gap:10px; text-align:left; background:var(--panel); border:1.5px solid var(--line); border-radius:12px; padding:8px 10px 8px 14px; font-size:14px; font-weight:700; }
 .member .dot{ width:12px; height:12px; border-radius:50%; background:var(--mag); flex:none; }
+.member .dot.mine{ width:16px; height:16px; cursor:pointer; }   /* 自分の丸は押すと色を変えられる */
 .member .nm.undef{ opacity:.42; }   /* 名前がまだ未定の人=薄く出す(待てアート/クッKeyと同じ) */
 .member .you{ font-size:11px; font-weight:700; color:#fff; background:var(--ink); padding:2px 8px; border-radius:6px; }
 .member .nm{ flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -513,6 +514,7 @@ button.dd{ text-align:left; min-width:96px; }
   </div>
 </div>
 
+<input type="color" id="colorPick" style="position:fixed; left:-60px; top:0; width:14px; height:14px; opacity:0; pointer-events:none;">
 <div id="chatBox">
   <div class="chat-pop" id="chatPop"></div>
 <div id="stampBar">
@@ -707,7 +709,7 @@ let playSet=new Set();                                       // ゲームを始�
 function gameMembers(){ return members.filter(m=>!specSet.has(m.id)); }   // ★ゲームに参加している人(観戦者を除く)
 const amHider=()=>!spectating&&(soloMode||!online||seekerId!==myId);   // ★観戦者は化ける側ではない
 const soloOK=()=>isHost()&&members.length<2&&stageKind==="hub"&&cpuN>=1;   // ハブのステージでCPUが1人以上なら、1人でも始められる
-function showScene(id){ document.querySelectorAll(".scene").forEach(s=>s.classList.toggle("on",s.id===id)); $("chatBox").classList.toggle("on", id==="lobbyScene"||id==="gameScene"); $("memBtn").style.display=(id==="lobbyScene"||id==="gameScene")?"":"none"; }
+function showScene(id){ document.querySelectorAll(".scene").forEach(s=>s.classList.toggle("on",s.id===id)); if(id!=="lobbyScene") lobSeen=null; $("chatBox").classList.toggle("on", id==="lobbyScene"||id==="gameScene"); $("memBtn").style.display=(id==="lobbyScene"||id==="gameScene")?"":"none"; }
 /* 自前プルダウン(項目ごとにフォント/太さを当てて表示。ネイティブselectはmacOS等で項目の書体を変えられない) */
 const DDS={};
 function mkDD(id,items,onChange){ DDS[id]={items,v:0,onChange}; $(id).addEventListener("click",e=>{ e.stopPropagation(); openDD(id); }); ddSet(id,0); }
@@ -912,6 +914,7 @@ function hostAct(a){
   if(online && a.type!=="imgreq" && !gameMembers().some(m=>m.id===from)) return;   // ★観戦者の操作は受け付けない
 
   switch(a.type){
+    case "color": { if(/^#[0-9a-f]{6}$/i.test(a.c||"")){ colors[from]=a.c; renderMembers(); sendSnap(); } break; }   // 自分の色を変えた(2026-10-02)
     case "upd": { if(phase!=="hide"&&phase!=="swap") break; let h=hiders.find(x=>x.id===from); if(!h){ h={ id:from, name:nameOf(from), cpu:false, found:false, likes:0, angry:0 }; hiders.push(h); if(from!==myId) makeHider(h); } if(from!==myId){ Object.assign(h,a.h); h.name=nameOf(from); styleHider(h); } break; }
     case "ready": { if(phase!=="hide") break; if(a.h){ let h=hiders.find(x=>x.id===from); if(!h){ h={ id:from, name:nameOf(from), cpu:false, found:false, likes:0, angry:0 }; hiders.push(h); if(from!==myId) makeHider(h); } if(from!==myId){ Object.assign(h,a.h); h.name=nameOf(from); styleHider(h); } }
       if(a.on) readyIds.add(from); else readyIds.delete(from); checkAllReady(); break; }
@@ -974,8 +977,18 @@ $("nameGo").addEventListener("click",()=>{
 });
 $("nameIn").addEventListener("keydown",e=>{ if(e.key==="Enter") $("nameGo").click(); });
 const PEN_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>';
+/* ロビーの参加/退出のお知らせ(2026-10-02・盤上人狼と同じ)。名前を決めた瞬間に「◯◯が参加」・抜けたら「◯◯が退出」。入った時にいた人は出さない */
+let lobSeen=null;
+function lobbyAnnounce(){ if(!online||!$("lobbyScene").classList.contains("on")) return; const cur={}; members.forEach(m=>{ cur[m.id]=m.name||""; });
+  if(lobSeen){ const say=t=>{ addSys(t); toast(t); };
+    Object.keys(cur).forEach(id=>{ if(id!==myId && cur[id] && !lobSeen[id]) say(cur[id]+"が参加"); });
+    Object.keys(lobSeen).forEach(id=>{ if(id!==myId && !(id in cur) && lobSeen[id]) say(lobSeen[id]+"が退出"); }); }
+  lobSeen=cur; }
+/* 自分の色(ロビーの丸を押すとカラーパレット)。オーナーが割り当て表(colors)に入れて全員に配る */
+function setMyColor(c){ if(!/^#[0-9a-f]{6}$/i.test(c)) return; colors[myId]=c; renderMembers(); act("color",{c}); }
+$("colorPick").addEventListener("input",e=>setMyColor(e.target.value));
 function renderMembers(){
-  renderRules(); renderMemberOv();
+  renderRules(); renderMemberOv(); lobbyAnnounce();
   const list=$("memberList"); list.innerHTML="";
   const gm0=gameMembers(); const arr=gm0.length?gm0:[{id:myId,name:myName,host:true}];
   arr.forEach(m=>{
@@ -983,13 +996,15 @@ function renderMembers(){
     const me=m.id===myId&&online;   // 自分の名前=押すと名前を変えられる
     row.innerHTML='<span class="dot"></span><span class="nm'+(m.name?"":" undef")+(me?" mine":"")+'"></span>'+(me?'<span class="nm-pen" aria-label="名前を変える">'+PEN_SVG+'</span>':"")+(m.id===hostId?'<span class="host">オーナー</span>':"")+(m.id===myId?'<span class="you">じぶん</span>':"")
       +(isHost()&&m.id!==myId?'<button class="mb give" data-id="'+m.id+'">オーナー譲渡</button><button class="mb kick" data-id="'+m.id+'">追放</button>':"");
-    row.querySelector(".dot").style.background=colorOf(m.id);
+    row.querySelector(".dot").style.background=colorOf(m.id); if(me){ const d=row.querySelector(".dot"); d.classList.add("mine"); d.id="myDot"; d.title="色を変える"; }
     row.querySelector(".nm").textContent=dispName(m);
     list.appendChild(row);
   });
   list.querySelectorAll(".give").forEach(b=>b.addEventListener("click",()=>{ playSelect(); transferHost(b.dataset.id); }));
   list.querySelectorAll(".kick").forEach(b=>b.addEventListener("click",()=>{ playSelect(); kickMember(b.dataset.id); }));
   list.querySelectorAll(".nm.mine,.nm-pen").forEach(el=>el.addEventListener("click",()=>{ playSelect(); openNameDlg(); }));
+  { const md=$("myDot"); if(md) md.onclick=()=>{ playSelect(); const cp=$("colorPick"); cp.value=colorOf(myId);   // ★自分の色の丸を押すとカラーパレット(丸の近くに開く)
+      const r=md.getBoundingClientRect(); cp.style.left=Math.round(r.left)+"px"; cp.style.top=Math.round(r.bottom+2)+"px"; cp.click(); }; }
   $("ruleFrame").classList.toggle("locked",!isHost()); $("ruleFrame2").classList.toggle("locked",!isHost()); $("ruleReset").style.display=isHost()?"":"none"; $("ruleNote").style.display=isHost()?"none":"";
   const n=arr.length; const so=soloOK();
   $("startBtn").disabled=!(isHost()&&((n>=2&&(stageKind!=="photo"||photoImg))||so)); $("startBtn").textContent=so?"1人でおためし":"はじめる";
