@@ -1090,9 +1090,9 @@ function readPeerName(){   // presenceからあいての名前を取り込む
   }
   function playStamp(i){   // スタンプ別の音(0泣く / 1うっとり / 2爆笑)
     if(!actx) return; const t=actx.currentTime;
-    if(i===0){ note(523,t,0.2,0.3,"sine"); note(392,t+0.15,0.22,0.3,"sine"); note(300,t+0.32,0.36,0.26,"sine"); }
-    else if(i===1){ note(523,t,0.34,0.22,"sine"); note(784,t+0.11,0.38,0.24,"sine"); note(1047,t+0.24,0.62,0.2,"sine"); note(1568,t+0.34,0.55,0.1,"triangle"); note(2349,t+0.46,0.5,0.06,"sine"); }
-    else{ const seq=[900,680,850,640,800,600,760,560]; seq.forEach((f,k)=>note(f, t+k*0.072, 0.07, 0.26, "triangle")); note(400, t+seq.length*0.072, 0.16, 0.24, "triangle"); }
+    if(i===0){ note(523,t,0.2,0.15,"sine"); note(392,t+0.15,0.22,0.15,"sine"); note(300,t+0.32,0.36,0.13,"sine"); }
+    else if(i===1){ note(523,t,0.34,0.11,"sine"); note(784,t+0.11,0.38,0.12,"sine"); note(1047,t+0.24,0.62,0.1,"sine"); note(1568,t+0.34,0.55,0.05,"triangle"); note(2349,t+0.46,0.5,0.03,"sine"); }
+    else{ const seq=[900,680,850,640,800,600,760,560]; seq.forEach((f,k)=>note(f, t+k*0.072, 0.07,0.13, "triangle")); note(400, t+seq.length*0.072, 0.16,0.12, "triangle"); }
   }
 
   /* ---------- 進行 ---------- */
@@ -2611,7 +2611,7 @@ setMini(true);   /* ★毎回「チャット欄 表示」の畳んだ状態で�
       if(typeof stampMuted!=="undefined" && stampMuted) return;
       if(!stampTTSVoice){ const vs=speechSynthesis.getVoices()||[]; stampTTSVoice=vs.find(v=>/ja/i.test(v.lang))||null; }
       if(!stampTTSWarm){ stampTTSWarm=true; speechSynthesis.onvoiceschanged=()=>{ const v2=speechSynthesis.getVoices()||[]; stampTTSVoice=v2.find(v=>/ja/i.test(v.lang))||stampTTSVoice; }; }
-      const u=new SpeechSynthesisUtterance(STAMP_WORDS[Math.max(0,Math.min(2,i|0))]); u.lang="ja-JP"; u.rate=1.05; u.pitch=1.1; u.volume=1;
+      const u=new SpeechSynthesisUtterance(STAMP_WORDS[Math.max(0,Math.min(2,i|0))]); u.lang="ja-JP"; u.rate=1.05; u.pitch=1.1; u.volume=0.5;
       if(stampTTSVoice) u.voice=stampTTSVoice;
       if(speechSynthesis.speaking||speechSynthesis.pending) speechSynthesis.cancel();
       speechSynthesis.speak(u);

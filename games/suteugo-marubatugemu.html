@@ -1444,7 +1444,7 @@ window.addEventListener("keydown",e=>{
   if(!k) return; e.preventDefault(); ensureAudio(); onShiftBtn(k);
 });
 window.addEventListener("pointerdown",ensureAudio,{passive:true});
-window.addEventListener("pagehide",()=>{ if(online&&started) send("bye",{id:myId,spec:spectating?1:0}); });
+/* ★2026-10-02: pagehideで退出(bye)を送るのはやめた。supabase-jsはpagehideで自分から通信を切りpageshowでつなぎ直すので、スマホでアプリを切り替えただけで「退出」あつかいになり部屋から抜けさせられていた。本当に閉じた時は在室(presence)が消えるので、いつもの猶予のあとで退出になる */
 
 /* ===== チャット(2026-09-10。オンラインのみ。スタンプもこの枠の中) ===== */
 const playChat=()=>{ note(700,700,.06,"sine",.10); note(980,980,.07,"sine",.08,.05); };
@@ -1485,9 +1485,9 @@ let stampTTSVoice=null, stampTTSWarm=false;
 const meLabel=()=>(mode==="local")?"自分":(myAcctName()||"あなた");
 function playStamp(i){                              /* 0泣く / 1うっとり / 2爆笑 */
   if(!actx||!seOn) return;
-  if(i===0){ note(523,523,.20,"sine",.30,0); note(392,392,.22,"sine",.30,.15); note(300,300,.36,"sine",.26,.32); }
-  else if(i===1){ note(523,523,.34,"sine",.22,0); note(784,784,.38,"sine",.24,.11); note(1047,1047,.62,"sine",.20,.24); note(1568,1568,.55,"triangle",.10,.34); note(2349,2349,.50,"sine",.06,.46); }
-  else{ const seq=[900,680,850,640,800,600,760,560]; seq.forEach((f,k)=>note(f,f,.07,"triangle",.26,k*.072)); note(400,400,.16,"triangle",.24,seq.length*.072); }
+  if(i===0){ note(523,523,.20,"sine",.15,0); note(392,392,.22,"sine",.15,.15); note(300,300,.36,"sine",.13,.32); }
+  else if(i===1){ note(523,523,.34,"sine",.11,0); note(784,784,.38,"sine",.12,.11); note(1047,1047,.62,"sine",.1,.24); note(1568,1568,.55,"triangle",.05,.34); note(2349,2349,.50,"sine",.03,.46); }
+  else{ const seq=[900,680,850,640,800,600,760,560]; seq.forEach((f,k)=>note(f,f,.07,"triangle",.13,k*.072)); note(400,400,.16,"triangle",.12,seq.length*.072); }
 }
 function speakStamp(i){                             /* 端末に日本語音声があれば読み上げる */
   try{
@@ -1495,7 +1495,7 @@ function speakStamp(i){                             /* 端末に日本語音声�
     if(!stampTTSVoice){ const vs=speechSynthesis.getVoices()||[]; stampTTSVoice=vs.find(v=>/ja/i.test(v.lang))||null; }
     if(!stampTTSWarm){ stampTTSWarm=true; speechSynthesis.onvoiceschanged=()=>{ const v2=speechSynthesis.getVoices()||[]; stampTTSVoice=v2.find(v=>/ja/i.test(v.lang))||stampTTSVoice; }; }
     const u=new SpeechSynthesisUtterance(STAMP_WORDS[Math.max(0,Math.min(2,i|0))]);
-    u.lang="ja-JP"; u.rate=1.05; u.pitch=1.1; u.volume=1;
+    u.lang="ja-JP"; u.rate=1.05; u.pitch=1.1; u.volume=0.5;
     if(stampTTSVoice) u.voice=stampTTSVoice;
     if(speechSynthesis.speaking||speechSynthesis.pending) speechSynthesis.cancel();
     speechSynthesis.speak(u);

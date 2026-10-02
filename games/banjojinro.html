@@ -2789,9 +2789,9 @@ function renderLobby(){
 const STAMP_SVGS=['😭','😍','🤣'];   // このスタンプだけは牧村さんの明示指示で絵文字を採用
 function playStamp(i){
   if(!actx) return; const t=T0();
-  if(i===0){ note(523,t,0.2,0.3,"sine"); note(392,t+0.15,0.22,0.3,"sine"); note(300,t+0.32,0.36,0.26,"sine"); }
-  else if(i===1){ note(523,t,0.34,0.22,"sine"); note(784,t+0.11,0.38,0.24,"sine"); note(1047,t+0.24,0.62,0.2,"sine"); note(1568,t+0.34,0.55,0.1,"triangle"); }
-  else{ const sq=[900,680,850,640,800,600,760,560]; sq.forEach((f,k)=>note(f,t+k*0.072,0.07,0.26,"triangle")); note(400,t+sq.length*0.072,0.16,0.24,"triangle"); }
+  if(i===0){ note(523,t,0.2,0.15,"sine"); note(392,t+0.15,0.22,0.15,"sine"); note(300,t+0.32,0.36,0.13,"sine"); }
+  else if(i===1){ note(523,t,0.34,0.11,"sine"); note(784,t+0.11,0.38,0.12,"sine"); note(1047,t+0.24,0.62,0.1,"sine"); note(1568,t+0.34,0.55,0.05,"triangle"); }
+  else{ const sq=[900,680,850,640,800,600,760,560]; sq.forEach((f,k)=>note(f,t+k*0.072,0.07,0.13,"triangle")); note(400,t+sq.length*0.072,0.16,0.12,"triangle"); }
 }
 let stampMuted=false;   // 毎回ミュートOFFで始める(保存しない)
 const SKULL_SVG='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2C7 2 3.5 5.6 3.5 10.2c0 2.6 1.2 4.6 3 5.9V19c0 .8.6 1.4 1.4 1.4h1.4v1.1h1.6v-1.1h2.2v1.1h1.6v-1.1h1.4c.8 0 1.4-.6 1.4-1.4v-2.9c1.8-1.3 3-3.3 3-5.9C20.5 5.6 17 2 12 2zM8.6 14.3a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm6.8 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4zM12 17.6l-1.2-2.2h2.4z"/></svg>';   // 墓地(死者どうし)の印
@@ -2815,7 +2815,7 @@ function speakStamp(i){
     if(!window.speechSynthesis||!seOn||stampMuted||document.hidden) return;
     if(!stampTTSVoice){ const vs=speechSynthesis.getVoices()||[]; stampTTSVoice=vs.find(v=>/ja/i.test(v.lang))||null; }
     if(!stampTTSWarm){ stampTTSWarm=true; speechSynthesis.onvoiceschanged=()=>{ const v2=speechSynthesis.getVoices()||[]; stampTTSVoice=v2.find(v=>/ja/i.test(v.lang))||stampTTSVoice; }; }
-    const u=new SpeechSynthesisUtterance(STAMP_WORDS[Math.max(0,Math.min(2,i|0))]); u.lang="ja-JP"; u.rate=1.05; u.pitch=1.1;
+    const u=new SpeechSynthesisUtterance(STAMP_WORDS[Math.max(0,Math.min(2,i|0))]); u.volume=0.5; u.lang="ja-JP"; u.rate=1.05; u.pitch=1.1;
     if(stampTTSVoice) u.voice=stampTTSVoice;
     if(speechSynthesis.speaking||speechSynthesis.pending) speechSynthesis.cancel();
     speechSynthesis.speak(u);
@@ -3309,7 +3309,7 @@ const _render=render;
 render=function(){ if((isHost||debug)&&G) onState(); _render(); };
 window.addEventListener("pointerdown",ensureAudio,{passive:true});
 /* タブを閉じた/別ページへ移った=すぐに退出を知らせる(5分の猶予を待たせない)。一瞬の通信切れはpresenceの猶予で吸収する */
-window.addEventListener("pagehide",e=>{ if(ch && !e.persisted){ try{ ch.send({type:"broadcast",event:"bye",payload:{id:myId}}); }catch(e2){} } });   // ★一時的に隠れただけ(戻ってくる可能性がある)なら退出を送らない
+/* ★2026-10-02: pagehideで退出(bye)を送るのはやめた。supabase-jsはpagehideで自分から通信を切りpageshowでつなぎ直すので、スマホでアプリを切り替えただけで「退出」あつかいになり部屋から抜けさせられていた。本当に閉じた時は在室(presence)が消えるので、いつもの猶予のあとで退出になる */
 window.addEventListener("pageshow",e=>{ if(e.persisted && ch && online){ try{ if(isHost) sendSnap(); else ch.send({type:"broadcast",event:"hello",payload:{id:myId,n:myName}}); }catch(e2){} } });
 renderSnd();
 if(/[?&]scenes=1/.test(location.search)) setTimeout(openGallery,60);   // ★?scenes=1 でシーン一覧から始める
