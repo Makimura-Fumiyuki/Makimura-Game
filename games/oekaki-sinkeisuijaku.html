@@ -29,7 +29,7 @@
     ① 3人以上いれば「お題を出した本人以外」から2人を選ぶ(1人あたりの上限=ceil(2×お題数÷人数)で均等にしながら、ランダムに何回かやり直す)
     ② ①が作れない時(2人プレイなど)は本人も含めて選ぶ
     ③ 同じお題の2枚を同じ人が描くことはない
-    ④ それでも枚数がそろわない人には「フェイク」(お題のない自由枠・どのカードともペアにならない)を足して全員の枚数を最大の人にそろえる
+    ④ (廃止 2026-10-07)枚数がそろわない人には「フェイク」(お題のない自由枠・どのカードともペアにならない)を足して全員の枚数を最大の人にそろえる
     ※「1人◯個」でお題を出すので、ふつうは①の時点で全員ぴったり同じ枚数になり、フェイクは出ない
        (フェイクが出るのは、途中で抜けた人がいる等で数がずれた時)
     ※途中で抜けた人の描き終わっていないカードは取り除く。相方を失ったお題の1枚は、ペアのできないカード(フェイクと同じ扱い)になる
@@ -203,7 +203,7 @@
      自分の描く絵を横に並べる。まん中の1枚=いま描いている絵・ほかは左右に小さく、ぼかして置く(押すとまん中に来る) */
   #drawBox{ display:none; width:100%; flex-direction:column; align-items:center; gap:10px; }
   #drawBox.on{ display:flex; }
-  .dr-topic{ font-size:13px; font-weight:800; color:var(--sub); letter-spacing:.06em; min-height:19px; font-variant-numeric:tabular-nums; }
+  .dr-topic{ width:var(--F,320px); text-align:right; margin:-6px 0 -9px; font-size:13px; font-weight:800; color:var(--sub); letter-spacing:.06em; min-height:19px; font-variant-numeric:tabular-nums; }   /* 「N / M」=絵の枠の外の右上(2026-10-07) */
   .dr-word{ font-size:clamp(22px,6.4vw,30px); font-weight:900; letter-spacing:.06em; text-align:center; line-height:1.35; padding:0 8px; max-width:var(--uiw);
     background:linear-gradient(transparent 58%, rgba(255,95,162,.45) 58%, rgba(255,95,162,.45) 92%, transparent 92%); transform:rotate(-1.5deg); word-break:break-all; }
   .dr-word.free{ font-size:clamp(18px,5vw,23px); background:linear-gradient(transparent 58%, rgba(58,134,255,.35) 58%, rgba(58,134,255,.35) 92%, transparent 92%); }
@@ -281,10 +281,10 @@
   .card .cap{ position:absolute; left:0; right:0; bottom:0; padding:1px 4px 2px; font-size:11px; font-weight:900; color:var(--ink);
     text-align:center; line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:none; border-top:2px solid var(--ink); opacity:.95; }
   /* 結果のあと=カードの左上に描いた人の名前 */
-  .card .drn{ position:absolute; left:4px; top:4px; max-width:calc(100% - 8px); display:none; align-items:center; gap:3px; z-index:2;
-    font-size:10px; font-weight:900; color:var(--ink); background:rgba(255,255,255,.9); border:1.5px solid var(--ink); border-radius:999px; padding:0 6px 1px 3px; line-height:15px; }
-  .card .drn i{ width:8px; height:8px; border-radius:50%; flex:none; border:1px solid var(--ink); }
-  .card .drn b{ font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  .card .drn{ position:absolute; left:4px; top:4px; max-width:calc(100% - 8px); height:18px; display:none; align-items:center; gap:3px; z-index:2; box-sizing:border-box;
+    font-size:10px; font-weight:900; line-height:1; color:var(--ink); background:var(--dc,#fff); border:1.5px solid #fff; border-radius:999px; padding:0 6px; }   /* 背景=描いた人の色・ふちは白 */
+  .card .drn svg{ width:10px; height:10px; flex:none; display:block; }
+  .card .drn b{ display:block; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
   .over-board .card .drn{ display:flex; }
   .card.got .cap, .card.showcap .cap{ display:block; }
   .card.got .cap{ border-top:none; }   /* そろえた人の色の枠が出ている時は、お題の帯の上の黒い線は出さない */
@@ -458,7 +458,6 @@
   #zoomBox .magi{ width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; color:var(--ink); cursor:pointer; }
   #zoomBox .magi svg{ width:19px; height:19px; }
   #zoomBox .zb:disabled{ opacity:.3; cursor:default; box-shadow:none; }
-  #zoomBox .magi.off{ opacity:.3; pointer-events:none; }
   #gameScene.grab{ cursor:grab; } #gameScene.panning{ cursor:grabbing; }
   .stamp-fly .s-emoji{ font-size:80px; line-height:1; }
   .stamp-fly .s-name{ margin-top:2px; font-size:15px; font-weight:900; color:var(--ink); white-space:nowrap; letter-spacing:.04em; }   /* 白い画用紙の上なので名前は墨色 */
@@ -577,13 +576,13 @@
 
   <div id="drawBox">
     <div class="dr-main">
-      <div class="dr-topic" id="drCount"></div>
       <div class="dr-word" id="drWord"></div>
+      <div class="dr-topic" id="drCount"></div>
       <div class="dr-strip t-pen" id="drStrip"></div>
       <div class="tools">
         <div class="ink-grid" id="inkRow"></div>
         <div class="ink-grid ink-recent" id="inkRecent"></div>
-        <div class="tool-row" id="toolRow"><button class="tb" type="button" data-tool="pen" aria-label="ペン" title="ペン"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button><button class="tb" type="button" data-tool="erase" aria-label="消しゴム" title="消しゴム"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(45 12 12)"><path d="M7 2.5h10V14H7z M9.7 5.2v6.1h4.6V5.2z" fill="currentColor" fill-rule="evenodd" stroke="none"/><path d="M7 14v4.6a3 3 0 0 0 3 3h4a3 3 0 0 0 3-3V14z" stroke-width="1.8"/></g></svg></button><button class="tb" type="button" data-tool="fill" aria-label="塗りつぶし" title="塗りつぶし"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 13)"><path d="M5.5 9.5c0-5 13-5 13 0" stroke-width="1.7"/><rect x="5.5" y="9" width="13" height="11.5" rx="2.6"/><path d="M5.5 14.5h13v3.4a2.6 2.6 0 0 1-2.6 2.6H8.1a2.6 2.6 0 0 1-2.6-2.6z" fill="currentColor" stroke="none"/></g></svg></button><button class="tb" type="button" data-tool="rect" aria-label="四角" title="四角"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="1"/></svg></button><button class="tb" type="button" data-tool="oval" aria-label="丸" title="丸"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/></svg></button><span class="tb-gap"></span><button class="tb" type="button" id="undoBtn" aria-label="ひとつ戻す" title="ひとつ戻す（Ctrl+Z）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button><button class="tb" type="button" id="redoBtn" aria-label="やり直す" title="やり直す（Ctrl+Shift+Z）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button><button class="tb" type="button" id="clearBtn" aria-label="全部消す" title="全部消す"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/></svg></button></div>
+        <div class="tool-row" id="toolRow"><button class="tb" type="button" data-tool="pen" aria-label="ペン" title="ペン"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button><button class="tb" type="button" data-tool="erase" aria-label="消しゴム" title="消しゴム"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(45 12 12)"><rect x="7.5" y="3" width="9" height="18" rx="1.2"/><path d="M7.5 10.5h9M7.5 13.5h9"/></g></svg></button><button class="tb" type="button" data-tool="fill" aria-label="塗りつぶし" title="塗りつぶし"><svg viewBox="0 0 24 24" preserveAspectRatio="none" style="height:23px" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11l7-7 7 7-7 7z"/><path d="M5 11h14"/><path d="M20 15s2 2.6 2 4a2 2 0 0 1-4 0c0-1.4 2-4 2-4z"/></svg></button><button class="tb" type="button" data-tool="rect" aria-label="四角" title="四角"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="1" fill="currentColor"/></svg></button><button class="tb" type="button" data-tool="oval" aria-label="丸" title="丸"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8" fill="currentColor"/></svg></button><span class="tb-gap"></span><button class="tb" type="button" id="undoBtn" aria-label="ひとつ戻す" title="ひとつ戻す（Ctrl+Z）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button><button class="tb" type="button" id="redoBtn" aria-label="やり直す" title="やり直す（Ctrl+Shift+Z）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button><button class="tb" type="button" id="clearBtn" aria-label="全部消す" title="全部消す"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/></svg></button></div>
         <div class="opt-row">
           <div class="sz-row" id="szRow"></div>
           <div class="op-box" title="不透明度"><input type="range" id="opRange" min="10" max="100" step="10" value="100" aria-label="不透明度"><span class="op-v" id="opVal">100%</span></div>
@@ -851,11 +850,8 @@ function buildCards(){
   const cards=[]; let k=0;
   const mk=(tp,dr)=>{ cards.push({ id:G.gid+"-"+(k++), tp, dr, q:0, done:false, gone:false }); };
   if(a){ G.tp.forEach((t,i)=>{ mk(i,a.res[i][0]); mk(i,a.res[i][1]); }); }
-  /* ④ 枚数がいちばん多い人にそろうまで、足りない人にフェイク(お題なし・どれともペアにならない)を足す */
-  const load={}; ids.forEach(i=>load[i]=0); cards.forEach(c=>load[c.dr]++);
-  const mx=Math.max(0,...ids.map(i=>load[i]));
-  ids.forEach(i=>{ for(let j=load[i];j<mx;j++) mk(-1,i); });
-  /* 1人ぶんの描く順番はシャッフル(フェイクもまぜる) */
+  /* ★フェイク(お題なしの絵)は2026-10-07に廃止。1人◯個のお題なので、ふつうは全員ぴったり同じ枚数になる */
+  /* 1人ぶんの描く順番はシャッフル */
   ids.forEach(i=>{ shuffle(cards.filter(c=>c.dr===i)).forEach((c,qi)=>c.q=qi); });
   G.cards=cards;
 }
@@ -881,7 +877,10 @@ function forceDrawEnd(){                      // 保険の締め切り: 届い�
 }
 /* --- 神経衰弱 --- */
 function startMatch(){
-  const live=G.cards.filter(c=>!c.gone);
+  /* ★ペアにならないカードは盤に出さない(2026-10-07・フェイクの仕様をなくした)。途中で抜けた人の相方・同じお題が奇数枚の余りは取り除く */
+  const keep={}, live=[];
+  G.cards.filter(c=>!c.gone).forEach(c=>{ const k=cardKey(c); if(!k) return; (keep[k]=keep[k]||[]).push(c); });
+  Object.values(keep).forEach(a=>{ a.slice(0, a.length-(a.length%2)).forEach(c=>live.push(c)); });
   G.board=shuffle(live.map(c=>c.id));
   /* ペアは「お題の文字が同じ2枚」(別の人がたまたま同じお題を出したら、その4枚はどの2枚でもペア=2組ぶん)。
      余った1枚(相方を失った・同じお題が奇数枚)はフェイクと同じく、ペアにならないまま残る */
@@ -1011,13 +1010,13 @@ function paintOp(ctx,s2,sc){
   if(k==="fill"){ if(pp.length>=2) floodFill(ctx,pp[0],pp[1],s2.col||"#000000",a,sc); return; }
   ctx.save();
   ctx.globalAlpha= k==="erase"? 1 : a;
-  ctx.strokeStyle= k==="erase"? "#fff" : (s2.col||"#000000");
+  ctx.strokeStyle= k==="erase"? "#fff" : (s2.col||"#000000"); ctx.fillStyle=s2.col||"#000000";
   ctx.lineWidth=(s2.w||W_DEF)*(k==="erase"?ERASE_MUL:1)*sc; ctx.lineCap="round"; ctx.lineJoin= k==="rect"? "miter" : "round";
   if(k==="rect"||k==="oval"){
     if(pp.length>=4){ const x0=(pp[0]+.5)*sc, y0=(pp[1]+.5)*sc, x1=(pp[2]+.5)*sc, y1=(pp[3]+.5)*sc; ctx.beginPath();
       if(k==="rect") ctx.rect(Math.min(x0,x1),Math.min(y0,y1),Math.abs(x1-x0),Math.abs(y1-y0));
       else ctx.ellipse((x0+x1)/2,(y0+y1)/2,Math.abs(x1-x0)/2,Math.abs(y1-y0)/2,0,0,Math.PI*2);
-      ctx.stroke(); }
+      ctx.fill(); }   // 四角・丸は塗りつぶし(2026-10-07)
     ctx.restore(); return;
   }
   if(pp.length>=2){
@@ -1216,7 +1215,7 @@ function gaugeD(F){                           // 絵のふち(角丸の四角)�
     +" H"+(b-r)+" A"+r+" "+r+" 0 0 0 "+b+" "+(b-r)+" V"+(a+r)+" A"+r+" "+r+" 0 0 0 "+(b-r)+" "+a+" Z";   // 2026-10-07: 減る向きを右回りに(線は左回りに引く)
 }
 function layoutStrip(){
-  const F=stripF(), st=$("drStrip"); st.style.setProperty("--F",F+"px");
+  const F=stripF(), st=$("drStrip"); st.style.setProperty("--F",F+"px"); $("drawBox").style.setProperty("--F",F+"px");
   if(strip.gF!==F){ strip.gF=F; const d=gaugeD(F); strip.els.forEach(el=>{ const g=el.querySelector(".gauge"); if(!g) return; g.setAttribute("viewBox","0 0 "+F+" "+F); g.querySelectorAll("path").forEach(p=>p.setAttribute("d",d)); }); }
   const step=F*0.5+F*SIDE_SC*0.5+18;           // となりの絵は、まん中の絵のすぐ右(左)に小さく
   strip.els.forEach((el,i)=>{ const d=i-strip.cur;
@@ -1288,7 +1287,7 @@ function endStroke(cv2){
   const s=stroke; stroke=null;
   const flat=(s.k==="rect"||s.k==="oval") && s.p[0]===s.p[2] && s.p[1]===s.p[3];
   if(flat){ const c=s.cv.getContext("2d"); c.drawImage(baseCv,0,0); }
-  else { (drafts[s.cid]=drafts[s.cid]||[]).push({ k:s.k, col:s.col, a:s.a, w:s.w, p:s.p.slice() }); redo[s.cid]=[]; if(s.k!=="erase") pushRecent(s.col); }
+  else { (drafts[s.cid]=drafts[s.cid]||[]).push({ k:s.k, col:s.col, a:s.a, w:s.w, p:s.p.slice() }); redo[s.cid]=[]; }
   updateTools();
   if(strip.pendSeg>=0){ const ps=strip.pendSeg; strip.pendSeg=-1; if(ps!==strip.cur){ setFocus(ps); playTick(); } }
 }
@@ -1310,6 +1309,7 @@ function wireCanvas(cv2,i){
     const shape=tool==="rect"||tool==="oval";
     stroke={ k:tool, col:penCol, a:tool==="erase"?1:penA, w:penW(), p:shape?[q.x,q.y,q.x,q.y]:[q.x,q.y], cv:cv2, cid:curCid, sx:q.x, sy:q.y, lp:q, shift:e.shiftKey };
     preview(); resetClear();
+    if(tool!=="erase") pushRecent(penCol);      // 最近使った色は押した瞬間に入れる(2026-10-07)
   });
   cv2.addEventListener("pointermove",e=>{
     moveGhost(e,cv2,i);
@@ -1502,7 +1502,7 @@ function renderMatch(){
     const word = c&&c.tp>=0? G.tp[c.tp].t : "お題なし";
     const capTx = (tk||over||(debug&&dbgShow))? esc(word) : "";
     if(cap._tx!==capTx){ cap._tx=capTx; cap.innerHTML=capTx; }
-    if(over && c && !el._drn){ const dp=pById(c.dr); el._drn=1; el.querySelector(".drn").innerHTML='<i style="background:'+(dp?dp.c:"#ccc")+'"></i><b>'+esc(dp?dp.n:"")+'</b>'; }   // 描いた人の名前=カードの左上
+    if(over && c && !el._drn){ const dp=pById(c.dr); el._drn=1; const dn=el.querySelector(".drn"); dn.style.setProperty("--dc",dp?dp.c:"#ddd"); dn.innerHTML=PEN_SVG+'<b>'+esc(dp?dp.n:"")+'</b>'; }   // 描いた人の名前=カードの左上
     cap.style.background = owner? owner.c : "#fff";
     el.classList.toggle("dim", over || !!tk);
     if(up) paintCard(cid);
@@ -2230,8 +2230,7 @@ function buildHelp(){
    +'<ul class="h-list"><li>お題づくり　お題を考える</li><li>おえかき　割り振られたお題を、時間内に全部描く（全員いっせいに。時間がたつと次の絵へ自動で移る）</li><li>神経衰弱　1回に2枚めくる。同じお題ならGET、もう一度めくれる</li></ul>'
    +'<div class="h-sec">勝ち負け</div>'
    +'<p>ペアが全部そろったらおしまい。いちばん多くGETした人の勝ち</p>'
-   +'<div class="h-sec">小ばなし</div>'
-   +'<p>どのカードともペアにならない絵が、まぎれていることもあるかも...</p>';
+''+'';
 }
 $("helpBtn").onclick=()=>{ ensureAudio(); playSelect(); buildHelp(); $("helpOv").classList.add("on"); };
 $("helpClose").onclick=()=>{ ensureAudio(); playSelect(); $("helpOv").classList.remove("on"); };
@@ -2451,7 +2450,6 @@ sc("おえかき","描いている途中",()=>{ sgLeft=100; sgDraw(); if(curCid)
 sc("おえかき","4枚描く（1枚目）",()=>{ sgLeft=110; sgDraw({ k:2 }); });
 sc("おえかき","4枚描く（2枚目に自動で移った）",()=>{ sgLeft=85; sgDraw({ k:2, set:g=>{ const c=myCards(myId)[0]; drafts[c.id]=autoArt(G.tp[c.tp].t); } }); });
 sc("おえかき","4枚描く（最後の1枚）",()=>{ sgLeft=20; sgDraw({ k:2, set:g=>{ myCards(myId).slice(0,3).forEach(c=>{ drafts[c.id]=autoArt(G.tp[c.tp].t); }); } }); });
-sc("おえかき","お題なし（どれともペアにならない絵）",()=>sgDraw({ set:g=>{ myCards(myId)[0].tp=-1; } }));
 sc("おえかき","消しゴムを選んだ",()=>{ sgDraw(); if(curCid){ drafts[curCid]=autoArt("ねこ"); repaintCur(); } tool="erase"; updateTools(); });
 sc("おえかき","塗りつぶし・四角・丸を使った",()=>{ sgDraw(); if(curCid){ drafts[curCid]=[ { k:"oval", col:"#000000", a:1, w:6, p:[40,40,200,200] }, { k:"fill", col:"#ffc126", a:1, w:1, p:[120,120] },
   { k:"rect", col:"#0050cd", a:.6, w:10.5, p:[20,150,110,236] }, { k:"pen", col:"#ff0013", a:.5, w:18, p:[60,60,120,90,180,60] } ]; repaintCur(); } tool="fill"; penCol="#26c9ff"; updateTools(); });
