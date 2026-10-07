@@ -1094,12 +1094,12 @@
     { id:"moku", thumbLight:true, yomi:"ごもくもくならべ", tpl:"tpl-moku", release:"2026-07-07", cats:["対戦"], clicks:null, likes:null },
   ];
   /* ★制作中(まだ正式に公開していない)ゲーム。ふだんは出さず、Shift+S+Dを押した時だけ一覧の先頭に出す(2026-10-07牧村指示)。
-     サムネは無地にゲーム名だけ・説明文は仮・NEWの位置に「D」。あそばれた回数やいいねは数えない */
+     サムネは無地にゲーム名だけ・説明文は「鋭意制作中」・タグなし・NEWの位置に「debug」。あそばれた回数やいいねは数えない */
   const DEV_GAMES=[
     { id:"banjojinro", dev:true, nm:"盤上人狼", href:"./games/banjojinro.html", players:"3〜20人", cats:["パーティ"], yomi:"ばんじょうじんろう",
-      desc:"盤面をこっそり歩いて、占って、毒を盛る。話し合いで人狼を吊れるか", tags:["人狼","心理戦"] },
+      desc:"鋭意制作中" },
     { id:"oekaki", dev:true, nm:"おえかき神経衰弱", href:"./games/oekaki-sinkeisuijaku.html", players:"2〜12人", cats:["パーティ"], yomi:"おえかきしんけいすいじゃく",
-      desc:"みんなで考えたお題を2人ずつ別々に描いて、その絵で神経衰弱。同じお題から生まれた2枚をさがそう", tags:["おえかき","神経衰弱"] },
+      desc:"鋭意制作中" },
   ];
   let devShow=false; try{ devShow=sessionStorage.getItem("hub.dev")==="1"; }catch(e){}
   /* Newはリリースから31日以内のゲームが自動判定(カテゴリと NEWバッジの両方に使う) */
@@ -1191,9 +1191,8 @@
     const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
     el.innerHTML='<div class="c-bar"></div><div class="c-thumb t-dev"><span class="dev-nm">'+esc(g.nm)+'</span><span class="c-players">'+PLAYERS_SVG+esc(g.players)+'</span></div>'
       +'<div class="c-body"><div class="c-name">'+esc(g.nm)+'</div><div class="c-desc">'+esc(g.desc)+'</div>'
-      +'<div class="c-tags">'+g.tags.map(x=>'<span class="tag">'+esc(x)+'</span>').join("")+'</div>'
       +'<div class="c-foot"><span class="c-play">あそぶ <span class="tri">▶</span></span></div></div>';
-    const b=document.createElement("span"); b.className="new-badge dev-badge"; b.textContent="D"; el.appendChild(b);
+    const b=document.createElement("span"); b.className="new-badge dev-badge"; b.textContent="debug"; el.appendChild(b);
     return el;
   }
   function card(g){
