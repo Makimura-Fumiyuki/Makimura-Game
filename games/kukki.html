@@ -232,6 +232,8 @@
   #zoomBox .zb:active{ transform:translateY(1px) scale(.94); }
   #zoomBox .magi{ width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; color:var(--card); cursor:pointer; }
   #zoomBox .magi svg{ width:18px; height:18px; }
+  #zoomBox .zb:disabled{ opacity:.3; cursor:default; box-shadow:none; }   /* これ以上変わらない時はグレー(2026-10-07・全作品共通) */
+  #zoomBox .magi.off{ opacity:.3; pointer-events:none; }
   .plate.grab{ cursor:grab; }
   .plate.panning{ cursor:grabbing; }
   .snd-btn{
@@ -1566,7 +1568,8 @@ const ptrs=new Map(); let zoom=1, zx=0, zy=0, pinch=null, pinchLock=false;
 function applyZoom(){ const gs=$("gameScene");
   const lim=(innerWidth+innerHeight)*(zoom-1)/2+80;   // 拡大したぶん+すこし余裕を持って動かせる
   zx=Math.max(-lim,Math.min(lim,zx)); zy=Math.max(-lim,Math.min(lim,zy));
-  gs.style.transform=(zoom===1&&!zx&&!zy)? "" : "translate("+zx+"px,"+zy+"px) scale("+zoom+")"; }
+  gs.style.transform=(zoom===1&&!zx&&!zy)? "" : "translate("+zx+"px,"+zy+"px) scale("+zoom+")"; zoomBtns(); }
+function zoomBtns(){ $("zoomIn").disabled=zoom>=4; $("zoomOut").disabled=zoom<=1; $("zoomReset").classList.toggle("off", zoom===1&&!zx&&!zy); }   // これ以上変わらない時はグレー
 function resetZoom(){ zoom=1; zx=0; zy=0; applyZoom(); }
 /* 虫眼鏡ボタン・Ctrl(⌘)+ホイールで拡大縮小、ホイールクリック/スペース+ドラッグで移動(ピンチと同じ zoom/zx/zy を使う) */
 function zoomAt(z1,cxp,cyp){   // cxp,cyp=画面の座標。その点を動かさずに拡大する
@@ -1582,6 +1585,7 @@ function zTyping(){ const a=document.activeElement; return !!(a&&(a.tagName==="I
 $("zoomIn").addEventListener("click",()=>{ playSelect(); zoomBy(1.25); });
 $("zoomOut").addEventListener("click",()=>{ playSelect(); zoomBy(1/1.25); });
 $("zoomReset").addEventListener("click",()=>{ playSelect(); resetZoom(); });
+zoomBtns();
 $("cookiePlate").addEventListener("wheel",e=>{
   if(!(e.ctrlKey||e.metaKey)) return; e.preventDefault();
   zoomAt(zoom*(e.deltaY<0?1.1:1/1.1), e.clientX, e.clientY);

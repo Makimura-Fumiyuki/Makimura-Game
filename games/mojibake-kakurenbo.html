@@ -264,6 +264,8 @@ button.dd{ text-align:left; min-width:96px; }
 .zb{ width:34px; height:34px; border-radius:50%; background:#fff; font-size:17px; font-weight:900; line-height:1; box-shadow:0 2px 8px rgba(0,0,0,.14); }
 .magi{ width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; color:var(--ink); cursor:pointer; }
 .magi svg{ width:18px; height:18px; }
+.zb:disabled{ opacity:.3; cursor:default; box-shadow:none; }   /* これ以上変わらない時はグレー(2026-10-07・全作品共通) */
+.magi.off{ opacity:.3; pointer-events:none; }
 .ok{ height:42px; padding:0 26px; border-radius:999px; background:var(--ink); color:#fff; font-size:14px; font-weight:900; letter-spacing:.06em; box-shadow:0 2px 8px rgba(0,0,0,.18); }
 .ok:disabled{ opacity:.35; cursor:default; }
 .ok.deny{ background:var(--mag); }
@@ -1199,7 +1201,9 @@ function layoutStage(){
   $("stage").style.width=stage.w+"px"; $("stage").style.height=stage.h+"px";
   $("stage").style.transform="scale("+scale+")";
   $("stageScaler").style.width=(stage.w*scale)+"px"; $("stageScaler").style.height=(stage.h*scale)+"px";
+  zoomBtns();
 }
+function zoomBtns(){ $("zoomIn").disabled=zoom>=10; $("zoomOut").disabled=zoom<=0.5; $("zoomReset").classList.toggle("off", zoom===1); }
 function setZoom(z, ax, ay){
   z=Math.max(0.5, Math.min(10, z)); if(z===zoom) return;
   const wrap=$("stageWrap"), r=wrap.getBoundingClientRect();
@@ -1211,6 +1215,7 @@ function setZoom(z, ax, ay){
 $("zoomIn").addEventListener("click",()=>{ playSelect(); setZoom(zoom*1.25); });
 $("zoomOut").addEventListener("click",()=>{ playSelect(); setZoom(zoom/1.25); });
 $("zoomReset").addEventListener("click",()=>{ playSelect(); setZoom(1); });
+zoomBtns();
 function layoutFloat(){
   const tw=$("toolWrap"); tw.classList.remove("low");
   const p=tw.getBoundingClientRect(), sb=$("chatBox").getBoundingClientRect(), side=$("sideBox").getBoundingClientRect();   /* スタンプはチャット枠の中なので枠全体で当たりを見る(2026-09-10) */

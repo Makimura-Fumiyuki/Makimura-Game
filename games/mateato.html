@@ -501,6 +501,8 @@
   #zoomBox .zb:active{ transform:translateY(1px) scale(.94); }
   #zoomBox .magi{ width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; color:rgba(58,42,28,.75); cursor:pointer; }
   #zoomBox .magi svg{ width:18px; height:18px; }
+  #zoomBox .zb:disabled{ opacity:.3; cursor:default; box-shadow:none; }   /* これ以上変わらない時はグレー(2026-10-07・全作品共通) */
+  #zoomBox .magi.off{ opacity:.3; pointer-events:none; }
   .cup-wrap.grab{ cursor:grab; }
   .cup-wrap.panning{ cursor:grabbing; }
   .snd-btn{
@@ -1336,7 +1338,9 @@ function applyZoom(){
   const lim=(innerWidth+innerHeight)*(zoom-1)/2 + 60;   // 拡大したぶん+すこし余裕を持って動かせる
   panX=Math.max(-lim,Math.min(lim,panX)); panY=Math.max(-lim,Math.min(lim,panY));
   z.style.transform=(zoom===1&&!panX&&!panY)?"":("translate("+panX+"px,"+panY+"px) scale("+zoom+")");
+  zoomBtns();
 }
+function zoomBtns(){ $("zoomIn").disabled=zoom>=4; $("zoomOut").disabled=zoom<=1; $("zoomReset").classList.toggle("off", zoom===1&&!panX&&!panY); }
 function setZoom(z){ zoom=Math.max(1,Math.min(4,Math.round(z*100)/100)); if(zoom===1){ panX=0; panY=0; } applyZoom(); }
 function zoomAtPt(z1,cxp,cyp){             /* その点を動かさずに拡大縮小する */
   const z0=zoom; z1=Math.max(1,Math.min(4,Math.round(z1*100)/100)); if(z1===z0) return;
@@ -1349,6 +1353,7 @@ function resetZoom(){ zoom=1; panX=0; panY=0; applyZoom(); }
 $("zoomIn").addEventListener("click",()=>{ playSelect&&playSelect(); setZoom(zoom*1.25); });
 $("zoomOut").addEventListener("click",()=>{ playSelect&&playSelect(); setZoom(zoom/1.25); });
 $("zoomReset").addEventListener("click",()=>{ playSelect&&playSelect(); resetZoom(); });
+zoomBtns();
 $("cupWrap").addEventListener("wheel",e=>{ if(!(e.ctrlKey||e.metaKey)) return; e.preventDefault(); zoomAtPt(zoom*(e.deltaY<0?1.1:1/1.1), e.clientX, e.clientY); },{passive:false});
 document.addEventListener("keydown",e=>{ if(e.code==="Space"&&!zTyping()&&$("gameScene").classList.contains("on")){ e.preventDefault(); if(!spaceHeld){ spaceHeld=true; $("cupWrap").classList.add("grab"); } } });
 document.addEventListener("keyup",e=>{ if(e.code==="Space"){ spaceHeld=false; $("cupWrap").classList.remove("grab"); } });

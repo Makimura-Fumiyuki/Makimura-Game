@@ -226,7 +226,7 @@
     border:1.5px solid rgba(43,43,43,.85); box-shadow:0 0 0 1px rgba(255,255,255,.9); }
   .tools{ --tw:350px; display:flex; flex-direction:column; align-items:center; gap:11px; width:100%; }   /* 色・ツール・太さの段は同じ横幅(--tw)にそろえる */
   .ink-grid{ display:grid; grid-template-columns:repeat(10,28px); gap:6px 0; justify-content:space-between; width:var(--tw); }
-  .ink-recent{ margin-top:-4px; }                 /* 直近で使った10色(左がいちばん新しい) */
+  .ink-recent{ margin-top:6px; }   /* 常設の色と少し離す */                 /* 直近で使った10色(左がいちばん新しい) */
   .ink-b.empty{ background:transparent; border:2px dashed rgba(43,43,43,.28); cursor:default; }
   .ink-b{ width:28px; height:28px; border-radius:50%; border:2px solid var(--ink); cursor:pointer; padding:0; }
   .ink-b.sel, .ink-free.sel{ box-shadow:0 0 0 2.5px #fff, 0 0 0 5px var(--ink); }
@@ -293,7 +293,7 @@
   .card.picked .face.front{ box-shadow:0 0 0 4px var(--yel), 4px 5px 0 4px var(--ink); }
   /* めくっている最中の2枚は少し大きく(となりのカードにほんの少しかぶるくらい) */
   .card.picked{ z-index:6; }
-  .card.picked .card-in{ transform:rotateY(180deg) scale(1.17); }
+  .card.picked .card-in{ transform:rotateY(180deg); }   /* 2026-10-07: めくった時に大きくするのはやめた */
   .card.got, .over-board .card{ cursor:zoom-in; }
   /* ほかの人(手番の人)のカーソル */
   .rcur{ position:absolute; z-index:20; display:none; pointer-events:none; transition:left .09s linear, top .09s linear; }
@@ -457,6 +457,8 @@
   #zoomBox .zb:active{ box-shadow:0 0 0; translate:2px 2px; }
   #zoomBox .magi{ width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; color:var(--ink); cursor:pointer; }
   #zoomBox .magi svg{ width:19px; height:19px; }
+  #zoomBox .zb:disabled{ opacity:.3; cursor:default; box-shadow:none; }
+  #zoomBox .magi.off{ opacity:.3; pointer-events:none; }
   #gameScene.grab{ cursor:grab; } #gameScene.panning{ cursor:grabbing; }
   .stamp-fly .s-emoji{ font-size:80px; line-height:1; }
   .stamp-fly .s-name{ margin-top:2px; font-size:15px; font-weight:900; color:var(--ink); white-space:nowrap; letter-spacing:.04em; }   /* 白い画用紙の上なので名前は墨色 */
@@ -581,7 +583,7 @@
       <div class="tools">
         <div class="ink-grid" id="inkRow"></div>
         <div class="ink-grid ink-recent" id="inkRecent"></div>
-        <div class="tool-row" id="toolRow"><button class="tb" type="button" data-tool="pen" aria-label="ペン" title="ペン"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button><button class="tb" type="button" data-tool="erase" aria-label="消しゴム" title="消しゴム"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(45 12 12)"><rect x="7.5" y="3" width="9" height="18" rx="1.2"/><path d="M7.5 10h9"/></g></svg></button><button class="tb" type="button" data-tool="fill" aria-label="塗りつぶし" title="塗りつぶし"><svg viewBox="0 0 24 24" preserveAspectRatio="none" style="height:23px" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11l7-7 7 7-7 7z"/><path d="M5 11h14"/><path d="M20 15s2 2.6 2 4a2 2 0 0 1-4 0c0-1.4 2-4 2-4z"/></svg></button><button class="tb" type="button" data-tool="rect" aria-label="四角" title="四角"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="1"/></svg></button><button class="tb" type="button" data-tool="oval" aria-label="丸" title="丸"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/></svg></button><span class="tb-gap"></span><button class="tb" type="button" id="undoBtn" aria-label="ひとつ戻す" title="ひとつ戻す（Ctrl+Z）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button><button class="tb" type="button" id="redoBtn" aria-label="やり直す" title="やり直す（Ctrl+Shift+Z）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button><button class="tb" type="button" id="clearBtn" aria-label="全部消す" title="全部消す"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/></svg></button></div>
+        <div class="tool-row" id="toolRow"><button class="tb" type="button" data-tool="pen" aria-label="ペン" title="ペン"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button><button class="tb" type="button" data-tool="erase" aria-label="消しゴム" title="消しゴム"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(45 12 12)"><path d="M7 2.5h10V14H7z M9.7 5.2v6.1h4.6V5.2z" fill="currentColor" fill-rule="evenodd" stroke="none"/><path d="M7 14v4.6a3 3 0 0 0 3 3h4a3 3 0 0 0 3-3V14z" stroke-width="1.8"/></g></svg></button><button class="tb" type="button" data-tool="fill" aria-label="塗りつぶし" title="塗りつぶし"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 13)"><path d="M5.5 9.5c0-5 13-5 13 0" stroke-width="1.7"/><rect x="5.5" y="9" width="13" height="11.5" rx="2.6"/><path d="M5.5 14.5h13v3.4a2.6 2.6 0 0 1-2.6 2.6H8.1a2.6 2.6 0 0 1-2.6-2.6z" fill="currentColor" stroke="none"/></g></svg></button><button class="tb" type="button" data-tool="rect" aria-label="四角" title="四角"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="1"/></svg></button><button class="tb" type="button" data-tool="oval" aria-label="丸" title="丸"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/></svg></button><span class="tb-gap"></span><button class="tb" type="button" id="undoBtn" aria-label="ひとつ戻す" title="ひとつ戻す（Ctrl+Z）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button><button class="tb" type="button" id="redoBtn" aria-label="やり直す" title="やり直す（Ctrl+Shift+Z）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button><button class="tb" type="button" id="clearBtn" aria-label="全部消す" title="全部消す"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/></svg></button></div>
         <div class="opt-row">
           <div class="sz-row" id="szRow"></div>
           <div class="op-box" title="不透明度"><input type="range" id="opRange" min="10" max="100" step="10" value="100" aria-label="不透明度"><span class="op-v" id="opVal">100%</span></div>
@@ -1103,7 +1105,7 @@ const PH_NAME={ topic:"お題づくり", draw:"おえかき", match:"神経衰�
 function renderTop(){
   $("phasePill").textContent=PH_NAME[G.phase]||"";
   let tag="";
-  if(G.phase==="match"||G.phase==="over"){ tag="のこり "+(G.pairTotal-takenPairs())+" 組"; }
+  if(G.phase==="match"||G.phase==="over"){ tag="残り "+(G.pairTotal-takenPairs())+" 組"; }
   else if(G.phase==="draw"){ tag=activePs().filter(p=>G.ready&&G.ready[p.id]).length+" / "+activePs().length+" 人"; }   // 完成を押した人数
   else if(G.phase==="topic"){ tag=activePs().filter(p=>G.topics[p.id]).length+" / "+activePs().length+" 人"; }
   $("phaseTag").textContent=tag;
@@ -1208,10 +1210,10 @@ function renderRecent(){
 function repaintCur(){ const c=curCv(); if(c&&curCid) paintArt(c, drafts[curCid]||[]); }
 function ptCount(cid){ let n=0; (drafts[cid]||[]).forEach(s2=>n+=(s2.p||[]).length/2); return n; }
 function stripF(){ return Math.round(Math.min(window.innerWidth*0.76, 400)); }
-function gaugeD(F){                           // 絵のふち(角丸の四角)を上のまん中から時計回りに1周する線
+function gaugeD(F){                           // 絵のふち(角丸の四角)を上のまん中から1周する線
   const a=1.5, b=F-1.5, r=7, m=F/2;
-  return "M"+m+" "+a+" H"+(b-r)+" A"+r+" "+r+" 0 0 1 "+b+" "+(a+r)+" V"+(b-r)+" A"+r+" "+r+" 0 0 1 "+(b-r)+" "+b
-    +" H"+(a+r)+" A"+r+" "+r+" 0 0 1 "+a+" "+(b-r)+" V"+(a+r)+" A"+r+" "+r+" 0 0 1 "+(a+r)+" "+a+" Z";
+  return "M"+m+" "+a+" H"+(a+r)+" A"+r+" "+r+" 0 0 0 "+a+" "+(a+r)+" V"+(b-r)+" A"+r+" "+r+" 0 0 0 "+(a+r)+" "+b
+    +" H"+(b-r)+" A"+r+" "+r+" 0 0 0 "+b+" "+(b-r)+" V"+(a+r)+" A"+r+" "+r+" 0 0 0 "+(b-r)+" "+a+" Z";   // 2026-10-07: 減る向きを右回りに(線は左回りに引く)
 }
 function layoutStrip(){
   const F=stripF(), st=$("drStrip"); st.style.setProperty("--F",F+"px");
@@ -1461,7 +1463,7 @@ function paintCardArt(cv2,cid){
   if(!blank || !c || c.tp<0 || !G.tp[c.tp]){ paintArt(cv2,ops); return; }
   const ctx=cv2.getContext("2d"), W=cv2.width, word=String(G.tp[c.tp].t), ch=[...word];
   ctx.globalAlpha=1; ctx.fillStyle="#fff"; ctx.fillRect(0,0,W,W); ctx.fillStyle="#2b2b2b"; ctx.textAlign="center"; ctx.textBaseline="middle";
-  for(let fs=Math.round(W*.24); fs>=8; fs-=Math.max(1,Math.round(W/110))){
+  for(let fs=Math.round(W*.16); fs>=8; fs-=Math.max(1,Math.round(W/110))){
     ctx.font='900 '+fs+'px "Noto Sans JP","Hiragino Sans",sans-serif';
     const lines=[]; let cur="";
     ch.forEach(x=>{ if(ctx.measureText(cur+x).width>W*.84 && cur){ lines.push(cur); cur=x; } else cur+=x; }); if(cur) lines.push(cur);
@@ -1619,14 +1621,14 @@ function cpuTick(){
   const now=Date.now(), cpus=activePs().filter(p=>isCpu(p.id));
   if(G.phase==="topic"){
     cpus.forEach(p=>{ if(G.phase!=="topic"||G.topics[p.id]) return; const k="t"+p.id;
-      if(!cpuAt[k]) cpuAt[k]=now+rint(2500,9000);
+      if(!cpuAt[k]) cpuAt[k]=now;   // ロボットは即決(2026-10-07)
       else if(now>=cpuAt[k]) hostAct({ t:"topics", from:p.id, sk:G.sk, l:randomTopics(G.rules.k, Object.values(G.topics).flat()) }); });
     return;
   }
   if(G.phase==="draw"){
     const T=G.rules.draw*1000;
     cpus.forEach(p=>{ const k="r"+p.id; if(G.phase!=="draw") return;
-      if(!cpuAt[k]) cpuAt[k]=now+rint(T*.3,T*.8);
+      if(!cpuAt[k]) cpuAt[k]=now;   // すぐに完成を押す=自分が完成を押した時点で終わる
       else if(cpuAt[k]>0 && now>=cpuAt[k]){ cpuAt[k]=-1; if(!(G.ready&&G.ready[p.id])) hostAct({ t:"ready", from:p.id, sk:G.sk }); } });
     if(G.phase==="draw" && G.stepEnd && now>=G.stepEnd) cpuFinishCards();
     return;
@@ -1635,7 +1637,7 @@ function cpuTick(){
   G.flip.forEach(cid=>{ const o=G.sk+":"+cid; if(cpuObs[o]) return; cpuObs[o]=1; if(Math.random()<.72) cpuMem[cid]=cardKey(cById(cid)); });   // めくられたカードを(ある程度)おぼえる
   const tn=G.turn; if(!isCpu(tn) || G.resAt || G.flip.length>=2) return;
   const k="m"+G.sk+"_"+G.flip.length;
-  if(!cpuAt[k]){ cpuAt[k]=now+rint(700,1500); return; }
+  if(!cpuAt[k]){ cpuAt[k]=now+380; return; }   // めくるのが見える程度の間だけあける
   if(now<cpuAt[k]) return;
   const live=G.board.filter(cid=>!G.taken[cid] && !G.flip.includes(cid)), unk=live.filter(cid=>!(cid in cpuMem));
   let pc=null;
@@ -1670,11 +1672,13 @@ window.__osDev={ get G(){ return G; }, assign:assignDrawers, arts:()=>arts, pres
    ・画面(#gameScene)ごと大きくする=UIも一緒に大きくなって細かく見られる。フェーズが変わるともとの大きさに戻す */
 let zoom=1, panX=0, panY=0, panning=null, spaceHeld=false, pinch=null;
 function zTyping(){ const a=document.activeElement; return !!(a&&(a.tagName==="INPUT"||a.tagName==="TEXTAREA"||a.tagName==="SELECT")); }
+function zoomBtns(){ $("zoomIn").disabled=zoom>=4; $("zoomOut").disabled=zoom<=1; $("zoomReset").classList.toggle("off", zoom===1&&!panX&&!panY); }   // これ以上変わらないボタンはグレー
 function applyZoom(){
   const z=$("gameScene"); if(!z) return;
   const lim=(innerWidth+innerHeight)*(zoom-1)/2 + 60;
   panX=Math.max(-lim,Math.min(lim,panX)); panY=Math.max(-lim,Math.min(lim,panY));
   z.style.transform=(zoom===1&&!panX&&!panY)?"":("translate("+panX+"px,"+panY+"px) scale("+zoom+")");
+  zoomBtns();
 }
 function zoomAtPt(z1,cxp,cyp){                 // その点を動かさずに拡大縮小する
   const z0=zoom; z1=Math.max(1,Math.min(4,Math.round(z1*100)/100)); if(z1===z0) return;
@@ -1769,7 +1773,7 @@ function onState(){
   }
   if(G.getN>seen.getN){ seen.getN=G.getN;
     const L=G.last, t=L&&G.tp[L.tp], by=L&&pById(L.by);
-    if(t){ playGet(); bigFx(esc(t.t)+"<small>"+esc(by?by.n:"")+"がGet!!!</small>","get",by?by.c:""); addSys((by?by.n:"")+" GET：「"+t.t+"」");
+    if(t){ playGet(); bigFx(esc(t.t)+"<small>"+esc(by?by.n:"")+" GET</small>","get",by?by.c:""); addSys((by?by.n:"")+" GET：「"+t.t+"」");
       [L.a,L.b].forEach(cid=>{ const el=cardEls[cid]; if(el){ el.classList.remove("hit"); void el.offsetWidth; el.classList.add("hit"); } }); }
   }
   if(seen.phase!==G.phase){
@@ -1777,7 +1781,7 @@ function onState(){
     resetZoom();
     if(ph==="topic"){ playStep(); bigFx("お題を考えよう"); }
     if(ph==="draw"){ playStep(); bigFx("おえかきタイム"); addSys("おえかきタイム"); }
-    if(ph==="match"){ justMatch=true; playStep(); const t=pById(G.turn); bigFx("神経衰弱スタート<small>最初は "+esc(t?t.n:"")+"</small>"); addSys("神経衰弱スタート（最初は "+(t?t.n:"")+"）"); }
+    if(ph==="match"){ justMatch=true; playStep(); const t=pById(G.turn); bigFx("神経衰弱スタート"); addSys("神経衰弱スタート"); }
     if(ph==="over" && !seen.over){
       seen.over=true;
       const rl=rankList(), top=rl.length? rl[0].p.score : 0, winners=rl.filter(r=>r.p.score===top).map(r=>r.p);
@@ -2546,6 +2550,7 @@ let dodT=0; window.addEventListener("resize",()=>{ clearTimeout(dodT); dodT=setT
 drawDoodles();
 updateTools();
 renderSnd();
+zoomBtns();
 if(/[?&]scenes=1/.test(location.search)) setTimeout(openGallery,60);   // ★?scenes=1 でシーン一覧から始める
 })();
 </script>
