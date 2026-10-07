@@ -20,7 +20,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!--
   おえかき神経衰弱（仮名称・2026-09-24着手）
-  ■ ながれ: お題づくり → 描き手の割り振り → お絵かき(全員同時・1枚ずつ制限時間) → 神経衰弱
+  ■ ながれ: お題づくり → 描き手の割り振り → おえかき(全員同時・1枚ずつ制限時間) → 神経衰弱
   ■ オンラインは他のパーティ系と同じ「ホスト権威＋スナップショット」
     ・スナップショットには進行の状態だけを入れる(お題の文字も入っている＝開発者ツールで覗けば見える。牧村了承済みの割り切り)
     ・絵はスナップショットに入れない。描き終わった瞬間に「ペンの軌跡」を1回だけ全員へ配る(event "art"・大きい時は分割)
@@ -56,6 +56,7 @@
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .45  0 0 0 0 .4  0 0 0 0 .3  0 0 0 .07 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
     display:flex; flex-direction:column; align-items:center;
     user-select:none; -webkit-user-select:none; overflow-x:hidden; }
+  html{ overflow-x:hidden; }   /* 横にはみ出した物で画面の幅が変わり、カードの列数がずれるのを防ぐ(2026-10-07) */
   input{ user-select:text; -webkit-user-select:text; }
   /* 背景のらくがき(JSで散らす) */
   #doodles{ position:fixed; inset:0; z-index:-1; pointer-events:none; }
@@ -104,6 +105,8 @@
   .stp:disabled{ opacity:.3; cursor:default; }
   .rule-reset{ display:block; margin:10px auto 0; border:none; background:none; padding:4px 2px;
     font-size:12.5px; font-weight:800; color:var(--ink); text-decoration:underline wavy rgba(43,43,43,.5); text-underline-offset:4px; cursor:pointer; }
+  .rule-frame.ro .stp{ opacity:.4; pointer-events:none; }   /* オーナー以外=同じUIを見せて、押せないことをグレーで示す */
+  .rule-reset:disabled{ opacity:.4; cursor:default; pointer-events:none; }
   .rule-sum{ font-size:12.5px; font-weight:700; color:var(--sub); text-align:center; line-height:1.7; }
 
   .btn-main{ width:var(--uiw); max-width:340px; margin-top:14px; padding:13px; cursor:pointer;
@@ -128,7 +131,7 @@
   .lobby-row .nm{ flex:1; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .lobby-row .nm.undef{ opacity:.42; font-weight:700; }
   .p-dot{ width:13px; height:13px; border-radius:50%; flex:none; border:1.5px solid var(--ink); }
-  .p-dot.mine{ width:17px; height:17px; cursor:pointer; }   /* 自分の丸は押すと色を変えられる */
+  .p-dot.mine{ cursor:pointer; }   /* 自分の丸は押すと色を変えられる(大きさはほかの人と同じ) */
   .lobby-row .hostmark{ flex:none; font-size:11px; font-weight:900; color:var(--ink); background:var(--yel); border:1.5px solid var(--ink); border-radius:999px; padding:1px 9px 2px; }
   .lobby-row .you{ flex:none; font-size:11px; font-weight:900; color:#fff; background:var(--ink); border-radius:999px; padding:2px 10px 3px; }
   .lobby-row .kick-btn{ flex:none; font-size:11px; font-weight:900; color:var(--red); background:#fff;
@@ -171,7 +174,10 @@
   .ros .av{ width:13px; height:13px; border-radius:50%; flex:none; border:1.5px solid var(--ink); }
   .ros .rb{ display:flex; justify-content:flex-end; align-items:center; height:16px; }
   .ros .sc{ width:44px; text-align:right; font-size:12px; font-weight:900; }
-  .ros .ok{ width:44px; text-align:center; font-size:10.5px; font-weight:900; border-radius:999px; padding:0; background:var(--grn); color:#fff; line-height:16px; }
+  /* 「決定」「完成」の印=マーカーで線を引いたような手描きの印(2026-10-07・この作品の画用紙の見た目に合わせた) */
+  .ros .ok{ width:46px; display:inline-flex; align-items:center; justify-content:center; gap:1px; font-size:10.5px; font-weight:900; color:var(--ink); line-height:15px;
+    background:linear-gradient(transparent 45%, rgba(59,178,115,.55) 45%, rgba(59,178,115,.55) 92%, transparent 92%); transform:rotate(-4deg); }
+  .ros .ok svg{ width:11px; height:11px; flex:none; }
   .ros.me{ background:#e4f4ff; }
   .ros.turn{ background:var(--yel); box-shadow:2px 3px 0 var(--ink); transform:rotate(-1.5deg); }
   .ros.gone{ opacity:.35; }
@@ -193,7 +199,7 @@
   .tp-in:disabled{ opacity:.55; }
   .tp-row .txt-btn{ padding:8px 13px; font-size:13px; }
 
-  /* お絵かき(2026-10-02作り直し)
+  /* おえかき(2026-10-02作り直し)
      自分の描く絵を横に並べる。まん中の1枚=いま描いている絵・ほかは左右に小さく、ぼかして置く(押すとまん中に来る) */
   #drawBox{ display:none; width:100%; flex-direction:column; align-items:center; gap:10px; }
   #drawBox.on{ display:flex; }
@@ -201,22 +207,27 @@
   .dr-word{ font-size:clamp(22px,6.4vw,30px); font-weight:900; letter-spacing:.06em; text-align:center; line-height:1.35; padding:0 8px; max-width:var(--uiw);
     background:linear-gradient(transparent 58%, rgba(255,95,162,.45) 58%, rgba(255,95,162,.45) 92%, transparent 92%); transform:rotate(-1.5deg); word-break:break-all; }
   .dr-word.free{ font-size:clamp(18px,5vw,23px); background:linear-gradient(transparent 58%, rgba(58,134,255,.35) 58%, rgba(58,134,255,.35) 92%, transparent 92%); }
-  .dr-strip{ position:relative; width:100vw; height:calc(var(--F,320px) + 14px); overflow:hidden; flex:none; }
+  .dr-strip{ position:relative; width:100%; height:calc(var(--F,320px) + 14px); overflow:hidden; flex:none; }
   .dr-slot{ position:absolute; left:50%; top:2px; width:var(--F,320px); height:var(--F,320px); transform-origin:50% 50%;
-    background:#fff; border:3px solid var(--ink); border-radius:8px; overflow:hidden; cursor:pointer;
+    background:#fff; border:none; border-radius:8px; overflow:hidden; cursor:pointer;
     filter:blur(2.4px) saturate(.55); opacity:.48;
     transition:transform .42s cubic-bezier(.25,.85,.3,1), filter .3s, opacity .3s; }
-  .dr-slot.focus{ filter:none; opacity:1; cursor:default; box-shadow:5px 6px 0 var(--ink); }
+  .dr-slot.focus{ filter:none; opacity:1; cursor:default; }
+  /* 絵のふち=1枚ぶんの時間のゲージ(2026-10-07)。うすい線の上の墨の線が、その絵の時間に合わせて減っていく */
+  .dr-slot .gauge{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+  .gauge .g-tr{ fill:none; stroke:rgba(43,43,43,.16); stroke-width:3; }
+  .gauge .g-v{ fill:none; stroke:var(--ink); stroke-width:3; stroke-dasharray:100 100; transition:stroke-dashoffset .22s linear, stroke .3s; }
+  .gauge .g-v.low{ stroke:var(--red); }
   .dr-slot canvas{ display:block; width:100%; height:100%; touch-action:none; pointer-events:none; }
   .dr-slot.focus canvas{ pointer-events:auto; cursor:crosshair; }
   .dr-strip.t-pen .dr-slot.focus canvas, .dr-strip.t-erase .dr-slot.focus canvas{ cursor:none; }
-  .dr-no{ position:absolute; left:6px; top:6px; width:24px; height:24px; border-radius:50%; background:var(--yel); border:1.5px solid var(--ink);
-    display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:900; pointer-events:none; }
   /* カーソルを合わせると、いまの太さ・色で描かれる丸を出す(マウスだけ) */
   #penGhost{ position:fixed; z-index:70; display:none; pointer-events:none; border-radius:50%; transform:translate(-50%,-50%);
     border:1.5px solid rgba(43,43,43,.85); box-shadow:0 0 0 1px rgba(255,255,255,.9); }
-  .tools{ display:flex; flex-direction:column; align-items:center; gap:11px; width:100%; }
-  .ink-grid{ display:grid; grid-template-columns:repeat(10,28px); gap:6px; justify-content:center; }
+  .tools{ --tw:350px; display:flex; flex-direction:column; align-items:center; gap:11px; width:100%; }   /* 色・ツール・太さの段は同じ横幅(--tw)にそろえる */
+  .ink-grid{ display:grid; grid-template-columns:repeat(10,28px); gap:6px 0; justify-content:space-between; width:var(--tw); }
+  .ink-recent{ margin-top:-4px; }                 /* 直近で使った10色(左がいちばん新しい) */
+  .ink-b.empty{ background:transparent; border:2px dashed rgba(43,43,43,.28); cursor:default; }
   .ink-b{ width:28px; height:28px; border-radius:50%; border:2px solid var(--ink); cursor:pointer; padding:0; }
   .ink-b.sel, .ink-free.sel{ box-shadow:0 0 0 2.5px #fff, 0 0 0 5px var(--ink); }
   /* 自由に選べる色(文字化けかくれんぼと同じ input type=color) */
@@ -234,25 +245,27 @@
   .tb:disabled{ opacity:.32; cursor:default; }
   .tb.deny{ background:var(--red); color:#fff; }
   .tb-gap{ width:6px; flex:none; }
-  .opt-row{ display:flex; align-items:center; justify-content:center; gap:10px 16px; flex-wrap:wrap; }
+  .opt-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; width:var(--tw); }
   .sz-row{ display:flex; gap:5px; }
   .sz-b{ width:38px; height:38px; padding:0; border:2px solid var(--ink); border-radius:9px; background:#fff; cursor:pointer;
     display:flex; align-items:center; justify-content:center; box-shadow:2px 2px 0 var(--ink); }
   .sz-b i{ display:block; width:var(--d); height:var(--d); border-radius:50%; background:var(--pc,#2b2b2b); border:1px solid rgba(43,43,43,.4); }
   .sz-b.sel{ background:#cfeaff; }
   .sz-b:active{ box-shadow:0 0 0; translate:2px 2px; }
-  .op-box{ display:flex; align-items:center; gap:8px; width:190px; }
-  .op-box .op-l{ flex:none; font-size:12px; font-weight:800; color:var(--sub); }
-  .op-box input[type=range]{ flex:1; min-width:0; accent-color:var(--ink); cursor:pointer; }
+  .op-box{ display:flex; align-items:center; gap:7px; flex:1; min-width:0; }
+  /* 不透明度のバー=選んでいる色に合わせる(バーはうすい→こい・つまみはその色) */
+  .op-box input[type=range]{ flex:1; min-width:0; -webkit-appearance:none; appearance:none; height:14px; margin:0; cursor:pointer; border-radius:999px;
+    border:2px solid var(--ink); background:linear-gradient(90deg, var(--op0,rgba(43,43,43,.1)), var(--op1,#2b2b2b)); }
+  .op-box input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:var(--opc,#2b2b2b); border:2px solid var(--ink); box-shadow:0 0 0 2px #fff; }
+  .op-box input[type=range]::-moz-range-thumb{ width:16px; height:16px; border-radius:50%; background:var(--opc,#2b2b2b); border:2px solid var(--ink); box-shadow:0 0 0 2px #fff; }
+  .op-box input[type=range]:disabled{ opacity:.35; cursor:default; }
   .op-box .op-v{ flex:none; width:38px; text-align:right; font-size:12.5px; font-weight:900; font-variant-numeric:tabular-nums; }
   .btn-main.deny{ background:var(--red); color:#fff; }
-  .dr-wait{ display:none; flex-direction:column; align-items:center; gap:6px; margin:18px 0; }
-  #drawBox.waiting .dr-wait{ display:flex; }
-  #drawBox.waiting .dr-main{ display:none; }
+  .btn-main.ready{ background:#fff; }            /* 完成を押した=「キャンセル」(押すと取り消す) */
   .dr-main{ display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; }
 
   /* 神経衰弱(並べ方はJSで列数を決めてグリッドにする) */
-  #matchBox{ display:none; width:100%; flex-direction:column; align-items:center; position:relative; }
+  #matchBox{ display:none; width:100%; flex-direction:column; align-items:center; position:relative; overflow:hidden; padding:10px 0; }
   #matchBox.on{ display:flex; }
   #grid{ display:grid; gap:10px; margin:0 auto; }
   .card{ aspect-ratio:1; perspective:700px; cursor:pointer; position:relative; }
@@ -267,7 +280,12 @@
   .face.front canvas{ display:block; width:100%; height:100%; }
   .card .cap{ position:absolute; left:0; right:0; bottom:0; padding:1px 4px 2px; font-size:11px; font-weight:900; color:var(--ink);
     text-align:center; line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:none; border-top:2px solid var(--ink); opacity:.95; }
-  .card .cap small{ font-size:9.5px; font-weight:700; margin-left:4px; }
+  /* 結果のあと=カードの左上に描いた人の名前 */
+  .card .drn{ position:absolute; left:4px; top:4px; max-width:calc(100% - 8px); display:none; align-items:center; gap:3px; z-index:2;
+    font-size:10px; font-weight:900; color:var(--ink); background:rgba(255,255,255,.9); border:1.5px solid var(--ink); border-radius:999px; padding:0 6px 1px 3px; line-height:15px; }
+  .card .drn i{ width:8px; height:8px; border-radius:50%; flex:none; border:1px solid var(--ink); }
+  .card .drn b{ font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  .over-board .card .drn{ display:flex; }
   .card.got .cap, .card.showcap .cap{ display:block; }
   .card.got .cap{ border-top:none; }   /* そろえた人の色の枠が出ている時は、お題の帯の上の黒い線は出さない */
   .card.got .face.front{ border-color:var(--oc,var(--ink)); border-width:4px; }
@@ -307,7 +325,7 @@
   .dbg-btns{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:9px; }
   .dbg-btns .txt-btn{ padding:5px 12px; font-size:12px; }
 
-  .toast{ position:fixed; left:50%; bottom:38px; transform:translateX(-50%); z-index:90;
+  .toast{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:200;   /* 画面のど真ん中(2026-10-07・全作品共通) */
     background:var(--ink); color:#fff; border-radius:var(--rough);
     padding:10px 20px; font-size:14px; font-weight:800; letter-spacing:.05em;
     opacity:0; pointer-events:none; transition:opacity .2s; white-space:nowrap; max-width:92vw; }
@@ -320,6 +338,7 @@
   #bigFx span small{ display:block; font-size:.45em; letter-spacing:.12em; color:var(--sub); }
   #bigFx.get span{ background:var(--gc,var(--yel)); }   /* そろえた人の色(2026-10-02) */
   #bigFx.get span small{ color:var(--ink); }
+  #bigFx.turn span{ background:var(--yel); }   /* 自分の番の知らせ */
   @keyframes bigFx{ 0%{opacity:0; transform:scale(1.3) rotate(4deg);} 12%{opacity:1; transform:scale(1);} 80%{opacity:1;} 100%{opacity:0;} }
 
   .help-btn{ position:fixed; left:12px; top:12px; z-index:40; display:flex; align-items:center; gap:6px;
@@ -430,6 +449,15 @@
   .stamp-fly{ position:fixed; bottom:-30px; width:96px; z-index:53; pointer-events:none;
     display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
     filter:drop-shadow(0 5px 9px rgba(0,0,0,.25)); animation:stampFloat 2.2s cubic-bezier(.2,.75,.35,1) forwards; }
+  /* 虫眼鏡(拡大縮小)と画面の移動(2026-10-07・待てアート/文字化けかくれんぼと同じ操作)。画面(#gameScene)ごと大きくする */
+  #zoomBox{ position:fixed; z-index:76; right:12px; bottom:12px; display:none; align-items:center; gap:4px; }
+  #gameScene.on ~ #zoomBox{ display:flex; }
+  #zoomBox .zb{ width:34px; height:34px; border-radius:50%; border:2px solid var(--ink); background:#fff; color:var(--ink); box-shadow:2px 2px 0 var(--ink);
+    font-size:17px; font-weight:900; line-height:1; cursor:pointer; font-family:inherit; padding:0; }
+  #zoomBox .zb:active{ box-shadow:0 0 0; translate:2px 2px; }
+  #zoomBox .magi{ width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; color:var(--ink); cursor:pointer; }
+  #zoomBox .magi svg{ width:19px; height:19px; }
+  #gameScene.grab{ cursor:grab; } #gameScene.panning{ cursor:grabbing; }
   .stamp-fly .s-emoji{ font-size:80px; line-height:1; }
   .stamp-fly .s-name{ margin-top:2px; font-size:15px; font-weight:900; color:var(--ink); white-space:nowrap; letter-spacing:.04em; }   /* 白い画用紙の上なので名前は墨色 */
   .stamp-fly.over-dialog{ z-index:82; }
@@ -515,7 +543,7 @@
     <div class="dev-h">試作用</div>
     <div class="rc-row"><span class="rc-name">人数</span><button class="stp" id="dvMinus">−</button><span class="rc-val" id="dvN">4人</span><button class="stp" id="dvPlus">＋</button></div>
     <div class="rc-row"><span class="rc-name">お題（1人）</span><button class="stp" id="dkMinus">−</button><span class="rc-val" id="dkN">1個</span><button class="stp" id="dkPlus">＋</button></div>
-    <button class="txt-btn" id="devStart">ひとりでためす（試作）</button>
+    <button class="txt-btn" id="devStart">ひとりでためす（ロボットと遊ぶ）</button>
     <button class="txt-btn" id="sgStart">シーン一覧（試作）</button>
   </div>
 </div>
@@ -539,7 +567,7 @@
   <div class="status" id="status"></div>
 
   <div id="topicBox">
-    <div class="hint" id="tpHint">お題を考えよう（ほかの人には見えない）</div>
+    <div class="hint" id="tpHint">お題を考えよう</div>
     <div id="tpRows" style="display:flex; flex-direction:column; gap:8px; width:100%; align-items:center;"></div>
     <div class="sub-btns"><button class="btn-main" id="tpGo" style="margin-top:4px;">決定</button></div>
     <div class="hint sub" id="tpNote"></div>
@@ -552,17 +580,14 @@
       <div class="dr-strip t-pen" id="drStrip"></div>
       <div class="tools">
         <div class="ink-grid" id="inkRow"></div>
-        <div class="tool-row" id="toolRow"><button class="tb" type="button" data-tool="pen" aria-label="ペン" title="ペン"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button><button class="tb" type="button" data-tool="erase" aria-label="消しゴム" title="消しゴム"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3l5 5-11 11H5v-5z"/><path d="M8.5 10.5l5 5"/><path d="M4 21h16"/></svg></button><button class="tb" type="button" data-tool="fill" aria-label="塗りつぶし" title="塗りつぶし"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11l7-7 7 7-7 7z"/><path d="M5 11h14"/><path d="M20 15s2 2.6 2 4a2 2 0 0 1-4 0c0-1.4 2-4 2-4z"/></svg></button><button class="tb" type="button" data-tool="rect" aria-label="四角" title="四角"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="1"/></svg></button><button class="tb" type="button" data-tool="oval" aria-label="丸" title="丸"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/></svg></button><span class="tb-gap"></span><button class="tb" type="button" id="undoBtn" aria-label="ひとつ戻す" title="ひとつ戻す（Ctrl+Z）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button><button class="tb" type="button" id="redoBtn" aria-label="やり直す" title="やり直す（Ctrl+Shift+Z）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button><button class="tb" type="button" id="clearBtn" aria-label="全部消す" title="全部消す"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/></svg></button></div>
+        <div class="ink-grid ink-recent" id="inkRecent"></div>
+        <div class="tool-row" id="toolRow"><button class="tb" type="button" data-tool="pen" aria-label="ペン" title="ペン"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button><button class="tb" type="button" data-tool="erase" aria-label="消しゴム" title="消しゴム"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(45 12 12)"><rect x="7.5" y="3" width="9" height="18" rx="1.2"/><path d="M7.5 10h9"/></g></svg></button><button class="tb" type="button" data-tool="fill" aria-label="塗りつぶし" title="塗りつぶし"><svg viewBox="0 0 24 24" preserveAspectRatio="none" style="height:23px" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11l7-7 7 7-7 7z"/><path d="M5 11h14"/><path d="M20 15s2 2.6 2 4a2 2 0 0 1-4 0c0-1.4 2-4 2-4z"/></svg></button><button class="tb" type="button" data-tool="rect" aria-label="四角" title="四角"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="1"/></svg></button><button class="tb" type="button" data-tool="oval" aria-label="丸" title="丸"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/></svg></button><span class="tb-gap"></span><button class="tb" type="button" id="undoBtn" aria-label="ひとつ戻す" title="ひとつ戻す（Ctrl+Z）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button><button class="tb" type="button" id="redoBtn" aria-label="やり直す" title="やり直す（Ctrl+Shift+Z）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button><button class="tb" type="button" id="clearBtn" aria-label="全部消す" title="全部消す"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/></svg></button></div>
         <div class="opt-row">
           <div class="sz-row" id="szRow"></div>
-          <div class="op-box"><span class="op-l">不透明度</span><input type="range" id="opRange" min="10" max="100" step="10" value="100" aria-label="不透明度"><span class="op-v" id="opVal">100%</span></div>
+          <div class="op-box" title="不透明度"><input type="range" id="opRange" min="10" max="100" step="10" value="100" aria-label="不透明度"><span class="op-v" id="opVal">100%</span></div>
         </div>
       </div>
       <button class="btn-main" id="drDone">完成</button>
-    </div>
-    <div class="dr-wait">
-      <div class="big-msg" style="font-size:19px;">描き終わった</div>
-      <div class="hint sub" id="drWaitNote">ほかの人を待っています</div>
     </div>
   </div>
 
@@ -573,6 +598,11 @@
   </div>
 
   <div class="dbg" id="dbg" style="display:none;"></div>
+</div>
+<div id="zoomBox">
+  <button class="zb" id="zoomOut" type="button" aria-label="縮小">−</button>
+  <span class="magi" id="zoomReset" title="もとの大きさ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/></svg></span>
+  <button class="zb" id="zoomIn" type="button" aria-label="拡大">＋</button>
 </div>
 
 <a class="home-foot" href="../index.html">牧村が作ったゲーム集へ</a>
@@ -708,11 +738,11 @@ const MIN_P=2, MAX_P=12;
 const MAX_PAIRS=24;                                   // お題(=ペア)の上限。カードは最大48枚+フェイク
 const PCOL=["#ff6b6b","#4dabf7","#69db7c","#ffd43b","#da77f2","#ff922b","#38d9a9","#f783ac","#a9e34b","#74c0fc","#e599f7","#ffa94d"];
 const K_OPTS=[1,2,3,4,5,6];                           // 1人が考えるお題の数
-const DRAW_OPTS=[60,90,120,150,180,240,300,420,600];  // お絵かきの時間(秒)=全部の絵を描く時間(2026-10-02に「1枚ずつ」から変更)
+const DRAW_OPTS=[60,90,120,150,180,240,300,420,600];  // おえかきの時間(秒)=全部の絵を描く時間(2026-10-02に「1枚ずつ」から変更)
 const TOPIC_OPTS=[30,45,60,90,120,180];               // お題を考える時間(秒)
 const TURN_OPTS=[10,15,20,30,45,60];                  // 神経衰弱の1手の制限時間(秒)
 const DEF_RULES={ k:1, draw:120, topic:60, turn:20 };
-const DRAW_GRACE=8000;                                // お絵かきの締め切りのあと、絵が届くのを待つ時間
+const DRAW_GRACE=8000;                                // おえかきの締め切りのあと、絵が届くのを待つ時間
 let rules=Object.assign({},DEF_RULES);
 const REVEAL_MS=1500;                                 // 2枚めくったあと、見せておく時間
 const TOPIC_MAX=30;                                   // お題の文字数の上限(2026-10-02に20→30)
@@ -760,7 +790,7 @@ function newGame(members){
   G={ gid:Math.random().toString(36).slice(2,8), rules:Object.assign({},rules,{k}),
       players:members.map((m,i)=>({ id:m.id, n:m.n||("P"+(i+1)), c:m.c||PCOL[i%PCOL.length], score:0, gone:false })),
       phase:"topic", sk:0, stepEnd:0, topics:{}, tp:[], cards:[], board:[], pairTotal:0, taken:{},
-      turn:"", flip:[], resAt:0, getN:0, missN:0, last:null, drawEnd:0 };
+      turn:"", flip:[], resAt:0, getN:0, missN:0, last:null, drawEnd:0, ready:{} };
   startStep("topic");
 }
 function stepMs(){ if(debug) return 0; if(G.phase==="topic") return G.rules.topic*1000; if(G.phase==="match") return G.rules.turn*1000; if(G.phase==="draw") return G.rules.draw*1000; return 0; }
@@ -827,11 +857,11 @@ function buildCards(){
   ids.forEach(i=>{ shuffle(cards.filter(c=>c.dr===i)).forEach((c,qi)=>c.q=qi); });
   G.cards=cards;
 }
-/* --- お絵かき --- */
+/* --- おえかき --- */
 function myCards(id){ return G.cards.filter(c=>c.dr===id && !c.gone).sort((a,b)=>a.q-b.q); }
 function startDraw(){
-  G.phase="draw"; G.sk++;
-  G.stepEnd= debug? 0 : Date.now()+G.rules.draw*1000;            // お絵かきの時間は全体でN秒(全員同じ締め切り)
+  G.phase="draw"; G.sk++; G.ready={};
+  G.stepEnd= debug? 0 : Date.now()+G.rules.draw*1000;            // おえかきの時間は全体でN秒(全員同じ締め切り)
   G.drawEnd= debug? 0 : G.stepEnd+DRAW_GRACE;                     // ホスト側の最後の保険: 締め切りのあと少し待っても届かない絵は白紙
   bump();
 }
@@ -840,6 +870,9 @@ function hostCardDone(cid){
   c.done=true; if(!(cid in arts)) arts[cid]="";
   if(G.phase==="draw" && G.cards.every(x=>x.done||x.gone)) startMatch(); else bump();
 }
+/* 全員が「完成」を押した=その場でおえかきを終える(各自の端末が時間切れと同じ扱いで絵を確定して送る) */
+function allReady(){ return activePs().every(p=>G.ready&&G.ready[p.id]); }
+function endDrawNow(){ const now=Date.now(); if(G.stepEnd&&G.stepEnd<=now) return; G.stepEnd=now; G.drawEnd=now+DRAW_GRACE; bump(); }
 function forceDrawEnd(){                      // 保険の締め切り: 届いていない絵は白紙にする
   G.cards.forEach(c=>{ if(!c.done&&!c.gone){ c.done=true; if(!(c.id in arts)) arts[c.id]=""; } });
   startMatch();
@@ -892,7 +925,10 @@ function hostAct(a){
     if(l.length<G.rules.k || l.some(x=>!x)) return;
     G.topics[p.id]=l; if(allTopicsIn()) finishTopics(); else bump(); return;
   }
-  if(a.t==="untopics" && G.phase==="topic"){ delete G.topics[p.id]; bump(); return; }   // 書き直す
+  if(a.t==="untopics" && G.phase==="topic"){ delete G.topics[p.id]; bump(); return; }   // キャンセル(入れ直す)
+  /* 完成=「いつ終わってもよい」の合図(押したあとも描ける・もう一度押すとキャンセル)。全員そろったら終わる */
+  if(a.t==="ready" && G.phase==="draw"){ G.ready=G.ready||{}; G.ready[p.id]=1; if(allReady()) endDrawNow(); else bump(); return; }
+  if(a.t==="unready" && G.phase==="draw"){ if(G.ready) delete G.ready[p.id]; bump(); return; }
   if(a.t==="flip" && G.phase==="match"){
     if(a.sk!==G.sk || p.id!==G.turn || G.resAt || G.flip.length>=2) return;
     if(!G.board.includes(a.cid) || G.taken[a.cid] || G.flip.includes(a.cid)) return;
@@ -908,8 +944,10 @@ function bump(){ sendSnap(); render(); }
    種類: 0ペン 1消しゴム 2四角(2点) 3丸(2点) 4塗りつぶし(1点) 5全部消す
    ★描く時はいつも ART_R(720px四方) のキャンバスで描く=塗りつぶしの結果がどの画面でも同じになる。カードなど小さい所へは縮めて写す */
 const ART_N=256, ART_R=720, MAX_PTS=30000, FILL_MAX=80, ERASE_MUL=2;
-const INK=["#000000","#666666","#0050cd","#ffffff","#aaaaaa","#26c9ff","#017420","#990000","#964112",
-  "#11b03c","#ff0013","#ff7829","#b0701c","#99004e","#cb5a57","#ffc126","#ff008f","#feafa8"];   // 規定の色(18色・白もある)
+/* 規定の色(19色+自由な色=10×2)。上の段=明るい色・下の段=暗い色で、列ごとに同じ色みをそろえる(2026-10-07)
+   白黒 / 灰 / 赤 / 薄赤 / 橙・茶 / 黄・黄土 / 緑 / 水・青 / 桃 / 紫(下の段の最後は自由な色) */
+const INK=["#ffffff","#aaaaaa","#ff0013","#feafa8","#ff7829","#ffc126","#11b03c","#26c9ff","#ff008f","#8a3ffc",
+  "#000000","#666666","#990000","#cb5a57","#964112","#b0701c","#017420","#0050cd","#99004e"];
 const PEN_LV=[2,3.5,6,10.5,18], PEN_DEF=2, W_DEF=6;   // ペンの太さは5段階(256マス基準・×1.75刻み)。消しゴムはこの2倍
 const OPK={ pen:0, erase:1, rect:2, oval:3, fill:4, clear:5 }, OPN=["pen","erase","rect","oval","fill","clear"];
 const hex2=v=>("0"+Math.max(0,Math.min(255,v|0)).toString(16)).slice(-2);
@@ -996,7 +1034,7 @@ function paintArt(cv2,st){
   if(!direct){ const c2=cv2.getContext("2d"); c2.imageSmoothingEnabled=true; c2.imageSmoothingQuality="high"; c2.drawImage(artBuf,0,0,cv2.width,cv2.height); }
 }
 const AUTO_INK=INK.filter(c=>["#ffffff","#aaaaaa","#feafa8"].indexOf(c)<0);   // 自動の絵に白などは使わない
-/* ★試作用: 自動のお絵かき。同じお題なら似た絵になる(1人で神経衰弱まで確かめるため) */
+/* ★試作用: 自動のおえかき。同じお題なら似た絵になる(1人で神経衰弱まで確かめるため) */
 function autoArt(seedStr){
   let h=2166136261; for(const ch2 of String(seedStr)) h=Math.imul(h^ch2.charCodeAt(0),16777619)>>>0;
   const rnd=()=>{ h^=h<<13; h>>>=0; h^=h>>>17; h^=h<<5; h>>>=0; return (h>>>0)/4294967296; };
@@ -1043,6 +1081,8 @@ function pendingIn(){                          // ゲストの入力がスナッ
   if(!pending||!G) return true;
   if(pending.t==="topics") return !!G.topics[pending.from] || G.phase!=="topic";
   if(pending.t==="untopics") return !G.topics[pending.from] || G.phase!=="topic";
+  if(pending.t==="ready") return !!(G.ready&&G.ready[pending.from]) || G.phase!=="draw";
+  if(pending.t==="unready") return !(G.ready&&G.ready[pending.from]) || G.phase!=="draw";
   if(pending.t==="flip") return G.sk!==pending.sk || G.flip.includes(pending.cid) || !!G.taken[pending.cid];
   return true;
 }
@@ -1059,12 +1099,12 @@ function render(){
   if(phaseUI!=="game"||!G) return;
   renderTop(); renderRoster(); renderTopic(); renderDraw(); renderMatch(); renderDbg();
 }
-const PH_NAME={ topic:"お題づくり", draw:"お絵かき", match:"神経衰弱", over:"結果" };
+const PH_NAME={ topic:"お題づくり", draw:"おえかき", match:"神経衰弱", over:"結果" };
 function renderTop(){
   $("phasePill").textContent=PH_NAME[G.phase]||"";
   let tag="";
   if(G.phase==="match"||G.phase==="over"){ tag="のこり "+(G.pairTotal-takenPairs())+" 組"; }
-  else if(G.phase==="draw"){ const all=G.cards.filter(c=>!c.gone), dn=all.filter(c=>c.done).length; tag=dn+" / "+all.length+" 枚"; }
+  else if(G.phase==="draw"){ tag=activePs().filter(p=>G.ready&&G.ready[p.id]).length+" / "+activePs().length+" 人"; }   // 完成を押した人数
   else if(G.phase==="topic"){ tag=activePs().filter(p=>G.topics[p.id]).length+" / "+activePs().length+" 人"; }
   $("phaseTag").textContent=tag;
   renderTimer();
@@ -1077,19 +1117,18 @@ function renderTimer(){
   if(!on){ el.textContent= (debug&&G.phase!=="over")? "--:--" : ""; el.classList.remove("warn"); return; }
   const s=Math.ceil(ms/1000); el.textContent=fmtT(s); el.classList.toggle("warn", s<=5);
 }
+const OK_SVG='<svg viewBox="0 0 12 12" fill="none" stroke="#2b2b2b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5l2.6 2.6L10 3"/></svg>';
 function renderRoster(){
   const ph=G.phase;
   $("roster").innerHTML=G.players.map(p=>{
     let right="";
-    if(ph==="topic" && G.topics[p.id]) right='<span class="ok">決定</span>';
-    if(ph==="draw"){ const cs=myCards(p.id), dn=cs.filter(c=>c.done).length; right= dn>=cs.length? '<span class="ok">完成</span>' : '<span class="sc">'+dn+'/'+cs.length+'</span>'; }
+    if(ph==="topic" && G.topics[p.id]) right='<span class="ok">'+OK_SVG+'決定</span>';
+    if(ph==="draw" && G.ready && G.ready[p.id]) right='<span class="ok">'+OK_SVG+'完成</span>';
     if(ph==="match"||ph==="over") right='<span class="sc">'+p.score+'組</span>';
     const turn = ph==="match" && p.id===G.turn, mine= !debug && p.id===myId;
     return '<div class="ros'+(turn?" turn":"")+(mine?" me":"")+(p.gone?" gone":"")+'" title="'+esc(p.n)+'"><div class="rt"><span class="av" style="background:'+p.c+'"></span><span class="nm">'+esc(p.n)+'</span></div><div class="rb">'+right+'</div></div>';
   }).join("");
-  let st="";
-  if(ph==="match"){ const t=pById(G.turn); if(t) st = (t.id===VID()&&!debug)? "あなたの番。2枚めくろう" : t.n+" の番"; }
-  if(ph==="over") st="おしまい";
+  let st="";   // 神経衰弱の「◯◯の番」はメンバーリストで分かるので出さない(2026-10-07)
   if(spectating && !debug && (ph==="topic"||ph==="draw")) st= ph==="topic"? "観戦中（みんながお題を考えています）" : "観戦中（みんなが描いています）";
   const tp=ph==="match"? pById(G.turn) : null;
   $("status").innerHTML= st? '<span style="--pc:'+(tp? tp.c+"99" : "rgba(255,210,63,.85)")+'">'+esc(st)+'</span>' : "";
@@ -1112,11 +1151,10 @@ function renderTopic(){
       const inp=$("tpRows").querySelector('.tp-in[data-i="'+b.dataset.om+'"]');
       const others=[...$("tpRows").querySelectorAll(".tp-in")].map(x=>x.value).concat(Object.values(G.topics||{}).flat()); inp.value=randomTopics(1,others)[0]; });   // ほかの人がもう決めたお題も避ける
   }
-  $("tpHint").innerHTML=(debug? esc(p.n)+" のお題を考えよう" : "お題を考えよう")+"<br>ほかの人には見えない。ペアがそろった時に発表される";
+  $("tpHint").textContent="お題を考えよう";
   $("tpRows").querySelectorAll(".tp-in, [data-om]").forEach(x=>x.disabled=sent);
-  $("tpGo").textContent= sent? "書き直す" : "決定";
-  const n=activePs().filter(q=>G.topics[q.id]).length;
-  $("tpNote").textContent= sent? "決定した。ほかの人を待っています（"+n+" / "+activePs().length+" 人）" : (k>1? k+"個考えよう" : "");
+  $("tpGo").textContent= sent? "キャンセル" : "決定";
+  $("tpNote").textContent= sent? "ほかの人を待っています" : "";
 }
 function wireTopicInput(inp){
   let comp=false;
@@ -1129,43 +1167,65 @@ function wireTopicInput(inp){
 $("tpGo").onclick=()=>{
   ensureAudio(); if(!G||G.phase!=="topic") return;
   const id=VID(); const sent = (!!G.topics[id] && !(pending&&pending.t==="untopics")) || (pending&&pending.t==="topics"&&pending.from===id);
-  if(sent){                                  // 書き直す: ホストの記録を消して入力欄を開く
+  if(sent){                                  // キャンセル: ホストの記録を消して入力欄を開く
     playTick();
     if(isHost||debug){ delete G.topics[id]; bump(); } else { submit({ t:"untopics" }); }
     return;
   }
-  const l=[...$("tpRows").querySelectorAll(".tp-in")].map(x=>clampTopic(x.value));
-  if(l.some(x=>!x)){ toast("お題を入れてね（おまかせもある）"); return; }
-  if(new Set(l).size<l.length){ toast("同じお題が入っている"); return; }
+  const ins=[...$("tpRows").querySelectorAll(".tp-in")], l=ins.map(x=>clampTopic(x.value));
+  if(l.some(x=>!x)){                         // 空欄はおまかせのお題で埋める(2026-10-07)
+    const others=l.filter(Boolean).concat(Object.values(G.topics||{}).flat());
+    ins.forEach((x,i)=>{ if(l[i]) return; const t2=randomTopics(1,others)[0]; others.push(t2); l[i]=t2; x.value=t2; });
+  }
+  if(new Set(l.map(normTopic)).size<l.length){ toast("同じお題は使えません"); return; }
   playSelect(); submit({ t:"topics", l });
 };
 
-/* --- お絵かき(2026-10-02作り直し) ---
+/* --- おえかき(2026-10-02作り直し) ---
    自分の描く絵を横に並べる。まん中の1枚=いま描いている絵・ほかは左右に小さく、ぼかして置く(押すとその絵がまん中に来る)。
-   お絵かきの時間は全体でN秒。「時間÷枚数」ごとに次の絵へ自動で移る(前の絵を押せば戻れる)。描いている線の途中では移らない */
+   おえかきの時間は全体でN秒。「時間÷枚数」ごとに次の絵へ自動で移る(前の絵を押せば戻れる)。描いている線の途中では移らない */
 const SIDE_SC=.62;
-let tool="pen", penCol=INK[0], penLv=PEN_DEF, penA=1, freeCol="#ff5fa2", curCid=null, stroke=null, clearArm=0, doneArm=0;
+let tool="pen", penCol="#000000", penLv=PEN_DEF, penA=1, freeCol="#ff5fa2", curCid=null, stroke=null, clearArm=0, doneArm=0;
 let redo={};                                   // cid → やり直しの山
 const strip={ key:"", cids:[], els:[], cur:0, seg:-1, pendSeg:-1 };
 const baseCv=document.createElement("canvas"); baseCv.width=baseCv.height=ART_R; const baseCtx=baseCv.getContext("2d");
 function penW(){ return PEN_LV[penLv]; }
 function hexA(h,a){ const r=parseInt(h.slice(1,3),16)||0, g=parseInt(h.slice(3,5),16)||0, b=parseInt(h.slice(5,7),16)||0; return "rgba("+r+","+g+","+b+","+a.toFixed(2)+")"; }
 function curCv(){ const el=strip.els[strip.cur]; return el? el.querySelector("canvas") : null; }
+let recentCols=[]; try{ recentCols=JSON.parse(localStorage.getItem("os.recent")||"[]").filter(c=>/^#[0-9a-f]{6}$/i.test(c)).slice(0,10); }catch(e){}
+function pushRecent(c){                        // 直近で使った10色(左が新しい・11色目からは古い色を消す)
+  if(!/^#[0-9a-f]{6}$/i.test(c||"")) return; c=c.toLowerCase();
+  recentCols=[c].concat(recentCols.filter(x=>x!==c)).slice(0,10);
+  try{ localStorage.setItem("os.recent",JSON.stringify(recentCols)); }catch(e){}
+  renderRecent();
+}
+function renderRecent(){
+  const el=$("inkRecent"); if(!el) return; let h="";
+  for(let i=0;i<10;i++){ const c=recentCols[i]; h+= c? '<button class="ink-b" type="button" data-rc="'+c+'" style="background:'+c+'" aria-label="最近の色"></button>' : '<span class="ink-b empty"></span>'; }
+  if(el._h!==h){ el._h=h; el.innerHTML=h; el.querySelectorAll("[data-rc]").forEach(b=>b.onclick=()=>{ ensureAudio(); playTick(); penCol=b.dataset.rc; if(tool==="erase") tool="pen"; updateTools(); }); }
+  const er=tool==="erase"; el.querySelectorAll("[data-rc]").forEach(b=>b.classList.toggle("sel", !er && b.dataset.rc===String(penCol).toLowerCase() && INK.indexOf(penCol)<0));
+}
 function repaintCur(){ const c=curCv(); if(c&&curCid) paintArt(c, drafts[curCid]||[]); }
 function ptCount(cid){ let n=0; (drafts[cid]||[]).forEach(s2=>n+=(s2.p||[]).length/2); return n; }
 function stripF(){ return Math.round(Math.min(window.innerWidth*0.76, 400)); }
+function gaugeD(F){                           // 絵のふち(角丸の四角)を上のまん中から時計回りに1周する線
+  const a=1.5, b=F-1.5, r=7, m=F/2;
+  return "M"+m+" "+a+" H"+(b-r)+" A"+r+" "+r+" 0 0 1 "+b+" "+(a+r)+" V"+(b-r)+" A"+r+" "+r+" 0 0 1 "+(b-r)+" "+b
+    +" H"+(a+r)+" A"+r+" "+r+" 0 0 1 "+a+" "+(b-r)+" V"+(a+r)+" A"+r+" "+r+" 0 0 1 "+(a+r)+" "+a+" Z";
+}
 function layoutStrip(){
   const F=stripF(), st=$("drStrip"); st.style.setProperty("--F",F+"px");
+  if(strip.gF!==F){ strip.gF=F; const d=gaugeD(F); strip.els.forEach(el=>{ const g=el.querySelector(".gauge"); if(!g) return; g.setAttribute("viewBox","0 0 "+F+" "+F); g.querySelectorAll("path").forEach(p=>p.setAttribute("d",d)); }); }
   const step=F*0.5+F*SIDE_SC*0.5+18;           // となりの絵は、まん中の絵のすぐ右(左)に小さく
   strip.els.forEach((el,i)=>{ const d=i-strip.cur;
     el.style.transform="translateX("+(-F/2+d*step).toFixed(1)+"px) scale("+(d?SIDE_SC:1)+")";
     el.style.zIndex=String(20-Math.abs(d)); el.classList.toggle("focus",!d); });
 }
 function buildStrip(cs){
-  const st=$("drStrip"); st.innerHTML=""; strip.els=[]; strip.cids=cs.map(c=>c.id);
+  const st=$("drStrip"); st.innerHTML=""; strip.els=[]; strip.cids=cs.map(c=>c.id); strip.gF=0;
   cs.forEach((c,i)=>{
     const el=document.createElement("div"); el.className="dr-slot";
-    el.innerHTML='<canvas width="'+ART_R+'" height="'+ART_R+'"></canvas>'+(cs.length>1?'<span class="dr-no">'+(i+1)+'</span>':'');
+    el.innerHTML='<canvas width="'+ART_R+'" height="'+ART_R+'"></canvas><svg class="gauge"><path class="g-tr" pathLength="100"/><path class="g-v" pathLength="100"/></svg>';
     st.appendChild(el); strip.els.push(el);
     const c2=el.querySelector("canvas"); paintArt(c2, drafts[c.id]||[]); wireCanvas(c2,i);
     el.addEventListener("click",()=>{ if(i!==strip.cur && !stroke){ ensureAudio(); playTick(); setFocus(i); } });
@@ -1176,10 +1236,15 @@ function autoSeg(){                            // 時間で決まる「いま描
   const T=G.rules.draw*1000, el=Math.max(0,T-Math.max(0,localEnd-Date.now()));
   return Math.max(0,Math.min(n-1, Math.floor(el/(T/n))));
 }
-function nextLeft(){                           // つぎの絵へ自動で移るまでの秒数(最後の区切りの間は0)
-  const n=strip.cids.length; if(n<=1||debug||!G||!G.stepEnd) return 0;
-  const T=G.rules.draw*1000, el=Math.max(0,T-Math.max(0,localEnd-Date.now())), s=Math.floor(el/(T/n));
-  if(s>=n-1) return 0; return Math.max(0,Math.ceil(((s+1)*T/n-el)/1000));
+/* ゲージ: 絵ごとに「その絵の番の時間」の残り。移動してほかの絵を描いていても、時間の来た絵のふちで減っていく(2026-10-07) */
+function gaugeTick(){
+  const n=strip.cids.length; if(!n||!G) return;
+  const T=G.rules.draw*1000, L=T/n, live=!!G.stepEnd && !debug;
+  const el= live? Math.max(0,T-Math.max(0,localEnd-Date.now())) : 0;
+  strip.els.forEach((s2,i)=>{ const g=s2.querySelector(".g-v"); if(!g) return;
+    const f= live? Math.max(0,Math.min(1,((i+1)*L-el)/L)) : 1;
+    const off=(100*(1-f)).toFixed(2); if(g._o!==off){ g._o=off; g.style.strokeDashoffset=off; }
+    g.classList.toggle("low", live && f>0 && f<1 && ((i+1)*L-el)<=5000); });
 }
 function setFocus(i){
   strip.cur=Math.max(0,Math.min(strip.cids.length-1,i)); curCid=strip.cids[strip.cur]||null;
@@ -1188,17 +1253,17 @@ function setFocus(i){
 function drawLabels(){
   const c=cById(curCid); if(!c) return;
   const w=$("drWord"), n=strip.cids.length, p=pById(VID());
-  const word= c.tp>=0? G.tp[c.tp].t : "なし（すきな絵を描こう）";
+  const word= c.tp>=0? G.tp[c.tp].t : "お題なし（自由に描く）";
   if(w.textContent!==word){ w.textContent=word; w.classList.toggle("free", c.tp<0); }
-  let tx=(debug&&p? p.n+"　" : "")+(n>1? (strip.cur+1)+" / "+n+" 枚目のお題" : "お題");
-  const nx=nextLeft(); if(nx>0) tx+="　つぎの絵まで "+nx+"秒";
+  const tx=(debug&&p? p.n+"　" : "")+(strip.cur+1)+" / "+n;
   if($("drCount").textContent!==tx) $("drCount").textContent=tx;
 }
 function stripTick(){                          // 200msごと: 区切りをまたいだら次の絵へ
   if(!G||G.phase!=="draw"||!curCid||!strip.cids.length) return;
+  if(G.stepEnd && localEnd && Date.now()>=localEnd){ gaugeTick(); return; }   // 終わったあとは絵を動かさない
   const s=autoSeg();
   if(s!==strip.seg){ strip.seg=s; if(stroke) strip.pendSeg=s; else if(s!==strip.cur){ setFocus(s); playTick(); } }
-  drawLabels();
+  drawLabels(); gaugeTick();
 }
 function hideGhost(){ $("penGhost").style.display="none"; }
 function moveGhost(e,cv2,i){
@@ -1221,7 +1286,7 @@ function endStroke(cv2){
   const s=stroke; stroke=null;
   const flat=(s.k==="rect"||s.k==="oval") && s.p[0]===s.p[2] && s.p[1]===s.p[3];
   if(flat){ const c=s.cv.getContext("2d"); c.drawImage(baseCv,0,0); }
-  else { (drafts[s.cid]=drafts[s.cid]||[]).push({ k:s.k, col:s.col, a:s.a, w:s.w, p:s.p.slice() }); redo[s.cid]=[]; }
+  else { (drafts[s.cid]=drafts[s.cid]||[]).push({ k:s.k, col:s.col, a:s.a, w:s.w, p:s.p.slice() }); redo[s.cid]=[]; if(s.k!=="erase") pushRecent(s.col); }
   updateTools();
   if(strip.pendSeg>=0){ const ps=strip.pendSeg; strip.pendSeg=-1; if(ps!==strip.cur){ setFocus(ps); playTick(); } }
 }
@@ -1233,11 +1298,11 @@ function wireCanvas(cv2,i){
     e.preventDefault(); e.stopPropagation(); ensureAudio();
     const q=pt(e), ops=drafts[curCid]=drafts[curCid]||[];
     if(tool==="fill"){
-      if(ops.filter(o=>o.k==="fill").length>=FILL_MAX){ toast("塗りつぶしはこれ以上できない"); return; }
+      if(ops.filter(o=>o.k==="fill").length>=FILL_MAX){ toast("塗りつぶしはこれ以上使えません"); return; }
       const op={ k:"fill", col:penCol, a:penA, w:1, p:[q.x,q.y] }; ops.push(op); redo[curCid]=[];
-      paintOp(cv2.getContext("2d"), op, ART_R/ART_N); playTick(); resetClear(); updateTools(); return;
+      paintOp(cv2.getContext("2d"), op, ART_R/ART_N); playTick(); resetClear(); pushRecent(penCol); updateTools(); return;
     }
-    if(ptCount(curCid)>=MAX_PTS){ toast("これ以上は描けない"); return; }
+    if(ptCount(curCid)>=MAX_PTS){ toast("これ以上描けません"); return; }
     try{ cv2.setPointerCapture(e.pointerId); }catch(_){}
     baseCtx.globalAlpha=1; baseCtx.drawImage(cv2,0,0);
     const shape=tool==="rect"||tool==="oval";
@@ -1259,7 +1324,7 @@ function wireCanvas(cv2,i){
   ["pointerup","pointercancel","lostpointercapture"].forEach(tp=>cv2.addEventListener(tp,()=>endStroke(cv2)));
   cv2.addEventListener("pointerleave",hideGhost);
 }
-/* 色: 規定の18色+自由に選べる色(input type=color)。一度だけ作り、あとはクラスの付け替えだけ(パレットを開いている最中に消さない) */
+/* 色: 規定の19色+自由に選べる色(input type=color)。一度だけ作り、あとはクラスの付け替えだけ(パレットを開いている最中に消さない) */
 (function buildTools(){
   $("inkRow").innerHTML=INK.map((c,i)=>'<button class="ink-b" type="button" data-c="'+i+'" style="background:'+c+'" aria-label="色"></button>').join("")
     +'<label class="ink-free" id="inkFree" aria-label="好きな色"><input type="color" id="inkPick" value="'+freeCol+'"><i id="inkFreeDot" style="background:'+freeCol+'"></i></label>';
@@ -1282,6 +1347,8 @@ function updateTools(){
   $("szRow").querySelectorAll("[data-lv]").forEach(b=>{ b.classList.toggle("sel", +b.dataset.lv===penLv); b.querySelector("i").style.setProperty("--pc", er? "#fff" : penCol); });
   $("opRange").value=String(Math.round(penA*100)); $("opVal").textContent=Math.round(penA*100)+"%";
   $("opRange").disabled=er;
+  { const op=$("opRange"), c=er? "#2b2b2b" : penCol; op.style.setProperty("--op0",hexA(c,.08)); op.style.setProperty("--op1",c); op.style.setProperty("--opc",c); }
+  renderRecent();
   const st=$("drStrip"); st.className="dr-strip t-"+tool;
   $("undoBtn").disabled=!(curCid&&(drafts[curCid]||[]).length);
   $("redoBtn").disabled=!(curCid&&(redo[curCid]||[]).length);
@@ -1300,14 +1367,15 @@ $("clearBtn").onclick=()=>{ ensureAudio(); if(!curCid||stroke) return;
   if(!clearArm){ clearArm=1; $("clearBtn").textContent="確定"; $("clearBtn").classList.add("deny"); playTick(); return; }   // 2段階(ボタン自体が「確定」に変わる)
   drafts[curCid].push({ k:"clear", col:"#ffffff", a:1, w:1, p:[] }); redo[curCid]=[];        // 全部消すも「ひとつ戻す」で戻せる
   clearArm=0; $("clearBtn").innerHTML=TRASH_SVG; $("clearBtn").classList.remove("deny"); repaintCur(); playSelect(); updateTools(); };
-function resetDone(){ if(!doneArm) return; doneArm=0; $("drDone").textContent="完成"; $("drDone").classList.remove("deny"); }
+function resetDone(){}
 document.addEventListener("pointerdown",e=>{
   if(clearArm && !e.target.closest("#clearBtn")) resetClear();
-  if(doneArm && !e.target.closest("#drDone")) resetDone();
 },true);
+function myReady(){ if(!G) return false; const id=VID(); let r=!!(G.ready&&G.ready[id]);
+  if(pending&&pending.from===id){ if(pending.t==="ready") r=true; else if(pending.t==="unready") r=false; } return r; }
+/* 完成=「いつ終わってもよい」の合図(2026-10-07)。1回で決まる・押したあとも描ける・もう一度押すと「キャンセル」 */
 $("drDone").onclick=()=>{ ensureAudio(); if(!G||G.phase!=="draw") return;
-  if(!doneArm){ doneArm=1; $("drDone").textContent="確定（もう描けなくなる）"; $("drDone").classList.add("deny"); playTick(); return; }
-  resetDone(); finishAll(); };
+  if(myReady()){ playTick(); submit({ t:"unready" }); } else { playDone(); submit({ t:"ready" }); } };
 /* Ctrl(⌘)+Z=ひとつ戻す／Ctrl(⌘)+Shift+Z・Ctrl+Y=やり直す。Shiftを押す/離すと描いている図形がすぐ正方形・正円に切りかわる */
 document.addEventListener("keydown",e=>{
   if(phaseUI!=="game"||!G||G.phase!=="draw"||!curCid) return;
@@ -1339,33 +1407,33 @@ function renderDraw(){
   box.classList.toggle("on",on);
   if(!on){ curCid=null; strip.key=""; stroke=null; hideGhost(); return; }
   const id=VID(), p=pById(id); if(!p){ box.classList.remove("on"); return; }
-  const cs=myCards(id), rest=cs.filter(c=>!c.done&&!localDone[c.id]);
-  box.classList.toggle("waiting",!rest.length);
-  if(!rest.length){
-    const left=G.cards.filter(x=>!x.done&&!x.gone).length;
-    $("drWaitNote").textContent= left? "ほかの人を待っています（のこり "+left+" 枚）" : "ほかの人を待っています";
-    curCid=null; stroke=null; hideGhost(); return;
-  }
+  const cs=myCards(id); if(!cs.length){ box.classList.remove("on"); return; }
   const key=G.gid+"|"+id+"|"+cs.map(c=>c.id).join(",");
   if(key!==strip.key){ strip.key=key; buildStrip(cs); const s=autoSeg(); strip.seg=s; setFocus(s); }
   else if(!curCid) setFocus(strip.cur);
-  drawLabels();
+  const fin=cs.every(c=>c.done||localDone[c.id]), rd=myReady(), b=$("drDone");
+  b.textContent= rd? "キャンセル" : "完成"; b.classList.toggle("ready",rd); b.disabled=fin;
+  drawLabels(); gaugeTick();
 }
 window.addEventListener("resize",()=>{ if(strip.els.length) layoutStrip(); });
 
 /* --- 神経衰弱(カードは作り直さない) --- */
 let gridKey="", cardEls={};
 /* 列数: √枚数くらいから、最後の段の空きがいちばん少ない列数を選ぶ(8枚=4×2・24枚=6×4・48枚=8×6)。画面幅に入る列数が上限(スマホは4列) */
-function layoutGrid(){
+let gridW=0;
+function stableW(){ const d=document.documentElement; return Math.min(window.innerWidth||9999, (d&&d.clientWidth)||9999); }
+function layoutGrid(force){
   const g=$("grid"), n=G? G.board.length : 0; if(!n) return;
-  const avail=Math.min(window.innerWidth*0.96, 860), GAP=10;
+  const W=stableW(); if(!force && gridW && Math.abs(W-gridW)<30) return;   // ★幅が少し揺れただけでは並べ直さない(スマホで列数が行ったり来たりするのを防ぐ)
+  gridW=W;
+  const avail=Math.min(W*0.94, 860), GAP=10;
   const maxC=Math.max(2, Math.floor((avail+GAP)/(70+GAP)));
   const c0=Math.ceil(Math.sqrt(n)); let best=Math.min(c0,maxC), bestE=1e9;
   for(let c=Math.min(c0,maxC); c<=Math.min(maxC, c0+2, n); c++){ const e=Math.ceil(n/c)*c-n; if(e<bestE){ bestE=e; best=c; } }
   const w=Math.min(128, (avail-(best-1)*GAP)/best);
   g.style.gridTemplateColumns="repeat("+best+","+w.toFixed(1)+"px)";
 }
-window.addEventListener("resize",()=>{ if(G&&(G.phase==="match"||G.phase==="over")) layoutGrid(); });
+window.addEventListener("resize",()=>{ if(zoom===1&&G&&(G.phase==="match"||G.phase==="over")) layoutGrid(); });
 const BACK_COLS=["#fff3b0","#ffd6e5","#d6f5ec","#dcebff","#efe0ff","#ffe3c7"];
 const DOODLE_INKS=["#ff4d4d","#ff9f1c","#3bb273","#2ec4b6","#3a86ff","#8338ec","#ff5fa2"];
 function backSvg(i){   // 裏面=色画用紙に「?」のらくがき(カードごとに色を変える)
@@ -1378,20 +1446,34 @@ function backSvg(i){   // 裏面=色画用紙に「?」のらくがき(カード
     +'<circle cx="84" cy="20" r="4" stroke="'+ink2+'" stroke-width="3"/></g></svg>';
 }
 function buildGrid(){
-  const g=$("grid"); g.innerHTML=""; cardEls={}; layoutGrid();
+  const g=$("grid"); g.innerHTML=""; cardEls={}; layoutGrid(true);
   G.board.forEach((cid,i)=>{
     const el=document.createElement("div"); el.className="card"; el.dataset.cid=cid;
-    el.innerHTML='<div class="card-in"><div class="face back" style="--bk:'+BACK_COLS[i%BACK_COLS.length]+'">'+backSvg(i)+'</div><div class="face front"><canvas width="220" height="220"></canvas><div class="cap"></div></div></div>';
+    el.innerHTML='<div class="card-in"><div class="face back" style="--bk:'+BACK_COLS[i%BACK_COLS.length]+'">'+backSvg(i)+'</div><div class="face front"><canvas width="220" height="220"></canvas><div class="drn"></div><div class="cap"></div></div></div>';
     el.addEventListener("click",()=>tapCard(cid));
     g.appendChild(el); cardEls[cid]=el; paintCard(cid);
   });
 }
-function paintCard(cid){ const el=cardEls[cid]; if(!el||!(cid in arts)||el._painted) return; paintArt(el.querySelector("canvas"), decodeArt(arts[cid])); el._painted=true; }
+/* 白紙の絵(ペンなどを一度も使っていない)は、お題をそのまま文字でカードのまん中に出す(2026-10-07・真っ白ではゲームにならないため) */
+function paintCardArt(cv2,cid){
+  const ops=decodeArt(arts[cid]||""), c=cById(cid);
+  const blank=!ops.some(o=>o.k==="pen"||o.k==="rect"||o.k==="oval"||o.k==="fill");
+  if(!blank || !c || c.tp<0 || !G.tp[c.tp]){ paintArt(cv2,ops); return; }
+  const ctx=cv2.getContext("2d"), W=cv2.width, word=String(G.tp[c.tp].t), ch=[...word];
+  ctx.globalAlpha=1; ctx.fillStyle="#fff"; ctx.fillRect(0,0,W,W); ctx.fillStyle="#2b2b2b"; ctx.textAlign="center"; ctx.textBaseline="middle";
+  for(let fs=Math.round(W*.24); fs>=8; fs-=Math.max(1,Math.round(W/110))){
+    ctx.font='900 '+fs+'px "Noto Sans JP","Hiragino Sans",sans-serif';
+    const lines=[]; let cur="";
+    ch.forEach(x=>{ if(ctx.measureText(cur+x).width>W*.84 && cur){ lines.push(cur); cur=x; } else cur+=x; }); if(cur) lines.push(cur);
+    if(lines.length*fs*1.25<=W*.84 || fs<=9){ const y0=W/2-(lines.length-1)*fs*1.25/2; lines.forEach((ln,i)=>ctx.fillText(ln,W/2,y0+i*fs*1.25)); return; }
+  }
+}
+function paintCard(cid){ const el=cardEls[cid]; if(!el||!(cid in arts)||el._painted) return; paintCardArt(el.querySelector("canvas"), cid); el._painted=true; }
 function tapCard(cid){
   if(!G) return;
   if(G.phase==="over" || (G.phase==="match" && G.taken[cid])){ ensureAudio(); playSelect(); openCardZoom(cid); return; }   // 表になったカード=拡大して見る
   if(G.phase!=="match") return;
-  const id=VID(); if(id!==G.turn){ if(!debug) toast(pById(G.turn)? pById(G.turn).n+" の番" : "まだ"); return; }
+  const id=VID(); if(id!==G.turn){ if(!debug) toast(pById(G.turn)? pById(G.turn).n+"の番です" : ""); return; }
   if(G.resAt || G.flip.length>=2 || G.taken[cid] || G.flip.includes(cid) || localFlip) return;
   ensureAudio(); playFlip();
   if(!(isHost||debug)){ localFlip={ cid, sk:G.sk, at:Date.now() }; renderMatch(); }
@@ -1416,14 +1498,14 @@ function renderMatch(){
     const owner=tk? pById(tk) : null; if(owner) el.style.setProperty("--oc",owner.c);
     const cap=el.querySelector(".cap");
     const word = c&&c.tp>=0? G.tp[c.tp].t : "お題なし";
-    const capTx = (tk||over||(debug&&dbgShow))? esc(word)+(over&&c? '<small>'+esc((pById(c.dr)||{}).n||"")+'</small>' : "") : "";
+    const capTx = (tk||over||(debug&&dbgShow))? esc(word) : "";
     if(cap._tx!==capTx){ cap._tx=capTx; cap.innerHTML=capTx; }
+    if(over && c && !el._drn){ const dp=pById(c.dr); el._drn=1; el.querySelector(".drn").innerHTML='<i style="background:'+(dp?dp.c:"#ccc")+'"></i><b>'+esc(dp?dp.n:"")+'</b>'; }   // 描いた人の名前=カードの左上
     cap.style.background = owner? owner.c : "#fff";
     el.classList.toggle("dim", over || !!tk);
     if(up) paintCard(cid);
   });
-  const t=pById(G.turn);
-  $("matchNote").textContent= over? "" : (G.resAt? "" : (t&&(t.id===VID())? TAPW+"してカードをめくる" : ""));
+  $("matchNote").textContent="";
   $("overBtns").style.display= over? "flex" : "none";
 }
 $("reopenRes").onclick=()=>{ ensureAudio(); playSelect(); openResult(); };
@@ -1432,7 +1514,7 @@ function openCardZoom(cid){
   const c=cById(cid); if(!c) return;
   const tp=c.tp>=0? G.tp[c.tp] : null, dr=pById(c.dr), by=tp? pById(tp.by) : null, tk=G.taken[cid]? pById(G.taken[cid]) : null;
   const w=$("czWord"); w.textContent= tp? tp.t : "お題なし"; w.classList.toggle("free",!tp);
-  paintArt($("czCv"), decodeArt(arts[cid]||""));
+  paintCardArt($("czCv"), cid);
   const row=(k,p,tx)=>'<div class="cz-row"><span class="k">'+k+'</span>'+(p?'<span class="p-dot" style="background:'+p.c+'"></span>':'')+'<span class="v">'+esc(p? p.n : tx)+'</span></div>';
   $("czInfo").innerHTML=row("描いた人",dr,"—")+row("お題を出した人",by,"（どれともペアにならない絵）")+(tk? row("そろえた人",tk,"") : "");
   $("cardOv").classList.add("on");
@@ -1467,7 +1549,7 @@ function showRcur(pl){
   let c=rcurs[pl.id]; if(!c){ c=document.createElement("div"); c.className="rcur"; c.innerHTML=CUR_SVG+'<span></span>'; $("matchBox").appendChild(c); rcurs[pl.id]=c; }
   const p=pById(pl.id); c.style.setProperty("--pc",p?p.c:"#888"); const nm=p?p.n:""; if(c.lastChild.textContent!==nm) c.lastChild.textContent=nm;
   const r=el.getBoundingClientRect(), b=$("matchBox").getBoundingClientRect();
-  c.style.left=(r.left-b.left+(+pl.x||0)*r.width-3).toFixed(1)+"px"; c.style.top=(r.top-b.top+(+pl.y||0)*r.height-2).toFixed(1)+"px"; c.style.display="block";
+  c.style.left=((r.left-b.left+(+pl.x||0)*r.width-3)/zoom).toFixed(1)+"px"; c.style.top=((r.top-b.top+(+pl.y||0)*r.height-2)/zoom).toFixed(1)+"px"; c.style.display="block";   // 拡大中は見た目の大きさで割って戻す
   clearTimeout(c._t); if(!gallery) c._t=setTimeout(()=>{ c.style.display="none"; },2500);
 }
 function clearRcurs(){ Object.keys(rcurs).forEach(id=>{ clearTimeout(rcurs[id]._t); rcurs[id].remove(); }); rcurs={}; }
@@ -1514,6 +1596,60 @@ function startDebug(n,k){                     // 1台・オフラインで全員
   dbgActor="d1"; dbgShow=false;
   enterGame(); newGame(members);
 }
+/* ================= ひとりでためす: ロボットと遊ぶ(2026-10-07) =================
+   みんなと遊んでいるのと同じ進行(時間もふつうに進む)で、自分以外はロボット。
+   ロボットはお題を出す・絵を描く(自動の絵)・完成を押す・神経衰弱でめくる(見たカードをある程度おぼえる) */
+let solo=false, cpuAt={}, cpuMem={}, cpuObs={}, cpuGid="";
+const isCpu=id=>/^cpu/.test(id||"");
+const rint=(a,b)=>a+Math.random()*(b-a);
+function startSolo(n,k){
+  leaveChannel(); debug=false; solo=true; online=false; isHost=true; hostId=myId;
+  rules=Object.assign({},DEF_RULES,{k});
+  const members=[{ id:myId, n:myName||"あなた", c:PCOL[0] }];
+  for(let i=1;i<n;i++) members.push({ id:"cpu"+i, n:"ロボット"+i, c:PCOL[i%PCOL.length] });
+  cpuGid=""; enterGame(); newGame(members);
+}
+function cpuFinishCards(){                     // おえかきの終わり: ロボットの絵を確定する
+  G.cards.forEach(c=>{ if(c.done||c.gone||!isCpu(c.dr)) return;
+    if(!(c.id in arts)) arts[c.id]=encodeArt(autoArt(c.tp>=0? G.tp[c.tp].t : "fake"+c.id)); localDone[c.id]=true; hostCardDone(c.id); });
+}
+function cpuTick(){
+  if(!solo||!G||gallery||G.phase==="over") return;
+  if(cpuGid!==G.gid){ cpuGid=G.gid; cpuAt={}; cpuMem={}; cpuObs={}; }
+  const now=Date.now(), cpus=activePs().filter(p=>isCpu(p.id));
+  if(G.phase==="topic"){
+    cpus.forEach(p=>{ if(G.phase!=="topic"||G.topics[p.id]) return; const k="t"+p.id;
+      if(!cpuAt[k]) cpuAt[k]=now+rint(2500,9000);
+      else if(now>=cpuAt[k]) hostAct({ t:"topics", from:p.id, sk:G.sk, l:randomTopics(G.rules.k, Object.values(G.topics).flat()) }); });
+    return;
+  }
+  if(G.phase==="draw"){
+    const T=G.rules.draw*1000;
+    cpus.forEach(p=>{ const k="r"+p.id; if(G.phase!=="draw") return;
+      if(!cpuAt[k]) cpuAt[k]=now+rint(T*.3,T*.8);
+      else if(cpuAt[k]>0 && now>=cpuAt[k]){ cpuAt[k]=-1; if(!(G.ready&&G.ready[p.id])) hostAct({ t:"ready", from:p.id, sk:G.sk }); } });
+    if(G.phase==="draw" && G.stepEnd && now>=G.stepEnd) cpuFinishCards();
+    return;
+  }
+  if(G.phase!=="match") return;
+  G.flip.forEach(cid=>{ const o=G.sk+":"+cid; if(cpuObs[o]) return; cpuObs[o]=1; if(Math.random()<.72) cpuMem[cid]=cardKey(cById(cid)); });   // めくられたカードを(ある程度)おぼえる
+  const tn=G.turn; if(!isCpu(tn) || G.resAt || G.flip.length>=2) return;
+  const k="m"+G.sk+"_"+G.flip.length;
+  if(!cpuAt[k]){ cpuAt[k]=now+rint(700,1500); return; }
+  if(now<cpuAt[k]) return;
+  const live=G.board.filter(cid=>!G.taken[cid] && !G.flip.includes(cid)), unk=live.filter(cid=>!(cid in cpuMem));
+  let pc=null;
+  if(!G.flip.length){
+    const by={}; live.forEach(cid=>{ const kk=cpuMem[cid]; if(kk) (by[kk]=by[kk]||[]).push(cid); });
+    const pr=Object.values(by).find(a=>a.length>=2);
+    pc= pr? pr[0] : pick(unk.length? unk : live);
+  }else{
+    const k1=cardKey(cById(G.flip[0])), known=live.filter(cid=>k1 && cpuMem[cid]===k1);
+    pc= (known.length && Math.random()<.85)? known[0] : pick(unk.length? unk : live);
+  }
+  if(pc) hostAct({ t:"flip", from:tn, sk:G.sk, cid:pc });
+}
+
 let dvN=4, dkN=1;
 function renderDv(){
   $("dvN").textContent=dvN+"人"; $("dvMinus").disabled=dvN<=MIN_P; $("dvPlus").disabled=dvN>=8;
@@ -1524,9 +1660,64 @@ $("dvMinus").onclick=()=>{ ensureAudio(); playSelect(); dvN=Math.max(MIN_P,dvN-1
 $("dvPlus").onclick=()=>{ ensureAudio(); playSelect(); dvN=Math.min(8,dvN+1); renderDv(); };
 $("dkMinus").onclick=()=>{ ensureAudio(); playSelect(); dkN=Math.max(1,dkN-1); renderDv(); };
 $("dkPlus").onclick=()=>{ ensureAudio(); playSelect(); dkN=dkN+1; renderDv(); };
-$("devStart").onclick=()=>{ ensureAudio(); playSelect(); leaveChannel(); startDebug(dvN,dkN); };
+$("devStart").onclick=()=>{ ensureAudio(); playSelect(); startSolo(dvN,dkN); };
 renderDv();
 window.__osDev={ get G(){ return G; }, assign:assignDrawers, arts:()=>arts, pres:()=>presentIds(), state:()=>{ try{ return ch.presenceState(); }catch(e){ return null; } } };   // ★試作用フック(公開前に削除するか要確認)
+
+/* ================= 虫眼鏡(拡大縮小)と画面の移動(2026-10-07・待てアート/文字化けかくれんぼと同じ操作) =================
+   ・右下の −/虫眼鏡(もとの大きさ)/＋、Ctrl(⌘)+ホイール、スマホは2本指でつまむ
+   ・ホイールクリック、またはスペースキーを押しながらドラッグで移動(スマホは2本指のまま動かす)
+   ・画面(#gameScene)ごと大きくする=UIも一緒に大きくなって細かく見られる。フェーズが変わるともとの大きさに戻す */
+let zoom=1, panX=0, panY=0, panning=null, spaceHeld=false, pinch=null;
+function zTyping(){ const a=document.activeElement; return !!(a&&(a.tagName==="INPUT"||a.tagName==="TEXTAREA"||a.tagName==="SELECT")); }
+function applyZoom(){
+  const z=$("gameScene"); if(!z) return;
+  const lim=(innerWidth+innerHeight)*(zoom-1)/2 + 60;
+  panX=Math.max(-lim,Math.min(lim,panX)); panY=Math.max(-lim,Math.min(lim,panY));
+  z.style.transform=(zoom===1&&!panX&&!panY)?"":("translate("+panX+"px,"+panY+"px) scale("+zoom+")");
+}
+function zoomAtPt(z1,cxp,cyp){                 // その点を動かさずに拡大縮小する
+  const z0=zoom; z1=Math.max(1,Math.min(4,Math.round(z1*100)/100)); if(z1===z0) return;
+  const r=$("gameScene").getBoundingClientRect(), dx=cxp-(r.left+r.width/2), dy=cyp-(r.top+r.height/2);
+  zoom=z1; if(zoom===1){ panX=0; panY=0; } else { panX+=dx*(1-z1/z0); panY+=dy*(1-z1/z0); }
+  applyZoom();
+}
+function setZoom(z){ zoomAtPt(z, innerWidth/2, innerHeight/2); }
+function resetZoom(){ zoom=1; panX=0; panY=0; applyZoom(); }
+$("zoomIn").addEventListener("click",()=>{ ensureAudio(); playSelect(); setZoom(zoom*1.25); });
+$("zoomOut").addEventListener("click",()=>{ ensureAudio(); playSelect(); setZoom(zoom/1.25); });
+$("zoomReset").addEventListener("click",()=>{ ensureAudio(); playSelect(); resetZoom(); });
+document.addEventListener("wheel",e=>{ if(phaseUI!=="game"||!(e.ctrlKey||e.metaKey)) return; e.preventDefault(); zoomAtPt(zoom*(e.deltaY<0?1.1:1/1.1), e.clientX, e.clientY); },{passive:false});
+document.addEventListener("keydown",e=>{ if(e.code==="Space"&&!zTyping()&&phaseUI==="game"){ e.preventDefault(); if(!spaceHeld){ spaceHeld=true; $("gameScene").classList.add("grab"); } } });
+document.addEventListener("keyup",e=>{ if(e.code==="Space"){ spaceHeld=false; $("gameScene").classList.remove("grab"); } });
+window.addEventListener("blur",()=>{ spaceHeld=false; $("gameScene").classList.remove("grab"); });
+$("gameScene").addEventListener("auxclick",e=>{ if(e.button===1) e.preventDefault(); });
+$("gameScene").addEventListener("pointerdown",e=>{   // capture=描く処理より先に受ける
+  if(!(e.button===1||spaceHeld)) return;
+  e.preventDefault(); e.stopPropagation();
+  panning={ id:e.pointerId, x:e.clientX, y:e.clientY, px:panX, py:panY }; $("gameScene").classList.add("panning");
+  try{ $("gameScene").setPointerCapture(e.pointerId); }catch(_){}
+},true);
+$("gameScene").addEventListener("pointermove",e=>{ if(!panning||panning.id!==e.pointerId) return; e.stopPropagation();
+  panX=panning.px+(e.clientX-panning.x); panY=panning.py+(e.clientY-panning.y); applyZoom(); },true);
+["pointerup","pointercancel"].forEach(ev=>$("gameScene").addEventListener(ev,e=>{ if(!panning||panning.id!==e.pointerId) return; panning=null; $("gameScene").classList.remove("panning"); },true));
+/* スマホ: 2本指でつまんで拡大・そのまま動かして移動。描いている途中の線は取り消す */
+const tDist=(a,b)=>Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+document.addEventListener("touchstart",e=>{
+  if(phaseUI!=="game"||e.touches.length!==2) return;
+  if(stroke){ const c=stroke.cv.getContext("2d"); c.globalAlpha=1; c.drawImage(baseCv,0,0); stroke=null; }
+  const a=e.touches[0], b=e.touches[1];
+  pinch={ d:Math.max(10,tDist(a,b)), z:zoom, cx:(a.clientX+b.clientX)/2, cy:(a.clientY+b.clientY)/2 };
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(!pinch||e.touches.length!==2) return; e.preventDefault();
+  const a=e.touches[0], b=e.touches[1], cx=(a.clientX+b.clientX)/2, cy=(a.clientY+b.clientY)/2;
+  zoomAtPt(pinch.z*tDist(a,b)/pinch.d, cx, cy);
+  if(zoom>1){ panX+=cx-pinch.cx; panY+=cy-pinch.cy; applyZoom(); }
+  pinch.cx=cx; pinch.cy=cy;
+},{passive:false});
+document.addEventListener("touchend",e=>{ if(e.touches.length<2) pinch=null; });
+document.addEventListener("touchcancel",()=>{ pinch=null; });
 
 /* ================= 画面遷移・演出 ================= */
 function showScene(s){ ["titleScene","lobbyScene","gameScene"].forEach(id=>$(id).classList.toggle("on", id===s));
@@ -1555,19 +1746,22 @@ function openResult(){
   $("resList").innerHTML=rl.map(r=>'<div class="res-row'+(r.p.score===top?" top":"")+'"><span class="rk">'+r.rk+'</span><span class="p-dot" style="background:'+r.p.c+'"></span><span class="nm">'+esc(r.p.n)+(r.p.id===myId&&!debug&&r.p.n!=="あなた"?"（あなた）":"")+'</span><span class="pt">'+r.p.score+'組</span></div>').join("");
   /* 横並びの2択は決定(主ボタン)を右 */
   let b='<button class="ghost" id="resTitle">やめる</button>';
-  if(debug) b+='<button class="close" id="resAgain">もう一回</button>';
+  if(debug||solo) b+='<button class="close" id="resAgain">もう一回</button>';
   else b+='<button class="close" id="resLobby">ロビーに戻る</button>';   // オーナー=全員をロビーへ／参加者=自分だけ先にロビーで待つ(2026-09-28)
   $("resBtns").innerHTML=b;
   $("resTitle").onclick=()=>{ ensureAudio(); playSelect(); goTitle(); };
-  const ra=$("resAgain"); if(ra) ra.onclick=()=>{ ensureAudio(); playSelect(); $("resultOv").classList.remove("on","peek"); const n=G.players.length, k=G.rules.k; clearChat(); startDebug(n,k); };
+  const ra=$("resAgain"); if(ra) ra.onclick=()=>{ ensureAudio(); playSelect(); $("resultOv").classList.remove("on","peek"); const n=G.players.length, k=G.rules.k; clearChat(); if(solo) startSolo(n,k); else startDebug(n,k); };
   const rb=$("resLobby"); if(rb) rb.onclick=()=>{ ensureAudio(); playSelect(); if(isHost) hostToLobby(); else guestLocalLobby(); };
   $("resultOv").classList.remove("peek"); $("resultOv").classList.add("on");
 }
 $("resultOv").addEventListener("click",e=>{ if(e.target===$("resultOv")) $("resultOv").classList.toggle("peek"); });   // 枠外で一時的に隠す
 
 /* 状態が変わった時の演出(ホストもゲストも同じ関数を通る) */
+function playMyTurn(){ if(!actx) return; const t=T0(); [784,988,1319].forEach((f,i)=>note(f,t+i*0.09,0.22,0.13,"triangle")); note(1568,t+0.28,0.35,0.07,"sine"); }
+function myTurnFx(){ if(!G||G.phase!=="match"||G.turn!==myId) return; playMyTurn(); bigFx("あなたの番","turn"); try{ if(navigator.vibrate) navigator.vibrate(70); }catch(e){} }
 function onState(){
   if(!G) return;
+  let justMatch=false;
   if(seen.gid!==G.gid){
     resetLocal();
     seen={ gid:G.gid, sk:-1, phase:"", getN:G.getN, missN:G.missN, turn:"", over:false };
@@ -1580,9 +1774,10 @@ function onState(){
   }
   if(seen.phase!==G.phase){
     const ph=G.phase; seen.phase=ph;
+    resetZoom();
     if(ph==="topic"){ playStep(); bigFx("お題を考えよう"); }
-    if(ph==="draw"){ playStep(); bigFx("お絵かきタイム"); addSys("お絵かきタイム"); }
-    if(ph==="match"){ playStep(); const t=pById(G.turn); bigFx("神経衰弱スタート<small>最初は "+esc(t?t.n:"")+"</small>"); addSys("神経衰弱スタート（最初は "+(t?t.n:"")+"）"); }
+    if(ph==="draw"){ playStep(); bigFx("おえかきタイム"); addSys("おえかきタイム"); }
+    if(ph==="match"){ justMatch=true; playStep(); const t=pById(G.turn); bigFx("神経衰弱スタート<small>最初は "+esc(t?t.n:"")+"</small>"); addSys("神経衰弱スタート（最初は "+(t?t.n:"")+"）"); }
     if(ph==="over" && !seen.over){
       seen.over=true;
       const rl=rankList(), top=rl.length? rl[0].p.score : 0, winners=rl.filter(r=>r.p.score===top).map(r=>r.p);
@@ -1594,11 +1789,11 @@ function onState(){
   if(G.missN>seen.missN){ seen.missN=G.missN; playMiss(); }
   if(G.phase==="match" && seen.turn!==G.turn+"|"+G.sk){
     const prevTurn=seen.turn.split("|")[0]; seen.turn=G.turn+"|"+G.sk;
-    if(G.turn===myId && prevTurn!==myId && !debug){ playTurn(); toast("あなたの番"); }
+    if(G.turn===myId && prevTurn!==myId && !debug){ if(justMatch) setTimeout(myTurnFx,1700); else myTurnFx(); }   // 音+画面のまん中に大きく+スマホは振動(2026-10-07)
   }
   G.players.forEach(p=>{ seen.gone=seen.gone||{};
-    if(p.gone && !seen.gone[p.id]){ seen.gone[p.id]=1; addSys(p.n+" が退出した"); toast(p.n+" が退出した"); }
-    else if(!p.gone && seen.gone[p.id]){ delete seen.gone[p.id]; addSys(p.n+" が戻ってきた"); } });
+    if(p.gone && !seen.gone[p.id]){ seen.gone[p.id]=1; addSys(p.n+"が退出しました"); toast(p.n+"が退出しました"); }
+    else if(!p.gone && seen.gone[p.id]){ delete seen.gone[p.id]; addSys(p.n+"が戻りました"); } });
 }
 
 /* ================= オンライン(ホスト権威+スナップショット) ================= */
@@ -1674,6 +1869,7 @@ function onLeave(id){
   if(G.phase==="draw"){                            // 描き終わっていないカードは取り除く(相方を失ったお題はペアにならない)
     G.cards.forEach(c=>{ if(c.dr===id && !c.done) c.gone=true; });
     if(G.cards.every(x=>x.done||x.gone)){ startMatch(); return; }
+    if(G.ready) delete G.ready[id]; if(activePs().length && allReady()){ endDrawNow(); return; }
   }
   if(G.phase==="match" && G.turn===id){ G.flip=[]; G.resAt=0; nextTurn(); return; }
   bump();
@@ -1734,7 +1930,7 @@ function specMyName(){ const m=specIds().filter(o=>o.id===myId)[0]; return m? m.
 function renderSpecList(){
   const box=$("specList"); if(!box) return;
   const list=specIds(), canKick= online && !spectating && isHost;   /* 追放できるのはオーナーだけ */
-  if(!list.length){ box.innerHTML='<div class="spec-empty">まだ誰も見ていません</div>'; return; }
+  if(!list.length){ box.innerHTML='<div class="spec-empty">観戦者はいません</div>'; return; }
   box.innerHTML="";
   list.forEach(o=>{
     const row=document.createElement("div"); row.className="spec-row"; row.innerHTML=SPEC_EYE;
@@ -1765,7 +1961,7 @@ $("specClose").onclick=()=>{ ensureAudio(); playSelect(); $("specOv").classList.
 $("specOv").addEventListener("click",e=>{ if(e.target===$("specOv")) $("specOv").classList.remove("on"); });
 setInterval(updateSpecBadge, 2000);
 function goTitle(){
-  spectating=false; $("specBadge").style.display="none";
+  spectating=false; solo=false; resetZoom(); $("specBadge").style.display="none";
   leaveChannel(); G=null; localLobby=false; debug=false; phaseUI="title"; nameAsked=false; lobby=[]; clearChat(); resetLocal();
   document.querySelectorAll(".overlay").forEach(o=>o.classList.remove("on","peek"));
   showScene("titleScene");
@@ -1787,18 +1983,18 @@ $("joinRoomBtn").onclick=()=>{
   if(window.__pendingJoin) inp.value=window.__pendingJoin;
   $("pasteBtn").onclick=async ()=>{ ensureAudio();
     try{ const c=pickCode(await navigator.clipboard.readText()).slice(0,5);
-      if(c){ inp.value=c; nt.textContent="貼り付けた"; nt.className="room-note"; } else { nt.textContent="コピーした合言葉が見つからない"; nt.className="room-note err"; } }
-    catch(e){ nt.textContent="貼り付けできない。手入力で頼む"; nt.className="room-note err"; } };
+      if(c){ inp.value=c; nt.textContent="貼り付けました"; nt.className="room-note"; } else { nt.textContent="合言葉が見つかりません"; nt.className="room-note err"; } }
+    catch(e){ nt.textContent="貼り付けできません。手入力してください"; nt.className="room-note err"; } };
   $("codeGo").onclick=()=>{
     ensureAudio(); playSelect();
     const c=(inp.value||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
-    if(c.length!==5){ nt.textContent="合言葉は5文字"; nt.className="room-note err"; return; }
+    if(c.length!==5){ nt.textContent="合言葉は5文字です"; nt.className="room-note err"; return; }
     nt.textContent="部屋を探しています…"; nt.className="room-note";
     code=c; isHost=false; online=true; lobby=[]; lastVer=-1;
     openChannel(code,()=>{
       try{ ch.send({type:"broadcast",event:"hello",payload:{id:myId,n:myName}}); }catch(e){}
       setTimeout(()=>{ if(!hostId&&ch){ try{ ch.send({type:"broadcast",event:"hello",payload:{id:myId,n:myName}}); }catch(e){} } },2200);   // 届かなかった時のためにもう一度
-      joinWatch=setTimeout(()=>{ if(!hostId){ nt.textContent="部屋がみつからない。合言葉を確認しよう"; nt.className="room-note err"; leaveChannel(); } },7000);
+      joinWatch=setTimeout(()=>{ if(!hostId){ nt.textContent="部屋が見つかりません。合言葉を確認してください"; nt.className="room-note err"; leaveChannel(); } },7000);
     });
   };
 };
@@ -1817,7 +2013,7 @@ function openChannel(c,onReady){
     renderLobby(); sendSnap();
   });
   ch.on("broadcast",{event:"locked"},({payload})=>{ if(payload&&payload.to===myId){ leaveChannel();
-    roomStatus('<div class="room-note err">'+(payload.full?"満室です（"+MAX_P+"人まで）":"今はゲーム中みたい。次のゲーム開始まで待ってね")+'</div>'); } });
+    roomStatus('<div class="room-note err">満室のため参加できません（'+MAX_P+'人まで）</div>'); } });   // ゲーム中に来た人は観戦者として入れるので、断るのは満室の時だけ
   ch.on("broadcast",{event:"spec"},({payload})=>{ if(payload&&payload.to===myId&&!isHost){ clearTimeout(joinWatch); } });   // 観戦者として入れてもらえた(画面はsnapで切り替わる)
   ch.on("broadcast",{event:"snap"},({payload})=>{ if(!isHost&&payload) applySnap(payload); });
   ch.on("broadcast",{event:"act"},({payload})=>{ if(!isHost||!payload) return;
@@ -1849,7 +2045,7 @@ function openChannel(c,onReady){
       try{ await ch.track({id:myId,n:myName||"",t:joinT}); }catch(e){}
       if(readyDone){ if(isHost) sendSnap(); else { try{ ch.send({type:"broadcast",event:"hello",payload:{id:myId,n:myName}}); }catch(e){} } return; }
       readyDone=true; if(onReady) onReady();
-    } else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){ roomStatus('<div class="room-note err">通信失敗。通信環境を見直そう</div>'); }
+    } else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){ roomStatus('<div class="room-note err">通信に失敗しました。通信環境を確認してください</div>'); }
   });
 }
 function startHb(){ clearInterval(hbIv); hbIv=setInterval(sendSnap,1500); }
@@ -1874,7 +2070,7 @@ function applySnap(p){
     renderLobby(); return;
   }
   G=p.G; localEnd=Date.now()+(p.left||0);
-  { const sp=!G.players.some(q=>q.id===myId); if(sp&&!spectating){ toast("とちゅうから観戦しています"); addSys("観戦モードで入室"); } spectating=sp; }
+  { const sp=!G.players.some(q=>q.id===myId); if(sp&&!spectating){ toast("観戦モードで参加しました"); addSys("観戦モードで参加"); } spectating=sp; }
   if(pending && pendingIn()) pending=null;
   if(pending && Date.now()-pendingSent>900){ pendingSent=Date.now(); sendAct(pending); }   // 届いていなければ送り直す
   /* 送った絵: ホストが受け取った(=そのカードが完成扱い)と分かるまで送り直す */
@@ -1890,15 +2086,16 @@ function applySnap(p){
 
 /* --- ロビー --- */
 function kEff(n){ return Math.max(1,Math.min(rules.k, Math.floor(MAX_PAIRS/Math.max(1,n)))); }
-function ruleFrameHTML(){
-  const row=(name,key,val)=>'<div class="rule-col"><span class="rc-name">'+name+'</span><div class="rc-row"><button class="stp" data-k="'+key+'" data-s="-1">−</button><span class="rc-val">'+val+'</span><button class="stp" data-k="'+key+'" data-s="1">＋</button></div></div>';
-  return '<div class="rule-frame">'
-    +row("お題の数（1人）","k",rules.k+"個")+row("お絵かきの時間","draw",fmtT(rules.draw))
+function ruleFrameHTML(ro){   // ro=オーナー以外(同じUIを、押せないグレーで見せる)
+  const dis=ro?" disabled":"";
+  const row=(name,key,val)=>'<div class="rule-col"><span class="rc-name">'+name+'</span><div class="rc-row"><button class="stp" data-k="'+key+'" data-s="-1"'+dis+'>−</button><span class="rc-val">'+val+'</span><button class="stp" data-k="'+key+'" data-s="1"'+dis+'>＋</button></div></div>';
+  return '<div class="rule-frame'+(ro?" ro":"")+'">'
+    +row("お題の数（1人）","k",rules.k+"個")+row("おえかきの時間","draw",fmtT(rules.draw))
     +row("お題を考える時間","topic",fmtT(rules.topic))+row("1手の制限時間","turn",rules.turn+"秒")+'</div>'
-    +'<button class="rule-reset" id="ruleReset">初期設定に戻す</button>';
+    +'<button class="rule-reset" id="ruleReset"'+dis+'>初期設定に戻す</button>';
 }
 const OPTS={ k:K_OPTS, draw:DRAW_OPTS, topic:TOPIC_OPTS, turn:TURN_OPTS };
-function ruleSummary(){ return "お題 1人"+rules.k+"個・お絵かき "+fmtT(rules.draw)+"<br>お題を考える時間 "+fmtT(rules.topic)+"・1手 "+rules.turn+"秒"; }
+function ruleSummary(){ return "お題 1人"+rules.k+"個・おえかき "+fmtT(rules.draw)+"<br>お題を考える時間 "+fmtT(rules.topic)+"・1手 "+rules.turn+"秒"; }
 const PEN_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>';
 function renderLobby(){
   if(!online||phaseUI!=="lobby") return;
@@ -1913,15 +2110,15 @@ function renderLobby(){
   });
   h+='</div><div class="room-note">合言葉（'+TAPW+'でコピー）</div>'
     +'<div class="code-show" id="codeShow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>'+esc(code)+'</div>';
-  h+= isHost? ruleFrameHTML() : '<div class="rule-sum">'+ruleSummary()+'</div>';
+  h+= ruleFrameHTML(!isHost);
   const n=lobby.length, okN=n>=MIN_P&&n<=MAX_P;
   if(!okN) h+='<div class="room-note">'+MIN_P+"〜"+MAX_P+"人で遊べます（いま"+n+"人）"+'</div>';
-  if(isHost) h+='<button class="btn-main" id="lobbyStart"'+(okN?"":" disabled")+'>はじめる</button>';
+  h+='<button class="btn-main" id="lobbyStart"'+((okN&&isHost)?"":" disabled")+'>はじめる</button>';   // オーナー以外にも見せる(押せない)
   $("lobbyBox").innerHTML=h;
   if(!nameAsked){ nameAsked=true; openNameOv(); }
   $("codeShow").onclick=async ()=>{ ensureAudio(); playSelect();
-    try{ await navigator.clipboard.writeText(inviteText(code)); toast("招待メッセージをコピーした"); }
-    catch(e){ try{ const ta=document.createElement("textarea"); ta.value=inviteText(code); document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); toast("招待メッセージをコピーした"); }catch(_){ toast("コピーできなかった…"); } } };
+    try{ await navigator.clipboard.writeText(inviteText(code)); toast("招待メッセージをコピーしました"); }
+    catch(e){ try{ const ta=document.createElement("textarea"); ta.value=inviteText(code); document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); toast("招待メッセージをコピーしました"); }catch(_){ toast("コピーできませんでした"); } } };
   $("lobbyBox").querySelectorAll("[data-me]").forEach(el=>el.onclick=()=>{ ensureAudio(); playSelect(); openNameOv(true); });
   { const md=$("myDot"); if(md) md.onclick=()=>{ ensureAudio(); playSelect(); const cp=$("colorPick"), me0=lobbyById(myId);   // ★自分の色の丸を押すとカラーパレット(丸の近くに開く)
       cp.value=/^#[0-9a-f]{6}$/i.test(me0&&me0.c||"")? me0.c : "#ff6b6b";
@@ -1952,7 +2149,7 @@ function spawnStamp(i,who,self){
   if(stampMuted && !self) return;
   i=Math.max(0,Math.min(2,i|0));
   const el=document.createElement("div"); el.className="stamp-fly";
-  const hx=0.06+Math.random()*0.88; el.style.left="calc("+(hx*100).toFixed(1)+"% - 48px)";
+  const hx=0.06+Math.random()*0.88; el.style.left="max(0px, min(calc("+(hx*100).toFixed(1)+"% - 48px), calc(100% - 96px)))";   // 画面の外へはみ出さない(はみ出すとスマホで画面の幅が揺れる)
   const central=1-Math.abs(hx-0.5)*2;
   el.style.setProperty("--rise","-"+(24+(1-central)*16).toFixed(0)+"vh");
   el.style.setProperty("--dx",(Math.random()*24-12).toFixed(0)+"px");
@@ -2026,7 +2223,7 @@ function buildHelp(){
   $("helpBody").innerHTML='<div class="h-sec">基本ルール</div>'
    +'<p>みんなでお題を考えて、ひとつのお題を2人が別々に絵に描く。その絵を裏返して並べ、神経衰弱で「同じお題から生まれた2枚」をさがそう</p>'
    +'<div class="h-sec">ながれ</div>'
-   +'<ul class="h-list"><li>お題づくり　お題を考える（ほかの人には見えない）</li><li>お絵かき　割り振られたお題を、時間内に全部描く（全員いっせいに。時間がたつと次の絵へ自動で移る）</li><li>神経衰弱　1回に2枚めくる。同じお題ならGET、もう一度めくれる</li></ul>'
+   +'<ul class="h-list"><li>お題づくり　お題を考える</li><li>おえかき　割り振られたお題を、時間内に全部描く（全員いっせいに。時間がたつと次の絵へ自動で移る）</li><li>神経衰弱　1回に2枚めくる。同じお題ならGET、もう一度めくれる</li></ul>'
    +'<div class="h-sec">勝ち負け</div>'
    +'<p>ペアが全部そろったらおしまい。いちばん多くGETした人の勝ち</p>'
    +'<div class="h-sec">小ばなし</div>'
@@ -2168,7 +2365,7 @@ function sgReset(){
   clearTimeout(toastT); $("toast").classList.remove("on"); clearTimeout(fxT); $("bigFx").className="";
   goTitle();                                                     // 部屋・状態・チャット・ダイアログ・絵を片付けてタイトルへ
   rules=Object.assign({},DEF_RULES); code=""; nameAsked=true; pending=null; dbgShow=false;
-  tool="pen"; penCol=INK[0]; penLv=PEN_DEF; penA=1; resetClear(); resetDone(); $("cardOv").classList.remove("on"); updateTools(); setMini(true);
+  tool="pen"; penCol="#000000"; penLv=PEN_DEF; penA=1; resetClear(); resetDone(); $("cardOv").classList.remove("on"); updateTools(); setMini(true);
 }
 /* 状態を作る。o.guest=参加者側で見る／o.k=1人のお題の数 */
 function sgG(n,o){
@@ -2176,7 +2373,7 @@ function sgG(n,o){
   G={ gid:"sg"+(++sgSeq), rules:Object.assign({},DEF_RULES,{ k:o.k||1 }),
       players:[...Array(n)].map((_,i)=>({ id:i?"g"+i:myId, n:SG_NM[i], c:PCOL[i], score:0, gone:false })),
       phase:o.phase||"topic", sk:5, stepEnd:0, topics:{}, tp:[], cards:[], board:[], pairTotal:0, taken:{},
-      turn:"", flip:[], resAt:0, getN:0, missN:0, last:null, drawEnd:0 };
+      turn:"", flip:[], resAt:0, getN:0, missN:0, last:null, drawEnd:0, ready:{} };
   isHost=!o.guest; online=!!o.guest; hostId=o.guest? "g1" : myId;
   return G;
 }
@@ -2219,10 +2416,9 @@ const sgOverG=(scores,o)=>{ o=o||{}; sgG(4,Object.assign({ phase:"over", k:2 },o
 sc("タイトル・入室","タイトル",()=>{});
 sc("タイトル・入室","部屋に入る（合言葉の入力）",()=>{ $("joinRoomBtn").onclick(); });
 sc("タイトル・入室","合言葉が5文字でない",()=>{ $("joinRoomBtn").onclick(); $("codeInput").value="AB"; $("codeGo").onclick(); });
-sc("タイトル・入室","部屋がみつからない",()=>{ $("joinRoomBtn").onclick(); $("codeInput").value="HUBAP"; const nt=$("joinNote"); nt.textContent="部屋がみつからない。合言葉を確認しよう"; nt.className="room-note err"; });
-sc("タイトル・入室","満室で入れない",()=>{ roomStatus('<div class="room-note err">満室です（'+MAX_P+'人まで）</div>'); });
-sc("タイトル・入室","ゲーム中で入れない",()=>{ roomStatus('<div class="room-note err">今はゲーム中みたい。次のゲーム開始まで待ってね</div>'); });
-sc("タイトル・入室","通信失敗",()=>{ roomStatus('<div class="room-note err">通信失敗。通信環境を見直そう</div>'); });
+sc("タイトル・入室","部屋がみつからない",()=>{ $("joinRoomBtn").onclick(); $("codeInput").value="HUBAP"; const nt=$("joinNote"); nt.textContent="部屋が見つかりません。合言葉を確認してください"; nt.className="room-note err"; });
+sc("タイトル・入室","満室で入れない",()=>{ roomStatus('<div class="room-note err">満室のため参加できません（'+MAX_P+'人まで）</div>'); });
+sc("タイトル・入室","通信失敗",()=>{ roomStatus('<div class="room-note err">通信に失敗しました。通信環境を確認してください</div>'); });
 
 sc("ロビー","人数が足りない（オーナー）",()=>sgLobby(1));
 sc("ロビー","はじめられる（オーナー）",()=>sgLobby(4));
@@ -2245,21 +2441,23 @@ sc("お題づくり","決定した（ほかの人を待つ）",()=>sgTopic(4,{ s
 sc("お題づくり","送信中（参加者側）",()=>{ sgTopic(4,{ guest:true }); pending={ t:"topics", l:["ねこ"], sk:G.sk, from:myId }; render(); });
 sc("お題づくり","残り5秒",()=>{ sgLeft=4; sgTopic(4); });
 
-sc("お絵かき","お絵かきタイムのはじまり",()=>{ sgLeft=120; sgDraw(); sgPhaseIn(); });
-sc("お絵かき","描く前（1枚目）",()=>{ sgLeft=118; sgDraw(); });
-sc("お絵かき","描いている途中",()=>{ sgLeft=100; sgDraw(); if(curCid){ drafts[curCid]=autoArt(G.tp[cById(curCid).tp].t); repaintCur(); updateTools(); } });
-sc("お絵かき","4枚描く（1枚目）",()=>{ sgLeft=110; sgDraw({ k:2 }); });
-sc("お絵かき","4枚描く（2枚目に自動で移った）",()=>{ sgLeft=85; sgDraw({ k:2, set:g=>{ const c=myCards(myId)[0]; drafts[c.id]=autoArt(G.tp[c.tp].t); } }); });
-sc("お絵かき","4枚描く（最後の1枚）",()=>{ sgLeft=20; sgDraw({ k:2, set:g=>{ myCards(myId).slice(0,3).forEach(c=>{ drafts[c.id]=autoArt(G.tp[c.tp].t); }); } }); });
-sc("お絵かき","お題なし（どれともペアにならない絵）",()=>sgDraw({ set:g=>{ myCards(myId)[0].tp=-1; } }));
-sc("お絵かき","消しゴムを選んだ",()=>{ sgDraw(); if(curCid){ drafts[curCid]=autoArt("ねこ"); repaintCur(); } tool="erase"; updateTools(); });
-sc("お絵かき","塗りつぶし・四角・丸を使った",()=>{ sgDraw(); if(curCid){ drafts[curCid]=[ { k:"oval", col:"#000000", a:1, w:6, p:[40,40,200,200] }, { k:"fill", col:"#ffc126", a:1, w:1, p:[120,120] },
+sc("おえかき","おえかきタイムのはじまり",()=>{ sgLeft=120; sgDraw(); sgPhaseIn(); });
+sc("おえかき","描く前（1枚目）",()=>{ sgLeft=118; sgDraw(); });
+sc("おえかき","描いている途中",()=>{ sgLeft=100; sgDraw(); if(curCid){ drafts[curCid]=autoArt(G.tp[cById(curCid).tp].t); repaintCur(); updateTools(); } });
+sc("おえかき","4枚描く（1枚目）",()=>{ sgLeft=110; sgDraw({ k:2 }); });
+sc("おえかき","4枚描く（2枚目に自動で移った）",()=>{ sgLeft=85; sgDraw({ k:2, set:g=>{ const c=myCards(myId)[0]; drafts[c.id]=autoArt(G.tp[c.tp].t); } }); });
+sc("おえかき","4枚描く（最後の1枚）",()=>{ sgLeft=20; sgDraw({ k:2, set:g=>{ myCards(myId).slice(0,3).forEach(c=>{ drafts[c.id]=autoArt(G.tp[c.tp].t); }); } }); });
+sc("おえかき","お題なし（どれともペアにならない絵）",()=>sgDraw({ set:g=>{ myCards(myId)[0].tp=-1; } }));
+sc("おえかき","消しゴムを選んだ",()=>{ sgDraw(); if(curCid){ drafts[curCid]=autoArt("ねこ"); repaintCur(); } tool="erase"; updateTools(); });
+sc("おえかき","塗りつぶし・四角・丸を使った",()=>{ sgDraw(); if(curCid){ drafts[curCid]=[ { k:"oval", col:"#000000", a:1, w:6, p:[40,40,200,200] }, { k:"fill", col:"#ffc126", a:1, w:1, p:[120,120] },
   { k:"rect", col:"#0050cd", a:.6, w:10.5, p:[20,150,110,236] }, { k:"pen", col:"#ff0013", a:.5, w:18, p:[60,60,120,90,180,60] } ]; repaintCur(); } tool="fill"; penCol="#26c9ff"; updateTools(); });
-sc("お絵かき","太い線・自由な色・不透明度50%",()=>{ sgDraw(); penCol="#00a0a0"; penLv=4; penA=.5; updateTools(); });
-sc("お絵かき","全部消す（確定待ち）",()=>{ sgDraw(); if(curCid){ drafts[curCid]=autoArt("ねこ"); repaintCur(); updateTools(); } $("clearBtn").onclick(); });
-sc("お絵かき","完成（確定待ち）",()=>{ sgDraw(); $("drDone").onclick(); });
-sc("お絵かき","残り5秒",()=>{ sgLeft=4; sgDraw(); });
-sc("お絵かき","描き終わった（ほかの人を待つ）",()=>sgDraw({ set:g=>{ myCards(myId).forEach(c=>{ c.done=true; localDone[c.id]=true; arts[c.id]=""; }); } }));
+sc("おえかき","太い線・自由な色・不透明度50%",()=>{ sgDraw(); penCol="#00a0a0"; penLv=4; penA=.5; updateTools(); });
+sc("おえかき","全部消す（確定待ち）",()=>{ sgDraw(); if(curCid){ drafts[curCid]=autoArt("ねこ"); repaintCur(); updateTools(); } $("clearBtn").onclick(); });
+sc("おえかき","完成を押した（まだ描ける・キャンセルできる）",()=>{ sgDraw(); $("drDone").onclick(); });
+sc("おえかき","ほかの人が完成を押した",()=>sgDraw({ set:g=>{ g.ready.g1=1; g.ready.g2=1; } }));
+sc("おえかき","最近使った色",()=>{ sgDraw(); recentCols=["#ff0013","#26c9ff","#ffc126","#00a0a0","#8a3ffc"]; renderRecent(); });
+sc("おえかき","残り5秒",()=>{ sgLeft=4; sgDraw(); });
+sc("おえかき","時間切れ（ほかの人の絵を待つ）",()=>sgDraw({ set:g=>{ myCards(myId).forEach(c=>{ c.done=true; localDone[c.id]=true; arts[c.id]=""; }); } }));
 
 sc("神経衰弱","神経衰弱のはじまり",()=>{ sgMatch(); sgPhaseIn(); });
 sc("神経衰弱","自分の番",()=>sgMatch());
@@ -2275,6 +2473,7 @@ sc("神経衰弱","そろったカードを押して拡大",()=>{ sgMatch({ set:
 sc("神経衰弱","ほかの人のカーソルが見える",()=>{ sgMatch({ set:g=>{ g.turn="g2"; g.flip=[g.board[1]]; } }); setTimeout(()=>showRcur({ id:"g2", i:2, x:.45, y:.55 }),60); });
 sc("神経衰弱","退出した人が戻ってきた",()=>{ sgMatch({ set:g=>{ g.players[3].gone=true; } }); sgFire(()=>{ G.players[3].gone=false; }); });
 sc("神経衰弱","退出した人がいる",()=>{ sgMatch(); sgFire(()=>{ G.players[3].gone=true; }); });
+sc("神経衰弱","白紙の絵（お題を文字で出す）",()=>{ sgMatch({ set:g=>{ const gs=sgGroups(); gs[0].forEach(cid=>{ arts[cid]=encodeArt([]); }); sgTake(gs[0],"g2"); } }); });
 
 sc("結果","1人の勝ち",()=>{ sgOverG([3,2,2,1]); sgPhaseIn(); });
 sc("結果","同点で2人の勝ち",()=>{ sgOverG([3,3,1,1]); sgPhaseIn(); });
@@ -2287,12 +2486,12 @@ sc("結果","結果のあとカードを拡大",()=>{ sgOverG([3,2,2,1]); openCa
 
 sc("ダイアログ","あそびかた",()=>{ buildHelp(); $("helpOv").classList.add("on"); });
 
-sc("試作","ひとりでためす（試作パネル）",()=>startDebug(4,1));
+sc("試作","ひとりでためす（ロボットと遊ぶ）",()=>startSolo(4,1));
 
 /* ================= タイマー ================= */
 let lastWarnS=-1;
 tickIv=setInterval(()=>{
-  hostTick();
+  hostTick(); cpuTick();
   if(phaseUI==="game"&&G){
     if(gallery){ if(G.stepEnd) G.stepEnd=Date.now()+sgLeft*1000; localEnd=G.stepEnd; }   // ★シーン一覧: 残り時間は止めたまま
     else if(isHost||debug) localEnd=G.stepEnd||0;

@@ -85,12 +85,12 @@
     font-size:12.5px; font-weight:800; color:var(--card); opacity:.85; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
   .rule-sum.err{ color:#ff8f7d; opacity:1; }
   .rule-sum{ font-size:12.5px; font-weight:700; opacity:.72; text-align:center; line-height:1.7; }
-  .rule-frame.ro .stp{ visibility:hidden; }                                   /* 参加者側は見るだけ */
+  /* ★参加者側(オーナー以外)もオーナーと同じUIを見る。操作部品はすべてグレーで押せない(値はオーナーのスナップで同期) */
+  .rule-frame.ro .stp, .rule-frame.ro .rtgl, .role-box.ro .stp, .stage-box.ro .stg-arw, .stage-box.ro .stg-dot, .rule-reset.ro{ opacity:.4; pointer-events:none; cursor:default; }
   .rtgl{ position:relative; width:56px; height:32px; padding:0; border:none; border-radius:999px; background:rgba(244,239,230,.2); cursor:pointer; transition:background .18s; }   /* ON/OFFのスイッチ(丸が左右に動く) */
   .rtgl .knob{ position:absolute; left:3px; top:3px; width:26px; height:26px; border-radius:50%; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.35); transition:transform .18s cubic-bezier(.3,.8,.3,1); }
   .rtgl.on{ background:var(--gold); }
   .rtgl.on .knob{ transform:translateX(24px); }
-  .rule-frame.ro .rtgl{ pointer-events:none; }
   .rule-frame .rule-col:last-child:nth-child(odd){ grid-column:1/-1; }       /* 3つ目の項目は横いっぱいの真ん中 */
   /* ステージ(ロビー): 名前・左右の切り替え・見た目 */
   .stage-box{ width:var(--uiw); background:rgba(0,0,0,.18); border:1.5px solid rgba(244,239,230,.18); border-radius:16px; padding:12px 12px 14px; }
@@ -99,15 +99,12 @@
   .stg-dots.stg-cst{ height:11px; align-items:center; font-size:11.5px; font-weight:900; color:var(--gold); letter-spacing:.08em; }
   .stg-dot{ width:9px; height:9px; padding:0; border:none; border-radius:50%; background:rgba(244,239,230,.25); cursor:pointer; }
   .stg-dot.on{ background:var(--gold); transform:scale(1.25); }
-  .stage-box.ro .stg-dot{ cursor:default; pointer-events:none; }
   .stg-arw.stg-mine.on{ background:var(--gold); color:#3a2a06; }
-  .stage-box.ro .stg-ctrl{ display:none; }
   .stg-nm{ display:flex; flex-direction:column; align-items:center; gap:1px; font-size:17px; font-weight:900; color:var(--gold); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .stg-nm small{ font-size:10.5px; font-weight:800; color:var(--card); opacity:.55; letter-spacing:.06em; }
   .stg-arw{ flex:none; width:38px; height:38px; border:none; border-radius:10px; background:rgba(244,239,230,.14); color:var(--card); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
   .stg-arw svg{ width:18px; height:18px; }
   .stg-arw:active{ transform:translateY(2px); }
-  .stage-box.ro .stg-arw{ visibility:hidden; }
   .stg-view{ width:148px; height:148px; margin:10px auto 0; }
   /* 自作ステージの一覧(ダイアログとステージを作る画面で共通): 3列・増えたら縦スクロール */
   .stg-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-height:56svh; overflow-y:auto; padding:2px; }
@@ -196,7 +193,7 @@
   .rcnt .rc-val.zero{ color:rgba(244,239,230,.3); }   /* 0人以下=いない役職 */
   .rcnt .rc-val.bad{ color:#ff6a55; }                   /* 市民がマイナス・人狼が0人 */
   .rcnt .stp{ width:30px; height:26px; font-size:16px; }
-  .rcnt .stp.hide, .role-box.ro .stp{ visibility:hidden; }
+  .rcnt .stp.hide{ visibility:hidden; }
   .role-err{ margin-top:7px; font-size:12.5px; font-weight:800; color:#ff8f7d; text-align:center; }
   .role-err:empty{ display:none; }
   #lobbyBox .sec-label{ margin:6px 0 -7px; }                               /* 見出しは枠に近づける(ロビーのgap13pxとあわせて6px) */
@@ -219,7 +216,7 @@
   .lobby-row{ display:flex; align-items:center; gap:10px; background:rgba(244,239,230,.1);
     border-radius:11px; padding:9px 14px; font-size:15px; font-weight:800; }
   .lobby-row .nm{ flex:1; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .lobby-row .p-dot.mine{ cursor:pointer; }   /* 自分の色は押すと変えられる(見た目はほかの人と同じ) */
+  .lobby-row .p-dot.mine{ cursor:pointer; width:12px; height:12px; padding:0; margin:0; border:none; box-shadow:none; outline:none; transform:none; }   /* 自分の色は押すと変えられる(見た目・大きさはほかの人とまったく同じ) */
   .lobby-row .nm.undef{ opacity:.42; font-weight:700; }
   .p-dot{ width:12px; height:12px; border-radius:50%; flex:none; }
   .lobby-row .hostmark{ flex:none; font-size:11px; font-weight:900; color:#3a2a06; background:var(--gold); border-radius:999px; padding:2px 10px 3px; }
@@ -391,11 +388,11 @@
   .dbg-btns{ display:flex; flex-wrap:wrap; gap:7px; justify-content:center; margin-top:9px; }
   .dbg-btns .txt-btn{ padding:6px 13px; font-size:12px; }
 
-  .toast{ position:fixed; left:50%; bottom:38px; transform:translateX(-50%); z-index:90;
+  .toast{ position:fixed; left:50%; top:50%; transform:translate(-50%,calc(-50% + 10px)); z-index:200;   /* ★トーストは画面の上下左右ど真ん中(全ゲーム共通) */
     background:rgba(24,20,38,.96); border:1.5px solid rgba(244,239,230,.3); color:var(--card);
     padding:11px 20px; border-radius:999px; font-size:14px; font-weight:800; letter-spacing:.05em;
-    opacity:0; pointer-events:none; transition:opacity .2s; white-space:nowrap; max-width:92vw; }
-  .toast.on{ opacity:1; }
+    opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; white-space:nowrap; max-width:92vw; }
+  .toast.on{ opacity:1; transform:translate(-50%,-50%); }
   .splat{ position:absolute; z-index:3; width:0; height:0; pointer-events:none; }
   .splat .drop{ position:absolute; left:0; top:0; border-radius:50%; background:#8fd14f; box-shadow:0 0 6px rgba(143,209,79,.7); transform:translate(-50%,-50%); animation:splatDrop 1s cubic-bezier(.2,.8,.3,1) forwards; }
   .splat .drop:nth-child(3n){ background:#c9432f; box-shadow:0 0 6px rgba(201,67,47,.7); }
@@ -1960,7 +1957,7 @@ function wirePop(){
     wi.addEventListener("input",()=>{ if(!comp) fix(); });
     wi.addEventListener("keydown",e=>{ if(e.key!=="Enter"||e.isComposing||e.keyCode===229) return; e.preventDefault(); if(go) go.click(); });
   }
-  if(go) go.onclick=()=>{ ensureAudio(); const tx=cleanMsg(wi.value); if(!tx){ toast("3文字までで入力"); return; }
+  if(go) go.onclick=()=>{ ensureAudio(); const tx=cleanMsg(wi.value); if(!tx){ toast("3文字以内で入力してください"); return; }
     const tg=sel.tg, t=pById(tg); playWhisper(); sel.tg=null; sel.pop=""; sel.tx=""; sel.side="";
     submit({t:"wh",tg,tx}); render(); };
 }
@@ -2421,7 +2418,7 @@ function onState(){
     bubbles.push({ f:w.f, t:w.t, until:Date.now()+ms }); setTimeout(()=>{ if(G) render(); },ms+100);
     if(mineIn && !debug) playWhisper();
   });
-  G.players.forEach(p=>{ if(!p.alive && p.cause==="gone" && !(seen.gone||(seen.gone={}))[p.id]){ seen.gone[p.id]=1; addSys(p.n+" が退出した"); toast(p.n+" が退出した"); } });
+  G.players.forEach(p=>{ if(!p.alive && p.cause==="gone" && !(seen.gone||(seen.gone={}))[p.id]){ seen.gone[p.id]=1; addSys(p.n+" が退出しました"); toast(p.n+" が退出しました"); } });
   if($("memOv").classList.contains("on")) renderMem();   // 参加者一覧を開いている間も最新に
 }
 
@@ -2602,18 +2599,18 @@ $("joinRoomBtn").onclick=()=>{
   if(window.__pendingJoin) inp.value=window.__pendingJoin;
   $("pasteBtn").onclick=async ()=>{ ensureAudio();
     try{ const c=pickCode(await navigator.clipboard.readText()).slice(0,5);
-      if(c){ inp.value=c; nt.textContent="貼り付けた"; nt.className="room-note"; } else { nt.textContent="コピーした合言葉が見つからない"; nt.className="room-note err"; } }
-    catch(e){ nt.textContent="貼り付けできない。手入力で頼む"; nt.className="room-note err"; } };
+      if(c){ inp.value=c; nt.textContent="貼り付けました"; nt.className="room-note"; } else { nt.textContent="合言葉が見つかりません"; nt.className="room-note err"; } }
+    catch(e){ nt.textContent="貼り付けできません。手入力してください"; nt.className="room-note err"; } };
   $("codeGo").onclick=()=>{
     ensureAudio(); playSelect();
     const c=(inp.value||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
     if(c.length===5) leaveGallery();
-    if(c.length!==5){ nt.textContent="合言葉は5文字"; nt.className="room-note err"; return; }
+    if(c.length!==5){ nt.textContent="合言葉は5文字で入力してください"; nt.className="room-note err"; return; }
     nt.textContent="部屋を探しています…"; nt.className="room-note";
     code=c; isHost=false; online=true; lobby=[]; lastVer=-1;
     openChannel(code,()=>{
       try{ ch.send({type:"broadcast",event:"hello",payload:{id:myId,n:myName}}); }catch(e){}
-      joinWatch=setTimeout(()=>{ if(!hostId){ nt.textContent="部屋がみつからない。合言葉を確認しよう"; nt.className="room-note err"; leaveChannel(); } },4000);
+      joinWatch=setTimeout(()=>{ if(!hostId){ nt.textContent="部屋が見つかりません。合言葉を確認してください"; nt.className="room-note err"; leaveChannel(); } },4000);
     });
   };
 };
@@ -2630,7 +2627,7 @@ function openChannel(c,onReady){
     renderLobby(); sendSnap();
   });
   ch.on("broadcast",{event:"locked"},({payload})=>{ if(payload&&payload.to===myId){ leaveChannel();
-    roomStatus('<div class="room-note err">'+(payload.full?"満室です（"+MAX_P+"人まで）":"今はゲーム中みたい。次のゲーム開始まで待ってね")+'</div>'); } });
+    roomStatus('<div class="room-note err">'+(payload.full?"満室のため参加できません（"+MAX_P+"人まで）":"ゲーム進行中のため参加できません")+'</div>'); } });
   ch.on("broadcast",{event:"spec"},({payload})=>{ if(payload&&payload.to===myId&&!isHost){ clearTimeout(joinWatch); } });   // 観戦者として入れてもらえた(画面はsnapで切り替わる)
   ch.on("broadcast",{event:"snap"},({payload})=>{ if(!isHost&&payload) applySnap(payload); });
   ch.on("broadcast",{event:"act"},({payload})=>{ if(!isHost||!payload) return;
@@ -2663,7 +2660,7 @@ function openChannel(c,onReady){
       try{ await ch.track({id:myId,n:myName||"",t:joinT}); }catch(e){}
       if(readyDone){ if(isHost) sendSnap(); else { try{ ch.send({type:"broadcast",event:"hello",payload:{id:myId,n:myName}}); }catch(e){} } return; }
       readyDone=true; if(onReady) onReady();
-    } else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){ roomStatus('<div class="room-note err">通信失敗。通信環境を見直そう</div>'); }
+    } else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){ roomStatus('<div class="room-note err">通信に失敗しました。通信環境を確認してください</div>'); }
   });
 }
 function startHb(){ clearInterval(hbIv); hbIv=setInterval(sendSnap,1500); }
@@ -2688,7 +2685,7 @@ function applySnap(p){
     renderLobby(); return;
   }
   G=p.G; localEnd=Date.now()+(p.left||0);
-  { const sp=!G.players.some(q=>q.id===myId); if(sp&&!spectating){ toast("とちゅうから観戦しています"); addSys("観戦モードで入室（チャットは死亡した人と観戦者だけに見えます）"); } spectating=sp; }
+  { const sp=!G.players.some(q=>q.id===myId); if(sp&&!spectating){ toast("途中から観戦しています"); addSys("観戦モードで入室（チャットは死亡した人と観戦者だけに見えます）"); } spectating=sp; }
   if(pending && pendingDone(pending)) pending=null;
   if(pending && pending.sk===G.sk && Date.now()-pendingSent>900){ pendingSent=Date.now(); sendAct(pending); }   // 届いていなければ送り直す
   { const mp=whMap(myId); Object.keys(pendWh).forEach(k=>{ const o=pendWh[k]; if(o.sk!==G.sk || mp[k]!==undefined) delete pendWh[k]; }); }
@@ -2707,7 +2704,7 @@ function ruleFrameHTML(n,ro){
     +row("行動ターン数","turns",rules.turns+"ターン")
     +row("議論の時間","talk",fmtT(rules.talk))+row("1手の制限時間","step",rules.step+"秒")
     +'<div class="rule-col"><span class="rc-name">匿名投票</span><div class="rc-row"><button class="rtgl'+(rules.anon!==false?" on":"")+'" id="anonTgl" role="switch" aria-checked="'+(rules.anon!==false)+'" aria-label="匿名投票"><span class="knob"></span></button></div></div>'+'</div>'
-    +(ro? "" : '<button class="rule-reset" id="ruleReset">初期設定に戻す</button>');
+    +'<button class="rule-reset'+(ro?" ro":"")+'" id="ruleReset"'+(ro?" disabled tabindex=\"-1\"":"")+'>初期設定に戻す</button>';
 }
 const OPTS={ turns:TURN_OPTS, talk:TALK_OPTS, step:STEP_OPTS };
 const CHEV_L='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -2755,6 +2752,7 @@ function renderLobby(){
   if(!okN) h+='<div class="room-note">'+MIN_P+"〜"+MAX_P+"人で遊べます（いま"+n+"人）"+'</div>';
   if(isHost) h+='<button class="btn-main" id="lobbyStart"'+(okN&&!err?"":" disabled")+'>はじめる</button>';
   $("lobbyBox").innerHTML=h;
+  if(!isHost) $("lobbyBox").querySelectorAll(".rule-frame .stp, .rule-frame .rtgl, .role-box .stp, .stage-box .stg-arw, .stage-box .stg-dot, #ruleReset").forEach(b=>{ b.disabled=true; b.tabIndex=-1; });   // ★参加者側はオーナーと同じUIをグレーで(押せない)
   { const f=$("roleErrFix"); f.textContent=err; f.classList.toggle("on", !!err && $("lobbyScene").classList.contains("on")); }   // ★役職のエラーは画面に固定して出す(スクロールしても見える)
   if(!nameAsked){ nameAsked=true; openNameOv(); }
   const md=$("myDot"); if(md) md.onclick=()=>{ ensureAudio(); playSelect(); const cp=$("colorPick"); const me0=lobbyById(myId); cp.value=/^#[0-9a-f]{6}$/i.test(me0&&me0.c||"")? me0.c : "#ff6b6b";
@@ -2762,8 +2760,8 @@ function renderLobby(){
     cp.click(); };
   const mn=$("myNm"); if(mn) mn.onclick=()=>{ ensureAudio(); playSelect(); openNameOv(); };   // ★自分の名前を押すと名前の変更
   $("codeShow").onclick=async ()=>{ ensureAudio(); playSelect();
-    try{ await navigator.clipboard.writeText(inviteText(code)); toast("招待メッセージをコピーした"); }
-    catch(e){ try{ const ta=document.createElement("textarea"); ta.value=inviteText(code); document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); toast("招待メッセージをコピーした"); }catch(_){ toast("コピーできなかった…"); } } };
+    try{ await navigator.clipboard.writeText(inviteText(code)); toast("招待メッセージをコピーしました"); }
+    catch(e){ try{ const ta=document.createElement("textarea"); ta.value=inviteText(code); document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); toast("招待メッセージをコピーしました"); }catch(_){ toast("コピーできませんでした"); } } };
   if(!isHost) return;
   { const t=$("anonTgl"); if(t) t.onclick=()=>{ ensureAudio(); playSelect(); rules.anon=(rules.anon===false); renderLobby(); sendSnap(); }; }
   $("lobbyBox").querySelectorAll(".rule-frame .stp[data-k]").forEach(b=>b.onclick=()=>{ ensureAudio(); playSelect();
@@ -3084,10 +3082,10 @@ const sgClickPiece=id=>{ const pc=document.querySelector('#board .pc[data-id="'+
 sc("タイトル・入室","タイトル",()=>{});
 sc("タイトル・入室","部屋に入る（合言葉の入力）",()=>{ $("joinRoomBtn").onclick(); });
 sc("タイトル・入室","合言葉が5文字でない",()=>{ $("joinRoomBtn").onclick(); $("codeInput").value="AB"; $("codeGo").onclick(); });
-sc("タイトル・入室","部屋がみつからない",()=>{ $("joinRoomBtn").onclick(); $("codeInput").value="HUBAP"; const nt=$("joinNote"); nt.textContent="部屋がみつからない。合言葉を確認しよう"; nt.className="room-note err"; });
-sc("タイトル・入室","満室で入れない",()=>{ roomStatus('<div class="room-note err">満室です（'+MAX_P+'人まで）</div>'); });
-sc("タイトル・入室","ゲーム中で入れない",()=>{ roomStatus('<div class="room-note err">今はゲーム中みたい。次のゲーム開始まで待ってね</div>'); });
-sc("タイトル・入室","通信失敗",()=>{ roomStatus('<div class="room-note err">通信失敗。通信環境を見直そう</div>'); });
+sc("タイトル・入室","部屋がみつからない",()=>{ $("joinRoomBtn").onclick(); $("codeInput").value="HUBAP"; const nt=$("joinNote"); nt.textContent="部屋が見つかりません。合言葉を確認してください"; nt.className="room-note err"; });
+sc("タイトル・入室","満室で入れない",()=>{ roomStatus('<div class="room-note err">満室のため参加できません（'+MAX_P+'人まで）</div>'); });
+sc("タイトル・入室","ゲーム中で入れない",()=>{ roomStatus('<div class="room-note err">ゲーム進行中のため参加できません</div>'); });
+sc("タイトル・入室","通信失敗",()=>{ roomStatus('<div class="room-note err">通信に失敗しました。通信環境を確認してください</div>'); });
 
 sc("ロビー","人数が足りない（オーナー）",()=>sgLobby(2));
 sc("ロビー","はじめられる（オーナー・役職は自動）",()=>sgLobby(6));

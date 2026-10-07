@@ -388,11 +388,11 @@
   .help-card li b{ font-weight:900; }
   .help-card .close{ display:block; margin:2px auto 0; min-width:132px; }
 
-  .toast{ position:fixed; left:50%; bottom:calc(26px + 62px); transform:translate(-50%,10px); z-index:80;
+  .toast{ position:fixed; left:50%; top:50%; transform:translate(-50%,calc(-50% + 10px)); z-index:200;
     background:rgba(35,33,31,.95); color:#fff; padding:9px 15px; border-radius:999px;
     font-size:12.5px; font-weight:700; letter-spacing:.06em; white-space:nowrap; opacity:0; pointer-events:none;
     transition:opacity .2s, transform .2s; }
-  .toast.on{ opacity:1; transform:translate(-50%,0); }
+  .toast.on{ opacity:1; transform:translate(-50%,-50%); }
   .home-foot{ position:fixed; left:0; right:0; bottom:0; z-index:40; text-align:center; padding:30px 0 16px;
     font-size:12.5px; font-weight:900; letter-spacing:.2em; color:var(--sub); text-decoration:none;
     background:linear-gradient(to top, var(--bg) 55%, rgba(245,243,239,0));
@@ -888,7 +888,7 @@ function onCell(i){
     if(i===lastPlaced){ cancelPiece(); return; }        /* 置いたコマをもう一度押すと取り消し */
     toast("いまはステージを動かす番"); playNg(); return;
   }
-  if(!inW(S,i)){ toast("光っている3×3の中に置いてね"); playNg(); return; }
+  if(!inW(S,i)){ toast("光っている3×3の中に置いてください"); playNg(); return; }
   if(S.b[i]){ toast("そこには置けません"); playNg(); return; }
   doPiece(i);
 }
@@ -1137,7 +1137,7 @@ function joinRoom(code,asHost){
     if(spectating||(foeId&&payload.id!==foeId)) return;   /* ★観戦者の「もう一度」は効かない */
     againFoe=true;
     if(againMe) tryRematch();
-    else $("rSub").textContent="あいてが「もう一度」を希望";
+    else $("rSub").textContent="あいてが「もう一回」を希望";
   });
   ch.on("broadcast",{event:"chat"},({payload})=>{
     if(!payload||payload.id===myId) return;
@@ -1180,7 +1180,7 @@ function joinRoom(code,asHost){
   ch.subscribe(async st=>{
     if(st!=="SUBSCRIBED") return;
     try{ await ch.track({ id:myId, n:myAcctName(), host:asHost, t:Date.now() }); }catch(e){}
-    if(!asHost){ send("nm",{pn:myAcctName()}); setTimeout(()=>{ if(!started){ roomNote("部屋が見つかりません。合言葉をたしかめてね","err"); leaveChannel(); } },4500); }
+    if(!asHost){ send("nm",{pn:myAcctName()}); setTimeout(()=>{ if(!started){ roomNote("部屋が見つかりません。合言葉を確認してください","err"); leaveChannel(); } },4500); }
   });
 }
 let _hs="o";
@@ -1306,7 +1306,7 @@ function openRuleOv(){                         /* タイトルに戻らずルー
 $("rRule").addEventListener("click",()=>{ ensureAudio(); playSelect(); openRuleOv(); });
 $("ruleOk").addEventListener("click",()=>{
   ensureAudio(); playSelect(); $("ruleOv").classList.remove("on"); placeRuleBox();
-  toast("次の対局から新しいルールで遊ぶ");
+  toast("次の対局から新しいルールで遊びます");
 });
 $("modeRow").addEventListener("click",e=>{
   const b=e.target.closest(".fuda"); if(!b) return;
@@ -1325,7 +1325,7 @@ $("sizeRow").addEventListener("click",e=>{
 $("ruleReset").addEventListener("click",()=>{
   ensureAudio(); playSelect(); boardN=7;
   [...$("sizeRow").children].forEach(x=>x.classList.toggle("sel",+x.dataset.n===7));
-  toast("初期設定に戻した");
+  toast("初期設定に戻しました");
 });
 $("lvRow").addEventListener("click",e=>{
   const b=e.target.closest(".fuda"); if(!b) return;
@@ -1365,7 +1365,7 @@ $("makeRoomBtn").addEventListener("click",()=>{
     let ok=true;
     try{ await navigator.clipboard.writeText(inviteText(c)); }catch(e){ ok=false; }
     const n=$("hostNote"); if(!n) return;
-    n.textContent = ok?"招待メッセージをコピーした":"コピーできませんでした。手で伝えてね";
+    n.textContent = ok?"招待メッセージをコピーしました":"コピーできませんでした。合言葉を直接伝えてください";
     n.className = "room-note"+(ok?"":" err");
     setTimeout(()=>{ if(n.isConnected&&!started){ n.textContent="あいてを待っています…"; n.className="room-note room-wait"; } },2200);
   });
@@ -1386,9 +1386,9 @@ $("joinRoomBtn").addEventListener("click",()=>{
     try{
       const t=await navigator.clipboard.readText();
       const c=pickCode(t).slice(0,5);
-      if(c){ $("codeInput").value=c; roomNote("貼り付けた"); }
+      if(c){ $("codeInput").value=c; roomNote("貼り付けました"); }
       else roomNote("コピーした合言葉が見つかりません","err");
-    }catch(e){ roomNote("貼り付けできません。手で入れてね","err"); }
+    }catch(e){ roomNote("貼り付けできません。手入力でお願いします","err"); }
   });
   $("codeGo").addEventListener("click",()=>{ ensureAudio(); playSelect(); tryJoin(); });
   $("codeInput").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing){ e.preventDefault(); tryJoin(); } });
@@ -1397,7 +1397,7 @@ $("joinRoomBtn").addEventListener("click",()=>{
 function tryJoin(){
   const el=$("codeInput"); if(!el) return;
   const c=(el.value||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
-  if(c.length<4){ roomNote("合言葉を入れてね","err"); playNg(); return; }
+  if(c.length<4){ roomNote("合言葉を入力してください","err"); playNg(); return; }
   roomNote("部屋をさがしています…","room-wait"); joinRoom(c,false);
 }
 

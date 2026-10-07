@@ -957,7 +957,7 @@ async function loadWorld(){
   const SHOW_N=999;   // ランキングは999位まで表示
   const total=rows.reduce((s,r)=>s+r.score,0);
   wTotal.textContent=total.toLocaleString("ja-JP");
-  if(!rows.length){ wList.innerHTML='<div class="w-state">まだ誰も遊んでないよ...</div>'; $("wMe").style.display="none"; return; }
+  if(!rows.length){ wList.innerHTML='<div class="w-state">まだ誰も遊んでいません</div>'; $("wMe").style.display="none"; return; }
   const myIdx=rows.findIndex(r=>r.mode===MYKEY);
   setRankPct((myIdx>=0 && rows.length>1) ? (myIdx/(rows.length-1)) : 1);   // 虹ノミの出やすさ=順位に連動(下位ほど高い)
   let html="";

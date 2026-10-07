@@ -160,10 +160,10 @@
   .ov-card .yaku-body li{ margin-bottom:7px; }
   .ov-btns{ display:flex; flex-direction:column; gap:8px; margin-top:16px; }
 
-  .toast{ position:fixed; left:50%; bottom:24px; transform:translate(-50%,10px); z-index:90; background:rgba(30,22,14,.93); color:#fff;
+  .toast{ position:fixed; left:50%; top:50%; transform:translate(-50%,calc(-50% + 10px)); z-index:200; background:rgba(30,22,14,.93); color:#fff;
     font-weight:800; font-size:clamp(9px,2.55vw,14px); padding:10px 14px; border-radius:999px; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s;
     white-space:nowrap; width:max-content; max-width:97vw; }   /* 長い案内文も1行で出す(狭い画面では文字が小さくなる) */
-  .toast.on{ opacity:1; transform:translate(-50%,0); }
+  .toast.on{ opacity:1; transform:translate(-50%,-50%); }
   .toast.tap.on{ pointer-events:auto; cursor:pointer; text-decoration:underline; text-decoration-color:rgba(255,255,255,.45); text-underline-offset:3px; }
   .toast.tap:active{ opacity:.7; }
 
@@ -460,7 +460,7 @@
     if(DEMO){ renderList(); return; }
     $("listBody").innerHTML='<div class="loading">よみこみ中…</div>';
     const cr=await sb.from("zukan_creature").select("*").order("created_at",{ascending:false});
-    if(cr.error){ $("listBody").innerHTML='<div class="empty">よみこみに失敗しました。開き直してみてください。</div>'; return; }
+    if(cr.error){ $("listBody").innerHTML='<div class="empty">読み込みに失敗しました。ページを開き直してください。</div>'; return; }
     creatures=cr.data||[];
     // 図鑑の件数(全件のcreature_idだけ取得して集計)
     counts={}; written=new Set();
@@ -595,7 +595,7 @@
       if(DEMO){ toast("デモ表示中は削除できません"); return; }
       if(!confirm("この投稿を削除しますか？")) return;
       const r=await sb.from("zukan_entry").delete().eq("id",bn.dataset.adel).select();
-      if(r.error || !r.data || !r.data.length){ toast("削除できませんでした（権限SQLが未実行かも）"); return; }
+      if(r.error || !r.data || !r.data.length){ toast("削除できませんでした（権限SQLが未実行の可能性があります）"); return; }
       toast("削除しました"); await openDetail(cur.id);
     }));
     box.querySelectorAll("[data-ab]").forEach(bn=>bn.addEventListener("click",async()=>{
@@ -621,7 +621,7 @@
     const author=myName||"";
     const body=($("fBody").value||"").trim();
     if(!author){ toast("図鑑を投稿するには「牧村が作ったゲーム集」でアカウントの登録が必要です"); return; }
-    if(!body){ toast("本文を書いてね"); return; }
+    if(!body){ toast("本文を入力してください"); return; }
     if([...body].length>MAXBODY){ toast("本文が長すぎます（"+MAXBODY+"字まで）"); return; }
     busy=true; $("postBtn").disabled=true; $("postBtn").textContent="送信中…";
     let res;
@@ -630,7 +630,7 @@
     busy=false;
     if(res.error){
       if((res.error.message||"").indexOf("duplicate")>=0){ toast("この生き物にはもう投稿済みです"); await openDetail(cur.id); return; }
-      toast("送信に失敗しました。もう一度ためしてね"); $("postBtn").disabled=false; $("postBtn").textContent=myEntry?"更新する":"投稿する"; return;
+      toast("送信に失敗しました。もう一度お試しください"); $("postBtn").disabled=false; $("postBtn").textContent=myEntry?"更新する":"投稿する"; return;
     }
     editing=false;
     try{ if(cur) localStorage.removeItem("zukan.draft."+cur.id); }catch(e){}   // 投稿できたら下書きを消す
@@ -713,13 +713,13 @@
     if(DEMO){ toast(editing?"デモ表示中は編集できません":"デモ表示中は出題できません"); return; }
     const name=($("crName").value||"").trim();
     const note=($("crNote").value||"").trim();
-    if(!name){ toast("生き物の名前を入れてね"); return; }
+    if(!name){ toast("生き物の名前を入力してください"); return; }
     $("crPost").disabled=true; $("crPost").textContent="送信中…";
     const r = editing
       ? await sb.from("zukan_creature").update({ name, note:(note||null) }).eq("id",crEditId).select()   // UPDATEなので図鑑(zukan_entry)は消えない。.select()=実際に更新できた行を確認(権限なしだとエラーにならず0件で空振りするため)
       : await sb.from("zukan_creature").insert({ name, note:(note||null) });
     $("crPost").disabled=false; $("crPost").textContent=editing?"保存する":"出題する";
-    if(r.error || (editing && (!r.data || !r.data.length))){ toast(editing?"保存できませんでした（編集の権限SQLが未実行かも）":"出題に失敗しました"); return; }
+    if(r.error || (editing && (!r.data || !r.data.length))){ toast(editing?"保存できませんでした（編集の権限SQLが未実行の可能性があります）":"出題に失敗しました"); return; }
     $("crOv").classList.remove("on"); toast(editing?"保存しました":"出題しました");
     if(editing){
       const c=creatures.find(x=>x.id===crEditId);
@@ -765,7 +765,7 @@
   $("nameOv").addEventListener("click",e=>{ if(e.target===$("nameOv")) $("nameOv").classList.remove("on"); });
   $("nameSave").addEventListener("click",async()=>{
     const nm=($("nameInput").value||"").trim();
-    if(!nm){ toast("ペンネームを入れてね"); return; }
+    if(!nm){ toast("ペンネームを入力してください"); return; }
     if(nm===myName){ $("nameOv").classList.remove("on"); return; }
     if(DEMO){ myName=nm; saveName(nm); paintNamePill(); $("nameOv").classList.remove("on"); toast("ペンネームを変えました"); return; }
     if(busy) return;

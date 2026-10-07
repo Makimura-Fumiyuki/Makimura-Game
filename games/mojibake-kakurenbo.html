@@ -77,7 +77,7 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 .member-list{ width:100%; display:flex; flex-direction:column; gap:6px; }
 .member{ display:flex; align-items:center; gap:10px; text-align:left; background:var(--panel); border:1.5px solid var(--line); border-radius:12px; padding:8px 10px 8px 14px; font-size:14px; font-weight:700; }
 .member .dot{ width:12px; height:12px; border-radius:50%; background:var(--mag); flex:none; }
-.member .dot.mine{ width:16px; height:16px; cursor:pointer; }   /* 自分の丸は押すと色を変えられる */
+.member .dot.mine{ cursor:pointer; }   /* 自分の丸は押すと色を変えられる(大きさ・見た目はほかの人と同じ) */
 .member .nm.undef{ opacity:.42; }   /* 名前がまだ未定の人=薄く出す(待てアート/クッKeyと同じ) */
 .member .you{ font-size:11px; font-weight:700; color:#fff; background:var(--ink); padding:2px 8px; border-radius:6px; }
 .member .nm{ flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -97,7 +97,9 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 .rf-note{ font-size:9.5px; font-weight:500; color:var(--gray); }
 .rule-frame.off{ opacity:.45; }   /* おまけ機能は写真ステージでは使えない=枠ごとグレーアウト(注記も中にあるので読める程度に) */
 .rule-frame.off .stepper button{ pointer-events:none; }
-.rule-frame.locked .rule-ctl button, .rule-frame.locked .stage-row button, .rule-frame.locked .stepper button{ pointer-events:none; opacity:.6; }
+/* オーナー以外=オーナーと同じUIを出し、操作部品だけグレーで押せなくする(2026-10-07) */
+.rule-frame.locked button, .rule-frame.locked select{ pointer-events:none; opacity:.4; cursor:default; }
+.rule-reset:disabled{ pointer-events:none; opacity:.4; cursor:default; }
 .stage-row{ display:flex; gap:10px; width:100%; }
 .stage-row button{ flex:1 1 0; background:#fff; border:1.5px solid var(--line); border-radius:14px; padding:12px 8px; font-size:14px; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:6px; }
 .stage-row button.selected{ border-color:var(--mag); box-shadow:0 0 0 2px var(--mag) inset; }
@@ -122,7 +124,7 @@ button{ cursor:pointer; color:inherit; background:none; border:none; white-space
 .txt-btn{ padding:9px 20px; border:1.5px solid var(--line); border-radius:999px; font-size:13px; font-weight:700; background:var(--panel); }
 .photo-note{ font-size:11px; color:var(--gray); text-align:center; line-height:1.6; cursor:pointer; }
 #fileName{ font-size:12px; color:var(--ink); font-weight:700; }
-#toast{ position:fixed; left:50%; top:18px; transform:translateX(-50%); background:var(--ink); color:#fff; font-size:13px; font-weight:700; padding:9px 16px; border-radius:999px; z-index:90; opacity:0; transition:opacity .2s; pointer-events:none; white-space:nowrap; }
+#toast{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); background:var(--ink); color:#fff; font-size:13px; font-weight:700; padding:9px 16px; border-radius:999px; z-index:90; opacity:0; transition:opacity .2s; pointer-events:none; white-space:normal; max-width:calc(100vw - 32px); width:max-content; text-align:center; line-height:1.5; }
 #toast.on{ opacity:1; }
 .name-in{ width:min(80vw,280px); height:44px; border-radius:12px; border:1.5px solid var(--line); font-size:16px; font-weight:700; text-align:center; outline:none; }
 .name-in:focus{ border-color:var(--ink); }
@@ -773,9 +775,9 @@ function joinRoom(code,asHost){
   ch.on("presence",{event:"sync"},onPresence);
   ch.on("broadcast",{event:"snap"},({payload})=>{ if(payload&&!isHost()) applySnap(payload); });
   ch.on("broadcast",{event:"act"},({payload})=>{ if(payload&&isHost()) hostAct(payload); });
-  ch.on("broadcast",{event:"hello"},({payload})=>{ if(!isHost()||!payload) return; if(isKicked(payload.id)){ send("kick",{to:payload.id}); return; } const known=members.some(m=>m.id===payload.id)||hiders.some(h=>h.id===payload.id); if(phase!=="lobby"&&!known){ specSet.add(payload.id); send("spec",{to:payload.id}); sendSnap(); setTimeout(updateSpecBadge,200); } else { sendSnap(); } });   // ゲーム中の入室は観戦者として受け入れる(2026-09-27)
-  ch.on("broadcast",{event:"busy"},({payload})=>{ if(payload&&payload.to===myId){ toast("次のゲーム開始まで待ってね"); goTitle(); } });
-  ch.on("broadcast",{event:"spec"},({payload})=>{ if(!payload||payload.to!==myId||spectating) return; spectating=true; toast("とちゅうから観戦しています"); });   // ゲーム中に入った=観戦者
+  ch.on("broadcast",{event:"hello"},({payload})=>{ if(!isHost()||!payload) return; if(isKicked(payload.id)){ send("kick",{to:payload.id}); return; } if(phase==="lobby"&&!soloMode&&gameMembers().filter(m=>m.id!==payload.id).length>=MAX_PLAYERS){ send("busy",{to:payload.id}); return; } const known=members.some(m=>m.id===payload.id)||hiders.some(h=>h.id===payload.id); if(phase!=="lobby"&&!known){ specSet.add(payload.id); send("spec",{to:payload.id}); sendSnap(); setTimeout(updateSpecBadge,200); } else { sendSnap(); } });   // ゲーム中の入室は観戦者として受け入れる(2026-09-27)
+  ch.on("broadcast",{event:"busy"},({payload})=>{ if(payload&&payload.to===myId){ toast("満室のため参加できません"); goTitle(); } });   // ゲーム中の入室は観戦者になる=busyは満室の時だけ
+  ch.on("broadcast",{event:"spec"},({payload})=>{ if(!payload||payload.to!==myId||spectating) return; spectating=true; toast("観戦モードで参加しました"); });   // ゲーム中に入った=観戦者
   ch.on("broadcast",{event:"kick"},({payload})=>{ if(payload&&payload.to===myId){ toast("オーナーから追放されました"); goTitle(); } });
   ch.on("broadcast",{event:"host"},({payload})=>onHostMsg(payload));
   ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload&&payload.from!==myId){ speakStamp(payload.i|0); spawnStamp(payload.i|0, payload.n||"？", false, payload.c); } });   // 届いたスタンプも読み上げる
@@ -788,7 +790,7 @@ function joinRoom(code,asHost){
     try{ await ch.track(myPresence()); }catch(e){}
     if(subDone){ if(isHost()) sendSnap(); else send("hello",{id:myId}); return; }   // ★再接続=名乗り直すだけ(以前はホストが毎回enterLobby()していた=ゲーム中に全員ロビーへ戻される)
     subDone=true;
-    if(!asHost){ if(helloSent) return; helloSent=true; send("hello",{id:myId}); joinChk=setTimeout(()=>{ if(!gotSnap&&members.length<2){ const er=$("codeErr"); if(er) er.textContent="部屋が見つかりません（合言葉をたしかめてね）"; leaveChannel(); } },4000); }
+    if(!asHost){ if(helloSent) return; helloSent=true; send("hello",{id:myId}); joinChk=setTimeout(()=>{ if(!gotSnap&&members.length<2){ const er=$("codeErr"); if(er) er.textContent="部屋が見つかりません（合言葉を確認してください）"; leaveChannel(); } },4000); }
     else{ enterLobby(); }
   });
 }
@@ -830,7 +832,7 @@ function onPresence(){
   if(isHost()){
     const left=prevIds.filter(id=>!arr.some(m=>m.id===id));
     if(left.length&&phase!=="lobby"){
-      if(left.includes(seekerId)){ toast("さがす人が退出したのでロビーへ"); hostToLobby(); }
+      if(left.includes(seekerId)){ toast("さがす人が退出したため、ロビーに戻ります"); hostToLobby(); }
       else{ hiders=hiders.filter(x=>x.cpu||arr.some(m=>m.id===x.id)); left.forEach(id=>{ readyIds.delete(id); voteDoneIds.delete(id); delete votes[id]; }); checkAllReady(); checkAllVoted(); renderAll(); }
     }
     if(phase==="lobby") renderRules();
@@ -842,7 +844,7 @@ function hiderPack(h){ const o={}; HKEYS.forEach(k=>o[k]=h[k]); o.id=h.id; o.nam
 function sendSnap(){
   if(!online||!isHost()||!ch) return;
   const s={ ver:++snapVer, hid:hostId, cols:colors, photo:photoImg?{ n:photoName, w:photoImg.naturalWidth, h:photoImg.naturalHeight }:null, phase, seekerId, rules, stageKind, hz:hiders.map(hiderPack), ready:[...readyIds], misses, foundN, left:tmr?Math.max(0,tEnd-Date.now()):0,
-            votes, vdone:[...voteDoneIds], seekerWin, endReason, lastTap, sp:[...specSet], img:imgMeta?{id:imgMeta.id,n:imgMeta.n}:null, mem:members.map(m=>m.id) };   // mem=オーナーから見えているメンバー(参加者が自分の抜け落ちに気づくため)
+            votes, vdone:[...voteDoneIds], seekerWin, endReason, lastTap, sp:[...specSet], cpu:cpuN, img:imgMeta?{id:imgMeta.id,n:imgMeta.n}:null, mem:members.map(m=>m.id) };   // mem=オーナーから見えているメンバー(参加者が自分の抜け落ちに気づくため)
   send("snap",s);
 }
 function startHeartbeat(){ clearInterval(hbT); hbT=setInterval(()=>{ if(isHost()) sendSnap(); },2500); }
@@ -856,13 +858,13 @@ function applySnap(s){
 }
 function applySnapBody(s){
   const prevPhase=phase;
-  if(!isHost()){ specSet=new Set(s.sp||[]); const sp=specSet.has(myId); if(sp&&!spectating) toast("とちゅうから観戦しています"); spectating=sp; }
+  if(!isHost()){ specSet=new Set(s.sp||[]); const sp=specSet.has(myId); if(sp&&!spectating) toast("観戦モードで参加しました"); spectating=sp; }
   rules=s.rules||rules; seekerId=s.seekerId; misses=s.misses|0; foundN=s.foundN|0; seekerWin=!!s.seekerWin; endReason=s.endReason||"";
   if(s.cols) colors=s.cols; photoInfo=s.photo||null;
   if(localLobby){ if(s.phase==="result"||s.phase==="vote"||s.phase==="ending"){ renderMembers(); renderStageSel(); return; } localLobby=false; }   // ★先にロビーへ戻った人を、終わったゲームの結果に引き戻さない
   readyIds=new Set(s.ready||[]); voteDoneIds=new Set(s.vdone||[]);
   { const mv=votes[myId]; votes=s.votes||{}; if(s.phase==="vote"&&mv) votes[myId]=mv; }   // 自分の投票は手元が正(古いsnapで巻き戻さない)
-  if(s.stageKind) stageKind=s.stageKind;
+  if(s.stageKind) stageKind=s.stageKind; if(!isHost()&&typeof s.cpu==="number") cpuN=s.cpu;
   if(s.img&&(!imgMeta||imgMeta.id!==s.img.id)){ imgMeta={ id:s.img.id, n:s.img.n, parts:[] }; imgReqTimer(); }
   if(s.img&&photoImgId!==s.img.id&&s.phase!=="lobby"){ photoImg=null; if(stage&&stage.kind==="photo"){ stage.pending=true; $("stageLoading").hidden=false; $("stageLoading").textContent="オーナーの写真を受け取っています…"; } }   // ★新しい写真が配られる時は前の写真を捨てる(2枚目以降が反映されなかったバグ)
   if(prevPhase==="lobby"||prevPhase==="title"||prevPhase==="result"){ if(s.phase!=="lobby"&&s.phase!=="result") { guestStartGame(s); } }
@@ -952,12 +954,12 @@ function imgReqTimer(){ clearTimeout(imgReqT); imgReqT=setTimeout(()=>{ if(!imgM
 $("makeRoomBtn").addEventListener("click",()=>{ playConfirm(); joinRoom(genCode(),true); });
 $("joinRoomBtn").addEventListener("click",()=>{
   playSelect();
-  if($("codeInput")){ toast("下の入室ボタンを"+TAPW); return; }
+  if($("codeInput")){ toast("下の入室ボタンを"+TAPW+"してください"); return; }
   const ra=$("roomArea");
   ra.innerHTML='<div class="code-form"><button class="icon-btn paste-btn" id="pasteBtn" aria-label="貼り付け"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4h6v3H9z"/></svg></button><input id="codeInput" maxlength="6" placeholder="合言葉" autocomplete="off"><button class="btn-main" id="codeGo" style="padding:12px 22px;font-size:14px;">入室</button></div><div class="err-line" id="codeErr"></div>';
   if(window.__pendingJoin) $("codeInput").value=window.__pendingJoin;
   $("pasteBtn").addEventListener("click",async()=>{ try{ const t=await navigator.clipboard.readText(); const c=pickCode(t).slice(0,6); if(c) $("codeInput").value=c; }catch(e){ toast("貼り付けできませんでした"); } });
-  $("codeGo").addEventListener("click",()=>{ playSelect(); const c=($("codeInput").value||"").trim().toUpperCase(); if(c.length<4){ $("codeErr").textContent="合言葉を入れてね"; return; } $("codeErr").textContent="入室中…"; joinRoom(c,false); });
+  $("codeGo").addEventListener("click",()=>{ playSelect(); const c=($("codeInput").value||"").trim().toUpperCase(); if(c.length<4){ $("codeErr").textContent="合言葉を入力してください"; return; } $("codeErr").textContent="入室中…"; joinRoom(c,false); });
   $("codeInput").addEventListener("keydown",e=>{ if(e.key==="Enter") $("codeGo").click(); });
   $("codeInput").focus();
 });
@@ -1005,7 +1007,7 @@ function renderMembers(){
   list.querySelectorAll(".nm.mine,.nm-pen").forEach(el=>el.addEventListener("click",()=>{ playSelect(); openNameDlg(); }));
   { const md=$("myDot"); if(md) md.onclick=()=>{ playSelect(); const cp=$("colorPick"); cp.value=colorOf(myId);   // ★自分の色の丸を押すとカラーパレット(丸の近くに開く)
       const r=md.getBoundingClientRect(); cp.style.left=Math.round(r.left)+"px"; cp.style.top=Math.round(r.bottom+2)+"px"; cp.click(); }; }
-  $("ruleFrame").classList.toggle("locked",!isHost()); $("ruleFrame2").classList.toggle("locked",!isHost()); $("ruleReset").style.display=isHost()?"":"none"; $("ruleNote").style.display=isHost()?"none":"";
+  $("ruleFrame").classList.toggle("locked",!isHost()); $("ruleFrame2").classList.toggle("locked",!isHost()); $("ruleReset").disabled=!isHost(); $("ruleNote").style.display=isHost()?"none":"";
   const n=arr.length; const so=soloOK();
   $("startBtn").disabled=!(isHost()&&((n>=2&&(stageKind!=="photo"||photoImg))||so)); $("startBtn").textContent=so?"1人でおためし":"はじめる";
   $("startNote").textContent=isHost()?(n<2?"2人以上で始められます（"+n+"/"+MAX_PLAYERS+"）":"") : "オーナーが始めるのを待っています";
@@ -1055,7 +1057,7 @@ function onHostMsg(p){
   if(phase==="lobby"){ renderMembers(); renderStageSel(); }
 }
 function kickMember(id){ if(!isHost()||id===myId) return; kickedIds.set(id,Date.now()); byeIds.set(id, lastPres[id]?lastPres[id].t:0); send("kick",{to:id}); specSet.delete(id); members=members.filter(m=>m.id!==id); renderMembers(); renderMemberOv(); }
-$("copyCode").addEventListener("click",async()=>{ playSelect(); try{ await navigator.clipboard.writeText(inviteText(roomCode)); toast("招待メッセージをコピーした"); }catch(e){ toast("コピーできませんでした"); } });
+$("copyCode").addEventListener("click",async()=>{ playSelect(); try{ await navigator.clipboard.writeText(inviteText(roomCode)); toast("招待メッセージをコピーしました"); }catch(e){ toast("コピーできませんでした"); } });
 $("lobbyBack").addEventListener("click",()=>{ playSelect(); goTitle(); });
 const SPEC_EYE='<svg class="sr-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
 function specIds(){   /* 観戦者=specSetに入っている人。名前が無い人は「ゲスト1」… */
@@ -1121,7 +1123,7 @@ function renderStageSel(){
   $("cpuNote").style.display=stageKind==="photo"?"":"none"; $("debugFrame").classList.toggle("off",stageKind==="photo");
 }
 function loadPhotoFile(f,nm){
-  if(!f||!/^image\//.test(f.type||"")){ toast("画像ファイルを選んでね"); return; }
+  if(!f||!/^image\//.test(f.type||"")){ toast("画像ファイルを選択してください"); return; }
   const url=URL.createObjectURL(f); const im=new Image();
   im.onload=()=>{ photoImg=im; photoName=nm||f.name||"画像"; stageKind="photo"; renderStageSel(); renderMembers(); sendSnap(); URL.revokeObjectURL(url); };
   im.onerror=()=>{ $("fileName").textContent="この画像は読み込めませんでした"; };
@@ -1148,7 +1150,7 @@ document.addEventListener("paste",e=>{
   if(!isHost()){ toast("ステージはオーナーだけが変えられます"); return; }
   playSelect(); loadPhotoFile(f,"貼り付けた画像");
 });
-[["cpuM",-1],["cpuP",1]].forEach(([id,d])=>$(id).addEventListener("click",()=>{ if(!isHost()){ toast("おまけ機能はオーナーだけが変えられます"); return; } if(stageKind==="photo"){ toast("ステージ「牧村が作ったゲーム集」の時だけ使えます"); return; } playSelect(); cpuN=Math.max(0,Math.min(10,cpuN+d)); renderStageSel(); renderMembers(); }));
+[["cpuM",-1],["cpuP",1]].forEach(([id,d])=>$(id).addEventListener("click",()=>{ if(!isHost()){ toast("おまけ機能はオーナーだけが変えられます"); return; } if(stageKind==="photo"){ toast("ステージ「牧村が作ったゲーム集」の時だけ使えます"); return; } playSelect(); cpuN=Math.max(0,Math.min(10,cpuN+d)); renderStageSel(); renderMembers(); sendSnap(); }));
 
 /* ================= ステージ ================= */
 function clearStage(){
@@ -1568,7 +1570,7 @@ function placeCPUs(n){
   if(n<=0||!isHost()) return;
   const words=CPU_WORDS.slice().sort(()=>Math.random()-0.5);
   const cands=(stage.kind==="hub"&&hubCands)?hubCands.slice():[];
-  if(stage.kind==="hub"&&!cands.length){ toast("ハブの文字の情報がまだ届いていません（CPUなし）"); return; }
+  if(stage.kind==="hub"&&!cands.length){ toast("ステージの文字情報を取得できないため、CPUなしで始めます"); return; }
   let k=0, guard=0;
   while(k<n && guard<400){
     guard++;

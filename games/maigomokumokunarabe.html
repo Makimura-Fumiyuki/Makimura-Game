@@ -269,14 +269,14 @@
   .help-body b{ font-weight:700; }
   /* 対局中の一時メッセージ(画面上部中央にふわっと) */
   #toast{
-    position:fixed; left:50%; top:64px; transform:translate(-50%,-8px); z-index:70;
+    position:fixed; left:50%; top:50%; transform:translate(-50%,calc(-50% + 8px)); z-index:200;
     max-width:86vw; padding:9px 18px; border-radius:999px;
     background:var(--sumi); color:#fff;
     font-size:13px; letter-spacing:.06em; white-space:nowrap; text-align:center;
     box-shadow:0 6px 18px rgba(0,0,0,.3);
     opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease;
   }
-  #toast.on{ opacity:1; transform:translate(-50%,0); }
+  #toast.on{ opacity:1; transform:translate(-50%,-50%); }
   /* 迷子: きょろきょろする碁石の頭上に浮かぶ「？」 */
   .qmark{
     position:fixed; z-index:65; pointer-events:none; color:var(--shu);
@@ -794,10 +794,10 @@
   <!-- ===== 旧・投了の確認(未使用。降参はボタン自体が「確定」に変わる方式へ) ===== -->
   <div id="confirmOverlay">
     <div class="r-card">
-      <div class="cf-msg">まことに投了する？</div>
+      <div class="cf-msg">まことに降参する？</div>
       <div class="sub-btns">
         <button class="txt-btn" id="cfNo">やめておく</button>
-        <button class="txt-btn" id="cfYes">投了する</button>
+        <button class="txt-btn" id="cfYes">降参する</button>
       </div>
     </div>
   </div>
@@ -1730,12 +1730,12 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     setTimeout(()=>{
       if(winner!==0) burstStones(winner);   // 勝利陣営の碁笥から碁石が吹き上がる
       const subWin = reason==="line" ? "みごと"+winLen+"つ並べた"
-                   : reason==="both" ? "囲んで、並べて、大勝利！"
+                   : reason==="both" ? "囲んで、並べて、大勝利"
                    : reason==="count" ? "とった石の数で勝負あり"
                    : "みごと"+capNorm+"個囲んだ";
       if(winner===0){ rTitle.textContent="引き分け"; rTitle.className="r-title"; rSub.textContent="打てる場所がなくなった"; }
-      else if(local){ rTitle.textContent=(winner===BLACK?"先攻":"後攻")+"の勝ち！"; rTitle.className="r-title win"; rSub.textContent=subWin; playWin(); }
-      else if(winner===human){ rTitle.textContent="あなたの勝ち！"; rTitle.className="r-title win"; rSub.textContent=subWin; playWin(); }
+      else if(local){ rTitle.textContent=(winner===BLACK?"先攻":"後攻")+"の勝ち"; rTitle.className="r-title win"; rSub.textContent=subWin; playWin(); }
+      else if(winner===human){ rTitle.textContent="あなたの勝ち"; rTitle.className="r-title win"; rSub.textContent=subWin; playWin(); }
       else { rTitle.textContent=(online?foeLabel()+"の勝ち…":("ロボット（"+LV_NAMES[cpuLv]+"）の勝ち…")); rTitle.className="r-title"; rSub.textContent="次はきっと勝てる"; playLose(); }
       if(!local && !online){   // ロボット戦: 戦った階級と待ったの有無を表示(勝ちの自慢に)
         rSub.innerHTML += '<br><span class="r-foe">'+LV_NAMES[cpuLv]+'ロボットと対局'+(undoUsed?'（一手戻りあり）':'（一手戻りなし）')+'</span>';
@@ -1972,7 +1972,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     ch.on("broadcast",{event:"rematch"},()=>{
       peerRematch=true;
       if(myRematch){ if(isHost) hostRestart(); }   // 両者合意: 部屋主が先手後手を引き直して開始合図を送る
-      else if(resultOverlay.classList.contains("on")) rSub.textContent=foeLabel()+"が「もう一局」を希望！";
+      else if(resultOverlay.classList.contains("on")) rSub.textContent=foeLabel()+"が「もう一局」を希望";
     });
     ch.on("broadcast",{event:"restart"},({payload})=>{   // 再戦: 先手後手は毎回引き直し。ルールも部屋主のものに揃え直す
       if(isHost) return;
@@ -1984,7 +1984,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
     ch.on("broadcast",{event:"rules"},({payload})=>{
       if(isHost) return;
       applyNetRules(payload);
-      showToast("部屋主がルールを変えた。次の一局から反映");
+      showToast("オーナーがルールを変えた。次の一局から反映");
     });
     // 待った(一手戻る)の申し込みが相手から届いた → 許可を尋ねる
     ch.on("broadcast",{event:"undoreq"},()=>{
@@ -2043,7 +2043,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       try{ await navigator.clipboard.writeText(inviteText(code)); }
       catch(e){ try{ const ta=document.createElement("textarea"); ta.value=inviteText(code); document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); }catch(_){ ok=false; } }
       const n=document.getElementById("hostNote");
-      if(n){ n.textContent=ok?"コピー完了、共に伝えたまえ":"コピー失敗、すまぬが手入力で頼む";
+      if(n){ n.textContent=ok?"コピー完了。友に伝えたまえ":"コピー失敗、すまぬが手入力で頼む";
         setTimeout(()=>{ if(n.isConnected && !online) n.textContent="友に伝え、待ちたまえ"; }, 2200); }
     });
     openChannel(code, true);

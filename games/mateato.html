@@ -141,6 +141,8 @@
   .dbn-btn.sel{ color:#fff; background:linear-gradient(160deg,#f0603f,var(--red) 55%,#b93117); border-color:#8f2510; }
   .dbn-btn:active{ transform:translateY(1px); }
   .dbn-btn.locked{ opacity:.4; }
+  /* オーナー以外のロビー=同じルールUIをグレーアウトして見せるだけ(2026-10-07) */
+  .rule-frame.ro button, .rc-reset.ro{ opacity:.4; pointer-events:none; cursor:default; }
   .rc-reset{
     font-size:12.5px; font-weight:700; letter-spacing:.1em; opacity:.55; cursor:pointer;
     background:none; border:none; text-decoration:underline; color:var(--ink);
@@ -645,12 +647,12 @@
   }
 
   .toast{
-    position:fixed; left:50%; top:64px; transform:translate(-50%,-8px); z-index:85;
+    position:fixed; left:50%; top:50%; transform:translate(-50%,calc(-50% + 10px)); z-index:9000;   /* 画面のど真ん中(2026-10-07) */
     background:rgba(58,42,28,.92); color:#fff7ea; font-size:14px; font-weight:800; letter-spacing:.05em;
     padding:10px 20px 11px; border-radius:999px; opacity:0; pointer-events:none; transition:all .25s ease;
     white-space:nowrap; max-width:92vw; overflow:hidden; text-overflow:ellipsis;
   }
-  .toast.on{ opacity:1; transform:translate(-50%,0); }
+  .toast.on{ opacity:1; transform:translate(-50%,-50%); }
 
   .home-foot{
     position:fixed; left:0; right:0; bottom:0; z-index:40; display:block; text-align:center;
@@ -1528,7 +1530,7 @@ function spendErase(a,b){
 function readyErase(){   // 未使用(互換)
   erasing=true;
   spoonBtn.classList.add("on"); $("cupWrap").classList.add("erasing");
-  playSwirl(); showToast("カップをこすった瞬間から3秒だけ消せる！");
+  playSwirl(); showToast("カップをこすった瞬間から3秒だけ消せます");
   renderGauge();
 }
 function stopErase(silent){   /* ターン終了/ペンに戻す */
@@ -1653,7 +1655,7 @@ $("topicRandom").addEventListener("click",()=>{
 });
 $("topicGo").addEventListener("click",()=>{
   ensureAudio();
-  const t=$("topicInput").value.trim(); if(!t){ showToast("お題を入れてね"); return; }
+  const t=$("topicInput").value.trim(); if(!t){ showToast("お題を入力してください"); return; }
   playDecide();
   clearTimeout(topicTmr);
   $("topicPanel").classList.remove("on"); $("topicPeek").style.display="none";
@@ -2003,20 +2005,20 @@ $("joinRoomBtn").addEventListener("click",()=>{
     try{
       const t=await navigator.clipboard.readText();
       const c=pickCode(t).slice(0,5);
-      if(c){ inp.value=c; note.textContent="貼り付けた"; note.className="room-note"; }
-      else { note.textContent="コピーした合言葉が見つからない"; note.className="room-note err"; }
-    }catch(e){ note.textContent="貼り付けできない。手入力で頼む"; note.className="room-note err"; }
+      if(c){ inp.value=c; note.textContent="貼り付けました"; note.className="room-note"; }
+      else { note.textContent="コピーした合言葉が見つかりません"; note.className="room-note err"; }
+    }catch(e){ note.textContent="貼り付けできません。手入力してください"; note.className="room-note err"; }
   });
   $("codeGo").addEventListener("click",()=>{
     ensureAudio(); playSelect();
     const c=(inp.value||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
-    if(c.length!==5){ note.textContent="合言葉は5文字"; note.className="room-note err"; return; }
+    if(c.length!==5){ note.textContent="合言葉は5文字です"; note.className="room-note err"; return; }
     note.textContent="部屋を探しています…"; note.className="room-note room-wait";
     code=c; isHost=false; online=true; players=[];
     openChannel(code, ()=>{
       sendHello();
       joinWatch=setTimeout(()=>{
-        if(!hostId){ note.textContent="部屋がみつからない。合言葉を確認しよう"; note.className="room-note err"; leaveChannel(); }
+        if(!hostId){ note.textContent="部屋が見つかりません。合言葉を確認してください"; note.className="room-note err"; leaveChannel(); }
       },4000);
     });
   });
@@ -2030,16 +2032,16 @@ function openChannel(c, onReady){
     if(kickedAt[payload.id] && Date.now()-kickedAt[payload.id]<15000){ try{ ch.send({type:"broadcast",event:"kick",payload:{to:payload.id}}); }catch(e){} return; }
     cancelGone(payload.id);
     if(byId(payload.id)){ sendSnap(); return; }   // すでにメンバー(再接続)=観戦者にしない(満室判定より先に見る)
-    if(players.length>=MAXP){ try{ ch.send({type:"broadcast",event:"locked",payload:{to:payload.id}}); }catch(e){} return; }
-    if(phase!=="lobby"){   // 対局中の入室=観戦者として受け入れる(2026-08-05)
+    if(phase!=="lobby"){   // 対局中の入室=観戦者として受け入れる(2026-08-05)。観戦は人数に数えないので満室判定より先(2026-10-07)
       try{ ch.send({type:"broadcast",event:"spec",payload:{to:payload.id}}); }catch(e){}
       sendSnap(); return;
     }
+    if(players.length>=MAXP){ try{ ch.send({type:"broadcast",event:"locked",payload:{to:payload.id}}); }catch(e){} return; }   // ロビーが満室のときだけ断る
     if(!byId(payload.id)) players.push({id:payload.id, n:String(payload.n||"").slice(0,8), s:0, c:nextColor()});   // 空=まだ名前を考え中
     renderLobby(); sendSnap();
   });
   ch.on("broadcast",{event:"locked"},({payload})=>{
-    if(payload && payload.to===myId){ showToast("次のゲーム開始まで待ってね"); leaveChannel(); roomStatus('<div class="room-note err">今はゲーム中みたい。次のゲーム開始まで待ってね</div>'); }
+    if(payload && payload.to===myId){ showToast("満室のため参加できません"); leaveChannel(); roomStatus('<div class="room-note err">満室のため参加できません</div>'); }
   });
   ch.on("broadcast",{event:"spec"},({payload})=>{
     if(!payload || payload.to!==myId || isHost || spectating) return;
@@ -2086,7 +2088,7 @@ function openChannel(c, onReady){
       readyDone=true; if(onReady) onReady();
     }
     else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){
-      roomStatus('<div class="room-note err">通信失敗。通信環境を見直そう</div>');
+      roomStatus('<div class="room-note err">通信に失敗しました。通信環境を確認してください</div>');
     }
   });
 }
@@ -2140,21 +2142,20 @@ function renderLobby(){
   html+='</div>';
   html+='<div class="room-note">合言葉（'+TAPW+'でコピー）</div>'
     +'<div class="code-show" id="codeShow"><svg class="cs-copy" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg><span class="cs-code">'+esc(code)+'</span></div>';
-  if(isHost){
-    html+='<div class="rule-frame">'
+  { const ro=!isHost, D=ro?" disabled":"";   // ★オーナー以外も同じルールUIを見る(グレーアウト・操作不可。値はsnapで同期)(2026-10-07)
+    html+='<div class="rule-frame'+(ro?" ro":"")+'">'
       +'<div class="rule-col"><div class="rc-name">制限時間</div>'
-      +'<div class="rc-row"><button class="rc-btn" id="lbTlM">−</button><span class="rc-val">'+timeLimit+'秒</span><button class="rc-btn" id="lbTlP">＋</button></div></div>'
+      +'<div class="rc-row"><button class="rc-btn" id="lbTlM"'+D+'>−</button><span class="rc-val">'+timeLimit+'秒</span><button class="rc-btn" id="lbTlP"'+D+'>＋</button></div></div>'
       +'<div class="rule-col"><div class="rc-name">時間切れで負け</div>'
-      +'<div class="dbn-toggle"><button class="dbn-btn'+(co?"":(dobonOn?" sel":""))+(co?" locked":"")+'" id="lbDbOn">あり</button><button class="dbn-btn'+(co?" sel locked":(!dobonOn?" sel":""))+'" id="lbDbOff">なし</button></div>' 
+      +'<div class="dbn-toggle"><button class="dbn-btn'+(co?"":(dobonOn?" sel":""))+(co?" locked":"")+'" id="lbDbOn"'+D+'>あり</button><button class="dbn-btn'+(co?" sel locked":(!dobonOn?" sel":""))+'" id="lbDbOff"'+D+'>なし</button></div>'
       +'</div>'
       +'<div class="rule-col"><div class="rc-name">消しゴム</div>'
-      +'<div class="rc-row"><button class="rc-btn" id="lbErM">−</button><span class="rc-val">'+ERASE_OPTS[eraserAmt].k+'</span><button class="rc-btn" id="lbErP">＋</button></div>'
+      +'<div class="rc-row"><button class="rc-btn" id="lbErM"'+D+'>−</button><span class="rc-val">'+ERASE_OPTS[eraserAmt].k+'</span><button class="rc-btn" id="lbErP"'+D+'>＋</button></div>'
       +'</div>'
-      +'</div>';
-  }else{
-    html+='<div class="room-note">制限時間 '+timeLimit+'秒 ／ '+(co?"協力モード":("時間切れで負け"+(dobonOn?"あり":"なし")))+' ／ 消しゴム'+ERASE_OPTS[eraserAmt].k+'</div>';
+      +'</div>'
+      +'<button class="rc-reset'+(ro?" ro":"")+'" id="lbReset"'+D+'>初期設定に戻す</button>';
   }
-  html+='<div class="room-note room-wait">'+(lobbyEarly?"オーナーがロビーに戻るのを待っています":(players.length<2?"2人以上集まれば開始できます":"いつでもはじめれるよ"))+'</div>';
+  html+='<div class="room-note room-wait">'+(lobbyEarly?"オーナーがロビーに戻るのを待っています":(players.length<2?"2人以上集まれば開始できます":"いつでも開始できます"))+'</div>';
   if(isHost) html+='<button class="start-btn" id="lobbyStart"'+(players.length<2?" disabled":"")+'>はじめる</button>';
   $("lobbyBox").innerHTML=html;
   if(!nameAsked){ nameAsked=true; openNameOv(); }   // 部屋に入るたび名前を決める(前回の名前を入れた状態で開く=そのまま決定でもOK)
@@ -2164,8 +2165,8 @@ function renderLobby(){
       const r=md.getBoundingClientRect(); cp.style.left=Math.round(r.left)+"px"; cp.style.top=Math.round(r.bottom+2)+"px"; cp.click(); }; }
   $("codeShow").addEventListener("click", async ()=>{
     ensureAudio(); playSelect();
-    try{ await navigator.clipboard.writeText(inviteText(code)); showToast("招待メッセージをコピーした"); }
-    catch(e){ try{ const ta=document.createElement("textarea"); ta.value=inviteText(code); document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); showToast("招待メッセージをコピーした"); }catch(_){ showToast("コピーできなかった…"); } }
+    try{ await navigator.clipboard.writeText(inviteText(code)); showToast("招待メッセージをコピーしました"); }
+    catch(e){ try{ const ta=document.createElement("textarea"); ta.value=inviteText(code); document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); showToast("招待メッセージをコピーしました"); }catch(_){ showToast("コピーできませんでした"); } }
   });
   if(isHost){
     $("lobbyBox").querySelectorAll("[data-kick]").forEach(b=>b.addEventListener("click",()=>{
@@ -2190,6 +2191,8 @@ function renderLobby(){
     const eM=$("lbErM"), eP=$("lbErP");
     if(eM) eM.addEventListener("click",()=>{ ensureAudio(); if(eraserAmt>0){ eraserAmt--; playTick(); renderLobby(); sendSnap(); } });
     if(eP) eP.addEventListener("click",()=>{ ensureAudio(); if(eraserAmt<ERASE_OPTS.length-1){ eraserAmt++; playTick(); renderLobby(); sendSnap(); } });
+    const lr=$("lbReset");
+    if(lr) lr.addEventListener("click",()=>{ ensureAudio(); playSelect(); timeLimit=40; dobonOn=true; eraserAmt=0; renderLobby(); sendSnap(); showToast("初期設定に戻しました"); });
     const ls=$("lobbyStart");
     if(ls) ls.addEventListener("click",()=>{
       ensureAudio(); playStart();
@@ -2339,7 +2342,7 @@ function enterDrawAll(resume){
     if(!isHost){ snapAt=Date.now(); }
     startDrawPhase(!isHost);
     if(drawerId===myId){ startDrawFlush(); playStart(); showToast("はやく当てられるほど高得点"); }
-    else showToast("わかったら「待て！」で回答しよう");
+    else showToast("わかったら「待て！」で回答してください");
   }
   renderChatSend();
 }
@@ -2602,7 +2605,7 @@ function armPick(row, id){
   }
   if(armedRow){ armedRow.classList.remove("armed"); const m=armedRow.querySelector(".pickmark"); if(m) m.textContent=TAPW+"で正解"; }
   armedRow=row; row.classList.add("armed");
-  row.querySelector(".pickmark").textContent="もう一度"+TAPW+"で正解！";
+  row.querySelector(".pickmark").textContent="もう一度"+TAPW+"で正解";
   clearTimeout(armedTmr);
   armedTmr=setTimeout(()=>{ if(armedRow===row){ row.classList.remove("armed"); row.querySelector(".pickmark").textContent=TAPW+"で正解"; armedRow=null; } },3000);
 }

@@ -447,7 +447,7 @@
   .txt-btn:disabled{ opacity:.35; cursor:default; pointer-events:none; }
 
   /* ===== トースト ===== */
-  #toast{ position:fixed; bottom:86px; left:50%; transform:translateX(-50%); z-index:60; background:rgba(30,14,60,.94); color:#fff;
+  #toast{ position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:200; background:rgba(30,14,60,.94); color:#fff;
     font-size:13px; font-weight:800; padding:9px 20px; border-radius:999px; opacity:0; transition:opacity .25s; pointer-events:none; white-space:nowrap;
     border:1.5px solid rgba(255,255,255,.3); }
   #toast.on{ opacity:1; }
@@ -1828,7 +1828,7 @@ function openChannel(code, asHost){
   });
   ch.subscribe(async(status)=>{
     if(status==="SUBSCRIBED"){ try{ await ch.track({ n:myAcctName(), t:Date.now() }); }catch(e){} }
-    else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){ roomStatus('<div class="room-note err">通信に失敗しました。電波を確認してもう一度</div>'); }
+    else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){ roomStatus('<div class="room-note err">通信に失敗しました。電波を確認してもう一度お試しください</div>'); }
   });
 }
 function specFollow(payload){   // 観戦者: 再戦を最初から観る(初期盤面なのでスナップショット不要)
@@ -2044,15 +2044,15 @@ $("makeRoomBtn").addEventListener("click",()=>{
     +'<div class="room-code" id="codeShow" style="cursor:pointer">'
     +'<svg class="copy-ic" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4" y="4" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>'
     +code+'</div>'
-    +'<div class="room-note" id="hostNote">友だちに伝えて待とう</div>');
+    +'<div class="room-note" id="hostNote">あいてを待っています…</div>');
   $("codeShow").addEventListener("click", async ()=>{
     ensureAudio(); playSelect();
     let okc=true;
     try{ await navigator.clipboard.writeText(inviteText(code)); }
     catch(e){ try{ const ta=document.createElement("textarea"); ta.value=inviteText(code); document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); }catch(_){ okc=false; } }
     const nEl=$("hostNote");
-    if(nEl){ nEl.textContent=okc? "コピーした。友だちに送ろう" : "コピーできなかった。手入力でお願いします";
-      setTimeout(()=>{ if(nEl.isConnected&&!online) nEl.textContent="友だちに伝えて待とう"; },2200); }
+    if(nEl){ nEl.textContent=okc? "招待メッセージをコピーしました" : "コピーできませんでした。手入力でお願いします";
+      setTimeout(()=>{ if(nEl.isConnected&&!online) nEl.textContent="あいてを待っています…"; },2200); }
   });
   openChannel(code, true);
 });
@@ -2070,8 +2070,8 @@ $("joinRoomBtn").addEventListener("click",()=>{
     try{
       const t=await navigator.clipboard.readText();
       const code=pickCode(t).slice(0,5);
-      if(code){ inp.value=code; note.textContent="貼り付けた"; note.className="room-note"; }
-      else{ note.textContent="コピーした合言葉が見つからない"; note.className="room-note err"; }
+      if(code){ inp.value=code; note.textContent="貼り付けました"; note.className="room-note"; }
+      else{ note.textContent="コピーした合言葉が見つかりません"; note.className="room-note err"; }
     }catch(e){ note.textContent="貼り付けできない端末です。手入力でお願いします"; note.className="room-note err"; }
   });
   $("codeGo").addEventListener("click",()=>{
@@ -2080,7 +2080,7 @@ $("joinRoomBtn").addEventListener("click",()=>{
     note.textContent="部屋を探しています…"; note.className="room-note";
     openChannel(code, false);
     joinWatch=setTimeout(()=>{
-      if(!online){ note.textContent="部屋が見つからない。合言葉を確認してもう一度"; note.className="room-note err"; leaveChannel(); }
+      if(!online){ note.textContent="部屋が見つかりません。合言葉を確認してください"; note.className="room-note err"; leaveChannel(); }
     },4000);
   });
   inp.focus();
@@ -2105,7 +2105,7 @@ $("startBtn").addEventListener("click",()=>{
 $("ruleBtn").addEventListener("click",()=>{
   ensureAudio(); playSelect();
   if(online && !isHost){ toast("ルールは部屋を作った側が決めます"); return; }
-  $("ruleNote").textContent = online? "※部屋主の設定です。次の「もう一回」から反映されます" : "※次の「もう一回」から反映されます";
+  $("ruleNote").textContent = online? "※オーナーの設定です。次の「もう一回」から反映されます" : "※次の「もう一回」から反映されます";
   $("ruleOv").classList.add("on");
 });
 $("ruleClose").addEventListener("click",()=>{ ensureAudio(); playSelect(); $("ruleOv").classList.remove("on"); });

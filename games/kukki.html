@@ -73,6 +73,8 @@
   .rule-reset{ display:block; margin:10px auto 0; align-self:center; border:none !important; background:none !important; border-radius:0;
     padding:4px 2px; font-size:12.5px; font-weight:800; color:var(--card); opacity:.85; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
 
+  /* オーナー以外のロビー=同じルールUIをグレーアウトして見せるだけ(2026-10-07) */
+  .rule-frame.ro button, .rule-reset.ro{ opacity:.4 !important; pointer-events:none; cursor:default; }
   .rc-val{ min-width:92px; text-align:center; font-size:19px; font-weight:900; color:var(--gold); }
   .mode-opt{ padding:7px 16px; border:1.5px solid rgba(253,246,231,.35); border-radius:999px; background:transparent; color:var(--card); font-size:14px; font-weight:900; cursor:pointer; }
   .mode-opt.sel{ background:var(--gold); border-color:var(--gold); color:#3a2a06; }
@@ -198,12 +200,12 @@
   .pen-item.good .pt{ color:var(--gold); }
 
   .toast{
-    position:fixed; left:50%; bottom:38px; transform:translateX(-50%); z-index:90;
+    position:fixed; left:50%; top:50%; transform:translate(-50%,calc(-50% + 10px)); z-index:9000;   /* 画面のど真ん中(2026-10-07) */
     background:rgba(12,47,44,.95); border:1.5px solid rgba(253,246,231,.3); color:var(--card);
     padding:11px 20px; border-radius:999px; font-size:14px; font-weight:800; letter-spacing:.05em;
-    opacity:0; pointer-events:none; transition:opacity .2s; white-space:nowrap; max-width:92vw;
+    opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; white-space:nowrap; max-width:92vw;
   }
-  .toast.on{ opacity:1; }
+  .toast.on{ opacity:1; transform:translate(-50%,-50%); }
 
   #boom{ position:fixed; inset:0; z-index:70; display:none; align-items:center; justify-content:center;
     background:rgba(227,69,47,.3); pointer-events:none; }
@@ -411,7 +413,7 @@
   .lobby-row .nm{ flex:1; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .lobby-row .nm.undef{ opacity:.42; font-weight:700; }
   .lobby-row .p-dot{ width:12px; height:12px; border-radius:50%; flex:none; }
-  .lobby-row .p-dot.mine{ cursor:pointer; width:16px; height:16px; }   /* 自分の丸は押すと色を変えられる */   /* 一致度チェックで使う色(PCOL)と同じ */
+  .lobby-row .p-dot.mine{ cursor:pointer; }   /* 自分の丸は押すと色を変えられる */   /* 一致度チェックで使う色(PCOL)と同じ */
   .lobby-row .hostmark{ flex:none; font-size:11px; font-weight:900; color:#3a2a06; background:var(--gold);
     border-radius:999px; padding:2px 10px 3px; }
   .lobby-row .you{ flex:none; font-size:11px; font-weight:900; color:var(--card);
@@ -2040,12 +2042,13 @@ function fmtTime(s){ return String(Math.floor(s/60)).padStart(2,"0")+":"+String(
 function fmtClock(ms){ const t=Math.max(0,Math.floor(ms/1000+0.001));
   return String(Math.floor(t/60)).padStart(2,"0")+":"+String(t%60).padStart(2,"0"); }
 /* ルール枠(ロビー=接頭辞""・ひとりで遊ぶ=接頭辞"s")。対戦=ラウンド数+制限時間／協力=クリア基準+制限時間 */
-function ruleFrameHTML(px){
-  return '<div class="rule-frame">'
-    +'<div class="rule-col"><div class="rc-name">ラウンド数</div><div class="rc-row"><button class="stp" id="'+px+'RdM">−</button><span class="rc-val" id="'+px+'RdVal">'+rounds+'</span><button class="stp" id="'+px+'RdP">＋</button></div></div>'
-    +'<div class="rule-col"><div class="rc-name">制限時間</div><div class="rc-row"><button class="stp" id="'+px+'TlM">−</button><span class="rc-val" id="'+px+'TlVal">'+fmtTime(timeLimit)+'</span><button class="stp" id="'+px+'TlP">＋</button></div></div>'
+function ruleFrameHTML(px, ro){       // ro=オーナー以外のロビー(同じUIをグレーアウトして見せるだけ・2026-10-07)
+  const D=ro?" disabled":"";
+  return '<div class="rule-frame'+(ro?" ro":"")+'">'
+    +'<div class="rule-col"><div class="rc-name">ラウンド数</div><div class="rc-row"><button class="stp" id="'+px+'RdM"'+D+'>−</button><span class="rc-val" id="'+px+'RdVal">'+rounds+'</span><button class="stp" id="'+px+'RdP"'+D+'>＋</button></div></div>'
+    +'<div class="rule-col"><div class="rc-name">制限時間</div><div class="rc-row"><button class="stp" id="'+px+'TlM"'+D+'>−</button><span class="rc-val" id="'+px+'TlVal">'+fmtTime(timeLimit)+'</span><button class="stp" id="'+px+'TlP"'+D+'>＋</button></div></div>'
     +'</div>'
-    +'<button class="txt-btn rule-reset" id="'+px+'RuleReset">初期設定に戻す</button>';   // 枠の外(他作品と同じ)
+    +'<button class="txt-btn rule-reset'+(ro?" ro":"")+'" id="'+px+'RuleReset"'+D+'>初期設定に戻す</button>';   // 枠の外(他作品と同じ)
 }
 const DEF_ROUNDS=5, DEF_TIDX=2;   // 初期設定=5ラウンド・30秒
 function ruleSummary(){ return rounds+'ラウンド・制限時間 '+fmtTime(timeLimit); }
@@ -2056,12 +2059,13 @@ function wireRuleFrame(px, after){       // 枠のボタン配線(after=変更�
   g("TlP").addEventListener("click",()=>{ ensureAudio(); playSelect(); tIdx=Math.min(TIMES.length-1,tIdx+1); fin(); });
   g("RdM").addEventListener("click",()=>{ ensureAudio(); playSelect(); rounds=Math.max(ROUNDS_MIN,rounds-1); fin(); });
   g("RdP").addEventListener("click",()=>{ ensureAudio(); playSelect(); rounds=Math.min(ROUNDS_MAX,rounds+1); fin(); });
-  g("RuleReset").addEventListener("click",()=>{ ensureAudio(); playSelect(); rounds=DEF_ROUNDS; tIdx=DEF_TIDX; fin(); toast("初期設定に戻した",1100); });
+  g("RuleReset").addEventListener("click",()=>{ ensureAudio(); playSelect(); rounds=DEF_ROUNDS; tIdx=DEF_TIDX; fin(); toast("初期設定に戻しました",1100); });
 }
 function renderTime(){ timeLimit=TIMES[tIdx];
   ["","s"].forEach(px=>{ const g=id=>$(px+id); if(!g("TlVal")) return;
-    g("TlVal").textContent=fmtTime(timeLimit); g("TlM").disabled=(tIdx<=0); g("TlP").disabled=(tIdx>=TIMES.length-1);
-    g("RdVal").textContent=rounds; g("RdM").disabled=(rounds<=ROUNDS_MIN); g("RdP").disabled=(rounds>=ROUNDS_MAX);
+    const ro=!!g("TlVal").closest(".ro");   // オーナー以外は全部押せないまま
+    g("TlVal").textContent=fmtTime(timeLimit); g("TlM").disabled=ro||(tIdx<=0); g("TlP").disabled=ro||(tIdx>=TIMES.length-1);
+    g("RdVal").textContent=rounds; g("RdM").disabled=ro||(rounds<=ROUNDS_MIN); g("RdP").disabled=ro||(rounds>=ROUNDS_MAX);
   });
 }
 function wireRule(){ wireRuleFrame("", ()=>sendSnap()); renderTime(); }   // ロビー(オーナーだけ)
@@ -2365,20 +2369,20 @@ $("joinRoomBtn").addEventListener("click",()=>{
     try{
       const t=await navigator.clipboard.readText();
       const c=pickCode(t).slice(0,5);
-      if(c){ inp.value=c; note.textContent="貼り付けた"; note.className="room-note"; }
-      else { note.textContent="コピーした合言葉が見つからない"; note.className="room-note err"; }
-    }catch(e){ note.textContent="貼り付けできない。手入力で頼む"; note.className="room-note err"; }
+      if(c){ inp.value=c; note.textContent="貼り付けました"; note.className="room-note"; }
+      else { note.textContent="コピーした合言葉が見つかりません"; note.className="room-note err"; }
+    }catch(e){ note.textContent="貼り付けできません。手入力してください"; note.className="room-note err"; }
   });
   $("codeGo").addEventListener("click",()=>{
     ensureAudio(); playSelect();
     const c=(inp.value||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
-    if(c.length!==5){ note.textContent="合言葉は5文字"; note.className="room-note err"; return; }
+    if(c.length!==5){ note.textContent="合言葉は5文字です"; note.className="room-note err"; return; }
     note.textContent="部屋を探しています…"; note.className="room-note";
     code=c; isHost=false; online=true; devMode=false; players=[];
     openChannel(code, ()=>{
       sendHello();
       joinWatch=setTimeout(()=>{
-        if(!hostId){ note.textContent="部屋がみつからない。合言葉を確認しよう"; note.className="room-note err"; leaveChannel(); }
+        if(!hostId){ note.textContent="部屋が見つかりません。合言葉を確認してください"; note.className="room-note err"; leaveChannel(); }
       },4000);
     });
   });
@@ -2408,8 +2412,8 @@ function openChannel(c, onReady){
     toast("オーナーから追放されました"); setTimeout(goTitle,900);
   });
   ch.on("broadcast",{event:"locked"},({payload})=>{
-    if(payload && payload.to===myId){ toast("次のゲーム開始まで待ってね"); leaveChannel();
-      roomStatus('<div class="room-note err">今はゲーム中みたい。次のゲーム開始まで待ってね</div>'); }
+    if(payload && payload.to===myId){ toast("満室のため参加できません"); leaveChannel();
+      roomStatus('<div class="room-note err">満室のため参加できません</div>'); }
   });
   ch.on("broadcast",{event:"snap"},({payload})=>{
     if(isHost||!payload) return;
@@ -2445,7 +2449,7 @@ function openChannel(c, onReady){
       if(readyDone){ if(isHost) sendSnap(); else { sendHello(); } return; }
       readyDone=true; if(onReady) onReady();
     } else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){
-      roomStatus('<div class="room-note err">通信失敗。通信環境を見直そう</div>');
+      roomStatus('<div class="room-note err">通信に失敗しました。通信環境を確認してください</div>');
     }
   });
 }
@@ -2481,24 +2485,20 @@ function renderLobby(){
   html+='</div>';
   html+='<div class="room-note">合言葉（'+TAPW+'でコピー）</div>'
     +'<div class="code-show" id="codeShow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>'+esc(code)+'</div>';
-  if(isHost){
-    html+=ruleFrameHTML("");
-  }else{
-    html+='<div class="room-note">'+ruleSummary()+'</div>';
-  }
-  html+='<div class="room-note">'+(lobbyEarly?"オーナーがロビーに戻るのを待っています":(players.length<2?"2人以上集まれば始められます":"いつでも始められるよ"))+'</div>';
+  html+=ruleFrameHTML("", !isHost);   // ★オーナー以外も同じルールUI(グレーアウト・操作不可。値はsnapで同期)(2026-10-07)
+  html+='<div class="room-note">'+(lobbyEarly?"オーナーがロビーに戻るのを待っています":(players.length<2?"2人以上集まれば開始できます":"いつでも開始できます"))+'</div>';
   if(isHost) html+='<button class="btn-main" id="lobbyStart"'+(players.length<2?" disabled":"")+' style="margin-top:4px;">はじめる</button>';
   $("lobbyBox").innerHTML=html;
   if(!nameAsked){ nameAsked=true; openNameOv(); }   // 部屋に入ったら名前を決める
   $("lobbyBox").querySelectorAll("[data-rename]").forEach(el=>el.addEventListener("click",()=>{ ensureAudio(); playSelect(); openNameOv(); }));   // 自分の名前を押すと名前変更
   { const md=$("myDot"); if(md) md.onclick=()=>{ ensureAudio(); playSelect(); const cp=$("colorPick"), k=players.findIndex(p=>p.id===myId);   // ★自分の色の丸を押すとカラーパレット(丸の近くに開く)
       cp.value=pcol(k>=0?k:0); const r=md.getBoundingClientRect(); cp.style.left=Math.round(r.left)+"px"; cp.style.top=Math.round(r.bottom+2)+"px"; cp.click(); }; }
-  wireRule();
+  if(isHost) wireRule(); else renderTime();
   $("codeShow").addEventListener("click", async ()=>{
     ensureAudio(); playSelect();
-    try{ await navigator.clipboard.writeText(inviteText(code)); toast("招待メッセージをコピーした"); }
+    try{ await navigator.clipboard.writeText(inviteText(code)); toast("招待メッセージをコピーしました"); }
     catch(e){ try{ const ta=document.createElement("textarea"); ta.value=inviteText(code); document.body.appendChild(ta);
-      ta.select(); document.execCommand("copy"); ta.remove(); toast("招待メッセージをコピーした"); }catch(_){ toast("コピーできなかった…"); } }
+      ta.select(); document.execCommand("copy"); ta.remove(); toast("招待メッセージをコピーしました"); }catch(_){ toast("コピーできませんでした"); } }
   });
   if(isHost){
     $("lobbyBox").querySelectorAll("[data-kick]").forEach(b=>b.addEventListener("click",()=>{
