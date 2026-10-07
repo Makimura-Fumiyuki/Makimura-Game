@@ -113,6 +113,10 @@
     box-shadow:0 2px 6px rgba(255,54,22,.4);
     transform:rotate(-3deg);
   }
+  /* ★制作中のゲーム(Shift+S+Dで表示・2026-10-07)。NEWの位置に「D」・サムネは無地にゲーム名だけ */
+  .new-badge.dev-badge{ background:var(--ink); box-shadow:0 2px 6px rgba(32,33,31,.35); padding:3px 11px 4px; }
+  .c-thumb.t-dev{ background:#efece6; }
+  .c-thumb .dev-nm{ font-size:24px; font-weight:900; letter-spacing:.06em; color:rgba(32,33,31,.55); text-align:center; padding:0 16px; }
   .card{
     position:relative;
     display:flex; flex-direction:column; text-decoration:none; color:var(--ink);
@@ -1089,6 +1093,15 @@
     { id:"maigo", thumbLight:true, yomi:"まいご", tpl:"tpl-maigo", release:"2026-07-07", cats:["対戦"], clicks:null, likes:null },   // 同日リリースはこの並び順が優先される(新しい方を先頭に)
     { id:"moku", thumbLight:true, yomi:"ごもくもくならべ", tpl:"tpl-moku", release:"2026-07-07", cats:["対戦"], clicks:null, likes:null },
   ];
+  /* ★制作中(まだ正式に公開していない)ゲーム。ふだんは出さず、Shift+S+Dを押した時だけ一覧の先頭に出す(2026-10-07牧村指示)。
+     サムネは無地にゲーム名だけ・説明文は仮・NEWの位置に「D」。あそばれた回数やいいねは数えない */
+  const DEV_GAMES=[
+    { id:"banjojinro", dev:true, nm:"盤上人狼", href:"./games/banjojinro.html", players:"3〜20人", cats:["パーティ"], yomi:"ばんじょうじんろう",
+      desc:"盤面をこっそり歩いて、占って、毒を盛る。話し合いで人狼を吊れるか", tags:["人狼","心理戦"] },
+    { id:"oekaki", dev:true, nm:"おえかき神経衰弱", href:"./games/oekaki-sinkeisuijaku.html", players:"2〜12人", cats:["パーティ"], yomi:"おえかきしんけいすいじゃく",
+      desc:"みんなで考えたお題を2人ずつ別々に描いて、その絵で神経衰弱。同じお題から生まれた2枚をさがそう", tags:["おえかき","神経衰弱"] },
+  ];
+  let devShow=false; try{ devShow=sessionStorage.getItem("hub.dev")==="1"; }catch(e){}
   /* Newはリリースから31日以内のゲームが自動判定(カテゴリと NEWバッジの両方に使う) */
   const isNew=g=>!g.noNew && g.release && (Date.now()-new Date(g.release+"T00:00:00"))/86400000<=31;
   const SECTIONS=[
@@ -1172,7 +1185,19 @@
   document.addEventListener("keydown",e=>{ if(e.key) heldKeys.add(e.key.toLowerCase()); });
   document.addEventListener("keyup",e=>{ if(e.key) heldKeys.delete(e.key.toLowerCase()); });
   window.addEventListener("blur",()=>heldKeys.clear());
+  const PLAYERS_SVG='<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="7.2" r="4.2"/><path d="M9 13.4c-4.4 0-8 2.5-8 6.1V21h16v-1.5c0-3.6-3.6-6.1-8-6.1z"/><circle cx="17.5" cy="8.2" r="3.3"/><path d="M17.5 13.2c-.8 0-1.6.1-2.3.3 1.9 1.3 3.1 3.2 3.1 5.5V21H23v-1.3c0-3-2.5-5.5-5.5-5.5z"/></svg>';
+  function devCard(g){   // 制作中のゲームのカード(テンプレートを使わずに組み立てる)
+    const el=document.createElement("a"); el.className="card"; el.href=g.href;
+    const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+    el.innerHTML='<div class="c-bar"></div><div class="c-thumb t-dev"><span class="dev-nm">'+esc(g.nm)+'</span><span class="c-players">'+PLAYERS_SVG+esc(g.players)+'</span></div>'
+      +'<div class="c-body"><div class="c-name">'+esc(g.nm)+'</div><div class="c-desc">'+esc(g.desc)+'</div>'
+      +'<div class="c-tags">'+g.tags.map(x=>'<span class="tag">'+esc(x)+'</span>').join("")+'</div>'
+      +'<div class="c-foot"><span class="c-play">あそぶ <span class="tri">▶</span></span></div></div>';
+    const b=document.createElement("span"); b.className="new-badge dev-badge"; b.textContent="D"; el.appendChild(b);
+    return el;
+  }
   function card(g){
+    if(g.dev) return devCard(g);
     const el=document.getElementById(g.tpl).content.firstElementChild.cloneNode(true);
     // プレイ人数バッジはタイトル横ではなくサムネ右下へ移動(背景半透明)
     const players=el.querySelector(".c-players"), thumb=el.querySelector(".c-thumb");
@@ -1255,16 +1280,17 @@
   function render(){
     const sort=sel.value;
     wrap.innerHTML="";
-    const soonLast=(cmp)=>(a,b)=>((a.soon?1:0)-(b.soon?1:0))||cmp(a,b);   // 準備中(バミリ等)は各並びの末尾へ回す
+    const soonLast=(cmp)=>(a,b)=>((a.dev?0:1)-(b.dev?0:1))||((a.soon?1:0)-(b.soon?1:0))||(a.dev&&b.dev?0:cmp(a,b));   // 制作中(D)は先頭・準備中(バミリ等)は各並びの末尾へ回す
+    const ALL=devShow? DEV_GAMES.concat(GAMES) : GAMES;
     if(sort==="cat"){   // カテゴリ順: セクション分け(各セクション内は新しい順)
       SECTIONS.forEach(sec=>{
-        const list=GAMES.filter(sec.filter).sort(soonLast(byRelease));
+        const list=ALL.filter(sec.filter).sort(soonLast(byRelease));
         if(!list.length) return;
         wrap.appendChild(head(sec.label)); wrap.appendChild(grid(list));
       });
     } else {            // リリース順/人気順/あそばれた回数順/お気に入り: カテゴリを分けず一覧で
       const cmp = sort==="pop" ? byPop : sort==="play" ? byPlay : sort==="fav" ? byFav : sort==="name" ? byName : sort==="rec" ? byRec : byRelease;
-      const list=[...GAMES].sort(soonLast(cmp));
+      const list=[...ALL].sort(soonLast(cmp));
       const d=grid(list); d.appendChild(card({tpl:"tpl-soon"}));
       wrap.appendChild(d);
     }
@@ -1273,6 +1299,20 @@
   sel.addEventListener("change", ()=>{ try{ localStorage.setItem("hub.sort", sel.value); }catch(e){} render(); });
   render();
   loadCounts();
+  /* ★Shift+S+Dで制作中のゲームを出す/隠す(全作品共通のデバッグキー。入力欄の中では反応しない・日本語入力中でも効くようキーの位置で見る) */
+  (function(){ const held=new Set();
+    document.addEventListener("keydown",e=>{
+      if(e.ctrlKey||e.metaKey||e.altKey||e.repeat||!e.shiftKey) return;
+      const tg=e.target; if(tg&&(tg.tagName==="INPUT"||tg.tagName==="TEXTAREA"||tg.tagName==="SELECT"||tg.isContentEditable)) return;
+      if(e.code!=="KeyS"&&e.code!=="KeyD") return;
+      held.add(e.code); if(!(held.has("KeyS")&&held.has("KeyD"))) return;
+      held.clear(); e.preventDefault();
+      devShow=!devShow; try{ sessionStorage.setItem("hub.dev",devShow?"1":"0"); }catch(_){}
+      render();
+    });
+    document.addEventListener("keyup",e=>held.delete(e.code));
+    window.addEventListener("blur",()=>held.clear());
+  })();
 
   /* ---------- 管理モード(牧村専用): ハブで1回ログイン→各ゲームを管理者として開ける ----------
      共有セッションはlocalStorage"mk.admin"({at:アクセストークン, rt:リフレッシュトークン, exp:期限秒})。
