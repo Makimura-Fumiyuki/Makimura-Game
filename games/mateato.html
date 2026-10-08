@@ -1064,6 +1064,29 @@ const PEN_W=[0.002,0.0035,0.006,0.0105,0.018];   // SIZE比。3(0.006)を中心�
 let online=false, isHost=false, sb=null, ch=null, myId=Math.random().toString(36).slice(2,10);
 let myName="", code="", hostId=null, joinWatch=0, hbIv=0, snapAt=0, snapEl=0, lastPh="";
 let hostVer=0, xferIv=0, annHost=null, lobbyEarly=false, lastHelloAt=0, kickedAt={}, xferArm=null;
+/* ★2026-10-08: hostVer=オーナーの世代番号(譲渡・引き継ぎのたびに1つ増える。snapの hv/he)。
+   leftP=ゲームの途中で抜けた人(点数と色ごと覚えておく=リンクから入り直したら席に戻す。snapの lf で全員に配る=引き継いだオーナーも知っている) */
+let leftP=[], lfSeen=null, succWatch=0, hostSnapAt=0, lastSnapHost=null, goneHost=null;
+/* ★部屋ごとの席ID(2026-10-08・ロビーのある全作品共通)。同じ合言葉の部屋にリンクから入り直すと、前と同じIDで入る
+   =オーナーが「戻ってきた」と分かり、ゲームの途中でも自分の席(点数・色)に戻れる。ほかのタブが使っている席は使わない(3時間で忘れる) */
+const SEAT_KEY="mk.seat", SEAT_TTL=3*3600e3;
+let seatK="";
+function seatLoad(){ try{ const o=JSON.parse(localStorage.getItem(SEAT_KEY)||"{}"); return (o&&typeof o==="object")?o:{}; }catch(e){ return {}; } }
+function seatSave(o){ try{ localStorage.setItem(SEAT_KEY,JSON.stringify(o)); }catch(e){} }
+function seatTake(game,code){
+  const o=seatLoad(), now=Date.now(); seatK=game+":"+code;
+  Object.keys(o).forEach(k=>{ o[k]=(Array.isArray(o[k])?o[k]:[]).filter(r=>r&&r.id&&now-(r.at||0)<SEAT_TTL); if(!o[k].length) delete o[k]; });
+  const l=o[seatK]=o[seatK]||[];
+  const free=l.filter(r=>!r.live||now-(r.at||0)>9000).sort((a,b)=>b.at-a.at)[0];   // 使われていない席(ページを閉じた・9秒以上更新が止まっている)
+  if(free && !isHost) myId=free.id;           // 部屋を作る時はそのまま(一覧とhostIdを先に作っているため)
+  const me2=l.find(r=>r.id===myId); if(me2){ me2.at=now; me2.live=1; } else l.push({ id:myId, at:now, live:1 });
+  if(l.length>8) l.splice(0,l.length-8);
+  seatSave(o);
+}
+function seatMark(live){ if(!seatK) return; const o=seatLoad(), l=o[seatK]=Array.isArray(o[seatK])?o[seatK]:[];
+  let r=l.find(x=>x.id===myId); if(!r){ r={ id:myId }; l.push(r); } r.at=Date.now(); r.live=live?1:0; seatSave(o); }
+setInterval(()=>{ if(ch&&online) seatMark(1); },3000);
+window.addEventListener("pagehide",()=>seatMark(0));
 const LOBBY_GRACE=30000;   // ロビー中の退出の猶予(30秒)。明示の退出(bye)は即時
 try{ myName=(localStorage.getItem("mate.name")||mkName()||"").slice(0,16); }catch(e){}
 /* ===== 名前(2026-09-06) =====
@@ -1638,7 +1661,7 @@ function openTopic(){
       const t=$("topicInput").value.trim()||randOdai();
       $("topicPanel").classList.remove("on"); $("topicPeek").style.display="none";
       showToast("時間切れ。お題を自動で決定");
-      sendAct({t:"topic", topic:t});
+      topic=t.slice(0,12); sendAct({t:"topic", topic:t});
     },90000);
     startTopicRing();
   } else {
@@ -1663,7 +1686,7 @@ $("topicGo").addEventListener("click",()=>{
   playDecide();
   clearTimeout(topicTmr);
   $("topicPanel").classList.remove("on"); $("topicPeek").style.display="none";
-  if(online){ sendAct({t:"topic", topic:t}); return; }
+  if(online){ topic=t.slice(0,12); sendAct({t:"topic", topic:t}); return; }   // ゲストの描き手も自分のお題を覚えておく(オーナーが替わったら新しいオーナーへ渡す)
   topic=t; startDrawPhase(false);
 });
 function startDrawPhase(guest){
@@ -1906,6 +1929,7 @@ const roomArea=$("roomArea");
 function roomStatus(html){ roomArea.innerHTML=html; }
 function sbClient(){ if(!sb) sb=window.supabase.createClient(SB_URL, SB_KEY); return sb; }
 function leaveChannel(){
+  seatMark(0);   // ★自分から抜けた=この席はすぐ空き(「やめる」のあと9秒以内にリンクから入り直しても同じ席で戻れる)
   clearTimeout(joinWatch); clearInterval(hbIv); hbIv=0; stopDrawFlush(); clearTimeout(celebTmr); clearGone();
   if(ch){ const c0=ch; ch=null;
     try{ c0.send({type:"broadcast",event:"bye",payload:{id:myId}}); }catch(e){}
@@ -1914,6 +1938,7 @@ function leaveChannel(){
   }
   online=false; isHost=false; hostId=null; roomStatus("");
   hostVer=0; clearInterval(xferIv); xferIv=0; annHost=null; lobbyEarly=false; kickedAt={}; xferArm=null;
+  leftP=[]; lfSeen=null; clearTimeout(succWatch); succWatch=0; lastSnapHost=null; goneHost=null; clearTimeout(ansTmr);
 }
 /* ===== オーナー譲渡・ロビーの在室管理(2026-09-28) =====
    hostVer=譲渡のたびに1つ増える番号。snapに載せ、古い番号(=譲渡前のオーナー)のsnapは捨てる */
@@ -2030,12 +2055,14 @@ $("joinRoomBtn").addEventListener("click",()=>{
 $("lobbyBack").addEventListener("click",()=>{ ensureAudio(); playSelect(); goTitle(); });
 
 function openChannel(c, onReady){
+  seatTake("mate",c);   // ★presenceのkeyにmyIdを使う前に席を決める
   ch=sbClient().channel("mate-"+c, { config:{ presence:{ key:myId } } });
   ch.on("broadcast",{event:"hello"},({payload})=>{
     if(!isHost||!payload) return;
     if(kickedAt[payload.id] && Date.now()-kickedAt[payload.id]<15000){ try{ ch.send({type:"broadcast",event:"kick",payload:{to:payload.id}}); }catch(e){} return; }
     cancelGone(payload.id);
     if(byId(payload.id)){ sendSnap(); return; }   // すでにメンバー(再接続)=観戦者にしない(満室判定より先に見る)
+    if(phase!=="lobby" && restorePlayer(payload.id, payload.n)) return;   // ★ゲームの途中で抜けた人がリンクから入り直した=自分の席(点数・色)に戻す(2026-10-08)
     if(phase!=="lobby"){   // 対局中の入室=観戦者として受け入れる(2026-08-05)。観戦は人数に数えないので満室判定より先(2026-10-07)
       try{ ch.send({type:"broadcast",event:"spec",payload:{to:payload.id}}); }catch(e){}
       sendSnap(); return;
@@ -2058,10 +2085,19 @@ function openChannel(c, onReady){
     if(!nameAsked){ nameAsked=true; openNameOv(); }   // 観戦者もロビーを通らないのでここで名前を決める
   });
   ch.on("broadcast",{event:"snap"},({payload})=>{
-    if(isHost||!payload) return;
+    if(!payload) return;
     const hv=(typeof payload.hv==="number")?payload.hv:0;
+    if(isHost){   // ★オーナーが2人いる(引き継ぎが重なった・前のオーナーの通信が戻ってきた)=新しく引き継いだ方、同じなら先に入った方に合わせる(2026-10-08)
+      if(payload.hostId && payload.hostId!==myId && (hv>hostVer || (hv===hostVer && hostRank(payload.hostId)<hostRank(myId)))){
+        isHost=false; clearInterval(hbIv); hbIv=0; clearTimeout(celebTmr); clearTimeout(ansTmr);
+        hostId=payload.hostId; hostVer=hv; lastPh="";   // lastPh=""=いまの段階の画面に入り直す
+        hostSnapAt=Date.now(); applySnap(payload);
+      }
+      return;
+    }
     if(hv<hostVer) return;   // 譲渡前のオーナーが送った古いsnap
-    hostVer=hv;
+    if(goneHost && payload.hostId===goneHost.id && hv<=goneHost.hv) return;   // 退出あつかいにしたオーナーが遅れて送ってきたsnap
+    hostVer=hv; hostSnapAt=Date.now();
     if(xferIv && payload.hostId===hostId){ clearInterval(xferIv); xferIv=0; }   // 新しいオーナーが動き出した
     applySnap(payload);
   });
@@ -2082,7 +2118,8 @@ function openChannel(c, onReady){
     (leftPresences||[]).forEach(p=>{ if(p && p.id) markGone(p.id); });   // すぐには抜けたと決めない(猶予20秒)
   });
   ch.on("presence",{event:"join"},({newPresences})=>{
-    (newPresences||[]).forEach(p=>{ if(p && p.id) cancelGone(p.id); });   // 戻ってきたら退出扱いを取り消す
+    (newPresences||[]).forEach(p=>{ if(!p || !p.id) return; cancelGone(p.id);   // 戻ってきたら退出扱いを取り消す
+      if(isHost && phase!=="lobby" && !(kickedAt[p.id] && Date.now()-kickedAt[p.id]<15000)) restorePlayer(p.id, p.n); });   // ★同じページのまま通信が戻った人もゲームに戻す
   });
   let readyDone=false;
   ch.subscribe(async status=>{
@@ -2096,33 +2133,87 @@ function openChannel(c, onReady){
     }
   });
 }
-const GONE_GRACE=300000;   // 5分(2026-09-07牧村指示)。presenceが一瞬落ちただけで退出扱いしない猶予(スマホのバックグラウンド復帰対策)。明示の退出(bye)は即時
+/* ★退出の猶予は30秒(2026-10-08)。以前はゲーム中5分(オーナーも5分)で「抜けたのに抜けた判定にならない」状態だった。
+   抜けたあつかいになっても、リンクから入り直せば(同じ席IDで)戻れる。オーナーがいなくなったら残った人が引き継ぐ。明示の退出(bye)は即時 */
+const GONE_GRACE=30000;
 let goneTmr={};
 function presentIds(){ try{ return Object.keys(ch.presenceState()||{}); }catch(e){ return []; } }
 function cancelGone(id){ if(goneTmr[id]){ clearTimeout(goneTmr[id]); delete goneTmr[id]; } }
 function markGone(id){
   if(id===myId) return;
   cancelGone(id);
-  goneTmr[id]=setTimeout(()=>{ delete goneTmr[id]; if(!ch||!online) return; if(presentIds().indexOf(id)>=0) return; onLeave(id); }, (phase==="lobby"&&id!==hostId)?LOBBY_GRACE:GONE_GRACE);   // ロビー中は30秒(リロードした人の古い名前もこれで消える)。オーナーの不在だけは従来どおり5分待つ(オーナーが一瞬裏に回っただけで全員がタイトルへ戻されないように)
+  goneTmr[id]=setTimeout(()=>{ delete goneTmr[id]; if(!ch||!online) return;
+    const pr=presentIds(); if(pr.indexOf(id)>=0) return;
+    if(pr.indexOf(myId)<0){ markGone(id); return; }   // 自分の通信が切れている間は判定しない(つながってから数え直す)
+    onLeave(id); }, phase==="lobby"?LOBBY_GRACE:GONE_GRACE);   // ロビー中もゲーム中も30秒(オーナーだけ長く待つ特別扱いはやめた=引き継ぐ)
 }
 function clearGone(){ Object.keys(goneTmr).forEach(cancelGone); }
 function onLeave(id){
   if(id===myId) return;
   cancelGone(id);
-  if(id===hostId && !isHost){ showToast("オーナーが退出しました"); goTitle(); return; }
+  if(id===hostId && !isHost){ hostGone(id); return; }   // ★オーナーがいなくなった=残った人が引き継ぐ(2026-10-08。以前は全員タイトルへ戻していた)
   if(!isHost) return;
   const gone=byId(id); if(!gone) return;
   players=players.filter(p=>p.id!==id);
   if(phase==="lobby"){ renderLobby(); sendSnap(); return; }   // ロビー中の「◯◯が退出」はlobbyAnnounceが出す
-  addSys(gone.n+" が退出しました");
-  if(players.length<2){ showToast("メンバーが足りなくなりました"); hostEndToLobby(); return; }
-  if(id===drawerId && (phase==="topic"||phase==="draw")){
+  if(!leftP.some(x=>x.id===id)) leftP.push({id:gone.id, n:gone.n, s:gone.s|0, c:gone.c});   // ★点数と色を覚えておく=入り直したら席に戻す
+  addSys(nmOf(gone)+" が退出しました");
+  if(players.length<2){ showToast(nmOf(gone)+"が退出しました"); hostEndToLobby(); return; }   // ★残りが1人=ゲームはそこで終わり(2人で遊んでいて片方が抜けた時など)
+  if(id===drawerId && (phase==="topic"||phase==="draw"||phase==="answer")){   // 回答の判定中に描き手が抜けた時も次のお題へ(判定する人がいなくなるため)
+    clearTimeout(ansTmr); oAns=null; curAns=null;
     drawerId=players[0].id; hostOpenTopic(); return;
   }
   sendSnap();
 }
+/* ★オーナーの引き継ぎ(2026-10-08): 残っている参加者のうち、いちばん先に入った人(playersの並び順)が新しいオーナー。ゲーム中もそのまま続ける */
+function hostRank(id){ const i=players.findIndex(p=>p.id===id); return i<0?999:i; }
+function hostGone(oldId){
+  const pr=presentIds(), nid=(players.map(p=>p.id)).find(id=>id!==oldId && (id===myId || pr.indexOf(id)>=0)) || null;
+  if(!nid || spectating&&nid===myId){ showToast("オーナーが退出しました"); goTitle(); return; }   // 観戦者はオーナーにならない・引き継げる人がいなければタイトルへ
+  goneHost={ id:oldId, hv:hostVer }; clearTimeout(succWatch);
+  if(nid===myId){ becomeHost(oldId); return; }
+  const np=byId(nid), t0=Date.now();
+  hostId=nid; annHost=nid;   // annHostChangeの「◯◯がオーナーになりました」と二重に出さない
+  showToast("オーナーが退出しました。"+(np?nmOf(np):"だれか")+"がオーナーになりました",2600); addSys((np?nmOf(np):"だれか")+" がオーナーになりました");
+  succWatch=setTimeout(()=>{ if(!isHost&&hostId===nid&&hostSnapAt<t0&&presentIds().indexOf(nid)<0) hostGone(nid); },8000);   // 新しいオーナーからsnapが来ない=選び直す
+}
+function becomeHost(oldId){
+  /* 自分が持っている最後のsnapの状態を正として、ホストの仕事(定期snap・タイマー判定・進行)を始める。時刻は自分の時計に合わせ直す */
+  const el=snapEl+(Date.now()-snapAt);   // ゲストとして見ていた経過時間(isHostにする前に測る)
+  isHost=true; hostId=myId; hostVer++; annHost=myId; spectating=false; clearTimeout(joinWatch); clearTimeout(succWatch);
+  showToast("オーナーが退出しました。あなたがオーナーになりました",2600); addSys("あなた がオーナーになりました");
+  if(lobbyEarly){ lobbyEarly=false; phase="lobby"; lastPh="lobby"; leftP=[]; }   // 結果から先にロビーへ戻っていた=そのままロビーで続ける
+  if(phase==="draw"){ tStart=Date.now()-el; }
+  if(phase==="answer"){
+    drawPausedEl=snapEl;   // 回答中は描画の時計が止まっている(snapのel=止めた時点の経過)
+    if(curAns){ oAns={by:curAns.by, byName:curAns.byName, text:curAns.text, judging:true}; answerEnd=ansEnd; }
+  }
+  if((phase==="draw"||phase==="answer") && drawerId!==myId) topic="";   // お題は描き手が教えてくれる(topicfix)まで不明
+  if(phase==="timeup") dobonId=(dobonOn && players.length!==2)? drawerId : null;
+  startHb();
+  onLeave(oldId);   // 前のオーナーは退出あつかい(描き手だった・残りが1人、ならここで次のお題/ロビーへ進む)
+  if(!isHost) return;
+  if(phase==="draw"){ if(elapsedMs()>=timeLimit*1000){ stopTimer(); hostTimeUp(); } else if(!timerIv) startTimer(); }
+  else if(phase==="answer"){
+    if(!oAns){ hostResumeDraw(); }
+    else{ clearTimeout(ansTmr);
+      ansTmr=setTimeout(()=>{ if(phase==="answer" && oAns && oAns.judging){ broadcastChat(oAns.by, oAns.byName, oAns.text, false); hostResumeDraw(); } }, Math.max(0,answerEnd-Date.now())+250); }
+  }
+  else if(phase==="celebrate"){ $("celebNext").style.display=""; }   // 「次へ」はオーナーだけのボタン
+  else if(phase==="timeup"){ clearTimeout(celebTmr); celebTmr=setTimeout(()=>{ phase="result"; enterResultAll(); sendSnap(); },1500); }
+  else if(phase==="result"){ $("againBtn").style.display=""; $("rWaitNote").style.display="none"; $("rHomeBtn").style.display="none"; }
+  else if(phase==="lobby"){ renderLobby(); }
+  sendSnap();
+}
+function restorePlayer(id,n){   // ★ゲームの途中で抜けた人が戻ってきた=点数・色ごと席に戻す(追放した人はleftPに入らないので戻らない)
+  const i=leftP.findIndex(x=>x.id===id); if(i<0||byId(id)) return false;
+  const x=leftP.splice(i,1)[0];
+  players.push({id:x.id, n:x.n||String(n||"").slice(0,8), s:x.s|0, c:x.c||nextColor()});
+  addSys(nmOf(byId(x.id))+" が戻ってきました");
+  sendSnap(); return true;
+}
 function hostEndToLobby(){
-  phase="lobby"; clearTimeout(celebTmr); stopTimer();
+  phase="lobby"; clearTimeout(celebTmr); stopTimer(); leftP=[];
   document.querySelectorAll(".overlay").forEach(o=>o.classList.remove("on","peek"));
   showScene(lobbyScene); renderLobby(); sendSnap();
 }
@@ -2200,7 +2291,7 @@ function renderLobby(){
     const ls=$("lobbyStart");
     if(ls) ls.addEventListener("click",()=>{
       ensureAudio(); playStart();
-      roundNo=1; dobonId=null; players.forEach(p=>p.s=0);
+      roundNo=1; dobonId=null; players.forEach(p=>p.s=0); leftP=[];
       drawerId=players[Math.floor(Math.random()*players.length)].id;
       clearArt(); drawCrema(); drawSwirl();
       resetTable();
@@ -2213,8 +2304,9 @@ function renderLobby(){
 /* --- ホスト権威 --- */
 function sendSnap(){
   if(!isHost||!ch) return;
-  const p={ hostId:hostId, hv:hostVer, ph:phase, players:players.map(x=>({id:x.id,n:x.n,s:x.s,c:x.c})),
-    round:roundNo, drawerId:drawerId, tl:timeLimit, db:dobonOn?1:0, er:eraserAmt };
+  const p={ hostId:hostId, hv:hostVer, he:hostVer, ph:phase, players:players.map(x=>({id:x.id,n:x.n,s:x.s,c:x.c})),
+    round:roundNo, drawerId:drawerId, tl:timeLimit, db:dobonOn?1:0, er:eraserAmt,
+    lf:leftP.map(x=>({id:x.id,n:x.n,s:x.s,c:x.c})) };   // he=オーナーの世代番号(hvと同じ値)・lf=途中で抜けた人
   p.halted=[...haltedIds];
   if(phase==="draw") p.el=Date.now()-tStart;
   if(phase==="answer"){ p.el=drawPausedEl; if(oAns) p.ans={by:oAns.by,byName:oAns.byName,text:oAns.text,judging:oAns.judging?1:0,left:Math.max(0,answerEnd-Date.now())}; }
@@ -2238,6 +2330,7 @@ function hostAct(a){
     phase="celebrate"; stopTimer(); enterCelebrateAll(); sendSnap();
     clearTimeout(celebTmr);   // 自動では進めない(オーナーの「次へ」で進行)
   }
+  if(a.t==="topicfix" && a.from===drawerId && (phase==="draw"||phase==="answer"||phase==="celebrate") && a.topic){ topic=String(a.topic).slice(0,12); return; }   // ★引き継いだオーナーに描き手がお題を教える(2026-10-08)
   if(a.t==="color"){ const pp=byId(a.from); if(!pp||!/^#[0-9a-f]{6}$/i.test(a.c||"")) return; pp.c=a.c; if(phase==="lobby") renderLobby(); sendSnap(); return; }   // 自分の色を変えた(2026-10-02)
   if(a.t==="rename"){   // ロビー/ゲーム中に名前を決めた(部屋に入ったあとに決める方式)
     const pp=byId(a.from); if(!pp) return;
@@ -2299,7 +2392,7 @@ function hostTimeUp(){
   celebTmr=setTimeout(()=>{ phase="result"; enterResultAll(); sendSnap(); },3000);
 }
 function hostRestart(){
-  roundNo=1; dobonId=null; players.forEach(p=>p.s=0);
+  roundNo=1; dobonId=null; players.forEach(p=>p.s=0); leftP=[];
   drawerId=players[Math.floor(Math.random()*players.length)].id;
   clearArt(); drawCrema(); drawSwirl(); resetTable();
   try{ ch.send({type:"broadcast",event:"reset",payload:{}}); }catch(e){}
@@ -2400,10 +2493,22 @@ function applySnap(p){
     spectating=false;
     sendHello();
   }
-  clearTimeout(joinWatch);
+  clearTimeout(joinWatch); clearTimeout(succWatch);
+  const hostChg=!!lastSnapHost && lastSnapHost!==p.hostId; lastSnapHost=p.hostId;
   hostId=p.hostId;
   players=p.players||[];
+  leftP=p.lf||[];   // 引き継いだ時のために持っておく
   annHostChange(hostId);
+  if(p.ph!=="lobby"){   // 途中で抜けた人・戻ってきた人をチャットに残す(オーナーのaddSysはゲストに届かないため)
+    const cur={}; leftP.forEach(x=>{ cur[x.id]=x.n||""; });
+    if(lfSeen){
+      Object.keys(cur).forEach(id=>{ if(id!==myId && !(id in lfSeen)) addSys((cur[id]||UNDEF_NM)+" が退出しました"); });
+      Object.keys(lfSeen).forEach(id=>{ if(id!==myId && !(id in cur) && players.some(x=>x.id===id)) addSys((lfSeen[id]||UNDEF_NM)+" が戻ってきました"); });
+    }
+    lfSeen=cur;
+    /* ★自分が退出あつかいになっていた(通信が切れていた)=名乗って席に戻してもらう */
+    if(!spectating && ch && !players.some(x=>x.id===myId) && leftP.some(x=>x.id===myId) && Date.now()-lastHelloAt>2000) sendHello();
+  } else lfSeen={};
   /* ロビーにいるのに一覧に自分がいない(オーナーの側で一時的に抜けた扱いになった)=入り直しを頼む */
   if(p.ph==="lobby" && !spectating && ch && !players.some(x=>x.id===myId) && Date.now()-lastHelloAt>2000) sendHello();
   if(lobbyEarly){   // 結果画面から先にロビーへ戻った人=オーナーが戻るまで結果画面へ引き戻さない
@@ -2411,6 +2516,7 @@ function applySnap(p){
     lobbyEarly=false;
   }
   roundNo=p.round||1; drawerId=p.drawerId||null;
+  if(hostChg && drawerId===myId && topic && (p.ph==="draw"||p.ph==="answer")) sendAct({t:"topicfix", topic:topic});   // ★オーナーが替わった=描いているお題を新しいオーナーへ
   timeLimit=p.tl||45; dobonOn=p.db===1; eraserAmt=(p.er!=null?p.er:0);
   haltedIds=new Set(p.halted||[]);
   if(p.ph==="draw" && !haltedIds.has(myId)) myHalted=false;   // 全員復活のリセットを自分にも反映

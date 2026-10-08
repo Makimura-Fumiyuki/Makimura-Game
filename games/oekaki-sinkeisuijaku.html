@@ -210,7 +210,7 @@
   .dr-strip{ position:relative; width:100%; height:calc(var(--F,320px) + 14px); overflow:hidden; flex:none; }
   .dr-slot{ position:absolute; left:50%; top:2px; width:var(--F,320px); height:var(--F,320px); transform-origin:50% 50%;
     background:#fff; border:none; border-radius:8px; overflow:hidden; cursor:pointer;
-    filter:blur(2.4px) saturate(.55); opacity:.48;
+    filter:blur(1.2px) saturate(.55); opacity:.48;
     transition:transform .42s cubic-bezier(.25,.85,.3,1), filter .3s, opacity .3s; }
   .dr-slot.focus{ filter:none; opacity:1; cursor:default; }
   /* 絵のふち=1枚ぶんの時間のゲージ(2026-10-07)。うすい線の上の墨の線が、その絵の時間に合わせて減っていく */
@@ -261,7 +261,8 @@
   .op-box input[type=range]:disabled{ opacity:.35; cursor:default; }
   .op-box .op-v{ flex:none; width:38px; text-align:right; font-size:12.5px; font-weight:900; font-variant-numeric:tabular-nums; }
   .btn-main.deny{ background:var(--red); color:#fff; }
-  .btn-main.ready{ background:#fff; }            /* 完成を押した=「キャンセル」(押すと取り消す) */
+  .btn-main.ready{ background:#fff; }
+  .btn-main.off{ filter:grayscale(1); opacity:.5; cursor:default; }   /* 自分の絵がまだ全部描けていない=押せない(押すとトースト) */            /* 完成を押した=「キャンセル」(押すと取り消す) */
   .dr-main{ display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; }
 
   /* 神経衰弱(並べ方はJSで列数を決めてグリッドにする) */
@@ -866,19 +867,20 @@ function startDraw(){
 function hostCardDone(cid){
   const c=cById(cid); if(!c||c.done) return;
   c.done=true; if(!(cid in arts)) arts[cid]="";
-  if(G.phase==="draw" && G.cards.every(x=>x.done||x.gone)) startMatch(); else bump();
+  if(G.phase==="draw" && drawAllIn()) startMatch(); else bump();
 }
 /* 全員が「完成」を押した=その場でおえかきを終える(各自の端末が時間切れと同じ扱いで絵を確定して送る) */
 function allReady(){ return activePs().every(p=>G.ready&&G.ready[p.id]); }
 function endDrawNow(){ const now=Date.now(); if(G.stepEnd&&G.stepEnd<=now) return; G.stepEnd=now; G.drawEnd=now+DRAW_GRACE; bump(); }
 function forceDrawEnd(){                      // 保険の締め切り: 届いていない絵は白紙にする
-  G.cards.forEach(c=>{ if(!c.done&&!c.gone){ c.done=true; if(!(c.id in arts)) arts[c.id]=""; } });
+  G.cards.forEach(c=>{ if(!c.done&&!c.gone&&!drGone(c)){ c.done=true; if(!(c.id in arts)) arts[c.id]=""; } });
   startMatch();
 }
 /* --- 神経衰弱 --- */
 function startMatch(){
   /* ★ペアにならないカードは盤に出さない(2026-10-07・フェイクの仕様をなくした)。途中で抜けた人の相方・同じお題が奇数枚の余りは取り除く */
   const keep={}, live=[];
+  G.cards.forEach(c=>{ if(!c.done&&!c.gone&&drGone(c)) c.gone=true; });   // 抜けたままの人の描けていないカードは取り除く
   G.cards.filter(c=>!c.gone).forEach(c=>{ const k=cardKey(c); if(!k) return; (keep[k]=keep[k]||[]).push(c); });
   Object.values(keep).forEach(a=>{ a.slice(0, a.length-(a.length%2)).forEach(c=>live.push(c)); });
   G.board=shuffle(live.map(c=>c.id));
@@ -1063,7 +1065,7 @@ function gotArt(cid,d){
 }
 function onArtChunk(pl){
   if(!pl||!pl.cid) return; if(pl.cid in arts) return;
-  { if(!G) return; const c=G.cards.find(x=>x.id===pl.cid); if(!c || (pl.from!==c.dr && pl.from!==hostId)) return; }   // ★描いた本人かオーナー以外の絵は受け取らない(観戦者が送っても無視)
+  { if(!G) return; const c=G.cards.find(x=>x.id===pl.cid); if(!c || (pl.from!==c.dr && pl.from!==hostId && !(isHost&&pById(pl.from)))) return; }   // 引き継いだオーナーは参加者から取り寄せる   // ★描いた本人かオーナー以外の絵は受け取らない(観戦者が送っても無視)
   const a=artParts[pl.cid]=artParts[pl.cid]||{ n:pl.n, parts:[] };
   a.parts[pl.i]=pl.d||"";
   let ok=true; for(let i=0;i<a.n;i++) if(a.parts[i]===undefined){ ok=false; break; }
@@ -1354,6 +1356,7 @@ function updateTools(){
   const st=$("drStrip"); st.className="dr-strip t-"+tool;
   $("undoBtn").disabled=!(curCid&&(drafts[curCid]||[]).length);
   $("redoBtn").disabled=!(curCid&&(redo[curCid]||[]).length);
+  updDoneBtn();
 }
 function renderTools(){ updateTools(); }
 function undoDraw(){ if(!curCid||stroke) return; const ops=drafts[curCid]||[]; if(!ops.length) return;
@@ -1376,7 +1379,12 @@ document.addEventListener("pointerdown",e=>{
 function myReady(){ if(!G) return false; const id=VID(); let r=!!(G.ready&&G.ready[id]);
   if(pending&&pending.from===id){ if(pending.t==="ready") r=true; else if(pending.t==="unready") r=false; } return r; }
 /* 完成=「いつ終わってもよい」の合図(2026-10-07)。1回で決まる・押したあとも描ける・もう一度押すと「キャンセル」 */
+/* ★2026-10-08: 自分の絵がぜんぶ「少しでも描いてある」状態になるまで完成は押せない(グレー・押すとトースト) */
+function hasInk(ops){ let i=(ops||[]).length-1; for(;i>=0;i--){ const k=ops[i].k; if(k==="clear") return false; if(k==="pen"||k==="rect"||k==="oval"||k==="fill") return true; } return false; }
+function allInked(){ if(!G) return false; return myCards(VID()).every(c=>c.done||localDone[c.id]||hasInk(drafts[c.id])); }
+function updDoneBtn(){ const b=$("drDone"); if(!b||!G||G.phase!=="draw") return; b.classList.toggle("off", !myReady() && !allInked()); }
 $("drDone").onclick=()=>{ ensureAudio(); if(!G||G.phase!=="draw") return;
+  if(!myReady() && !allInked()){ playTick(); toast("まだ描けてないよ"); return; }
   if(myReady()){ playTick(); submit({ t:"unready" }); } else { playDone(); submit({ t:"ready" }); } };
 /* Ctrl(⌘)+Z=ひとつ戻す／Ctrl(⌘)+Shift+Z・Ctrl+Y=やり直す。Shiftを押す/離すと描いている図形がすぐ正方形・正円に切りかわる */
 document.addEventListener("keydown",e=>{
@@ -1414,7 +1422,7 @@ function renderDraw(){
   if(key!==strip.key){ strip.key=key; buildStrip(cs); const s=autoSeg(); strip.seg=s; setFocus(s); }
   else if(!curCid) setFocus(strip.cur);
   const fin=cs.every(c=>c.done||localDone[c.id]), rd=myReady(), b=$("drDone");
-  b.textContent= rd? "キャンセル" : "完成"; b.classList.toggle("ready",rd); b.disabled=fin;
+  b.textContent= rd? "キャンセル" : "完成"; b.classList.toggle("ready",rd); b.disabled=fin; updDoneBtn();
   drawLabels(); gaugeTick();
 }
 window.addEventListener("resize",()=>{ if(strip.els.length) layoutStrip(); });
@@ -1664,7 +1672,7 @@ $("dkMinus").onclick=()=>{ ensureAudio(); playSelect(); dkN=Math.max(1,dkN-1); r
 $("dkPlus").onclick=()=>{ ensureAudio(); playSelect(); dkN=dkN+1; renderDv(); };
 $("devStart").onclick=()=>{ ensureAudio(); playSelect(); startSolo(dvN,dkN); };
 renderDv();
-window.__osDev={ get G(){ return G; }, assign:assignDrawers, arts:()=>arts, pres:()=>presentIds(), state:()=>{ try{ return ch.presenceState(); }catch(e){ return null; } } };   // ★試作用フック(公開前に削除するか要確認)
+window.__osDev={ get G(){ return G; }, net:()=>({ myId, isHost, hostId, hostEp, spectating }), assign:assignDrawers, arts:()=>arts, pres:()=>presentIds(), state:()=>{ try{ return ch.presenceState(); }catch(e){ return null; } } };   // ★試作用フック(公開前に削除するか要確認)
 
 /* ================= 虫眼鏡(拡大縮小)と画面の移動(2026-10-07・待てアート/文字化けかくれんぼと同じ操作) =================
    ・右下の −/虫眼鏡(もとの大きさ)/＋、Ctrl(⌘)+ホイール、スマホは2本指でつまむ
@@ -1743,11 +1751,13 @@ function rankList(){
   const ps=G.players.slice().sort((a,b)=>b.score-a.score);
   let rk=0, prev=null; return ps.map((p,i)=>{ if(p.score!==prev){ rk=i+1; prev=p.score; } return { p, rk }; });
 }
+/* 勝った人=途中で抜けた人をのぞいた中でいちばん多くそろえた人(全員抜けた時は全員から) */
+function winnersOf(){ const act=G.players.filter(p=>!p.gone), pool=act.length?act:G.players, top=Math.max(0,...pool.map(p=>p.score)); return pool.filter(p=>p.score===top); }
 function openResult(){
   if(!G||G.phase!=="over") return;             // 決着していない時(別の画面へ移ったあとの遅れた呼び出し)は開かない
-  const rl=rankList(), top=rl.length? rl[0].p.score : 0, winners=rl.filter(r=>r.p.score===top).map(r=>r.p);
+  const winners=winnersOf(), rl=rankList();
   $("winBanner").textContent= winners.length===1? winners[0].n+" の勝ち" : winners.map(p=>p.n).join("・")+" の勝ち";
-  $("resList").innerHTML=rl.map(r=>'<div class="res-row'+(r.p.score===top?" top":"")+'"><span class="rk">'+r.rk+'</span><span class="p-dot" style="background:'+r.p.c+'"></span><span class="nm">'+esc(r.p.n)+(r.p.id===myId&&!debug&&r.p.n!=="あなた"?"（あなた）":"")+'</span><span class="pt">'+r.p.score+'組</span></div>').join("");
+  $("resList").innerHTML=rl.map(r=>'<div class="res-row'+(winners.includes(r.p)?" top":"")+'"><span class="rk">'+r.rk+'</span><span class="p-dot" style="background:'+r.p.c+'"></span><span class="nm">'+esc(r.p.n)+(r.p.id===myId&&!debug&&r.p.n!=="あなた"?"（あなた）":"")+'</span><span class="pt">'+r.p.score+'組</span></div>').join("");
   /* 横並びの2択は決定(主ボタン)を右 */
   let b='<button class="ghost" id="resTitle">やめる</button>';
   if(debug||solo) b+='<button class="close" id="resAgain">もう一回</button>';
@@ -1784,7 +1794,7 @@ function onState(){
     if(ph==="match"){ justMatch=true; playStep(); const t=pById(G.turn); bigFx("神経衰弱スタート"); addSys("神経衰弱スタート"); }
     if(ph==="over" && !seen.over){
       seen.over=true;
-      const rl=rankList(), top=rl.length? rl[0].p.score : 0, winners=rl.filter(r=>r.p.score===top).map(r=>r.p);
+      const winners=winnersOf();
       addSys(winners.map(p=>p.n).join("・")+" の勝ち","c-res");
       if(debug || winners.some(p=>p.id===myId)) playWin(); else playLose();
       setTimeout(openResult,1200);
@@ -1844,16 +1854,75 @@ $("nameInput").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposin
 $("nameOv").addEventListener("click",e=>{ if(e.target===$("nameOv")&&nameRename) $("nameOv").classList.remove("on"); });   // 名前を変える時だけ枠外で閉じる(はじめの1回は決めてもらう)
 
 function roomStatus(html){ $("roomArea").innerHTML=html; }
-const GONE_GRACE=300000;   // 対戦中にpresenceが一瞬落ちても退出扱いにしない猶予(5分・共通ルール)。明示の退出(bye)は即時
-const LOBBY_GRACE=30000;   // ★ロビー中の猶予(30秒・2026-09-28)。以前はロビー中のleave=即退出で、スマホが一瞬裏に回るだけで勝手に抜けていた
-let goneTmr={}, kicked={}, hostChgAt=0, lastHeal=0, localLobby=false, xferIv=0;   // localLobby=結果から先にロビーへ戻った(参加者側)
+/* ★部屋ごとの席ID(2026-10-08・ロビーのある全作品共通)。同じ合言葉の部屋にリンクから入り直すと、前と同じIDで入る
+   =オーナーが「戻ってきた」と分かり、ゲームの途中でも自分の席に戻れる。ほかのタブが使っている席は使わない(3時間で忘れる) */
+const SEAT_KEY="mk.seat", SEAT_TTL=3*3600e3;
+let seatK="";
+function seatLoad(){ try{ const o=JSON.parse(localStorage.getItem(SEAT_KEY)||"{}"); return (o&&typeof o==="object")?o:{}; }catch(e){ return {}; } }
+function seatSave(o){ try{ localStorage.setItem(SEAT_KEY,JSON.stringify(o)); }catch(e){} }
+function seatTake(game,code){
+  const o=seatLoad(), now=Date.now(); seatK=game+":"+code;
+  Object.keys(o).forEach(k=>{ o[k]=(Array.isArray(o[k])?o[k]:[]).filter(r=>r&&r.id&&now-(r.at||0)<SEAT_TTL); if(!o[k].length) delete o[k]; });
+  const l=o[seatK]=o[seatK]||[];
+  const free=l.filter(r=>!r.live||now-(r.at||0)>9000).sort((a,b)=>b.at-a.at)[0];   // 使われていない席(ページを閉じた・9秒以上更新が止まっている)
+  if(free && !isHost) myId=free.id;           // 部屋を作る時はそのまま
+  const me2=l.find(r=>r.id===myId); if(me2){ me2.at=now; me2.live=1; } else l.push({ id:myId, at:now, live:1 });
+  if(l.length>8) l.splice(0,l.length-8);
+  seatSave(o);
+}
+function seatMark(live){ if(!seatK) return; const o=seatLoad(), l=o[seatK]=Array.isArray(o[seatK])?o[seatK]:[];
+  let r=l.find(x=>x.id===myId); if(!r){ r={ id:myId }; l.push(r); } r.at=Date.now(); r.live=live?1:0; seatSave(o); }
+setInterval(()=>{ if(ch&&online) seatMark(1); },3000);
+window.addEventListener("pagehide",()=>seatMark(0));
+/* ★退出の猶予は30秒(2026-10-08)。以前はゲーム中5分で「抜けたのに抜けた判定にならない」状態だった。
+   抜けたあつかいになっても、リンクから入り直せば(同じ席IDで)戻れる。オーナーがいなくなったら残った人が引き継ぐ */
+const GONE_GRACE=30000;
+const LOBBY_GRACE=30000;
+let goneTmr={}, kicked={}, hostChgAt=0, lastHeal=0, localLobby=false, xferIv=0, hostEp=0, succWatch=0;   // localLobby=結果から先にロビーへ戻った(参加者側)
 function isKicked(id){ return !!kicked[id]&&Date.now()-kicked[id]<60000; }
 function nmOf(id){ if(id===myId&&myName) return myName; const p=lobbyById(id); return (p&&p.n)||UNDEF_NM; }
 function presentIds(){ try{ return Object.keys(ch.presenceState()||{}); }catch(e){ return []; } }
 function cancelGone(id){ if(goneTmr[id]){ clearTimeout(goneTmr[id]); delete goneTmr[id]; } }
 function markGone(id){ if(id===myId) return; cancelGone(id);
-  goneTmr[id]=setTimeout(()=>{ delete goneTmr[id]; if(!ch||!online) return; if(presentIds().indexOf(id)>=0) return; onLeave(id); }, (phaseUI==="lobby"&&id!==hostId)?LOBBY_GRACE:GONE_GRACE); }   // 参加者から見たオーナーは従来どおり5分(オーナーが一瞬裏に回っただけで全員タイトルへ戻さない)
+  goneTmr[id]=setTimeout(()=>{ delete goneTmr[id]; if(!ch||!online) return;
+    const pr=presentIds(); if(pr.indexOf(id)>=0) return;
+    if(pr.indexOf(myId)<0){ markGone(id); return; }   // 自分の通信が切れている間は判定しない(つながってから数え直す)
+    onLeave(id); }, phaseUI==="lobby"?LOBBY_GRACE:GONE_GRACE); }
+/* ★オーナーの引き継ぎ(2026-10-08): 残っている人のうち、いちばん先に入った人が新しいオーナー。ゲーム中もそのまま続ける */
+function hostOrder(){ return (G&&phaseUI==="game")? G.players.filter(p=>!p.gone).map(p=>p.id) : lobby.map(p=>p.id); }
+function hostRank(id){ const i=((G&&phaseUI==="game")? G.players.map(p=>p.id) : lobby.map(p=>p.id)).indexOf(id); return i<0?999:i; }
+function hostGone(oldId){
+  const pr=presentIds(), nid=hostOrder().find(id=>id!==oldId && (id===myId || pr.indexOf(id)>=0)) || null;
+  if(!nid || spectating&&nid===myId){ toast("オーナーが退出しました"); goTitle(); return; }
+  hostChgAt=Date.now(); clearTimeout(succWatch);
+  if(nid===myId){ becomeHost(oldId); return; }
+  hostId=nid; lastVer=-1; toast("オーナーが退出しました。"+nmOf(nid)+"がオーナーになりました",2600);
+  succWatch=setTimeout(()=>{ if(!isHost&&hostId===nid&&lastVer<0&&presentIds().indexOf(nid)<0) hostGone(nid); },8000);   // 新しいオーナーからsnapが来ない=選び直す
+}
+function becomeHost(oldId){
+  isHost=true; hostId=myId; hostEp++; clearTimeout(joinWatch); ver=Math.max(ver,lastVer+1);
+  lobby=lobby.filter(p=>p.id!==oldId);
+  toast("オーナーが退出しました。あなたがオーナーになりました",2600);
+  if(phaseUI==="game"&&G){
+    if(G.stepEnd&&localEnd){ const d=localEnd-G.stepEnd; G.stepEnd=localEnd; if(G.drawEnd) G.drawEnd+=d; if(G.resAt) G.resAt+=d; }   // 締め切りを自分の時計に合わせる
+    G.cards.forEach(c=>{ if(!c.done&&!c.gone&&(c.id in arts)) c.done=true; });                // 届いている絵は完成あつかい
+    const pd=pending; pending=null; localFlip=null;
+    startHb(); onLeave(oldId);
+    if(G&&G.phase==="draw"&&drawAllIn()) startMatch();
+    if(pd&&G) hostAct(pd);
+    const miss=(G&&G.board||[]).filter(cid=>!(cid in arts));                                 // 持っていない絵は、みんなから取り寄せる
+    if(miss.length&&ch){ try{ ch.send({type:"broadcast",event:"artreq",payload:{ from:myId, any:1, cids:miss.slice(0,8) }}); }catch(e){} }
+  }else{ startHb(); renderLobby(); sendSnap(); }
+}
+/* 抜けた人の、まだ描けていないカードは「抜けたまま」なら神経衰弱の前に取り除く(戻ってくれば描ける) */
+function drGone(c){ const p=pById(c.dr); return !p||p.gone; }
+function drawAllIn(){ return G.cards.every(x=>x.done||x.gone||drGone(x)); }
+function restorePlayer(id){   // 退出あつかいになっていた人が戻ってきた=ゲームに戻す
+  const gp=G&&pById(id); if(!gp||!gp.gone) return false;
+  gp.gone=false; if(!lobbyById(gp.id)) lobby.push({ id:gp.id, n:gp.n, c:gp.c, t:Date.now() }); bump(); return true;
+}
 function leaveChannel(){
+  seatMark(0);   // 自分で出た=この席はすぐ使ってよい(リンクから入り直すと同じ席に戻れる)
   clearTimeout(joinWatch); clearInterval(hbIv); hbIv=0; clearInterval(xferIv); xferIv=0; Object.keys(goneTmr).forEach(cancelGone); localLobby=false;
   if(ch){ const c0=ch; ch=null;
     try{ c0.send({type:"broadcast",event:"bye",payload:{id:myId}}); }catch(e){}
@@ -1863,17 +1932,18 @@ function leaveChannel(){
 }
 function onLeave(id){
   if(id===myId) return; cancelGone(id);
-  if(id===hostId && !isHost){ toast("オーナーが退出しました"); goTitle(); return; }
+  if(id===hostId && !isHost){ hostGone(id); return; }
   if(!isHost) return;
   if(!G || phaseUI!=="game"){ lobby=lobby.filter(p=>p.id!==id); renderLobby(); sendSnap(); return; }
   const p=pById(id); if(!p||p.gone) return;
   p.gone=true; lobby=lobby.filter(q=>q.id!==id);   // 「◯◯ が退出した」はonStateで全員の画面に出す
-  if(!activePs().length){ finishGame(); return; }
-  if(G.phase==="topic"){ delete G.topics[id]; if(allTopicsIn()){ finishTopics(); return; } }
-  if(G.phase==="draw"){                            // 描き終わっていないカードは取り除く(相方を失ったお題はペアにならない)
-    G.cards.forEach(c=>{ if(c.dr===id && !c.done) c.gone=true; });
-    if(G.cards.every(x=>x.done||x.gone)){ startMatch(); return; }
-    if(G.ready) delete G.ready[id]; if(activePs().length && allReady()){ endDrawNow(); return; }
+  if(G.phase==="over"){ bump(); return; }
+  if(activePs().length<2){ finishGame(); return; }  // ★残りが1人=ゲームはそこで終わり(2人で遊んでいて片方が抜けた時など)
+  if(G.phase==="topic"){ if(allTopicsIn()){ finishTopics(); return; } }   // 出したお題は残しておく(戻ってきたらそのまま使う)
+  if(G.phase==="draw"){                            // 描き終わっていないカードは、神経衰弱の前まで残す(戻ってくれば描ける)
+    if(G.ready) delete G.ready[id];
+    if(drawAllIn()){ startMatch(); return; }
+    if(allReady()){ endDrawNow(); return; }
   }
   if(G.phase==="match" && G.turn===id){ G.flip=[]; G.resAt=0; nextTurn(); return; }
   bump();
@@ -1894,7 +1964,8 @@ function guestLocalLobby(){
    新オーナーのsnapが届かなければ2秒ごとに最大4回送り直す */
 function transferHost(id){
   if(!isHost||!online||!ch||debug||phaseUI!=="lobby"||id===myId||!lobbyById(id)) return;
-  const pl={ to:id, from:myId, v:ver, rules, lob:lobby.map(x=>({id:x.id,n:x.n,c:x.c})) };
+  hostEp++;
+  const pl={ to:id, from:myId, v:ver, he:hostEp, rules, lob:lobby.map(x=>({id:x.id,n:x.n,c:x.c})) };
   isHost=false; hostId=id; clearInterval(hbIv); hbIv=0; lastVer=-1; hostChgAt=Date.now();
   const sendH=()=>{ try{ if(ch) ch.send({type:"broadcast",event:"host",payload:pl}); }catch(e){} };
   sendH(); setTimeout(sendH,400);
@@ -1903,7 +1974,7 @@ function transferHost(id){
 }
 function onHostMsg(p){
   if(!p||!p.to) return;
-  const changed=hostId!==p.to; hostChgAt=Date.now();
+  const changed=hostId!==p.to; hostChgAt=Date.now(); hostEp=Math.max(hostEp,p.he|0);
   if(p.to===myId){
     if(!isHost){
       if(phaseUI!=="lobby"){ G=null; localLobby=false; document.querySelectorAll(".overlay").forEach(o=>o.classList.remove("on","peek")); phaseUI="lobby"; showScene("lobbyScene"); }
@@ -2003,13 +2074,12 @@ $("joinRoomBtn").onclick=()=>{
   };
 };
 function openChannel(c,onReady){
-  joinT=Date.now(); spectating=false;
+  joinT=Date.now(); spectating=false; seatTake("os",c);
   ch=sbClient().channel("os-"+c,{ config:{ presence:{ key:myId }, broadcast:{ self:false } } });
   ch.on("broadcast",{event:"hello"},({payload})=>{
     if(!isHost||!payload) return; cancelGone(payload.id);
     if(isKicked(payload.id)){ try{ ch.send({type:"broadcast",event:"kick",payload:{to:payload.id}}); }catch(e){} return; }   // 追放した人は戻さない
-    if(phaseUI==="game"&&G){ const gp=pById(payload.id); if(gp&&gp.gone){                // ★退出あつかいになっていた人が戻ってきた=ゲームに戻す(2026-10-02)
-      gp.gone=false; if(!lobbyById(gp.id)) lobby.push({ id:gp.id, n:gp.n, c:gp.c, t:Date.now() }); bump(); return; } }
+    if(phaseUI==="game"&&G&&restorePlayer(payload.id)) return;          // ★退出あつかいになっていた人が戻ってきた(リンクから入り直した)=ゲームに戻す
     if(lobbyById(payload.id)){ sendSnap(); return; }                       // もういる(再接続)
     if(phaseUI==="game"){ try{ ch.send({type:"broadcast",event:"spec",payload:{to:payload.id}}); }catch(e){} sendSnap(); setTimeout(updateSpecBadge,800); return; }   // ★ゲーム中=観戦者として入る(2026-10-02)
     if(lobby.length>=MAX_P){ try{ ch.send({type:"broadcast",event:"locked",payload:{to:payload.id,full:true}}); }catch(e){} return; }
@@ -2019,14 +2089,20 @@ function openChannel(c,onReady){
   ch.on("broadcast",{event:"locked"},({payload})=>{ if(payload&&payload.to===myId){ leaveChannel();
     roomStatus('<div class="room-note err">満室のため参加できません（'+MAX_P+'人まで）</div>'); } });   // ゲーム中に来た人は観戦者として入れるので、断るのは満室の時だけ
   ch.on("broadcast",{event:"spec"},({payload})=>{ if(payload&&payload.to===myId&&!isHost){ clearTimeout(joinWatch); } });   // 観戦者として入れてもらえた(画面はsnapで切り替わる)
-  ch.on("broadcast",{event:"snap"},({payload})=>{ if(!isHost&&payload) applySnap(payload); });
+  ch.on("broadcast",{event:"snap"},({payload})=>{ if(!payload) return;
+    if(isHost){   // ★オーナーが2人いる(引き継ぎが重なった・前のオーナーが戻ってきた)=新しく引き継いだ方、同じなら先に入った方に合わせる
+      if(payload.hid&&payload.hid!==myId&&((payload.he|0)>hostEp||((payload.he|0)===hostEp&&hostRank(payload.hid)<hostRank(myId)))){
+        isHost=false; clearInterval(hbIv); hbIv=0; hostId=payload.hid; lastVer=-1; hostChgAt=0; applySnap(payload); }
+      return; }
+    applySnap(payload); });
   ch.on("broadcast",{event:"act"},({payload})=>{ if(!isHost||!payload) return;
     if(payload.t==="color"){ const p=lobbyById(payload.from); if(p&&/^#[0-9a-f]{6}$/i.test(payload.c||"")){ p.c=payload.c; if(phaseUI==="lobby") renderLobby(); sendSnap(); } return; }   // 自分の色を変えた
     if(payload.t==="rename"){ const p=lobbyById(payload.from); if(p) p.n=String(payload.n||"").slice(0,16); if(G){ const q=pById(payload.from); if(q) q.n=p?p.n:q.n; } if(phaseUI==="lobby") renderLobby(); sendSnap(); return; }
     hostAct(payload); });
   ch.on("broadcast",{event:"art"},({payload})=>onArtChunk(payload));
-  ch.on("broadcast",{event:"artreq"},({payload})=>{     // ホストだけが答える(全員の絵を持っている)
-    if(!isHost||!payload||!Array.isArray(payload.cids)) return;
+  ch.on("broadcast",{event:"artreq"},({payload})=>{     // ホストだけが答える(全員の絵を持っている)。引き継いだばかりのオーナーが頼んだ時(any)は誰でも答える
+    if(!payload||!Array.isArray(payload.cids)) return;
+    if(!isHost&&!(payload.any&&payload.from===hostId)) return;
     const now=Date.now();
     payload.cids.slice(0,8).forEach(cid=>{ if(!(cid in arts)) return; if(now-(artServeAt[cid]||0)<1500) return; artServeAt[cid]=now; sendArt(cid,arts[cid]); });
   });
@@ -2042,7 +2118,8 @@ function openChannel(c,onReady){
   ch.on("broadcast",{event:"kick"},({payload})=>{ if(payload&&payload.to===myId&&!isHost){ toast("オーナーから追放されました"); goTitle(); } });
   ch.on("presence",{event:"leave"},({leftPresences})=>{ (leftPresences||[]).forEach(p=>{ if(!p||!p.id) return;
     markGone(p.id); }); });   // ロビー中も猶予(30秒)。明示の退出はbyeで即時
-  ch.on("presence",{event:"join"},({newPresences})=>{ (newPresences||[]).forEach(p=>{ if(p&&p.id) cancelGone(p.id); }); });
+  ch.on("presence",{event:"join"},({newPresences})=>{ (newPresences||[]).forEach(p=>{ if(!p||!p.id) return; cancelGone(p.id);
+    if(isHost&&phaseUI==="game"&&G&&!isKicked(p.id)) restorePlayer(p.id); }); });   // 同じページのまま通信が戻った人もゲームに戻す
   let readyDone=false;
   ch.subscribe(async status=>{
     if(status==="SUBSCRIBED"){
@@ -2056,7 +2133,7 @@ function startHb(){ clearInterval(hbIv); hbIv=setInterval(sendSnap,1500); }
 function sendSnap(){
   if(!isHost||!ch||debug) return;
   ver++;
-  const p={ v:ver, hid:hostId, rules, lob:lobby.map(x=>({id:x.id,n:x.n,c:x.c})) };
+  const p={ v:ver, hid:hostId, he:hostEp, rules, lob:lobby.map(x=>({id:x.id,n:x.n,c:x.c})) };
   if(phaseUI==="game"&&G){ p.G=G; p.left=G.stepEnd? Math.max(0,G.stepEnd-Date.now()) : 0; }
   try{ ch.send({type:"broadcast",event:"snap",payload:p}); }catch(e){}
 }
@@ -2064,7 +2141,7 @@ function applySnap(p){
   if(hostId&&p.hid!==hostId&&Date.now()-hostChgAt<3000) return;       // 譲渡の直後に届いた元のオーナーのsnapは捨てる
   if(p.hid!==hostId){ lastVer=-1; }                                     // オーナーが替わったら番号を振り直す
   if(p.v<=lastVer) return; lastVer=p.v;
-  clearTimeout(joinWatch); hostId=p.hid; rules=p.rules||rules; lobby=p.lob||[];
+  clearTimeout(joinWatch); clearTimeout(succWatch); hostId=p.hid; hostEp=Math.max(hostEp,p.he|0); rules=p.rules||rules; lobby=p.lob||[];
   if(localLobby){ if(p.G&&p.G.phase==="over"){ renderLobby(); return; } localLobby=false; }   // ★先にロビーへ戻った人を、終わったゲームの結果に引き戻さない
   if(!p.G){
     if(spectating){ spectating=false; toast("ロビーに参加しました"); }   // ★観戦していた人はゲームが終わったらロビーに参加
@@ -2074,6 +2151,9 @@ function applySnap(p){
     renderLobby(); return;
   }
   G=p.G; localEnd=Date.now()+(p.left||0);
+  { const mp=G.players.find(q=>q.id===myId);
+    if(mp&&mp.gone&&Date.now()-lastHeal>2000){ lastHeal=Date.now(); try{ ch.send({type:"broadcast",event:"hello",payload:{id:myId,n:myName}}); }catch(e){} }   // ★退出あつかいになっていた=名乗って戻してもらう
+  }
   { const sp=!G.players.some(q=>q.id===myId); if(sp&&!spectating){ toast("観戦モードで参加しました"); addSys("観戦モードで参加"); } spectating=sp; }
   if(pending && pendingIn()) pending=null;
   if(pending && Date.now()-pendingSent>900){ pendingSent=Date.now(); sendAct(pending); }   // 届いていなければ送り直す
@@ -2520,30 +2600,59 @@ window.addEventListener("pageshow",e=>{ if(!e||!e.persisted||!ch||!online||debug
   try{ ch.track({id:myId,n:myName||"",t:joinT}); }catch(_){} if(isHost) sendSnap(); else { try{ ch.send({type:"broadcast",event:"hello",payload:{id:myId,n:myName}}); }catch(_){} } });
 /* ================= 背景のらくがき(白い画用紙にカラフルなインク) =================
    画面の端に寄せてランダムに散らす(真ん中のUIとなるべく重ねない)。画面サイズが変わったら描き直す */
-function drawDoodles(){
-  const W=window.innerWidth, H=window.innerHeight, R=Math.random;
-  const shape=k=>{
-    if(k===0){ let d="M0 0"; for(let t=0;t<=16;t+=.35){ const r=t*1.9; d+=" L"+(Math.cos(t)*r).toFixed(1)+" "+(Math.sin(t)*r).toFixed(1); } return d; }                 // うずまき
-    if(k===1){ let d=""; for(let i=0;i<=10;i++){ const r=i%2?11:26, a=-Math.PI/2+i*Math.PI/5; d+=(i?" L":"M")+(Math.cos(a)*r).toFixed(1)+" "+(Math.sin(a)*r).toFixed(1); } return d+" Z"; }   // 星
-    if(k===2) return "M0 22 C-30 0 -22 -24 0 -8 C22 -24 30 0 0 22 Z";                                                                                       // ハート
-    if(k===3){ let d="M-34 0"; for(let i=1;i<=8;i++) d+=" L"+(-34+i*8.5)+" "+(i%2?-10:10); return d; }                                                        // ぎざぎざ
-    if(k===4){ let d="M-38 0"; for(let x=-38;x<=38;x+=4) d+=" L"+x+" "+(Math.sin(x/6)*9).toFixed(1); return d; }                                              // なみなみ
-    if(k===5){ let d=""; for(let t=0;t<=Math.PI*4.3;t+=.2){ const r=20+Math.sin(t*3)*3+t*.6; d+=(t?" L":"M")+(Math.cos(t)*r).toFixed(1)+" "+(Math.sin(t)*r*.8).toFixed(1); } return d; }   // ぐるぐる丸
-    if(k===6){ let d="M 14 0 A14 14 0 1 1 -14 0 A14 14 0 1 1 14 0"; for(let i=0;i<8;i++){ const a=i*Math.PI/4; d+=" M"+(Math.cos(a)*20).toFixed(1)+" "+(Math.sin(a)*20).toFixed(1)+" L"+(Math.cos(a)*30).toFixed(1)+" "+(Math.sin(a)*30).toFixed(1); } return d; }   // 太陽
-    return "M-30 6 L22 6 M10 -6 L24 6 L10 18";                                                                                                               // やじるし
-  };
-  const n=Math.round(Math.max(14, Math.min(34, W*H/42000)));
-  let g="";
-  for(let i=0;i<n;i++){
-    let x, y;
-    if(R()<.72){ x= R()<.5? R()*W*.17 : W*(.83+R()*.17); y=R()*H; }     // 左右の端
-    else { x= R()<.5? R()*W*.3 : W*(.7+R()*.3); y= R()<.5? R()*H*.12 : H*(.88+R()*.12); }   // 上下の端(真ん中は空ける)
-    const col=DOODLE_INKS[Math.floor(R()*DOODLE_INKS.length)], sc=.8+R()*.9, rot=Math.floor(R()*360), k=Math.floor(R()*8);
-    const fill=(k===1||k===2)&&R()<.4? col : "none";
-    g+='<path d="'+shape(k)+'" transform="translate('+x.toFixed(0)+' '+y.toFixed(0)+') rotate('+rot+') scale('+sc.toFixed(2)+')" fill="'+fill+'" fill-opacity=".35" stroke="'+col+'" stroke-width="'+(3.2/sc).toFixed(2)+'" stroke-linecap="round" stroke-linejoin="round" opacity="'+(W<640?".38":".62")+'"/>';   // 狭い画面はUIの後ろに重なりやすいので薄く
-  }
-  $("doodles").innerHTML='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+g+'</svg>';
+/* ★2026-10-08: ときどき1つを消しゴムで消して(ジグザグにこすって消える)、別の場所にペンで描き直す */
+const DOD_ZIG="M-50 -44 L50 -36 L-50 -22 L50 -10 L-50 4 L50 16 L-50 30 L50 42 L-50 50";   // 消しゴムでこする道すじ(落書きの大きさ±40を全部おおう)
+let dodSeq=0, dodBusy=false;
+function dodShape(k){
+  if(k===0){ let d="M0 0"; for(let t=0;t<=16;t+=.35){ const r=t*1.9; d+=" L"+(Math.cos(t)*r).toFixed(1)+" "+(Math.sin(t)*r).toFixed(1); } return d; }                 // うずまき
+  if(k===1){ let d=""; for(let i=0;i<=10;i++){ const r=i%2?11:26, a=-Math.PI/2+i*Math.PI/5; d+=(i?" L":"M")+(Math.cos(a)*r).toFixed(1)+" "+(Math.sin(a)*r).toFixed(1); } return d+" Z"; }   // 星
+  if(k===2) return "M0 22 C-30 0 -22 -24 0 -8 C22 -24 30 0 0 22 Z";                                                                                       // ハート
+  if(k===3){ let d="M-34 0"; for(let i=1;i<=8;i++) d+=" L"+(-34+i*8.5)+" "+(i%2?-10:10); return d; }                                                        // ぎざぎざ
+  if(k===4){ let d="M-38 0"; for(let x=-38;x<=38;x+=4) d+=" L"+x+" "+(Math.sin(x/6)*9).toFixed(1); return d; }                                              // なみなみ
+  if(k===5){ let d=""; for(let t=0;t<=Math.PI*4.3;t+=.2){ const r=20+Math.sin(t*3)*3+t*.6; d+=(t?" L":"M")+(Math.cos(t)*r).toFixed(1)+" "+(Math.sin(t)*r*.8).toFixed(1); } return d; }   // ぐるぐる丸
+  if(k===6){ let d="M 14 0 A14 14 0 1 1 -14 0 A14 14 0 1 1 14 0"; for(let i=0;i<8;i++){ const a=i*Math.PI/4; d+=" M"+(Math.cos(a)*20).toFixed(1)+" "+(Math.sin(a)*20).toFixed(1)+" L"+(Math.cos(a)*30).toFixed(1)+" "+(Math.sin(a)*30).toFixed(1); } return d; }   // 太陽
+  return "M-30 6 L22 6 M10 -6 L24 6 L10 18";                                                                                                               // やじるし
 }
+function dodOne(W,H){   // 落書き1つ(位置・色・形はランダム)。<g>の中に「消しゴムでこする用のマスク」も持つ
+  const R=Math.random;
+  let x, y;
+  if(R()<.72){ x= R()<.5? R()*W*.17 : W*(.83+R()*.17); y=R()*H; }     // 左右の端
+  else { x= R()<.5? R()*W*.3 : W*(.7+R()*.3); y= R()<.5? R()*H*.12 : H*(.88+R()*.12); }   // 上下の端(真ん中は空ける)
+  const col=DOODLE_INKS[Math.floor(R()*DOODLE_INKS.length)], sc=.8+R()*.9, rot=Math.floor(R()*360), k=Math.floor(R()*8);
+  const fill=(k===1||k===2)&&R()<.4? col : "none", id="dm"+(++dodSeq);
+  return '<g class="dod" transform="translate('+x.toFixed(0)+' '+y.toFixed(0)+') rotate('+rot+') scale('+sc.toFixed(2)+')" opacity="'+(W<640?".38":".62")+'">'   // 狭い画面はUIの後ろに重なりやすいので薄く
+    +'<mask id="'+id+'" maskUnits="userSpaceOnUse" x="-90" y="-90" width="180" height="180"><rect x="-90" y="-90" width="180" height="180" fill="#fff"/>'
+    +'<path class="dz" d="'+DOD_ZIG+'" fill="none" stroke="#000" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" pathLength="100" stroke-dasharray="100 100" stroke-dashoffset="100"/></mask>'
+    +'<g mask="url(#'+id+')"><path class="dp" d="'+dodShape(k)+'" fill="'+fill+'" fill-opacity=".35" stroke="'+col+'" stroke-width="'+(3.2/sc).toFixed(2)+'" stroke-linecap="round" stroke-linejoin="round" pathLength="100"/></g></g>';
+}
+function drawDoodles(){
+  const W=window.innerWidth, H=window.innerHeight;
+  const n=Math.round(Math.max(14, Math.min(34, W*H/42000)));
+  let g=""; for(let i=0;i<n;i++) g+=dodOne(W,H);
+  $("doodles").innerHTML='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+g+'</svg>';
+  dodBusy=false;
+}
+function dodCycle(){
+  const sv=$("doodles").querySelector("svg"); if(!sv||dodBusy||document.hidden) return;
+  if(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const all=sv.querySelectorAll("g.dod"); if(!all.length) return;
+  const old=all[Math.floor(Math.random()*all.length)], dz=old.querySelector(".dz"); if(!dz||!dz.animate) return;
+  dodBusy=true;
+  const er=dz.animate([{strokeDashoffset:100},{strokeDashoffset:0}],{ duration:1100, easing:"ease-in-out", fill:"forwards" });   // 消しゴムでこする
+  er.onfinish=()=>{
+    old.remove();
+    const W=window.innerWidth, H=window.innerHeight, tmp=document.createElementNS("http://www.w3.org/2000/svg","svg");
+    tmp.innerHTML=dodOne(W,H); const ng=tmp.firstChild; if(!ng){ dodBusy=false; return; }
+    const dp=ng.querySelector(".dp"), fl=dp.getAttribute("fill");
+    dp.setAttribute("stroke-dasharray","100 100"); dp.setAttribute("stroke-dashoffset","100"); if(fl!=="none") dp.setAttribute("fill-opacity","0");
+    sv.appendChild(ng);
+    setTimeout(()=>{   // 少し間をあけてからペンで描く
+      const pn=dp.animate([{strokeDashoffset:100},{strokeDashoffset:0}],{ duration:1600, easing:"cubic-bezier(.4,.1,.4,1)", fill:"forwards" });
+      pn.onfinish=()=>{ if(fl!=="none") dp.animate([{fillOpacity:0},{fillOpacity:.35}],{ duration:400, fill:"forwards" }); dodBusy=false; };
+    },350);
+  };
+}
+setInterval(dodCycle, 3200);
 let dodT=0; window.addEventListener("resize",()=>{ clearTimeout(dodT); dodT=setTimeout(drawDoodles,250); });
 drawDoodles();
 updateTools();

@@ -2050,7 +2050,7 @@ function startCpu(n){                       // ★試作用: 自分1人+ロボ�
 }
 /* ★本当に遊ぶ時はシーン一覧を閉じる(開いたままだと進行が止まったままになる=「1人で遊ぶが動かない」の原因だった) */
 function leaveGallery(){ if(!gallery) return; gallery=false; const el=$("sgPanel"); if(el) el.remove(); }
-window.__bjDev={ get G(){ return G; }, resolve:()=>resolveNow(), act:o=>submit(o), st:()=>actState(), get lobby(){ return lobby; }, setLobby:a=>{ lobby=a; renderLobby(); }, get ed(){ return ed; } };   // ★試作用フック(公開前に削除するか要確認)
+window.__bjDev={ get G(){ return G; }, resolve:()=>resolveNow(), act:o=>submit(o), st:()=>actState(), get lobby(){ return lobby; }, setLobby:a=>{ lobby=a; renderLobby(); }, get ed(){ return ed; }, net:()=>({ myId, isHost, hostId, hostEp, spectating }) };   // ★試作用フック(公開前に削除するか要確認)
 
 /* ================= 役職の数(ロビーと試作用で共通) ================= */
 /* 1行=アイコン・内容(名前+占い結果のバッジ+説明)・人数(「N人」の下に−＋)。陣営ごとにセクションを分ける。市民は残りの人数(ボタンなし)
@@ -2304,7 +2304,7 @@ function renderMem(){
       memArm=""; playSelect(); kickedAt[id]=Date.now(); lobby=lobby.filter(q=>q.id!==id);
       try{ ch.send({type:"broadcast",event:"kick",payload:{to:id}}); }catch(_){} renderLobby(); sendSnap(); renderMem(); });
     return; }
-  $("memList").innerHTML=G.players.map(p=>{ const me0=p.id===myId, gone=p.cause==="gone";
+  $("memList").innerHTML=G.players.map(p=>{ const me0=p.id===myId, gone=p.cause==="gone"&&!p.back;
     const tag = gone? '<span class="mt gone">退出</span>' : (p.id===hostId? '<span class="mt own">オーナー</span>' : "") + (me0? '<span class="mt">あなた</span>' : "");
     const kb = (canKick && !me0 && !gone)? '<button class="mem-kick'+(memArm===p.id?" arm":"")+'" data-kk="'+esc(p.id)+'">'+(memArm===p.id?"確定":"追放")+'</button>' : "";
     return '<div class="mem-row"><span class="p-dot" style="background:'+p.c+'"></span><span class="nm">'+esc(p.n)+'</span>'+tag+kb+'</div>'; }).join("");
@@ -2317,7 +2317,8 @@ function kickPlayer(id){                       // オーナーが対戦中に追
   kickedAt[id]=Date.now();
   try{ ch.send({type:"broadcast",event:"kick",payload:{to:id}}); }catch(e){}
   lobby=lobby.filter(q=>q.id!==id);
-  const p=G&&pById(id); if(p && p.alive){ die(p,"gone"); p.pub=true; if(!checkWin()) bump(); } else if(G) bump();
+  const p=G&&pById(id); if(p){ p.kk=1; p.back=0; }   // 追放した人は戻さない(helloで来ても追い返す)
+  if(p && p.alive && G.phase!=="over"){ die(p,"gone"); p.pub=true; if(!checkWin()) bump(); } else if(G) bump();
 }
 $("memBtn").onclick=()=>{ ensureAudio(); playSelect(); memArm=""; renderMem(); $("memOv").classList.add("on"); };
 $("memClose").onclick=()=>{ ensureAudio(); playSelect(); memArm=""; $("memOv").classList.remove("on"); };
@@ -2392,7 +2393,7 @@ function onState(){
       playSeer(); openSeerRes(p,nt.black); seen.notes[m.id]=m.notes.length; }
     const sa=seen.alive[m.id];
     if(sa===true && !m.alive && !debug && m.cause!=="hang"){ const k=pById(m.killer); playDeath();   // 吊られた時は「◯◯が選ばれた」の演出だけ
-      bigFx(m.cause==="hang"? "あなたは吊られた" : m.cause==="poison"&&k? k.n+" に\n毒殺された" : m.cause==="mine"? "地雷を踏んだ" : "あなたは死亡した"); }
+      bigFx(m.cause==="hang"? "あなたは吊られた" : m.cause==="poison"&&k? k.n+" に\n毒殺された" : m.cause==="mine"? "地雷を踏んだ" : m.cause==="gone"? "退出あつかいになった" : "あなたは死亡した"); }
     seen.alive[m.id]=m.alive;
   }
   /* ★敏感肌: ほかの人が死んだ瞬間に知らせる(吊り・退出は別の知らせがあるので除く) */
@@ -2419,6 +2420,8 @@ function onState(){
     if(mineIn && !debug) playWhisper();
   });
   G.players.forEach(p=>{ if(!p.alive && p.cause==="gone" && !(seen.gone||(seen.gone={}))[p.id]){ seen.gone[p.id]=1; addSys(p.n+" が退出しました"); toast(p.n+" が退出しました"); } });
+  seen.back=seen.back||{};
+  G.players.forEach(p=>{ if(p.back && !seen.back[p.id]){ seen.back[p.id]=1; if(p.id!==myId) addSys(p.n+" が戻ってきた"); } else if(!p.back) delete seen.back[p.id]; });   // ★退出あつかいの人が戻ってきた(死亡のまま)
   if($("memOv").classList.contains("on")) renderMem();   // 参加者一覧を開いている間も最新に
 }
 
@@ -2463,14 +2466,16 @@ const MK_GUEST="ゲスト";
 function mkName(){ try{ return (localStorage.getItem("mk.name")||"").trim(); }catch(e){ return ""; } }
 const UNDEF_NM="（名前を考え中）";
 let lastRejoin=0, nameAsked=false, joinWatch=0, hbIv=0, tickIv=0, lastVer=-1, ver=0;
+let hostEp=0, succWatch=0, hostChgAt=0;   // hostEp=オーナーの世代(引き継ぎ・譲渡のたびに+1。snapのhe)
 function lobbyById(id){ return lobby.find(p=>p.id===id); }
 function nextColor(){ const used=new Set(lobby.map(p=>p.c)); return PCOL.find(c=>!used.has(c)) || PCOL[lobby.length%PCOL.length]; }
 const PEN_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>';
 /* ★オーナー譲渡(ロビーの間だけ・2回送る)。新しいオーナーがロビーの一覧とルールを引き継いでスナップを配りはじめる */
 function transferHost(id){
   if(!isHost||!online||phaseUI!=="lobby"||!ch||id===myId||!lobbyById(id)) return;
-  const pl={ to:id, from:myId, lob:lobby, rules, v:ver };
-  isHost=false; hostId=id; clearInterval(hbIv); hbIv=0; lastVer=-1;
+  hostEp++;
+  const pl={ to:id, from:myId, lob:lobby, rules, v:ver, he:hostEp };
+  isHost=false; hostId=id; clearInterval(hbIv); hbIv=0; lastVer=-1; hostChgAt=Date.now();
   const send=()=>{ try{ ch.send({type:"broadcast",event:"host",payload:pl}); }catch(e){} };
   send(); setTimeout(send,450);
   const p=lobbyById(id); toast((p&&p.n||"")+" がオーナーになりました"); renderLobby();
@@ -2496,15 +2501,78 @@ $("nameGo").onclick=()=>{ ensureAudio(); const v=$("nameInput").value.trim();
 $("nameInput").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing&&e.keyCode!==229) $("nameGo").click(); });
 
 function roomStatus(html){ $("roomArea").innerHTML=html; }
-const GONE_GRACE=300000;   // 対戦中にpresenceが一瞬落ちても退出扱いにしない猶予(5分・共通ルール)。明示の退出(bye)は即時
+/* ★部屋ごとの席ID(2026-10-08・ロビーのある全作品共通)。同じ合言葉の部屋にリンクから入り直すと、前と同じIDで入る
+   =オーナーが「戻ってきた」と分かり、ゲームの途中でも自分の席(死亡した参加者)に戻れる。ほかのタブが使っている席は使わない(3時間で忘れる) */
+const SEAT_KEY="mk.seat", SEAT_TTL=3*3600e3;
+let seatK="";
+function seatLoad(){ try{ const o=JSON.parse(localStorage.getItem(SEAT_KEY)||"{}"); return (o&&typeof o==="object")?o:{}; }catch(e){ return {}; } }
+function seatSave(o){ try{ localStorage.setItem(SEAT_KEY,JSON.stringify(o)); }catch(e){} }
+function seatTake(game,code){
+  const o=seatLoad(), now=Date.now(); seatK=game+":"+code;
+  Object.keys(o).forEach(k=>{ o[k]=(Array.isArray(o[k])?o[k]:[]).filter(r=>r&&r.id&&now-(r.at||0)<SEAT_TTL); if(!o[k].length) delete o[k]; });
+  const l=o[seatK]=o[seatK]||[];
+  const free=l.filter(r=>!r.live||now-(r.at||0)>9000).sort((a,b)=>b.at-a.at)[0];   // 使われていない席(ページを閉じた・9秒以上更新が止まっている)
+  if(free && !isHost) myId=free.id;           // 部屋を作る時はそのまま
+  const me2=l.find(r=>r.id===myId); if(me2){ me2.at=now; me2.live=1; } else l.push({ id:myId, at:now, live:1 });
+  if(l.length>8) l.splice(0,l.length-8);
+  seatSave(o);
+}
+function seatMark(live){ if(!seatK) return; const o=seatLoad(), l=o[seatK]=Array.isArray(o[seatK])?o[seatK]:[];
+  let r=l.find(x=>x.id===myId); if(!r){ r={ id:myId }; l.push(r); } r.at=Date.now(); r.live=live?1:0; seatSave(o); }
+setInterval(()=>{ if(ch&&online) seatMark(1); },3000);
+window.addEventListener("pagehide",()=>seatMark(0));
+/* ★退出の猶予は30秒(2026-10-08)。以前はゲーム中5分で「抜けたのに抜けた判定にならない」状態だった。明示の退出(bye)は即時。
+   抜けたあつかい(=「退出」で死亡)になっても、リンクから入り直せば死亡した参加者として戻れる(生き返らない)。オーナーがいなくなったら残った人が引き継ぐ */
+const GONE_GRACE=30000;
 let goneTmr={};
 function presentIds(){ try{ return Object.keys(ch.presenceState()||{}); }catch(e){ return []; } }
 function cancelGone(id){ if(goneTmr[id]){ clearTimeout(goneTmr[id]); delete goneTmr[id]; } }
 const LOBBY_GRACE=30000;   // ★ロビーでもpresenceが一瞬落ちただけでは消さない(スマホの切り替え・通信の瞬断で「勝手に抜けた」になっていた)
 function markGone(id,ms){ if(id===myId) return; cancelGone(id);
-  goneTmr[id]=setTimeout(()=>{ delete goneTmr[id]; if(!ch||!online) return; if(presentIds().indexOf(id)>=0) return; onLeave(id); }, ms||GONE_GRACE); }
+  goneTmr[id]=setTimeout(()=>{ delete goneTmr[id]; if(!ch||!online) return;
+    const pr=presentIds(); if(pr.indexOf(id)>=0) return;
+    if(pr.indexOf(myId)<0){ markGone(id,ms); return; }   // 自分の通信が切れている間は判定しない(つながってから数え直す)
+    onLeave(id); }, ms||GONE_GRACE); }
+/* ★オーナーの引き継ぎ(2026-10-08): 残っている人のうち、いちばん先に入った人が新しいオーナー。ゲーム中もそのまま続ける
+   (ゲーム中=参加者の並び順。死亡した参加者もオーナーになれる。「退出」で抜けたままの人と観戦者はならない) */
+function stillIn(p){ return p.cause!=="gone" || !!p.back; }
+function hostOrder(){ return (G&&phaseUI==="game")? G.players.filter(stillIn).map(p=>p.id) : lobby.map(p=>p.id); }
+function hostRank(id){ const i=((G&&phaseUI==="game")? G.players.map(p=>p.id) : lobby.map(p=>p.id)).indexOf(id); return i<0?999:i; }
+function hostGone(oldId){
+  const pr=presentIds(), nid=hostOrder().find(id=>id!==oldId && (id===myId || pr.indexOf(id)>=0)) || null;
+  if(!nid || spectating&&nid===myId){ toast("オーナーが退出しました"); goTitle(); return; }
+  hostChgAt=Date.now(); clearTimeout(succWatch);
+  if(nid===myId){ becomeHost(oldId); return; }
+  hostId=nid; lastVer=-1; { const q=(G&&pById(nid))||lobbyById(nid); toast("オーナーが退出しました。"+((q&&q.n)||"")+"がオーナーになりました",2600); }
+  if(phaseUI==="lobby") renderLobby();
+  succWatch=setTimeout(()=>{ if(!isHost&&hostId===nid&&lastVer<0&&presentIds().indexOf(nid)<0) hostGone(nid); },8000);   // 新しいオーナーからsnapが来ない=選び直す
+}
+function becomeHost(oldId){
+  isHost=true; hostId=myId; hostEp++; clearTimeout(joinWatch); ver=Math.max(ver,lastVer+1);
+  lobby=lobby.filter(p=>p.id!==oldId);
+  if(!lobbyById(myId)) lobby.push({ id:myId, n:myName||"", c:nextColor(), t:Date.now() });
+  toast("オーナーが退出しました。あなたがオーナーになりました",2600);
+  if(phaseUI==="game"&&G){
+    if(G.stepEnd&&localEnd) G.stepEnd=localEnd;                       // 締め切りを自分の時計に合わせる
+    const pd=pending, pw=Object.values(pendWh); pending=null; pendWh={};
+    startHb(); onLeave(oldId);                                         // 前のオーナーは「退出」で死亡(勝敗もここで判定)
+    if(G && G.phase!=="over"){ if(pd) hostAct(pd); pw.forEach(o=>{ if(G) hostAct(o); }); }   // 届いていなかった自分の入力
+    if(G) bump();
+  }else{ startHb(); renderLobby(); sendSnap(); }
+}
+/* 退出あつかいになっていた参加者が戻ってきた(リンクから入り直した・通信が戻った)=死亡した参加者として部屋に戻す(生き返らない)。
+   死者と同じく盤を見て墓地チャットが使える。ゲームが終わってロビーに戻れば、ふつうに次のゲームに参加できる */
+function restorePlayer(id){
+  const gp=G&&pById(id); if(!gp) return false;
+  let ch2=false;
+  if(!lobbyById(id)){ lobby.push({ id, n:gp.n, c:gp.c, t:Date.now() }); ch2=true; }
+  if(gp.cause==="gone" && !gp.back){ gp.back=1; ch2=true; }
+  if(ch2) bump(); else sendSnap();
+  return true;
+}
 function leaveChannel(){
-  clearTimeout(joinWatch); clearInterval(hbIv); hbIv=0; Object.keys(goneTmr).forEach(cancelGone);
+  seatMark(0);   // 自分で出た=この席はすぐ使ってよい(リンクから入り直すと同じ席に戻れる)
+  clearTimeout(joinWatch); clearTimeout(succWatch); clearInterval(hbIv); hbIv=0; Object.keys(goneTmr).forEach(cancelGone); hostEp=0; hostChgAt=0;
   if(ch){ const c0=ch; ch=null;
     try{ c0.send({type:"broadcast",event:"bye",payload:{id:myId}}); }catch(e){}
     try{ c0.untrack(); }catch(e){}
@@ -2513,15 +2581,18 @@ function leaveChannel(){
 }
 function onLeave(id){
   if(id===myId) return; cancelGone(id);
-  if(id===hostId && !isHost){ toast("オーナーが退出しました"); goTitle(); return; }
+  if(id===hostId && !isHost){ hostGone(id); return; }   // ★オーナーがいなくなった=残った人が引き継ぐ(タイトルへ戻さない)
   if(!isHost) return;
   if(!G || phaseUI!=="game"){ lobby=lobby.filter(p=>p.id!==id); renderLobby(); sendSnap(); return; }
-  const p=pById(id); if(!p||!p.alive){ return; }
-  die(p,"gone"); p.pub=true;                  // 対戦中に抜けた人は「退出」で死亡扱い(すぐ公表)
-  lobby=lobby.filter(q=>q.id!==id);   // 「◯◯ が退出した」はonStateで全員の画面に出す
-  if(!checkWin()) bump();
+  const p=pById(id); if(!p) return;
+  const inL=!!lobbyById(id); lobby=lobby.filter(q=>q.id!==id);   // 死亡していた人が抜けた時も一覧から外す(次のゲームに入れない)
+  if(!p.alive){ if(p.back){ p.back=0; bump(); } else if(inL) bump(); return; }
+  if(G.phase==="over"){ if(inL) bump(); return; }   // 決着したあとは死亡にしない(勝敗を書き換えない)
+  die(p,"gone"); p.pub=true;                  // 対戦中に抜けた人は「退出」で死亡扱い(すぐ公表)。「◯◯ が退出した」はonStateで全員の画面に出す
+  if(!checkWin()) bump();                     // 残りが1人(や0人)になった時もjudgeで必ず決着する
 }
 var kickedAt={};   // 追放した人(自動の名乗り直しで戻ってこないように60秒おぼえる)
+function isKicked(id){ if(kickedAt[id] && Date.now()-kickedAt[id]<60000) return true; const gp=G&&phaseUI==="game"&&pById(id); return !!(gp&&gp.kk); }   // ゲーム中に追放した人はそのゲームの間ずっと戻さない
 let earlyLobby=false;   // 参加者が結果から先にロビーへ戻っている(オーナーはまだ結果画面)
 function guestEarlyLobby(){ earlyLobby=true; G=null; phaseUI="lobby"; document.querySelectorAll(".overlay").forEach(o=>o.classList.remove("on","peek")); showScene("lobbyScene"); renderLobby(); }
 function hostToLobby(){
@@ -2615,11 +2686,12 @@ $("joinRoomBtn").onclick=()=>{
   };
 };
 function openChannel(c,onReady){
-  joinT=Date.now(); spectating=false;
+  joinT=Date.now(); spectating=false; seatTake("bj",c);
   ch=sbClient().channel("bj-"+c,{ config:{ presence:{ key:myId } } });
   ch.on("broadcast",{event:"hello"},({payload})=>{
     if(!isHost||!payload) return; cancelGone(payload.id);
-    if(kickedAt[payload.id] && Date.now()-kickedAt[payload.id]<60000){ try{ ch.send({type:"broadcast",event:"kick",payload:{to:payload.id}}); }catch(e){} return; }   // 追放した人は戻さない
+    if(isKicked(payload.id)){ try{ ch.send({type:"broadcast",event:"kick",payload:{to:payload.id}}); }catch(e){} return; }   // 追放した人は戻さない
+    if(phaseUI==="game"&&G&&restorePlayer(payload.id)) return;          // ★ゲームの参加者が戻ってきた(リンクから入り直した)=自分の席(退出していたら死亡のまま)に戻す
     if(lobbyById(payload.id)){ sendSnap(); return; }                       // もういる(再接続)
     if(phaseUI==="game"){ try{ ch.send({type:"broadcast",event:"spec",payload:{to:payload.id}}); }catch(e){} sendSnap(); setTimeout(updateSpecBadge,800); return; }   // ★ゲーム中=観戦者として入る(2026-10-02)
     if(lobby.length>=MAX_P){ try{ ch.send({type:"broadcast",event:"locked",payload:{to:payload.id,full:true}}); }catch(e){} return; }
@@ -2629,7 +2701,12 @@ function openChannel(c,onReady){
   ch.on("broadcast",{event:"locked"},({payload})=>{ if(payload&&payload.to===myId){ leaveChannel();
     roomStatus('<div class="room-note err">'+(payload.full?"満室のため参加できません（"+MAX_P+"人まで）":"ゲーム進行中のため参加できません")+'</div>'); } });
   ch.on("broadcast",{event:"spec"},({payload})=>{ if(payload&&payload.to===myId&&!isHost){ clearTimeout(joinWatch); } });   // 観戦者として入れてもらえた(画面はsnapで切り替わる)
-  ch.on("broadcast",{event:"snap"},({payload})=>{ if(!isHost&&payload) applySnap(payload); });
+  ch.on("broadcast",{event:"snap"},({payload})=>{ if(!payload) return;
+    if(isHost){   // ★オーナーが2人いる(引き継ぎが重なった・前のオーナーが戻ってきた)=新しく引き継いだ方、同じなら先に入った方に合わせる
+      if(payload.hid&&payload.hid!==myId&&((payload.he|0)>hostEp||((payload.he|0)===hostEp&&hostRank(payload.hid)<hostRank(myId)))){
+        isHost=false; clearInterval(hbIv); hbIv=0; hostId=payload.hid; lastVer=-1; hostChgAt=0; applySnap(payload); }
+      return; }
+    applySnap(payload); });
   ch.on("broadcast",{event:"act"},({payload})=>{ if(!isHost||!payload) return;
     if(payload.t==="color"){ const p=lobbyById(payload.from); if(p && /^#[0-9a-f]{6}$/i.test(payload.c||"")) p.c=payload.c; if(phaseUI==="lobby") renderLobby(); sendSnap(); return; }
     if(payload.t==="rename"){ const p=lobbyById(payload.from); if(p) p.n=String(payload.n||"").slice(0,16); if(G){ const q=pById(payload.from); if(q) q.n=p?p.n:q.n; } if(phaseUI==="lobby") renderLobby(); sendSnap(); return; }
@@ -2644,8 +2721,9 @@ function openChannel(c,onReady){
     else if(G && phaseUI==="game" && (G.phase==="move"||G.phase==="act") && !iAmDead()) return;   // 夜は受け付けない
     recvChat(payload.n||"あいて", String(payload.t).slice(0,40), payload.c||"", !!payload.g, !!payload.sp); });
   ch.on("broadcast",{event:"host"},({payload})=>{ if(!payload) return;   // ★オーナー譲渡
+    hostEp=Math.max(hostEp,payload.he|0); hostChgAt=Date.now();
     if(payload.to===myId){ if(isHost) return;
-      isHost=true; hostId=myId; lobby=payload.lob||lobby; rules=payload.rules||rules; ver=Math.max(ver,(payload.v|0))+1; lastVer=-1;
+      isHost=true; hostId=myId; clearTimeout(succWatch); lobby=payload.lob||lobby; rules=payload.rules||rules; ver=Math.max(ver,(payload.v|0))+1; lastVer=-1;
       if(!lobbyById(myId)) lobby.push({ id:myId, n:myName||"", c:nextColor(), t:Date.now() });
       startHb(); renderLobby(); sendSnap(); toast("あなたがオーナーになりました"); }
     else if(payload.from!==myId && hostId!==payload.to){ hostId=payload.to; lastVer=-1; const p=lobbyById(payload.to); toast((p&&p.n||"")+" がオーナーになりました"); renderLobby(); } });
@@ -2653,7 +2731,8 @@ function openChannel(c,onReady){
   ch.on("broadcast",{event:"kick"},({payload})=>{ if(payload&&payload.to===myId&&!isHost){ toast("オーナーから追放されました"); goTitle(); } });
   ch.on("presence",{event:"leave"},({leftPresences})=>{ (leftPresences||[]).forEach(p=>{ if(!p||!p.id) return;
     markGone(p.id, phaseUI==="lobby"? LOBBY_GRACE : GONE_GRACE); }); });
-  ch.on("presence",{event:"join"},({newPresences})=>{ (newPresences||[]).forEach(p=>{ if(p&&p.id) cancelGone(p.id); }); });
+  ch.on("presence",{event:"join"},({newPresences})=>{ (newPresences||[]).forEach(p=>{ if(!p||!p.id) return; cancelGone(p.id);
+    if(isHost&&phaseUI==="game"&&G&&!isKicked(p.id)){ const gp=pById(p.id); if(gp&&!gp.kk&&(!lobbyById(p.id)||(gp.cause==="gone"&&!gp.back))) restorePlayer(p.id); } }); });   // 同じページのまま通信が戻った人も席に戻す
   let readyDone=false;
   ch.subscribe(async status=>{
     if(status==="SUBSCRIBED"){
@@ -2667,14 +2746,16 @@ function startHb(){ clearInterval(hbIv); hbIv=setInterval(sendSnap,1500); }
 function sendSnap(){
   if(!isHost||!ch||debug) return;
   ver++;
-  const p={ v:ver, hid:hostId, rules, lob:lobby.map(x=>({id:x.id,n:x.n,c:x.c})) };
+  const p={ v:ver, hid:hostId, he:hostEp, rules, lob:lobby.map(x=>({id:x.id,n:x.n,c:x.c})) };
   if(phaseUI==="game"&&G){ p.G=G; p.left=G.stepEnd? Math.max(0,G.stepEnd-Date.now()) : 0; }
   try{ ch.send({type:"broadcast",event:"snap",payload:p}); }catch(e){}
 }
 function applySnap(p){
+  if(hostId&&p.hid!==hostId&&(p.he|0)<=hostEp&&Date.now()-hostChgAt<3000) return;   // 譲渡・引き継ぎの直後に届いた元のオーナーのsnapは捨てる
+  if(hostId&&p.hid!==hostId&&(p.he|0)<hostEp) return;                  // 古い世代のオーナー(引き継がれたあとで通信が戻った人)のsnapは捨てる
   if(p.hid!==hostId){ lastVer=-1; }                                     // オーナーが替わったら番号を振り直す
   if(p.v<=lastVer) return; lastVer=p.v;
-  clearTimeout(joinWatch); hostId=p.hid; rules=p.rules||rules; lobby=p.lob||[];
+  clearTimeout(joinWatch); clearTimeout(succWatch); hostId=p.hid; hostEp=Math.max(hostEp,p.he|0); rules=p.rules||rules; lobby=p.lob||[];
   /* ★自分がロビーの一覧から消えていたら(オーナー側で退出扱いになった等)、もう一度名乗り出て戻る */
   if(!p.G && !lobby.some(x=>x.id===myId) && ch && Date.now()-lastRejoin>2000){ lastRejoin=Date.now(); try{ ch.send({type:"broadcast",event:"hello",payload:{id:myId,n:myName}}); }catch(e){} }
   if(earlyLobby){ if(p.G && p.G.phase==="over"){ renderLobby(); return; } earlyLobby=false; }   // ★先にロビーへ戻った人は、決着した画面へ引き戻さない
@@ -2685,6 +2766,8 @@ function applySnap(p){
     renderLobby(); return;
   }
   G=p.G; localEnd=Date.now()+(p.left||0);
+  { const mp=G.players.find(q=>q.id===myId);   // ★参加者なのにオーナーの一覧にいない(退出あつかいになっていた)=名乗って席に戻してもらう
+    if(mp && !mp.kk && !lobby.some(x=>x.id===myId) && ch && Date.now()-lastRejoin>2000){ lastRejoin=Date.now(); try{ ch.send({type:"broadcast",event:"hello",payload:{id:myId,n:myName}}); }catch(e){} } }
   { const sp=!G.players.some(q=>q.id===myId); if(sp&&!spectating){ toast("途中から観戦しています"); addSys("観戦モードで入室（チャットは死亡した人と観戦者だけに見えます）"); } spectating=sp; }
   if(pending && pendingDone(pending)) pending=null;
   if(pending && pending.sk===G.sk && Date.now()-pendingSent>900){ pendingSent=Date.now(); sendAct(pending); }   // 届いていなければ送り直す
