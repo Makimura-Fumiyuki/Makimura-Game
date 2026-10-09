@@ -82,18 +82,18 @@
   .t-sub{ font-size:13px; font-weight:800; letter-spacing:.12em; color:var(--sub); margin:16px 0 26px; }
   .room-row{ display:flex; gap:12px; margin-top:6px; }
   .room-row button{ padding:14px 12px; cursor:pointer; width:min(150px,calc((100vw - 46px)/2)); white-space:nowrap;
-    background:#fff; color:var(--ink); border:2.5px solid var(--ink); border-radius:var(--rough); box-shadow:1.5px 2px 0 var(--ink);
+    background:#fff; color:var(--ink); border:2.5px solid var(--ink); border-radius:var(--rough);
     font-size:16px; font-weight:900; letter-spacing:.06em; }
   .room-row button:nth-child(1){ background:#ffe9ef; transform:rotate(-1.5deg); }
   .room-row button:nth-child(2){ background:#e4f4ff; transform:rotate(1.2deg); }
-  .room-row button:active{ box-shadow:0.5px 0.5px 0 var(--ink); translate:1px 1.5px; }
+  .room-row button:active{ opacity:.7; }   /* 影をなくしたので、押した手ごたえは薄くするだけ */
   #roomArea{ display:flex; flex-direction:column; align-items:center; gap:6px; width:var(--uiw); margin-top:14px; }
   .dev-box{ margin-top:34px; width:var(--uiw); max-width:380px; border:2px dashed rgba(43,43,43,.4); border-radius:var(--rough2);
     padding:12px 14px 14px; display:flex; flex-direction:column; align-items:center; gap:9px; background:rgba(255,255,255,.6); }
   .dev-box .dev-h{ font-size:11.5px; font-weight:900; letter-spacing:.14em; color:var(--sub); }
 
   .sec-label{ font-size:12px; font-weight:900; letter-spacing:.22em; color:var(--sub); margin-bottom:9px; }
-  .rule-frame{ width:var(--uiw); background:#fff; border:2.5px solid var(--ink); border-radius:var(--rough2); box-shadow:1.5px 2px 0 var(--ink);
+  .rule-frame{ width:var(--uiw); background:#fff; border:2.5px solid var(--ink); border-radius:var(--rough2);
     padding:14px 12px; display:grid; grid-template-columns:1fr 1fr; gap:12px 10px; }
   .rule-col{ display:flex; flex-direction:column; align-items:center; gap:6px; }
   .rc-name{ font-size:12px; font-weight:800; letter-spacing:.06em; color:var(--sub); }
@@ -101,7 +101,7 @@
   .rc-val{ min-width:72px; text-align:center; font-size:17px; font-weight:900; color:var(--ink); }
   .stp{ width:34px; height:34px; border:2px solid var(--ink); border-radius:var(--rough); cursor:pointer;
     background:#fff; color:var(--ink); font-size:18px; font-weight:900; line-height:1; }
-  .stp:active{ translate:0.5px 1px; }
+  .stp:active{ opacity:.7; }   /* 影をなくしたので、押した手ごたえは薄くするだけ */
   .stp:disabled{ opacity:.3; cursor:default; }
   .rule-reset{ display:block; margin:10px auto 0; border:none; background:none; padding:4px 2px;
     font-size:12.5px; font-weight:800; color:var(--ink); text-decoration:underline wavy rgba(43,43,43,.5); text-underline-offset:4px; cursor:pointer; }
@@ -110,13 +110,13 @@
   .rule-sum{ font-size:12.5px; font-weight:700; color:var(--sub); text-align:center; line-height:1.7; }
 
   .btn-main{ width:var(--uiw); max-width:340px; margin-top:14px; padding:13px; cursor:pointer;
-    background:var(--yel); color:var(--ink); border:3px solid var(--ink); border-radius:var(--rough2); box-shadow:2px 2.5px 0 var(--ink);
+    background:var(--yel); color:var(--ink); border:3px solid var(--ink); border-radius:var(--rough2);
     font-size:18px; font-weight:900; letter-spacing:.12em; transform:rotate(-.8deg); }
-  .btn-main:active{ box-shadow:0.5px 0.5px 0 var(--ink); translate:1.5px 2px; }
+  .btn-main:active{ opacity:.7; }   /* 影をなくしたので、押した手ごたえは薄くするだけ */
   .btn-main:disabled{ filter:grayscale(1); opacity:.5; cursor:default; }
-  .txt-btn{ padding:8px 20px; border:2px solid var(--ink); border-radius:var(--rough); box-shadow:1px 1.5px 0 var(--ink);
+  .txt-btn{ padding:8px 20px; border:2px solid var(--ink); border-radius:var(--rough);
     background:#fff; color:var(--ink); font-size:14px; font-weight:800; letter-spacing:.06em; cursor:pointer; white-space:nowrap; }
-  .txt-btn:active{ box-shadow:0 0 0 var(--ink); translate:1px 1.5px; }
+  .txt-btn:active{ opacity:.7; }   /* 影をなくしたので、押した手ごたえは薄くするだけ */
   .txt-btn.sel{ background:var(--yel); }
   .txt-btn.deny{ background:var(--red); color:#fff; }
   .txt-btn:disabled{ opacity:.35; cursor:default; }
@@ -149,7 +149,7 @@
     display:flex; align-items:center; justify-content:center; }
   .paste-btn svg{ width:22px; height:22px; }
   .code-show{ display:flex; align-items:center; gap:10px; justify-content:center; cursor:pointer; background:#fff;
-    border:2.5px solid var(--ink); border-radius:var(--rough); box-shadow:1.5px 2px 0 var(--ink); padding:9px 22px; font-size:27px; font-weight:900; letter-spacing:.28em; }
+    border:2.5px solid var(--ink); border-radius:var(--rough); padding:9px 22px; font-size:27px; font-weight:900; letter-spacing:.28em; }
   .code-show svg{ width:19px; height:19px; opacity:.7; }
   .room-note{ font-size:12.5px; font-weight:700; letter-spacing:.05em; color:var(--sub); text-align:center; }
   .room-note.err{ color:var(--red); }
@@ -179,7 +179,7 @@
     background:linear-gradient(transparent 45%, rgba(59,178,115,.55) 45%, rgba(59,178,115,.55) 92%, transparent 92%); transform:rotate(-4deg); }
   .ros .ok svg{ width:11px; height:11px; flex:none; }
   .ros.me{ background:#e4f4ff; }
-  .ros.turn{ background:var(--yel); box-shadow:1px 1.5px 0 var(--ink); transform:rotate(-1.5deg); }
+  .ros.turn{ background:var(--yel); transform:rotate(-1.5deg); }
   .ros.gone{ opacity:.35; }
   .ros.gone .nm{ text-decoration:line-through; }
   .status{ font-size:16px; font-weight:900; letter-spacing:.06em; text-align:center; margin:2px 0 12px; min-height:24px; }
@@ -195,7 +195,7 @@
   .tp-row{ display:flex; gap:8px; align-items:center; width:100%; max-width:400px; }
   .tp-in{ flex:1; min-width:0; padding:10px 13px; border:2.5px solid var(--ink); border-radius:var(--rough2); font-size:16px; font-weight:800;
     background:#fff; color:var(--ink); }
-  .tp-in:focus{ outline:none; box-shadow:1.5px 2px 0 var(--blu); }
+  .tp-in:focus{ outline:none; border-color:var(--blu); }
   .tp-in:disabled{ opacity:.55; }
   .tp-row .txt-btn{ padding:8px 13px; font-size:13px; }
 
@@ -238,9 +238,9 @@
   /* ツールバー(すべてアイコン・同じ大きさ) */
   .tool-row{ display:flex; gap:5px; align-items:center; justify-content:center; }
   .tb{ width:38px; height:38px; flex:none; padding:0; border:2px solid var(--ink); border-radius:9px; background:#fff; color:var(--ink); cursor:pointer;
-    display:flex; align-items:center; justify-content:center; box-shadow:1px 1px 0 var(--ink); font-size:10.5px; font-weight:900; white-space:nowrap; }
+    display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:900; white-space:nowrap; }
   .tb svg{ width:21px; height:21px; }
-  .tb:active{ box-shadow:0 0 0; translate:1px 1px; }
+  .tb:active{ opacity:.7; }   /* 影をなくしたので、押した手ごたえは薄くするだけ */
   .tb.sel{ background:#cfeaff; }
   .tb:disabled{ opacity:.32; cursor:default; }
   .tb.deny{ background:var(--red); color:#fff; }
@@ -248,10 +248,10 @@
   .opt-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; width:var(--tw); }
   .sz-row{ display:flex; gap:5px; }
   .sz-b{ width:38px; height:38px; padding:0; border:2px solid var(--ink); border-radius:9px; background:#fff; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; box-shadow:1px 1px 0 var(--ink); }
+    display:flex; align-items:center; justify-content:center; }
   .sz-b i{ display:block; width:var(--d); height:var(--d); border-radius:50%; background:var(--pc,#2b2b2b); border:1px solid rgba(43,43,43,.4); }
   .sz-b.sel{ background:#cfeaff; }
-  .sz-b:active{ box-shadow:0 0 0; translate:1px 1px; }
+  .sz-b:active{ opacity:.7; }   /* 影をなくしたので、押した手ごたえは薄くするだけ */
   .op-box{ display:flex; align-items:center; gap:7px; flex:1; min-width:0; }
   /* 不透明度のバー=選んでいる色に合わせる(バーはうすい→こい・つまみはその色) */
   .op-box input[type=range]{ flex:1; min-width:0; -webkit-appearance:none; appearance:none; height:14px; margin:0; cursor:pointer; border-radius:999px;
@@ -274,7 +274,7 @@
   .card-in{ position:absolute; inset:0; transition:transform .45s cubic-bezier(.3,.8,.3,1); transform-style:preserve-3d; }
   .card.up .card-in{ transform:rotateY(180deg); }
   .face{ position:absolute; inset:0; border-radius:9px; backface-visibility:hidden; -webkit-backface-visibility:hidden; overflow:hidden;
-    border:2.5px solid var(--ink); box-shadow:1.5px 2px 0 var(--ink); }
+    border:2.5px solid var(--ink); }
   .face.back{ background:var(--bk,#fff3b0); display:flex; align-items:center; justify-content:center; }
   .face.back svg{ width:100%; height:100%; display:block; }
   .face.front{ transform:rotateY(180deg); background:#fff; }
@@ -291,21 +291,21 @@
   .card.got .cap{ border-top:none; }   /* そろえた人の色の枠が出ている時は、お題の帯の上の黒い線は出さない */
   .card.got .face.front{ border-color:var(--oc,var(--ink)); border-width:4px; }
   .card.got{ cursor:default; }
-  .card.picked .face.front{ box-shadow:0 0 0 4px var(--yel), 2px 2.5px 0 4px var(--ink); }
+  .card.picked .face.front{ box-shadow:0 0 0 4px var(--yel), 0 0 0 7px var(--ink); }
   /* めくっている最中の2枚は少し大きく(となりのカードにほんの少しかぶるくらい) */
   .card.picked{ z-index:6; }
   .card.picked .card-in{ transform:rotateY(180deg); }   /* 2026-10-07: めくった時に大きくするのはやめた */
   .card.got, .over-board .card{ cursor:zoom-in; }
   /* ほかの人(手番の人)のカーソル */
   .rcur{ position:absolute; z-index:20; display:none; pointer-events:none; transition:left .09s linear, top .09s linear; }
-  .rcur svg{ width:22px; height:22px; display:block; filter:drop-shadow(.5px 1px 0 rgba(43,43,43,.5)); }
+  .rcur svg{ width:22px; height:22px; display:block; }
   .rcur span{ position:absolute; left:16px; top:18px; white-space:nowrap; font-size:11px; font-weight:900; color:#fff; background:var(--pc,#888);
     border:1.5px solid var(--ink); border-radius:999px; padding:0 7px 1px; }
   /* 表になったカードの拡大 */
   .cz-word{ font-size:clamp(20px,6vw,27px); font-weight:900; letter-spacing:.05em; line-height:1.35; margin-bottom:10px; word-break:break-all;
     display:inline-block; padding:0 6px; background:linear-gradient(transparent 58%, rgba(255,210,63,.85) 58%, rgba(255,210,63,.85) 92%, transparent 92%); }
   .cz-word.free{ color:var(--sub); }
-  .cz-cv{ width:min(78vw,340px); aspect-ratio:1; margin:0 auto; border:3px solid var(--ink); border-radius:8px; overflow:hidden; background:#fff; box-shadow:2px 2.5px 0 var(--ink); }
+  .cz-cv{ width:min(78vw,340px); aspect-ratio:1; margin:0 auto; border:3px solid var(--ink); border-radius:8px; overflow:hidden; background:#fff; }
   .cz-cv canvas{ display:block; width:100%; height:100%; }
   .cz-info{ display:flex; flex-direction:column; gap:6px; width:min(78vw,340px); margin:14px auto 0; }
   .cz-row{ display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:800; text-align:left; }
@@ -334,16 +334,17 @@
     padding:10px 20px; font-size:14px; font-weight:800; letter-spacing:.05em;
     opacity:0; pointer-events:none; transition:opacity .2s; white-space:nowrap; max-width:92vw; }
   .toast.on{ opacity:1; }
-  #bigFx{ position:fixed; inset:0; z-index:78; display:none; flex-direction:column; align-items:center; justify-content:center; gap:16px; pointer-events:none; }
-  /* そろえた2枚の絵(GETの時だけ・文字の上) */
-  #bigFxArt{ display:none; gap:clamp(10px,3vw,22px); }
+  #bigFx{ position:fixed; inset:0; z-index:78; display:none; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; }
+  /* そろえた2枚の絵(GETの時だけ)=通知の下に、通知の背景の下のふちに少しかぶせる(文字にはかぶせない・2026-10-10) */
+  #bigFxArt{ display:none; order:2; position:relative; z-index:1; margin-top:-14px; gap:clamp(10px,3vw,22px); }
+  #bigFx.get span{ padding-bottom:22px; }
   #bigFx.get #bigFxArt{ display:flex; }
-  #bigFxArt canvas{ width:min(27.2vw,136px); height:min(27.2vw,136px); background:#fff; border:3px solid var(--ink); border-radius:8px; box-shadow:2px 2.5px 0 var(--ink); }
+  #bigFxArt canvas{ width:min(19vw,95px); height:min(19vw,95px); background:#fff; border:3px solid var(--ink); border-radius:8px; }
   #bigFxArt canvas:first-child{ transform:rotate(-2.5deg); }
   #bigFxArt canvas:last-child{ transform:rotate(2deg); }
   #bigFx.on{ display:flex; animation:bigFx 2.2s ease-out forwards; }
   #bigFx span{ font-size:clamp(26px,8vw,46px); font-weight:900; letter-spacing:.06em; color:var(--ink);
-    background:#fff; border:3px solid var(--ink); box-shadow:2.5px 3px 0 var(--ink); border-radius:var(--rough);
+    background:#fff; border:3px solid var(--ink); border-radius:var(--rough);
     padding:10px 28px; text-align:center; max-width:92vw; transform:rotate(-3deg); }
   #bigFx span small{ display:block; font-size:.45em; letter-spacing:.12em; color:var(--sub); }
   #bigFx.get span{ background:var(--gc,var(--yel)); }   /* そろえた人の色(2026-10-02) */
@@ -353,12 +354,12 @@
 
   .help-btn{ position:fixed; left:12px; top:12px; z-index:40; display:flex; align-items:center; gap:6px;
     padding:5px 13px 5px 6px; border:2px solid var(--ink); border-radius:var(--rough); cursor:pointer;
-    background:#fff; color:var(--ink); font-size:13px; font-weight:900; letter-spacing:.06em; box-shadow:1px 1.5px 0 var(--ink); }
+    background:#fff; color:var(--ink); font-size:13px; font-weight:900; letter-spacing:.06em; }
   .help-btn span{ width:20px; height:20px; border-radius:50%; background:var(--yel); color:var(--ink); border:1.5px solid var(--ink);
     display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; }
   .snd-btn{ position:fixed; right:12px; top:12px; z-index:40; display:flex; align-items:center; gap:6px;
     padding:5px 13px; border:2px solid var(--ink); border-radius:var(--rough2); cursor:pointer;
-    background:#fff; color:var(--ink); font-size:13px; font-weight:900; letter-spacing:.06em; box-shadow:1px 1.5px 0 var(--ink); }
+    background:#fff; color:var(--ink); font-size:13px; font-weight:900; letter-spacing:.06em; }
   .snd-btn svg{ width:17px; height:17px; }
   .snd-btn .slash{ display:none; }
   .snd-btn.off .wave{ display:none; }
@@ -368,7 +369,7 @@
     background:rgba(255,253,247,.6); opacity:0; pointer-events:none; transition:opacity .24s; }
   .overlay.on{ opacity:1; pointer-events:auto; }
   .r-card{ width:min(92vw,430px); max-height:82svh; overflow-y:auto; background:#fff; color:var(--ink);
-    border:3px solid var(--ink); border-radius:var(--rough2); box-shadow:3px 3.5px 0 var(--ink); padding:24px 20px 20px; text-align:center;
+    border:3px solid var(--ink); border-radius:var(--rough2); padding:24px 20px 20px; text-align:center;
     transition:opacity .2s, transform .2s; }
   .r-card::-webkit-scrollbar{ width:7px; }
   .r-card::-webkit-scrollbar-track{ background:transparent; }
@@ -379,13 +380,13 @@
   .h-sec:nth-of-type(2)::before{ background:var(--blu); } .h-sec:nth-of-type(3)::before{ background:var(--grn); } .h-sec:nth-of-type(4)::before{ background:var(--org); }
   .r-card p{ text-align:left; font-size:14px; font-weight:500; line-height:1.85; }
   .r-card .h-list{ text-align:left; font-size:14px; font-weight:500; line-height:1.85; margin:0 0 4px 18px; }
-  .r-card .close{ margin-top:16px; padding:9px 26px; border:2.5px solid var(--ink); border-radius:var(--rough); cursor:pointer; box-shadow:1.5px 2px 0 var(--ink);
+  .r-card .close{ margin-top:16px; padding:9px 26px; border:2.5px solid var(--ink); border-radius:var(--rough); cursor:pointer;
     background:var(--yel); color:var(--ink); font-size:15px; font-weight:900; letter-spacing:.1em; }
   .r-btns{ display:flex; gap:12px; justify-content:center; margin-top:16px; flex-wrap:wrap; }
   .r-btns button{ margin-top:0 !important; }
   #resBtns button{ width:156px; padding-left:0; padding-right:0; }   /* 結果のボタンは同じ固定サイズ */
   .r-btns .ghost{ padding:9px 22px; border:2.5px solid var(--ink); border-radius:var(--rough2); background:#fff; color:var(--ink);
-    font-size:14px; font-weight:900; cursor:pointer; box-shadow:1.5px 2px 0 var(--ink); }
+    font-size:14px; font-weight:900; cursor:pointer; }
   .res-row{ display:flex; align-items:center; gap:9px; padding:7px 10px; border:2px solid var(--ink); border-radius:var(--rough); background:#fff; margin-top:7px; font-size:14px; font-weight:800; text-align:left; }
   .res-row:nth-child(even){ border-radius:var(--rough2); }
   .res-row .rk{ width:22px; text-align:center; font-weight:900; }
@@ -462,9 +463,9 @@
   /* 虫眼鏡(拡大縮小)と画面の移動(2026-10-07・待てアート/文字化けかくれんぼと同じ操作)。画面(#gameScene)ごと大きくする */
   #zoomBox{ position:fixed; z-index:76; right:12px; bottom:12px; display:none; align-items:center; gap:4px; }
   #gameScene.on ~ #zoomBox{ display:flex; }
-  #zoomBox .zb{ width:34px; height:34px; border-radius:50%; border:2px solid var(--ink); background:#fff; color:var(--ink); box-shadow:1px 1px 0 var(--ink);
+  #zoomBox .zb{ width:34px; height:34px; border-radius:50%; border:2px solid var(--ink); background:#fff; color:var(--ink);
     font-size:17px; font-weight:900; line-height:1; cursor:pointer; font-family:inherit; padding:0; }
-  #zoomBox .zb:active{ box-shadow:0 0 0; translate:1px 1px; }
+  #zoomBox .zb:active{ opacity:.7; }   /* 影をなくしたので、押した手ごたえは薄くするだけ */
   #zoomBox .magi{ width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; color:var(--ink); cursor:pointer; }
   #zoomBox .magi svg{ width:19px; height:19px; }
   #zoomBox .zb:disabled{ opacity:.3; cursor:default; box-shadow:none; }
