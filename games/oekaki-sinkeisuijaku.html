@@ -1759,17 +1759,7 @@ function toast(m,ms){ const el=$("toast"); el.textContent=m; el.classList.add("o
 let fxT=0;
 function bigFx(html,cls,col,cids){ const el=$("bigFx"); $("bigFxTx").innerHTML=html;
   const ab=$("bigFxArt"); ab.innerHTML=""; (cids||[]).forEach(cid=>{ const cv=document.createElement("canvas"); cv.width=cv.height=340; paintCardArt(cv,cid); ab.appendChild(cv); });   /* ★GETの時はそろえた2枚の絵を文字の上に(2026-10-10) */
-  $("bigFxTx").style.setProperty("--gc",col||""); el.className=""; void el.offsetWidth; el.className="on"+(cls?" "+cls:""); clearTimeout(fxT); fxT=setTimeout(()=>el.className="",2300);
-  /* ★通知中は操作できない(2026-10-10): 入力欄のカーソルを外し、描いている途中の線はそこで確定する */
-  const ae=document.activeElement; if(ae&&(ae.tagName==="INPUT"||ae.tagName==="TEXTAREA")&&!ae.closest("#sgPanel")) ae.blur();
-  if(stroke) endStroke(); hideGhost(); }
-function fxBusy(){ return $("bigFx").classList.contains("on"); }
-/* 通知(画面のまん中の大きな文字)が出ている間は、クリック・タップ・キー・ホイールをすべて止める(シーン一覧のパネルだけは使える) */
-["pointerdown","mousedown","click","dblclick","touchstart","keydown","keypress","beforeinput","wheel","contextmenu"].forEach(ev=>window.addEventListener(ev,e=>{
-  if(!fxBusy()) return;
-  if(e.target&&e.target.closest&&e.target.closest("#sgPanel")) return;
-  e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-},{capture:true,passive:false}));
+  $("bigFxTx").style.setProperty("--gc",col||""); el.className=""; void el.offsetWidth; el.className="on"+(cls?" "+cls:""); clearTimeout(fxT); fxT=setTimeout(()=>el.className="",2300); }
 function rankList(){
   const ps=G.players.slice().sort((a,b)=>b.score-a.score);
   let rk=0, prev=null; return ps.map((p,i)=>{ if(p.score!==prev){ rk=i+1; prev=p.score; } return { p, rk }; });
