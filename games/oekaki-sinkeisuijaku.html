@@ -314,6 +314,9 @@
   .card.hit .card-in{ animation:hit .55s ease-out; }
   @keyframes hit{ 0%{ transform:rotateY(180deg) scale(1); } 40%{ transform:rotateY(180deg) scale(1.14) rotate(-3deg); } 100%{ transform:rotateY(180deg) scale(1); } }
   .card.dim{ cursor:default; }
+  /* 2枚めくった瞬間=ほかのカードを全部グレーにして、めくった2枚を見やすく(2026-10-10) */
+  .card{ transition:filter .18s, opacity .18s; }
+  .card.shade{ filter:grayscale(1) brightness(.9); opacity:.35; }
   .big-msg{ font-size:22px; font-weight:900; letter-spacing:.06em; text-align:center; }
 
   /* 試作用(DEBUG)パネル */
@@ -1504,6 +1507,8 @@ function renderMatch(){
   if(localFlip && (G.sk!==localFlip.sk || G.flip.includes(localFlip.cid) || Date.now()-localFlip.at>3000)) localFlip=null;
   const over=G.phase==="over";
   $("grid").classList.toggle("over-board",over);
+  const lf=localFlip&&!G.flip.includes(localFlip.cid)? localFlip.cid : null;
+  const two=!over && G.flip.length+(lf?1:0)>=2;   // 2枚めくった(自分の2枚目は返事を待たずに)
   Object.keys(rcurs).forEach(id=>{ if(over||id!==G.turn) rcurs[id].style.display="none"; });
   G.board.forEach(cid=>{
     const el=cardEls[cid]; if(!el) return; const c=cById(cid), tk=G.taken[cid];
@@ -1520,6 +1525,7 @@ function renderMatch(){
     if(over && c && !el._drn){ const dp=pById(c.dr); el._drn=1; const dn=el.querySelector(".drn"); dn.style.setProperty("--dc",dp?dp.c:"#ddd"); dn.innerHTML=PEN_SVG+'<b>'+esc(dp?dp.n:"")+'</b>'; }   // 描いた人の名前=カードの左上
     cap.style.background = owner? owner.c : "#fff";
     el.classList.toggle("dim", over || !!tk);
+    el.classList.toggle("shade", two && !G.flip.includes(cid) && cid!==lf);
     if(up) paintCard(cid);
   });
   $("matchNote").textContent="";
