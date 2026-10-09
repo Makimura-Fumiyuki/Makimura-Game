@@ -315,7 +315,7 @@
   @keyframes hit{ 0%{ transform:rotateY(180deg) scale(1); } 40%{ transform:rotateY(180deg) scale(1.14) rotate(-3deg); } 100%{ transform:rotateY(180deg) scale(1); } }
   .card.dim{ cursor:default; }
   /* 2枚めくった瞬間=ほかのカードを全部グレーにして、めくった2枚を見やすく(2026-10-10) */
-  .card{ transition:filter .18s, opacity .18s; }
+  .card{ transition:filter .35s ease, opacity .35s ease; }   /* 一瞬で切りかわって見えないよう、目で追える短いフェード(2026-10-10) */
   .card.shade{ filter:grayscale(1) brightness(.9); opacity:.35; }
   .big-msg{ font-size:22px; font-weight:900; letter-spacing:.06em; text-align:center; }
 
