@@ -958,7 +958,7 @@ const ART_N=256, ART_R=720, MAX_PTS=30000, FILL_MAX=80, ERASE_MUL=2;
    白黒 / 灰 / 赤 / 薄赤 / 橙・茶 / 黄・黄土 / 緑 / 水・青 / 桃 / 紫(下の段の最後は自由な色) */
 const INK=["#ffffff","#aaaaaa","#ff0013","#feafa8","#ff7829","#ffc126","#11b03c","#26c9ff","#ff008f","#8a3ffc",
   "#000000","#666666","#990000","#cb5a57","#964112","#b0701c","#017420","#0050cd","#99004e"];
-const PEN_LV=[2,3.5,6,10.5,18], PEN_DEF=2, W_DEF=6;   // ペンの太さは5段階(256マス基準・×1.75刻み)。消しゴムはこの2倍
+const PEN_LV=[1.2,2,3,5,8], PEN_DEF=2, W_DEF=6;   // ペンの太さは5段階(256マス基準・約1.6倍刻み・初期=3は旧6の半分 2026-10-10)。消しゴムはこの2倍
 const OPK={ pen:0, erase:1, rect:2, oval:3, fill:4, clear:5 }, OPN=["pen","erase","rect","oval","fill","clear"];
 const hex2=v=>("0"+Math.max(0,Math.min(255,v|0)).toString(16)).slice(-2);
 function encodeArt(st){
@@ -1347,7 +1347,7 @@ function wireCanvas(cv2,i){
   pk.addEventListener("input",useFree); pk.addEventListener("change",useFree);
   pk.addEventListener("click",()=>{ ensureAudio(); pickInk(freeCol); });
   $("toolRow").querySelectorAll("[data-tool]").forEach(b=>b.onclick=()=>{ ensureAudio(); playTick(); tool=b.dataset.tool; resetClear(); updateTools(); });
-  $("szRow").innerHTML=PEN_LV.map((w,i)=>'<button class="sz-b" type="button" data-lv="'+i+'" aria-label="太さ'+(i+1)+'"><i style="--d:'+[4,7,10,15,23][i]+'px"></i></button>').join("");
+  $("szRow").innerHTML=PEN_LV.map((w,i)=>'<button class="sz-b" type="button" data-lv="'+i+'" aria-label="太さ'+(i+1)+'"><i style="--d:'+[3,5,8,12,17][i]+'px"></i></button>').join("");
   $("szRow").querySelectorAll("[data-lv]").forEach(b=>b.onclick=()=>{ ensureAudio(); playTick(); penLv=+b.dataset.lv; updateTools(); });
   const op=$("opRange"); op.addEventListener("input",()=>{ penA=Math.max(.1,Math.min(1,(+op.value||100)/100)); updateTools(); });
 })();
