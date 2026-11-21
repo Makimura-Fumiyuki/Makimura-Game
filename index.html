@@ -1079,7 +1079,8 @@
 (function(){
   /* ゲームのデータ: release=リリース日 / cats=カテゴリ / clicks=あそばれた回数(サーバー集計) */
   const GAMES=[
-    { id:"tsubuyaki", thumbLight:true, noIntro:true, yomi:"まきむらたちのつぶやき", tpl:"tpl-tsubuyaki", release:"2026-09-03", cats:["その他"], clicks:null, likes:null },
+    // 2026-11-21 牧村指示で「牧村たちのつぶやき」を非公開(Shift+S+Dでも出さない=DEV_GAMESにも入れない)。戻し方はCLAUDE.mdの「つぶやき非公開」の項
+    // { id:"tsubuyaki", thumbLight:true, noIntro:true, yomi:"まきむらたちのつぶやき", tpl:"tpl-tsubuyaki", release:"2026-09-03", cats:["その他"], clicks:null, likes:null },
     { id:"mojibake", thumbLight:true, yomi:"もじばけかくれんぼ", tpl:"tpl-mojibake", release:"2026-09-05", cats:["パーティ"], clicks:null, likes:null },   // 制作中=Coming Soon(リリース時にsoon:trueを外し、intro-mojibake.htmlを作ってnoIntroも外す)
     // 2026-10-25 牧村指示で非公開(戻す時はこの行の // を外す＋deploy.shのEXCLUDEから外す＋sitemap/intro相互リンク/_redirects/newsのリンクを戻す)
     // { id:"handjanken", thumbLight:true, yomi:"てづくりじゃんけん", tpl:"tpl-handjanken", release:"2026-09-24", cats:["対戦"], clicks:null, likes:null },   // 2026-09-24に正式リリース(soon解除。NEWバッジは自動)

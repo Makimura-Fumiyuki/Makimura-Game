@@ -589,6 +589,7 @@ function mkIn(){ return !!mkSes(); }
 function mkName(){ try{ return (localStorage.getItem("mk.name")||"").trim(); }catch(e){ return ""; } }
 function myAcctName(){ return mkIn()? mkName() : ""; }
 let peerName="";
+const cleanNm=n=>String(n||"").replace(/[<>&"'`]/g,"").slice(0,16);
 const foeLabel=()=>peerName||MK_GUEST;
 
 /* ===== 盤のルール(CPUの読みにも使う純粋な関数) ===== */
@@ -1108,11 +1109,11 @@ function joinRoom(code,asHost){
     const pl=presenceArr().slice(0,2);
     if(pl.length>=2 && pl.every(p=>p.id!==myId)) return;   /* ★自分は対局者ではない=観戦者になるのを待つ */
     if(spectating) return;
-    if(typeof payload.pn==="string") peerName=payload.pn.slice(0,16);
+    if(typeof payload.pn==="string") peerName=cleanNm(payload.pn);
     send("nm",{pn:myAcctName()});
     startOnlineGame(payload.hs,payload.bn);
   });
-  ch.on("broadcast",{event:"nm"},({payload})=>{ if(payload&&typeof payload.pn==="string"){ peerName=payload.pn.slice(0,16); render(); } });
+  ch.on("broadcast",{event:"nm"},({payload})=>{ if(payload&&typeof payload.pn==="string"){ peerName=cleanNm(payload.pn); render(); } });
   ch.on("broadcast",{event:"mv"},({payload})=>{
     if(!payload||payload.id===myId) return;
     if(spectating){                              /* 観戦者は両者の手を受ける。★ackは返さない(送り直しを誤って止めない) */
@@ -1193,7 +1194,7 @@ function onPresence(){
   const players=arr.slice(0,2);                 /* 入室が早い2人が対局者。それ以外は観戦者 */
   const foe=players.find(p=>p.id!==myId);
   foeId=foe?foe.id:"";
-  if(foe&&typeof foe.n==="string"&&foe.n) peerName=foe.n.slice(0,16);
+  if(foe&&typeof foe.n==="string"&&foe.n) peerName=cleanNm(foe.n);
   if(!isHost && players.length>=2 && players.every(p=>p.id!==myId)){   /* ★自分は観戦者。ホストから局面が届くのを待つ */
     updateSpecBadge(); if(started) render(); return;
   }
@@ -1510,7 +1511,7 @@ function spawnStamp(i,who,self){
   const central=1-Math.abs(hx-0.5)*2;
   el.style.setProperty("--rise","-"+(24+(1-central)*16).toFixed(0)+"vh");   /* 中央は低め・両端は高め */
   el.style.setProperty("--dx",(Math.random()*24-12).toFixed(0)+"px");
-  el.innerHTML='<span class="s-emoji">'+STAMP_SVGS[i]+'</span><span class="s-name">'+(who||meLabel())+'</span>';
+  {const se=document.createElement("span");se.className="s-emoji";se.textContent=STAMP_SVGS[i];const sn=document.createElement("span");sn.className="s-name";sn.textContent=String(who||meLabel()).slice(0,16);el.append(se,sn);}
   if(seOn&&!stampMuted) playStamp(i);
   if($("resultOv").classList.contains("on")) el.classList.add("over-dialog");   /* 結果ダイアログ中も見えるように */
   document.body.appendChild(el);

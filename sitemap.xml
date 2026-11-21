@@ -55,11 +55,13 @@
     <lastmod>2026-09-10</lastmod>
     <priority>0.9</priority>
   </url>
+  <!-- HIDDEN-TUBUYAKI
   <url>
     <loc>https://makimura-gamehub.com/makimuratatino-tubuyaki/</loc>
     <lastmod>2026-09-10</lastmod>
     <priority>0.8</priority>
   </url>
+  -->
   <url>
     <loc>https://makimura-gamehub.com/games/minnade-ikimonozukan</loc>
     <lastmod>2026-09-10</lastmod>
@@ -140,24 +142,32 @@
     <lastmod>2026-09-10</lastmod>
     <priority>0.8</priority>
   </url>
+  <!-- HIDDEN-TUBUYAKI
   <url>
     <loc>https://makimura-gamehub.com/makimuratatino-tubuyaki/001_makimura_koukokukoi</loc>
     <lastmod>2026-09-10</lastmod>
     <priority>0.8</priority>
   </url>
+  -->
+  <!-- HIDDEN-TUBUYAKI
   <url>
     <loc>https://makimura-gamehub.com/makimuratatino-tubuyaki/002_makimura_syousetuya-ehonni-tukaesoujane-tteiu-kotobadasi</loc>
     <lastmod>2026-09-10</lastmod>
     <priority>0.8</priority>
   </url>
+  -->
+  <!-- HIDDEN-TUBUYAKI
   <url>
     <loc>https://makimura-gamehub.com/makimuratatino-tubuyaki/003_makimura_mahounoranpuninegau-3tunokoto</loc>
     <lastmod>2026-09-10</lastmod>
     <priority>0.8</priority>
   </url>
+  -->
+  <!-- HIDDEN-TUBUYAKI
   <url>
     <loc>https://makimura-gamehub.com/makimuratatino-tubuyaki/004_makimura_jinsei20nenwohurikaeru-10sen</loc>
     <lastmod>2026-09-10</lastmod>
     <priority>0.8</priority>
   </url>
+  -->
 </urlset>

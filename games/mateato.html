@@ -1148,13 +1148,19 @@ const ODAI=["りんご","猫","車","ロケット","メガネ","傘","魚","山"
 function randOdai(){ return ODAI[Math.floor(Math.random()*ODAI.length)]; }
 
 function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+/* ★受け取った値の検証(2026-10-22セキュリティ修正)=色・数・idは形が正しいものだけ使う */
+const okCol=c=>/^#[0-9a-f]{6}$/i.test(c)?c:"#888";
+const num=(v,lo,hi,d)=>{v=+v;return Number.isFinite(v)?Math.min(hi,Math.max(lo,Math.round(v))):d;};
+const okId=id=>typeof id==="string"&&/^[a-z0-9]{1,16}$/.test(id);
+function cleanPl(a){ return (Array.isArray(a)?a:[]).filter(x=>x&&okId(x.id)).slice(0,120).map(x=>({id:x.id, n:[...String(x.n||"").replace(/[<>&"'`]/g,"")].slice(0,16).join(""), s:num(x.s,-99999,99999,0), c:okCol(x.c)})); }
 function byId(id){ return players.find(p=>p.id===id); }
 function isDrawer(){ return online ? drawerId===myId : true; }
 function tint(hex){
+  hex=okCol(hex);
   const n=parseInt(hex.slice(1),16), r=(n>>16)+70, g=((n>>8)&255)+70, b=(n&255)+70;
   return "rgb("+Math.min(255,r)+","+Math.min(255,g)+","+Math.min(255,b)+")";
 }
-function dotStyle(c){ return "background:radial-gradient(circle at 35% 30%, "+tint(c)+", "+c+")"; }
+function dotStyle(c){ c=okCol(c); return "background:radial-gradient(circle at 35% 30%, "+tint(c)+", "+c+")"; }
 
 /* ================= シーン ================= */
 const titleScene=$("titleScene"), lobbyScene=$("lobbyScene"), gameScene=$("gameScene");
@@ -1810,7 +1816,7 @@ function showResult(st, showAgain){
       row.className="rank-row"+(s.dobon?" dobon":(rank===1?" gold":""));
       row.innerHTML='<span class="rk">'+rank+'位</span><span class="p-dot" style="'+dotStyle(s.c)+'"></span><span class="nm"></span>'
         +(s.dobon?'<span class="dobon-tag">ドボン</span>':"")
-        +'<span class="pt">'+s.p+'点</span>';
+        +'<span class="pt">'+num(s.p,-99999,99999,0)+'点</span>';
     }
     row.querySelector(".nm").textContent=s.n||UNDEF_NM;
     list.appendChild(row);
@@ -1868,7 +1874,7 @@ $("scoreBtn").addEventListener("click",()=>{
   standings().forEach(s=>{
     const row=document.createElement("div"); row.className="rank-row";
     const canKick = online && isHost && s.id!==myId;   // オーナーはここからも追放できる(2026-08-10)
-    row.innerHTML='<span class="p-dot" style="'+dotStyle(s.c)+'"></span><span class="nm"></span><span class="pt">'+s.p+'点</span>'
+    row.innerHTML='<span class="p-dot" style="'+dotStyle(s.c)+'"></span><span class="nm"></span><span class="pt">'+num(s.p,-99999,99999,0)+'点</span>'
       +(canKick?'<button class="kick-btn" data-kick="'+esc(s.id)+'">追放</button>':"");
     row.querySelector(".nm").textContent=s.n||UNDEF_NM;
     list.appendChild(row);
@@ -1970,7 +1976,7 @@ function onHostXfer(p){
   hostVer=p.hv; hostId=p.to;
   if(p.to===myId){
     isHost=true; spectating=false; lobbyEarly=false; clearTimeout(joinWatch);
-    players=(p.players||[]).map(x=>({id:x.id, n:x.n||"", s:x.s|0, c:x.c||COLORS[0]}));
+    players=cleanPl(p.players);
     if(!byId(myId)) players.push({id:myId, n:myName||"", s:0, c:nextColor()});
     if(p.tl) timeLimit=p.tl; dobonOn=p.db===1; if(p.er!=null) eraserAmt=p.er; roundNo=p.round||1;
     phase="lobby"; lastPh="lobby";
@@ -1978,7 +1984,7 @@ function onHostXfer(p){
     startHb(); renderLobby(); sendSnap();
   }else{
     if(isHost){ isHost=false; clearInterval(hbIv); hbIv=0; }
-    if(p.players) players=p.players;
+    if(p.players) players=cleanPl(p.players);
     if(phase==="lobby") renderLobby();
   }
   annHostChange(p.to);
@@ -2105,7 +2111,7 @@ function openChannel(c, onReady){
   ch.on("broadcast",{event:"act"},({payload})=>{ if(isHost && payload) hostAct(payload); });
   ch.on("broadcast",{event:"chat"},({payload})=>{ if(payload) addChat(payload.id, payload.n, payload.tx, payload.ans===1, payload.ok===1, payload.sp===1); });
   ch.on("broadcast",{event:"stamp"},({payload})=>{ if(payload) speakStamp(payload.i|0); if(payload) spawnStamp(payload.i|0, payload.name||"", payload.color||"#fff"); });   // ロストしても実害なし=seq/ack不要
-  ch.on("broadcast",{event:"rot"},({payload})=>{ if(payload&&typeof payload.r==="number"){ cupRot=payload.r; applyCupRot(); } });   // カップ回転の共有
+  ch.on("broadcast",{event:"rot"},({payload})=>{ if(payload&&typeof payload.r==="number"){ cupRot=num(payload.r,-100000,100000,0); applyCupRot(); } });   // カップ回転の共有
   ch.on("broadcast",{event:"erase"},({payload})=>{ if(payload && drawerId!==myId){ $("cupWrap").classList.toggle("erasing", payload.on===1); } });   // 描き手の消しゴム=みんなのフチも赤
   ch.on("broadcast",{event:"draw"},({payload})=>{
     if(!payload||!payload.s||drawerId===myId) return;
@@ -2496,8 +2502,8 @@ function applySnap(p){
   clearTimeout(joinWatch); clearTimeout(succWatch);
   const hostChg=!!lastSnapHost && lastSnapHost!==p.hostId; lastSnapHost=p.hostId;
   hostId=p.hostId;
-  players=p.players||[];
-  leftP=p.lf||[];   // 引き継いだ時のために持っておく
+  players=cleanPl(p.players);
+  leftP=cleanPl(p.lf);   // 引き継いだ時のために持っておく
   annHostChange(hostId);
   if(p.ph!=="lobby"){   // 途中で抜けた人・戻ってきた人をチャットに残す(オーナーのaddSysはゲストに届かないため)
     const cur={}; leftP.forEach(x=>{ cur[x.id]=x.n||""; });

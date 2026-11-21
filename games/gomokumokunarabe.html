@@ -818,12 +818,13 @@ function mkName(){ try{ return (localStorage.getItem("mk.name")||"").trim(); }ca
 function myAcctName(){ return mkIn()? mkName() : ""; }            // presenceで相手に渡す名前(未登録は空)
 function meLabel(){ const n=myAcctName(); return n||"自分"; }      // 自分の表示(未登録は従来どおり「自分」)
 let peerName="";
+const cleanNm=n=>String(n||"").replace(/[<>&"'`]/g,"").slice(0,16);
 let redrawNames=null;   // 対局画面の名札を描き直す(名前がpresenceで届いたら呼ぶ)
 function foeLabel(){ return peerName||MK_GUEST; }                  // あいての表示(未登録は「ゲスト」)
 function readPeerName(){   // presenceからあいての名前を取り込む
   try{ if(!ch) return; const st=ch.presenceState(); let n="";
     Object.keys(st).forEach(k=>{ const p=st[k]&&st[k][0]; if(!p||p.id===myId||k===myId) return; if(typeof p.n==="string"&&p.n) n=p.n; });
-    const before=peerName; peerName=(n||"").slice(0,16);
+    const before=peerName; peerName=cleanNm(n);
     if(peerName!==before && redrawNames) redrawNames();
   }catch(e){}
 }
@@ -1597,7 +1598,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       }
       opponentLeft();
     });
-    ch.on("broadcast",{event:"nm"},({payload})=>{ if(payload&&typeof payload.pn==="string"){ peerName=payload.pn.slice(0,16); if(redrawNames) redrawNames(); } });
+    ch.on("broadcast",{event:"nm"},({payload})=>{ if(payload&&typeof payload.pn==="string"){ peerName=cleanNm(payload.pn); if(redrawNames) redrawNames(); } });
     ch.on("broadcast",{event:"start"},({payload})=>{
       if(isHost) return;
       if(payload&&payload.ps&&payload.ps.length>=2){ specPlayers=payload.ps.slice(); }
@@ -1607,7 +1608,7 @@ function readPeerName(){   // presenceからあいての名前を取り込む
       }
       applyNetRules(payload);   // 部屋主のルールを受け取って揃える
       if(payload&&payload.ps&&payload.ps.length>=2) specPlayers=payload.ps.slice();   // 対局者2人=これ以外は観戦者
-      if(payload&&typeof payload.pn==="string"){ peerName=payload.pn.slice(0,16); }   // 部屋主の名前
+      if(payload&&typeof payload.pn==="string"){ peerName=cleanNm(payload.pn); }   // 部屋主の名前
       try{ ch.send({ type:"broadcast", event:"nm", payload:{ pn:myAcctName() } }); }catch(e){}   // 自分の名前を返す
       beginOnline(payload && payload.hc===BLACK ? WHITE : BLACK);
     });
@@ -2421,7 +2422,7 @@ setMini(true);   /* ★毎回「チャット欄 表示」の畳んだ状態で�
     el.style.setProperty("--rise", "-"+(24+(1-central)*16).toFixed(0)+"vh");   // 中央は低め(盤の下側に少しかぶる程度)・両端は高め(従来通り)
     el.style.setProperty("--dx", (Math.random()*24-12).toFixed(0)+"px");
     const nm=who||(local?"自分":meLabel());   // 1台は誰が押したか分からないので「自分」
-    el.innerHTML='<span class="s-emoji">'+STAMP_SVGS[i]+'</span><span class="s-name">'+nm+'</span>';
+    {const se=document.createElement("span");se.className="s-emoji";se.textContent=STAMP_SVGS[i];const sn=document.createElement("span");sn.className="s-name";sn.textContent=String(nm).slice(0,16);el.append(se,sn);}
     if(seOn && !stampMuted) playStamp(i);   // スタンプ別の効果音
     // ダイアログ表示中は前面に出して見えるようにする
     const overlayOpen=document.getElementById("resultOverlay").classList.contains("on")||document.getElementById("confirmOverlay").classList.contains("on");
